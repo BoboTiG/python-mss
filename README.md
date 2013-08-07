@@ -1,3 +1,5 @@
+**WARNING**: this project is under heavy development, do not use in prod.
+
 Python MSS
 ===
 
@@ -28,7 +30,7 @@ Usage
 It is quite easy, just call a new instance of `MSS()` and then `save()`.  
 You can pass `oneshot=True` to create one screen shot of all monitors.
 
-    from mss import MSS
+    import mss  # or from mss import MSS
     try:
         mss = MSS()
         # One shot per monitor
