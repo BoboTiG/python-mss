@@ -55,7 +55,70 @@ from os.path import isfile
 import zlib
 from platform import system
 
-if system() == 'Windows':
+if system() == 'Linux':
+    from ctypes import addressof, byref, cast, cdll
+    from ctypes import (
+        c_char_p,
+        c_int,
+        c_int32,
+        c_uint,
+        c_uint32,
+        c_ulong,
+        c_void_p,
+        POINTER,
+        Structure
+    )
+
+    class Display(Structure):
+        pass
+
+    class XWindowAttributes(Structure):
+        _fields_ = [
+            ("x",                     c_int32),
+            ("y",                     c_int32),
+            ("width",                 c_int32),
+            ("height",                c_int32),
+            ("border_width",          c_int32),
+            ("depth",                 c_int32),
+            ("visual",                c_ulong),
+            ("root",                  c_ulong),
+            ("class",                 c_int32),
+            ("bit_gravity",           c_int32),
+            ("win_gravity",           c_int32),
+            ("backing_store",         c_int32),
+            ("backing_planes",        c_ulong),
+            ("backing_pixel",         c_ulong),
+            ("save_under",            c_int32),
+            ("colourmap",             c_ulong),
+            ("mapinstalled",          c_uint32),
+            ("map_state",             c_uint32),
+            ("all_event_masks",       c_ulong),
+            ("your_event_mask",       c_ulong),
+            ("do_not_propagate_mask", c_ulong),
+            ("override_redirect",     c_int32),
+            ("screen",                c_ulong)
+        ]
+
+    class XImage(Structure):
+        _fields_ = [
+            ('width'            , c_int),
+            ('height'           , c_int),
+            ('xoffset'          , c_int),
+            ('format'           , c_int),
+            ('data'             , c_char_p),
+            ('byte_order'       , c_int),
+            ('bitmap_unit'      , c_int),
+            ('bitmap_bit_order' , c_int),
+            ('bitmap_pad'       , c_int),
+            ('depth'            , c_int),
+            ('bytes_per_line'   , c_int),
+            ('bits_per_pixel'   , c_int),
+            ('red_mask'         , c_ulong),
+            ('green_mask'       , c_ulong),
+            ('blue_mask'        , c_ulong)
+        ]
+
+elif system() == 'Windows':
     from ctypes import byref, memset, pointer, sizeof, windll
     from ctypes.wintypes import (
         c_void_p as LPRECT,
@@ -126,7 +189,9 @@ class MSS(object):
         self.debug('__init__', 'system', this_is)
         self.debug('__init__', 'oneshot', self.oneshot)
 
-        if this_is == 'Windows':
+        if this_is == 'Linux':
+            self.__class__ = MSSLinux
+        elif this_is == 'Windows':
             self.__class__ = MSSWindows
         else:
             err = 'System "{0}" not implemented.'.format(this_is)
@@ -220,6 +285,133 @@ class MSS(object):
 
         '''
         pass
+
+
+class MSSLinux(MSS):
+    '''
+        Mutli-screen shot implementation for GNU/Linux.
+        It uses intensively the Xlib.
+    '''
+
+    def init(self):
+        ''' GNU/Linux initialisations '''
+
+        x11 = find_library('X11')
+        if x11 is None:
+            raise OSError('MSSLinux: no X11 library found.')
+        else:
+            xlib = cdll.LoadLibrary(x11)
+
+        # Acces to the X server
+        XOpenDisplay = xlib.XOpenDisplay
+        XOpenDisplay.argtypes = [c_char_p]
+        XOpenDisplay.restype = POINTER(Display)
+        self.XOpenDisplay = XOpenDisplay
+
+        #
+        XDefaultRootWindow = xlib.XDefaultRootWindow
+        XDefaultRootWindow.argtypes = [POINTER(Display)]
+        XDefaultRootWindow.restype = POINTER(XWindowAttributes)
+        self.XDefaultRootWindow = XDefaultRootWindow
+
+        #
+        XGetWindowAttributes = xlib.XGetWindowAttributes
+        XGetWindowAttributes.argtypes = [POINTER(Display),
+                POINTER(XWindowAttributes), POINTER(XWindowAttributes)]
+        XGetWindowAttributes.restype = c_int
+        self.XGetWindowAttributes = XGetWindowAttributes
+
+        #
+        XAllPlanes = xlib.XAllPlanes
+        XAllPlanes.argtypes = []
+        XAllPlanes.restype = c_ulong
+        self.XAllPlanes = XAllPlanes
+
+        #
+        XGetImage = xlib.XGetImage
+        XGetImage.argtypes = [POINTER(Display), POINTER(Display),
+                            c_int, c_int, c_uint, c_uint, c_ulong, c_int]
+        XGetImage.restype = POINTER(XImage)
+        self.XGetImage = xlib.XGetImage
+
+        #
+        XGetPixel = xlib.XGetPixel
+        XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
+        XGetPixel.restype = c_ulong
+        self.XGetPixel = XGetPixel
+
+        # Constants and scalars
+        self.ZPixmap = 2
+        self.display = self.XOpenDisplay(None)
+        self.root = self.XDefaultRootWindow(self.display)
+
+    def _enum_display_monitors(self):
+        '''
+            Get positions of one or more monitors.
+            Returns a dict with minimal requirements (see MSS class).
+        '''
+
+        results = []
+        if self.oneshot:
+            gwa = XWindowAttributes()
+            self.XGetWindowAttributes(self.display, self.root, byref(gwa))
+            infos = {b'left': gwa.x, b'right': gwa.width,
+                    b'top': gwa.y, b'bottom': gwa.height}
+            results.append(infos)
+        return results
+
+    def _get_pixels(self, monitor):
+        ''' Retreive all pixels from a monitor. Pixels have to be RGB. '''
+
+        width, height = monitor['width'], monitor['height']
+        left, top = monitor['left'], monitor['top']
+
+        return None
+        allplanes = self.XAllPlanes()
+        self.debug('_get_pixels', 'allplanes', allplanes)
+
+        '''
+        XImage *image = XGetImage(display,root, 0,0 , width,height,AllPlanes, ZPixmap);
+
+        unsigned char *array = new unsigned char[width * height * 3];
+
+        unsigned long red_mask = image->red_mask;
+        unsigned long green_mask = image->green_mask;
+        unsigned long blue_mask = image->blue_mask;
+
+        for (int x = 0; x < width; x++)
+          for (int y = 0; y < height ; y++)
+          {
+             unsigned long pixel = XGetPixel(image,x,y);
+
+             unsigned char blue = pixel & blue_mask;
+             unsigned char green = (pixel & green_mask) >> 8;
+             unsigned char red = (pixel & red_mask) >> 16;
+
+             array[(x + width * y) * 3] = red;
+             array[(x + width * y) * 3+1] = green;
+             array[(x + width * y) * 3+2] = blue;
+          }
+        '''
+        self.root = self.XDefaultRootWindow(self.display)
+        # Fix for XGetImage: expected LP_Display instance instead of LP_XWindowAttributes
+        root = cast(self.root, POINTER(Display))
+
+        image = self.XGetImage(self.display, root, 0, 0, width, height,
+                                allplanes, self.ZPixmap)
+        if image is None:
+            raise ValueError('MSSLinux: XGetImage() failed.')
+
+        pixels = b''
+        for x in range(width):
+            for y in range(height):
+                pixel = self.XGetPixel(image, x, y)
+                b, g, r = pixel & 255, (pixel & 65280) >> 8, (pixel & 16711680) >> 16
+                offset = (x + width * y) * 3
+                pixels += bytes(r)
+                pixels += bytes(g)
+                pixels += bytes(b)
+        return pixels
 
 
 class MSSWindows(MSS):
