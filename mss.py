@@ -580,7 +580,7 @@ class MSSImage(object):
         exts.append('jpg, png, ..., it will try using external libraries')
         return exts
 
-    def dump(self, output=None, ext='jpg', quality=95):
+    def dump(self, output=None, ext='jpg', quality=80, filtertype=0):
         ''' Dump data to the image file using file format specified by
             ext.
             To save time, it will try if PIL or another image library is
@@ -590,14 +590,11 @@ class MSSImage(object):
 
         if self.data is None:
             raise ValueError('MSSImage: no data to process.')
-        #if not isinstance(self.data, bytearray):
-        #    raise ValueError('MSSImage: bad data [{0}].'.format(type(self.data)))
-        #if not ext in self.ext_ok:
-        #    raise ValueError('MSSImage: unknown extension.')
 
         self.filename = output
         self.ext = ext
         self.quality = max(0, min(quality, 100))
+        self.filtertype = max(0, min(filtertype, 4))
         self.output = None
         contents = None
 
@@ -624,8 +621,8 @@ class MSSImage(object):
                 pass
 
         # Here, no success, use pure python PNG implementation
-        #if contents is None:
-        #    contents = self.libpng()
+        if contents is None:
+            contents = self.libpng()
 
         if contents is not None:
             self.output = self.filename + '.' + self.ext
@@ -689,25 +686,30 @@ class MSSImage(object):
             def paeth():
                 out = b''
                 ai = -fo
-                for i, x in enumerate(line):
+                i = 0
+                for x in line:
                     a = 0
                     b = prev[i]
                     c = 0
-
                     if ai >= 0:
                         a = line[ai]
                         c = prev[ai]
+
                     p = a + b - c
                     pa = abs(p - a)
                     pb = abs(p - b)
                     pc = abs(p - c)
-                    if pa <= pb and pa <= pc: Pr = a
-                    elif pb <= pc: Pr = b
-                    else: Pr = c
+                    if pa <= pb and pa <= pc:
+                        Pr = a
+                    elif pb <= pc:
+                        Pr = b
+                    else:
+                        Pr = c
 
                     x = (x - Pr) & 0xff
                     out += pack(b'B', x)
                     ai += 1
+                    i += 1
                 return out
 
             if not prev:
@@ -741,11 +743,10 @@ class MSSImage(object):
         padding = (to_take % 32) // 2  # Fix for MS Windows 64 bits
         offset = 0
         scanlines = b''
-        filter_type = 4
         prev = None
         for y in range(height):
             line = bytearray(data[offset : offset+to_take-padding])
-            scanlines += filter_scanline(filter_type, line, 3, prev)
+            scanlines += filter_scanline(self.filtertype, line, 3, prev)
             prev = line
             offset += to_take
 
