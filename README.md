@@ -38,8 +38,8 @@ You can pass `oneshot=True` to create one screen shot of all monitors.
             print('File "{0}" created.').format(filename)
             
         # A shot to grab them all :)
-        filename = mss.save(oneshot=True)[0]
-        print('[Full] File "{0}" created.').format(filename)
+        for filename in mss.save(oneshot=True):
+            print('[Full] File "{0}" created.'.format(filename))
     except Exception as ex:
         print(ex)
 
