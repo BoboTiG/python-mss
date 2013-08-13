@@ -66,9 +66,6 @@ if system() == 'Linux':
     class Display(Structure):
         pass
 
-    class Visual(Structure):
-        pass
-
     class XWindowAttributes(Structure):
         _fields_ = [
             ("x",                     c_int32),
