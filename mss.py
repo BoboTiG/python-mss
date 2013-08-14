@@ -46,7 +46,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSS', 'MSSImage']
+__all__ = ['MSSLinux', 'MSSWindows', 'MSSImage']
 
 
 from ctypes.util import find_library
@@ -57,7 +57,7 @@ from platform import system
 if system() == 'Linux':
     from os.path import expanduser, isfile
     import xml.etree.ElementTree as ET
-    from ctypes import addressof, byref, cast, cdll
+    from ctypes import byref, cast, cdll
     from ctypes import (
         c_char_p, c_int, c_int32, c_uint, c_uint32,
         c_ulong, c_void_p, POINTER, Structure
@@ -162,22 +162,12 @@ class MSS(object):
 
     DEBUG = False
 
-    def __init__(self):
+    def __init__(self, debug=False):
         ''' Global vars and class overload. '''
 
-        self.monitors = ()
+        self.DEBUG = debug
+        self.monitors = []
         self.oneshot = False
-
-        this_is = system()
-        self.debug('__init__', 'system', this_is)
-
-        if this_is == 'Linux':
-            self.__class__ = MSSLinux
-        elif this_is == 'Windows':
-            self.__class__ = MSSWindows
-        else:
-            err = 'System "{0}" not implemented.'.format(this_is)
-            raise NotImplementedError(err)
 
         self.init()
 
@@ -194,7 +184,7 @@ class MSS(object):
              - output - string - the output filename without extension
              - oneshot - boolean -grab only one screen shot of all monitors
              - ext - string - file format to save
-             - ftype - int - PNG filter type (0 = none, 4 = best [slower])
+             - ftype - int - PNG filter type (0..4 [slower])
 
             This is a generator which returns created files:
                 'output-1.ext',
@@ -296,6 +286,8 @@ class MSSLinux(MSS):
         else:
             xlib = cdll.LoadLibrary(x11)
 
+        self.debug('init', 'xlib', xlib)
+
         self.XOpenDisplay = xlib.XOpenDisplay
         self.XDefaultRootWindow = xlib.XDefaultRootWindow
         self.XGetWindowAttributes = xlib.XGetWindowAttributes
@@ -311,11 +303,15 @@ class MSSLinux(MSS):
         # Constants and scalars
         self.ZPixmap = 2
         self.display = self.XOpenDisplay(None)
+        self.debug('init', 'display', self.display)
         self.root = self.XDefaultRootWindow(self.display)
+        self.debug('init', 'root', self.root)
 
     def _set_argtypes(self):
         ''' Functions arguments '''
         
+        self.debug('_set_argtypes', 'Functions arguments')
+
         self.XOpenDisplay.argtypes = [c_char_p]
         self.XDefaultRootWindow.argtypes = [POINTER(Display)]
         self.XGetWindowAttributes.argtypes = [POINTER(Display),
@@ -330,6 +326,8 @@ class MSSLinux(MSS):
 
     def _set_restypes(self):
         ''' Functions return type '''
+        
+        self.debug('_set_restypes', 'Functions return type')
 
         self.XOpenDisplay.restype = POINTER(Display)
         self.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -345,6 +343,8 @@ class MSSLinux(MSS):
             Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
+        
+        self.debug('_enum_display_monitors', '_enum_display_monitors')
 
         results = []
         if self.oneshot:
@@ -383,13 +383,15 @@ class MSSLinux(MSS):
     def _get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB.
         '''
+        
+        self.debug('_get_pixels', '_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
 
         allplanes = self.XAllPlanes()
         self.debug('_get_pixels', 'allplanes', allplanes)
-        
+
         # Fix for XGetImage: expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
 
@@ -417,6 +419,8 @@ class MSSWindows(MSS):
     def init(self):
         ''' Windows initialisations '''
 
+        self.debug('init', 'initialisations')
+
         self.SM_XVIRTUALSCREEN = 76
         self.SM_YVIRTUALSCREEN = 77
         self.SM_CXVIRTUALSCREEN = 78
@@ -439,6 +443,8 @@ class MSSWindows(MSS):
 
     def _set_argtypes(self):
         ''' Functions arguments '''
+        
+        self.debug('_set_argtypes', 'Functions arguments')
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
             POINTER(RECT), DOUBLE)
@@ -456,6 +462,8 @@ class MSSWindows(MSS):
 
     def _set_restypes(self):
         ''' Functions return type '''
+        
+        self.debug('_set_restypes', 'Functions return type')
 
         self.GetSystemMetrics.restypes = INT
         self.EnumDisplayMonitors.restypes = BOOL
@@ -472,6 +480,8 @@ class MSSWindows(MSS):
             Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
+        
+        self.debug('_enum_display_monitors', '_enum_display_monitors')
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
@@ -495,6 +505,8 @@ class MSSWindows(MSS):
 
     def _get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB. '''
+        
+        self.debug('_get_pixels', '_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
@@ -533,7 +545,7 @@ class MSSWindows(MSS):
 
         return bottom_left(pixels.raw, width, height)
         return pixels.raw
-        
+
         # Note that the origin of the returned image is in the
         # bottom-left corner, 32-bit aligned. Need to "arrange" that.
         data = bottom_left(pixels.raw, width, height)
@@ -590,7 +602,7 @@ class MSSImage(object):
             err = 'MSSImage: {0}() not implemented. '.format(self.ext)
             err += 'Check MSSImage.extensions() to have more informations.'
             raise ValueError(err)
-            
+
         contents = getattr(self, self.ext)()
         if contents is not None:
             self.filename += '.' + self.ext
@@ -603,7 +615,7 @@ class MSSImage(object):
         '''
             JPEG implementation using ctypes over libjpeg.
         '''
-        
+
         self.ext = 'jpg'
         print('ctypes over libjpeg still not implemented.')
         pass
@@ -613,7 +625,7 @@ class MSSImage(object):
             Image represented as RGB tuples, no interlacing.
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
-        
+
         self.ext = 'png'
 
         def filter_scanline(ftype, line, fo, prev=None):
@@ -780,13 +792,23 @@ def bgr_to_rgb(data, width, height):
 
 
 if __name__ == '__main__':
+
+    this_is = system()
+    if this_is == 'Linux':
+        MSS = MSSLinux
+    elif this_is == 'Windows':
+        MSS = MSSWindows
+    else:
+        err = 'System "{0}" not implemented.'.format(this_is)
+        raise NotImplementedError(err)
+    
     try:
-        mss = MSS()
-        
+        mss = MSS(debug=True)
+
         # One screen shot per monitor
         for filename in mss.save():
             print('File "{0}" created.'.format(filename))
-        
+
         # A shot to grab them all :)
         for filename in mss.save(oneshot=True):
             print('File "{0}" created.'.format(filename))

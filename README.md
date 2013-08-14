@@ -30,18 +30,31 @@ Usage
 It is quite easy, just call a new instance of `MSS()` and then `save()`.  
 You can pass `oneshot=True` to create one screen shot of all monitors.
 
-    from mss import MSS
+    grom platform import system
+    from mss import *
+
+    this_is = system()
+    if this_is == 'Linux':
+        MSS = MSSLinux
+    elif this_is == 'Windows':
+        MSS = MSSWindows
+    else:
+        err = 'System "{0}" not implemented.'.format(this_is)
+        raise NotImplementedError(err)
+    
     try:
-        mss = MSS()
-        # One shot per monitor
+        mss = MSSWindows()
+
+        # One screen shot per monitor
         for filename in mss.save():
-            print('File "{0}" created.').format(filename)
-            
+            print('File "{0}" created.'.format(filename))
+
         # A shot to grab them all :)
         for filename in mss.save(oneshot=True):
-            print('[Full] File "{0}" created.'.format(filename))
+            print('File "{0}" created.'.format(filename))
     except Exception as ex:
         print(ex)
+        raise
 
 Bonus
 ---
