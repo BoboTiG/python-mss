@@ -27,10 +27,10 @@ Feel free to try MSS on a system we had not tested, and let report us by creatin
 Usage
 ---
 
-It is quite easy, just call a new instance of `MSS()` and then `save()`.  
+It is quite easy, just call a new instance of `MSS*()` and then `save()`.  
 You can pass `oneshot=True` to create one screen shot of all monitors.
 
-    grom platform import system
+    from platform import system
     from mss import *
 
     this_is = system()
