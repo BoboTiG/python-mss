@@ -43,7 +43,7 @@ You can pass `oneshot=True` to create one screen shot of all monitors.
         raise NotImplementedError(err)
     
     try:
-        mss = MSSWindows()
+        mss = MSS()
 
         # One screen shot per monitor
         for filename in mss.save():
