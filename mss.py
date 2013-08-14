@@ -50,7 +50,7 @@ __all__ = ['MSSLinux', 'MSSWindows', 'MSSImage']
 
 
 from ctypes.util import find_library
-from struct import calcsize, pack
+from struct import pack
 import zlib
 from platform import system
 
