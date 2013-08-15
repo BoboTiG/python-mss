@@ -277,6 +277,14 @@ class MSSLinux(MSS):
         It uses intensively the Xlib.
     '''
 
+    def __del__(self):
+        ''' Disconnect from X server '''
+
+        self.debug('__del__', 'XCloseDisplay')
+
+        if self.display is not None:
+            self.XCloseDisplay(self.display)
+
     def init(self):
         ''' GNU/Linux initialisations '''
 
@@ -296,6 +304,7 @@ class MSSLinux(MSS):
         self.XGetPixel = xlib.XGetPixel
         self.XCreateImage = xlib.XCreateImage
         self.XFree = xlib.XFree
+        self.XCloseDisplay = xlib.XCloseDisplay
 
         self._set_argtypes()
         self._set_restypes()
@@ -309,7 +318,7 @@ class MSSLinux(MSS):
 
     def _set_argtypes(self):
         ''' Functions arguments '''
-        
+
         self.debug('_set_argtypes', 'Functions arguments')
 
         self.XOpenDisplay.argtypes = [c_char_p]
@@ -323,10 +332,11 @@ class MSSLinux(MSS):
         self.XCreateImage.argtypes = [POINTER(Display), POINTER(Display),
             c_int, c_int, c_uint, c_uint, c_ulong, c_int]
         self.XFree.argtypes = [POINTER(XImage)]
+        self.XCloseDisplay.argtypes = [POINTER(Display)]
 
     def _set_restypes(self):
         ''' Functions return type '''
-        
+
         self.debug('_set_restypes', 'Functions return type')
 
         self.XOpenDisplay.restype = POINTER(Display)
@@ -337,13 +347,14 @@ class MSSLinux(MSS):
         self.XGetPixel.restype = c_ulong
         self.XCreateImage.restype = POINTER(XImage)
         self.XFree.restype = c_void_p
+        self.XCloseDisplay.restype = c_void_p
 
     def _enum_display_monitors(self):
         '''
             Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
-        
+
         self.debug('_enum_display_monitors', '_enum_display_monitors')
 
         results = []
@@ -383,7 +394,7 @@ class MSSLinux(MSS):
     def _get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB.
         '''
-        
+
         self.debug('_get_pixels', '_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
@@ -443,7 +454,7 @@ class MSSWindows(MSS):
 
     def _set_argtypes(self):
         ''' Functions arguments '''
-        
+
         self.debug('_set_argtypes', 'Functions arguments')
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
@@ -462,7 +473,7 @@ class MSSWindows(MSS):
 
     def _set_restypes(self):
         ''' Functions return type '''
-        
+
         self.debug('_set_restypes', 'Functions return type')
 
         self.GetSystemMetrics.restypes = INT
@@ -480,7 +491,7 @@ class MSSWindows(MSS):
             Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
-        
+
         self.debug('_enum_display_monitors', '_enum_display_monitors')
 
         def _callback(monitor, dc, rect, data):
@@ -505,7 +516,7 @@ class MSSWindows(MSS):
 
     def _get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB. '''
-        
+
         self.debug('_get_pixels', '_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
@@ -801,7 +812,7 @@ if __name__ == '__main__':
     else:
         err = 'System "{0}" not implemented.'.format(this_is)
         raise NotImplementedError(err)
-    
+
     try:
         mss = MSS(debug=True)
 
