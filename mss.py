@@ -584,8 +584,8 @@ class MSSImage(object):
             raise ValueError('MSSImage: width or height must be positive.')
 
         self.data = data
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
 
     def extensions(self):
         ''' List all known and working extensions. '''
@@ -606,8 +606,8 @@ class MSSImage(object):
 
         self.filename = output
         self.ext = ext
-        self.quality = max(0, min(quality, 100))
-        self.filtertype = max(0, min(ftype, 4))
+        self.quality = max(0, min(int(quality), 100))
+        self.filtertype = max(0, min(int(ftype), 4))
         contents = None
 
         if not hasattr(self, self.ext):
