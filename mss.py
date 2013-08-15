@@ -215,14 +215,6 @@ class MSS(object):
             else:
                 filename = output + '-' + str(i)
                 i += 1
-            monitor[b'width'] = monitor[b'right'] - monitor[b'left']
-            monitor[b'height'] = monitor[b'bottom'] - monitor[b'top']
-            try:
-                if monitor[b'rotation'] == 'left' or monitor[b'rotation'] == 'right':
-                    monitor[b'width'] = monitor[b'bottom']
-                    monitor[b'height'] = monitor[b'right'] - monitor[b'top']
-            except KeyError:
-                pass
 
             pixels = self._get_pixels(monitor)
             if pixels is None:
@@ -240,13 +232,14 @@ class MSS(object):
 
             If self.oneshot is True, this function has to return a dict
             with dimensions of all monitors at the same time.
+            If the monitor has rotation, you have to deal with inside this method.
 
             Must returns a dict with a minima:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
-                'right':  the x-coordinate of the lower-right corner,
-                'bottom': the y-coordinate of the lower-right corner
+                'width':  the monitor width,
+                'height': the monitor height
             }
         '''
         pass
@@ -259,8 +252,6 @@ class MSS(object):
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
-                'right':  the x-coordinate of the lower-right corner,
-                'bottom': the y-coordinate of the lower-right corner
                 'width':  the width,
                 'heigth': the height
             }
@@ -361,8 +352,10 @@ class MSSLinux(MSS):
         if self.oneshot:
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            infos = {b'left': gwa.x, b'right': gwa.width,
-                    b'top': gwa.y, b'bottom': gwa.height}
+            infos = {   b'left'  : gwa.x,
+                        b'top'   : gwa.y,
+                        b'width' : gwa.width,
+                        b'height': gwa.height}
             results.append(infos)
         else:
             # It is a little more complicated, we have to guess all stuff
@@ -372,23 +365,27 @@ class MSSLinux(MSS):
                 raise ValueError('MSSLinux: _enum_display_monitors() failed (no monitors.xml).')
             tree = ET.parse(monitors)
             root = tree.getroot()
-            for config in root.findall('configuration'):
-                if config.find('clone').text == 'no':
-                    for output in config.findall('output'):
-                        if output.get('name') != 'default':
-                            x = output.find('x')
-                            y = output.find('y')
-                            width = output.find('width')
-                            height = output.find('height')
-                            rotation = output.find('rotation')
-                            if None not in [x, y, width, height]:
-                                results.append({
-                                    b'left'    : int(x.text),
-                                    b'right'   : int(width.text),
-                                    b'top'     : int(y.text),
-                                    b'bottom'  : int(height.text),
-                                    b'rotation': rotation.text
-                                })
+            config = root.findall('configuration')[-1]
+            conf = []
+            for output in config.findall('output'):
+                name = output.get('name')
+                if name != 'default':
+                    x = output.find('x')
+                    y = output.find('y')
+                    width = output.find('width')
+                    height = output.find('height')
+                    rotation = output.find('rotation')
+                    if None not in [x, y, width, height] and name not in conf:
+                        conf.append(name)
+                        if rotation.text == 'left' or rotation.text == 'right':
+                            width, height = height, width
+                        results.append({
+                            b'left'    : int(x.text),
+                            b'top'     : int(y.text),
+                            b'width'   : int(width.text),
+                            b'height'  : int(height.text),
+                            b'rotation': rotation.text
+                        })
         return results
 
     def _get_pixels(self, monitor):
@@ -496,8 +493,10 @@ class MSSWindows(MSS):
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
-            infos = {b'left': int(rct.left), b'right': int(rct.right),
-                    b'top': int(rct.top), b'bottom': int(rct.bottom)}
+            infos = {   b'left'  : int(rct.left),
+                        b'top'   : int(rct.top),
+                        b'width' : int(rct.right - rct.left),
+                        b'height': int(rct.bottom -rct.top)}
             results.append(infos)
             return 1
 
@@ -507,8 +506,10 @@ class MSSWindows(MSS):
             right = self.GetSystemMetrics(self.SM_CXVIRTUALSCREEN)
             top = self.GetSystemMetrics(self.SM_YVIRTUALSCREEN)
             bottom = self.GetSystemMetrics(self.SM_CYVIRTUALSCREEN)
-            results.append({b'left': int(left), b'right': int(right),
-                            b'top': int(top), b'bottom': int(bottom)})
+            results.append({b'left'  : int(left),
+                            b'top'   : int(top),
+                            b'width' : int(right - left),
+                            b'height': int(bottom - top)})
         else:
             callback = self.MONITORENUMPROC(_callback)
             self.EnumDisplayMonitors(0, 0, callback, 0)
