@@ -294,7 +294,6 @@ class MSSLinux(MSS):
             xlib = cdll.LoadLibrary(x11)
 
         self.debug('init', 'xlib', xlib)
-        self.debug('init', '$DISPLAY', environ['DISPLAY'])
 
         self.XOpenDisplay = xlib.XOpenDisplay
         self.XDefaultScreen = xlib.XDefaultScreen
@@ -310,9 +309,14 @@ class MSSLinux(MSS):
         self._set_argtypes()
         self._set_restypes()
 
-        # Constants and scalars
         self.ZPixmap = 2
-        self.display = self.XOpenDisplay(environ['DISPLAY'])
+        display = None
+        try:
+            display = environ[b'DISPLAY']
+        except KeyError: pass
+        self.debug('init', '$DISPLAY', display)
+
+        self.display = self.XOpenDisplay(display)
         self.debug('init', 'display', self.display)
         self.screen = self.XDefaultScreen(self.display)
         self.debug('init', 'screen', self.screen)
