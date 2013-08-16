@@ -16,7 +16,7 @@
 
     Many thanks to all those who helped (in no particular order):
 
-      toi, moi, le pape et les autres
+      Oros
 
     History:
 
