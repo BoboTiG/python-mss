@@ -171,11 +171,14 @@ class MSS(object):
 
         self.init()
 
-    def debug(self, method='', scalar='', value=None):
+    def debug(self, method='', scalar=None, value=None):
         ''' Simple debug output. '''
 
         if self.DEBUG:
-            print(method + '()', scalar, type(value), value)
+            if scalar is None:
+                print(':: ' + method + '()')
+            else:
+                print(method + '()', scalar, type(value), value)
 
     def save(self, output='mss', oneshot=False, ext='png', ftype=0):
         ''' For each monitor, grab a screen shot and save it to a file.
@@ -194,6 +197,8 @@ class MSS(object):
                 or
                 'output-full.ext'
         '''
+
+        self.debug('save')
 
         self.oneshot = oneshot
         self.monitors = self._enum_display_monitors() or []
@@ -238,8 +243,8 @@ class MSS(object):
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
-                'width':  the monitor width,
-                'height': the monitor height
+                'width':  the width,
+                'height': the height
             }
         '''
         pass
@@ -271,13 +276,15 @@ class MSSLinux(MSS):
     def __del__(self):
         ''' Disconnect from X server '''
 
-        self.debug('__del__', 'XCloseDisplay')
+        self.debug('__del__')
 
-        if self.display is not None:
+        if self.display:
             self.XCloseDisplay(self.display)
 
     def init(self):
         ''' GNU/Linux initialisations '''
+
+        self.debug('init')
 
         x11 = find_library('X11')
         if x11 is None:
@@ -310,7 +317,7 @@ class MSSLinux(MSS):
     def _set_argtypes(self):
         ''' Functions arguments '''
 
-        self.debug('_set_argtypes', 'Functions arguments')
+        self.debug('_set_argtypes')
 
         self.XOpenDisplay.argtypes = [c_char_p]
         self.XDefaultRootWindow.argtypes = [POINTER(Display)]
@@ -328,7 +335,7 @@ class MSSLinux(MSS):
     def _set_restypes(self):
         ''' Functions return type '''
 
-        self.debug('_set_restypes', 'Functions return type')
+        self.debug('_set_restypes')
 
         self.XOpenDisplay.restype = POINTER(Display)
         self.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -346,7 +353,7 @@ class MSSLinux(MSS):
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('_enum_display_monitors', '_enum_display_monitors')
+        self.debug('_enum_display_monitors')
 
         results = []
         if self.oneshot:
@@ -394,7 +401,7 @@ class MSSLinux(MSS):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB.
         '''
 
-        self.debug('_get_pixels', '_get_pixels')
+        self.debug('_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
@@ -429,7 +436,7 @@ class MSSWindows(MSS):
     def init(self):
         ''' Windows initialisations '''
 
-        self.debug('init', 'initialisations')
+        self.debug('init')
 
         self.SM_XVIRTUALSCREEN = 76
         self.SM_YVIRTUALSCREEN = 77
@@ -454,7 +461,7 @@ class MSSWindows(MSS):
     def _set_argtypes(self):
         ''' Functions arguments '''
 
-        self.debug('_set_argtypes', 'Functions arguments')
+        self.debug('_set_argtypes')
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
             POINTER(RECT), DOUBLE)
@@ -473,7 +480,7 @@ class MSSWindows(MSS):
     def _set_restypes(self):
         ''' Functions return type '''
 
-        self.debug('_set_restypes', 'Functions return type')
+        self.debug('_set_restypes')
 
         self.GetSystemMetrics.restypes = INT
         self.EnumDisplayMonitors.restypes = BOOL
@@ -491,7 +498,7 @@ class MSSWindows(MSS):
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('_enum_display_monitors', '_enum_display_monitors')
+        self.debug('_enum_display_monitors')
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
@@ -523,7 +530,7 @@ class MSSWindows(MSS):
     def _get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB. '''
 
-        self.debug('_get_pixels', '_get_pixels')
+        self.debug('_get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
