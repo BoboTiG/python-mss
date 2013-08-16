@@ -495,13 +495,12 @@ class MSSWindows(MSS):
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
-            infos = {
+            results.append({
                 b'left'  : int(rct.left),
                 b'top'   : int(rct.top),
                 b'width' : int(rct.right - rct.left),
                 b'height': int(rct.bottom -rct.top)
-            }
-            results.append(infos)
+            })
             return 1
 
         results = []
