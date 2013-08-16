@@ -353,10 +353,10 @@ class MSSLinux(MSS):
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
             infos = {
-                b'left'  : gwa.x,
-                b'top'   : gwa.y,
-                b'width' : gwa.width,
-                b'height': gwa.height
+                b'left'  : int(gwa.x),
+                b'top'   : int(gwa.y),
+                b'width' : int(gwa.width),
+                b'height': int(gwa.height)
             }
             results.append(infos)
         else:
