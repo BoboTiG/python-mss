@@ -67,3 +67,8 @@ Bonus
 Just for fun ...
 Show us your screen shot with all monitors in one file, we will update the [gallery](https://tiger-222.fr/tout/python-mss/galerie/) ;)
 
+
+Errors
+---
+
+If you access a computer using SSH, do not forget to enable X11 forwarding, option `-X`. Else you will end on a segfault.
