@@ -297,6 +297,7 @@ class MSSLinux(MSS):
         self.debug('init', '$DISPLAY', environ['DISPLAY'])
 
         self.XOpenDisplay = xlib.XOpenDisplay
+        self.XDefaultScreen = xlib.XDefaultScreen
         self.XDefaultRootWindow = xlib.XDefaultRootWindow
         self.XGetWindowAttributes = xlib.XGetWindowAttributes
         self.XAllPlanes = xlib.XAllPlanes
@@ -313,7 +314,9 @@ class MSSLinux(MSS):
         self.ZPixmap = 2
         self.display = self.XOpenDisplay(environ['DISPLAY'])
         self.debug('init', 'display', self.display)
-        self.root = self.XDefaultRootWindow(self.display)
+        self.screen = self.XDefaultScreen(self.display)
+        self.debug('init', 'screen', self.screen)
+        self.root = self.XDefaultRootWindow(self.display, self.screen)
         self.debug('init', 'root', self.root)
 
     def _set_argtypes(self):
@@ -322,7 +325,8 @@ class MSSLinux(MSS):
         self.debug('_set_argtypes')
 
         self.XOpenDisplay.argtypes = [c_char_p]
-        self.XDefaultRootWindow.argtypes = [POINTER(Display)]
+        self.XDefaultScreen.argtypes = [POINTER(Display)]
+        self.XDefaultRootWindow.argtypes = [POINTER(Display), c_int]
         self.XGetWindowAttributes.argtypes = [POINTER(Display),
             POINTER(XWindowAttributes), POINTER(XWindowAttributes)]
         self.XAllPlanes.argtypes = []
@@ -340,6 +344,7 @@ class MSSLinux(MSS):
         self.debug('_set_restypes')
 
         self.XOpenDisplay.restype = POINTER(Display)
+        self.XDefaultScreen.restype = c_int
         self.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
         self.XGetWindowAttributes.restype = c_int
         self.XAllPlanes.restype = c_ulong
