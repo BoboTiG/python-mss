@@ -370,13 +370,12 @@ class MSSLinux(MSS):
         if self.oneshot:
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            infos = {
+            results.append({
                 b'left'  : int(gwa.x),
                 b'top'   : int(gwa.y),
                 b'width' : int(gwa.width),
                 b'height': int(gwa.height)
-            }
-            results.append(infos)
+            })
         else:
             # It is a little more complicated, we have to guess all stuff
             # from ~/.config/monitors.xml, if present.
