@@ -352,10 +352,12 @@ class MSSLinux(MSS):
         if self.oneshot:
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            infos = {   b'left'  : gwa.x,
-                        b'top'   : gwa.y,
-                        b'width' : gwa.width,
-                        b'height': gwa.height}
+            infos = {
+                b'left'  : gwa.x,
+                b'top'   : gwa.y,
+                b'width' : gwa.width,
+                b'height': gwa.height
+            }
             results.append(infos)
         else:
             # It is a little more complicated, we have to guess all stuff
@@ -493,10 +495,12 @@ class MSSWindows(MSS):
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
-            infos = {   b'left'  : int(rct.left),
-                        b'top'   : int(rct.top),
-                        b'width' : int(rct.right - rct.left),
-                        b'height': int(rct.bottom -rct.top)}
+            infos = {
+                b'left'  : int(rct.left),
+                b'top'   : int(rct.top),
+                b'width' : int(rct.right - rct.left),
+                b'height': int(rct.bottom -rct.top)
+            }
             results.append(infos)
             return 1
 
@@ -506,10 +510,12 @@ class MSSWindows(MSS):
             right = self.GetSystemMetrics(self.SM_CXVIRTUALSCREEN)
             top = self.GetSystemMetrics(self.SM_YVIRTUALSCREEN)
             bottom = self.GetSystemMetrics(self.SM_CYVIRTUALSCREEN)
-            results.append({b'left'  : int(left),
-                            b'top'   : int(top),
-                            b'width' : int(right - left),
-                            b'height': int(bottom - top)})
+            results.append({
+                b'left'  : int(left),
+                b'top'   : int(top),
+                b'width' : int(right - left),
+                b'height': int(bottom - top)
+            })
         else:
             callback = self.MONITORENUMPROC(_callback)
             self.EnumDisplayMonitors(0, 0, callback, 0)
