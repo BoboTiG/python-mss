@@ -55,6 +55,7 @@ import zlib
 from platform import system
 
 if system() == 'Linux':
+    from os import environ
     from os.path import expanduser, isfile
     import xml.etree.ElementTree as ET
     from ctypes import byref, cast, cdll
@@ -293,6 +294,7 @@ class MSSLinux(MSS):
             xlib = cdll.LoadLibrary(x11)
 
         self.debug('init', 'xlib', xlib)
+        self.debug('init', '$DISPLAY', environ['DISPLAY'])
 
         self.XOpenDisplay = xlib.XOpenDisplay
         self.XDefaultRootWindow = xlib.XDefaultRootWindow
@@ -309,7 +311,7 @@ class MSSLinux(MSS):
 
         # Constants and scalars
         self.ZPixmap = 2
-        self.display = self.XOpenDisplay(None)
+        self.display = self.XOpenDisplay(environ['DISPLAY'])
         self.debug('init', 'display', self.display)
         self.root = self.XDefaultRootWindow(self.display)
         self.debug('init', 'root', self.root)
