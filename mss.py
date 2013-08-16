@@ -382,7 +382,9 @@ class MSSLinux(MSS):
             # from ~/.config/monitors.xml, if present.
             monitors = expanduser('~/.config/monitors.xml')
             if not isfile(monitors):
-                raise ValueError('MSSLinux: _enum_display_monitors() failed (no monitors.xml).')
+                self.debug('ERROR', 'MSSLinux: _enum_display_monitors() failed (no monitors.xml).')
+                self.oneshot = True
+                return self._enum_display_monitors()
             tree = ET.parse(monitors)
             root = tree.getroot()
             config = root.findall('configuration')[-1]
