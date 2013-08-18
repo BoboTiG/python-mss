@@ -310,9 +310,11 @@ class MSSLinux(MSS):
         self._set_restypes()
 
         display = None
+        self.display = None
         try:
             display = environ[b'DISPLAY']
-        except KeyError: pass
+        except KeyError:
+            raise ValueError('MSSLinux: $DISPLAY not set. Stopping to prevent segfault.')
         self.debug('init', '$DISPLAY', display)
 
         # At this point, if there is no running server, it could end on
