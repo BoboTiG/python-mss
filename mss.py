@@ -316,6 +316,8 @@ class MSSLinux(MSS):
         except KeyError: pass
         self.debug('init', '$DISPLAY', display)
 
+        # At this point, if there is no running server, it could end on
+        # a segmentation fault. And we cannot catch it.
         self.display = self.XOpenDisplay(display)
         self.debug('init', 'display', self.display)
         self.screen = self.XDefaultScreen(self.display)
