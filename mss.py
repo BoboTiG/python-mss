@@ -233,8 +233,7 @@ class MSS(object):
                 yield img_out
 
     def _enum_display_monitors(self):
-        '''
-            Get positions of all monitors.
+        ''' Get positions of all monitors.
 
             If self.oneshot is True, this function has to return a dict
             with dimensions of all monitors at the same time.
@@ -251,8 +250,7 @@ class MSS(object):
         pass
 
     def _get_pixels(self, monitor_infos):
-        '''
-            Retrieve screen pixels for a given monitor.
+        ''' Retrieve screen pixels for a given monitor.
 
             monitor_infos should contain at least:
             {
@@ -269,8 +267,7 @@ class MSS(object):
 
 
 class MSSLinux(MSS):
-    '''
-        Mutli-screen shot implementation for GNU/Linux.
+    ''' Mutli-screen shot implementation for GNU/Linux.
         It uses intensively the Xlib.
     '''
 
@@ -314,7 +311,8 @@ class MSSLinux(MSS):
         try:
             display = environ[b'DISPLAY']
         except KeyError:
-            raise ValueError('MSSLinux: $DISPLAY not set. Stopping to prevent segfault.')
+            err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
+            raise ValueError(err)
         self.debug('init', '$DISPLAY', display)
 
         # At this point, if there is no running server, it could end on
@@ -362,8 +360,7 @@ class MSSLinux(MSS):
         self.XCloseDisplay.restype = c_void_p
 
     def _enum_display_monitors(self):
-        '''
-            Get positions of one or more monitors.
+        ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
@@ -502,8 +499,7 @@ class MSSWindows(MSS):
         self.DeleteObject.restypes = BOOL
 
     def _enum_display_monitors(self):
-        '''
-            Get positions of one or more monitors.
+        ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
@@ -650,8 +646,7 @@ class MSSImage(object):
         return None
 
     def libjpg(self):
-        '''
-            JPEG implementation using ctypes over libjpeg.
+        ''' JPEG implementation using ctypes over libjpeg.
         '''
 
         self.ext = 'jpg'
