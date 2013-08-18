@@ -450,13 +450,6 @@ class MSSWindows(MSS):
 
         self.debug('init')
 
-        self.SM_XVIRTUALSCREEN = 76
-        self.SM_YVIRTUALSCREEN = 77
-        self.SM_CXVIRTUALSCREEN = 78
-        self.SM_CYVIRTUALSCREEN = 79
-        self.SRCCOPY = 0xCC0020
-        self.DIB_RGB_COLORS = 0
-
         self.GetSystemMetrics = windll.user32.GetSystemMetrics
         self.EnumDisplayMonitors = windll.user32.EnumDisplayMonitors
         self.GetWindowDC = windll.user32.GetWindowDC
@@ -524,10 +517,14 @@ class MSSWindows(MSS):
 
         results = []
         if self.oneshot:
-            left = self.GetSystemMetrics(self.SM_XVIRTUALSCREEN)
-            right = self.GetSystemMetrics(self.SM_CXVIRTUALSCREEN)
-            top = self.GetSystemMetrics(self.SM_YVIRTUALSCREEN)
-            bottom = self.GetSystemMetrics(self.SM_CYVIRTUALSCREEN)
+            SM_XVIRTUALSCREEN = 76
+            SM_YVIRTUALSCREEN = 77
+            SM_CXVIRTUALSCREEN = 78
+            SM_CYVIRTUALSCREEN = 79
+            left = self.GetSystemMetrics(SM_XVIRTUALSCREEN)
+            right = self.GetSystemMetrics(SM_CXVIRTUALSCREEN)
+            top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
+            bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
             results.append({
                 b'left'  : int(left),
                 b'top'   : int(top),
@@ -546,13 +543,14 @@ class MSSWindows(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
+        SRCCOPY = 0xCC0020
+        DIB_RGB_COLORS = 0
 
         srcdc = self.GetWindowDC(0)
         memdc = self.CreateCompatibleDC(srcdc)
         bmp = self.CreateCompatibleBitmap(srcdc, width, height)
         self.SelectObject(memdc, bmp)
-        self.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
-            self.SRCCOPY)
+        self.BitBlt(memdc, 0, 0, width, height, srcdc, left, top, SRCCOPY)
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
         bmi.bmiHeader.biWidth = width
@@ -562,7 +560,7 @@ class MSSWindows(MSS):
         buffer_len = height * ((width * 3 + 3) & -4)
         pixels = create_string_buffer(buffer_len)
         bits = self.GetDIBits(memdc, bmp, 0, height, byref(pixels),
-            pointer(bmi), self.DIB_RGB_COLORS)
+            pointer(bmi), DIB_RGB_COLORS)
 
         self.debug('_get_pixels', 'srcdc', srcdc)
         self.debug('_get_pixels', 'memdc', memdc)
