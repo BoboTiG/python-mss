@@ -309,7 +309,6 @@ class MSSLinux(MSS):
         self._set_argtypes()
         self._set_restypes()
 
-        self.ZPixmap = 2
         display = None
         try:
             display = environ[b'DISPLAY']
@@ -419,6 +418,7 @@ class MSSLinux(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
+        ZPixmap = 2
 
         allplanes = self.XAllPlanes()
         self.debug('_get_pixels', 'allplanes', allplanes)
@@ -427,7 +427,7 @@ class MSSLinux(MSS):
         root = cast(self.root, POINTER(Display))
 
         image = self.XGetImage(self.display, root, left, top, width,
-            height, allplanes, self.ZPixmap)
+            height, allplanes, ZPixmap)
         if image is None:
             raise ValueError('MSSLinux: XGetImage() failed.')
 
