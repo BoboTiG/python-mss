@@ -202,7 +202,7 @@ class MSS(object):
         self.debug('save')
 
         self.oneshot = oneshot
-        self.monitors = self._enum_display_monitors() or []
+        self.monitors = self.enum_display_monitors() or []
 
         self.debug('save', 'oneshot', self.oneshot)
         self.debug('save', 'extension', ext)
@@ -222,7 +222,7 @@ class MSS(object):
                 filename = output + '-' + str(i)
                 i += 1
 
-            pixels = self._get_pixels(monitor)
+            pixels = self.get_pixels(monitor)
             if pixels is None:
                 raise ValueError('MSS: no data to process.')
 
@@ -232,7 +232,7 @@ class MSS(object):
             if img_out is not None:
                 yield img_out
 
-    def _enum_display_monitors(self):
+    def enum_display_monitors(self):
         ''' Get positions of all monitors.
 
             If self.oneshot is True, this function has to return a dict
@@ -249,7 +249,7 @@ class MSS(object):
         '''
         pass
 
-    def _get_pixels(self, monitor_infos):
+    def get_pixels(self, monitor_infos):
         ''' Retrieve screen pixels for a given monitor.
 
             monitor_infos should contain at least:
@@ -359,12 +359,12 @@ class MSSLinux(MSS):
         self.XFree.restype = c_void_p
         self.XCloseDisplay.restype = c_void_p
 
-    def _enum_display_monitors(self):
+    def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('_enum_display_monitors')
+        self.debug('enum_display_monitors')
 
         results = []
         if self.oneshot:
@@ -381,9 +381,9 @@ class MSSLinux(MSS):
             # from ~/.config/monitors.xml, if present.
             monitors = expanduser('~/.config/monitors.xml')
             if not isfile(monitors):
-                self.debug('ERROR', 'MSSLinux: _enum_display_monitors() failed (no monitors.xml).')
+                self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed (no monitors.xml).')
                 self.oneshot = True
-                return self._enum_display_monitors()
+                return self.enum_display_monitors()
             tree = ET.parse(monitors)
             root = tree.getroot()
             config = root.findall('configuration')[-1]
@@ -409,18 +409,18 @@ class MSSLinux(MSS):
                         })
         return results
 
-    def _get_pixels(self, monitor):
+    def get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB.
         '''
 
-        self.debug('_get_pixels')
+        self.debug('get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         ZPixmap = 2
 
         allplanes = self.XAllPlanes()
-        self.debug('_get_pixels', 'allplanes', allplanes)
+        self.debug('get_pixels', 'allplanes', allplanes)
 
         # Fix for XGetImage: expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
@@ -498,12 +498,12 @@ class MSSWindows(MSS):
         self.GetDIBits.restypes = INT
         self.DeleteObject.restypes = BOOL
 
-    def _enum_display_monitors(self):
+    def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('_enum_display_monitors')
+        self.debug('enum_display_monitors')
 
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
@@ -536,10 +536,10 @@ class MSSWindows(MSS):
             self.EnumDisplayMonitors(0, 0, callback, 0)
         return results
 
-    def _get_pixels(self, monitor):
+    def get_pixels(self, monitor):
         ''' Retreive all pixels from a monitor. Pixels have to be RGB. '''
 
-        self.debug('_get_pixels')
+        self.debug('get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
@@ -562,12 +562,12 @@ class MSSWindows(MSS):
         bits = self.GetDIBits(memdc, bmp, 0, height, byref(pixels),
             pointer(bmi), DIB_RGB_COLORS)
 
-        self.debug('_get_pixels', 'srcdc', srcdc)
-        self.debug('_get_pixels', 'memdc', memdc)
-        self.debug('_get_pixels', 'bmp', bmp)
-        self.debug('_get_pixels', 'buffer_len', buffer_len)
-        self.debug('_get_pixels', 'bits', bits)
-        self.debug('_get_pixels', 'len(pixels.raw)', len(pixels.raw))
+        self.debug('get_pixels', 'srcdc', srcdc)
+        self.debug('get_pixels', 'memdc', memdc)
+        self.debug('get_pixels', 'bmp', bmp)
+        self.debug('get_pixels', 'buffer_len', buffer_len)
+        self.debug('get_pixels', 'bits', bits)
+        self.debug('get_pixels', 'len(pixels.raw)', len(pixels.raw))
 
         # Clean up
         self.DeleteObject(srcdc)
@@ -820,7 +820,7 @@ if __name__ == '__main__':
         raise NotImplementedError(err)
 
     try:
-        mss = MSS(debug=True)
+        mss = MSS(debug=False)
 
         # One screen shot per monitor
         for filename in mss.save():
