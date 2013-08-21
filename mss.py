@@ -577,13 +577,30 @@ class MSSWindows(MSS):
         if bits != height or len(pixels.raw) != buffer_len:
             raise ValueError('MSSWindows: GetDIBits() failed.')
 
-        return bottom_left(pixels.raw, width, height)
-        return pixels.raw
-
         # Note that the origin of the returned image is in the
-        # bottom-left corner, 32-bit aligned. Need to "arrange" that.
-        data = bottom_left(pixels.raw, width, height)
-        return bgr_to_rgb(data, width, height)
+        # bottom-left corner, 32-bit aligned. And it is BGR.
+        # Need to "arrange" that.
+        return self._arrange(pixels.raw, (width * 3 + 3) & -4, height)
+
+    def _arrange(self, data, width, height):
+        ''' Reorganises data when the origin of the image is in the
+            bottom-left corner and converts BGR triple to RGB. '''
+
+        padding = 0 if width % 8 == 0 else (width % 8) // 2
+        total = width * height
+        y = height - 1
+        i = 1
+        scanlines = b''
+        while y >= 0:
+            offset = total-(width*i)
+            x = 0
+            while x < width - 2:
+                scanlines += data[offset+x+2] + data[offset+x+1] + data[offset+x]
+                x += 3
+            y -= 1
+            i += 1
+            scanlines += b'0' * padding
+        return scanlines
 
 
 class MSSImage(object):
@@ -789,39 +806,6 @@ class MSSImage(object):
         iend[0] = pack(b'>I', len(iend[2]))
 
         return magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
-
-
-def bottom_left(data, width, height):
-    ''' Reorganise data when the origin of the image is in the
-        bottom-left corner. '''
-
-    scanlines = b''
-    y = height - 1
-    while y >= 0:
-        offstart = y * width * 3
-        offend = ((y + 1) * width * 3)
-        scanlines += data[offstart:offend]
-        y -= 1
-    return scanlines
-    '''scanlines = b''
-    y = height - 1
-    while y >= 0:
-        offstart = (y * width * 3 + 3) & -4
-        offend = ((y + 1) * width * 3 + 3) & -4
-        scanlines += data[offstart:offend]
-        y -= 1
-    return scanlines'''
-
-
-def bgr_to_rgb(data, width, height):
-    ''' Convert BGR triple to RGB. '''
-
-    rgb = [None] * (3 * width * height)
-    for x in range(width):
-        for y in range(height):
-            off = 3 * (width * y + x)
-            rgb[off:off+3] = pack(b'3B', data[off+2], data[off+1], data[off])
-    return rgb
 
 
 if __name__ == '__main__':
