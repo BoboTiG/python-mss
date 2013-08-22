@@ -179,7 +179,7 @@ class MSS(object):
             if scalar is None:
                 print(':: ' + method + '()')
             else:
-                print(method + '()', scalar, type(value), value)
+                print(method + '()', scalar, type(value).__name__, value)
 
     def save(self, output='mss', oneshot=False, ext='png', ftype=0):
         ''' For each monitor, grab a screen shot and save it to a file.
@@ -299,7 +299,6 @@ class MSSLinux(MSS):
         self.XAllPlanes = xlib.XAllPlanes
         self.XGetImage = xlib.XGetImage
         self.XGetPixel = xlib.XGetPixel
-        self.XCreateImage = xlib.XCreateImage
         self.XFree = xlib.XFree
         self.XCloseDisplay = xlib.XCloseDisplay
 
@@ -338,8 +337,6 @@ class MSSLinux(MSS):
         self.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
             c_int, c_int, c_uint, c_uint, c_ulong, c_int]
         self.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
-        self.XCreateImage.argtypes = [POINTER(Display), POINTER(Display),
-            c_int, c_int, c_uint, c_uint, c_ulong, c_int]
         self.XFree.argtypes = [POINTER(XImage)]
         self.XCloseDisplay.argtypes = [POINTER(Display)]
 
@@ -355,7 +352,6 @@ class MSSLinux(MSS):
         self.XAllPlanes.restype = c_ulong
         self.XGetImage.restype = POINTER(XImage)
         self.XGetPixel.restype = c_ulong
-        self.XCreateImage.restype = POINTER(XImage)
         self.XFree.restype = c_void_p
         self.XCloseDisplay.restype = c_void_p
 
@@ -543,6 +539,7 @@ class MSSWindows(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
+        good_width = (width * 3 + 3) & -4
         SRCCOPY = 0xCC0020
         DIB_RGB_COLORS = 0
 
@@ -557,7 +554,7 @@ class MSSWindows(MSS):
         bmi.bmiHeader.biHeight = height
         bmi.bmiHeader.biBitCount = 24
         bmi.bmiHeader.biPlanes = 1
-        buffer_len = height * ((width * 3 + 3) & -4)
+        buffer_len = height * good_width
         pixels = create_string_buffer(buffer_len)
         bits = self.GetDIBits(memdc, bmp, 0, height, byref(pixels),
             pointer(bmi), DIB_RGB_COLORS)
@@ -580,11 +577,13 @@ class MSSWindows(MSS):
         # Note that the origin of the returned image is in the
         # bottom-left corner, 32-bit aligned. And it is BGR.
         # Need to "arrange" that.
-        return self._arrange(pixels.raw, (width * 3 + 3) & -4, height)
+        return self._arrange(pixels.raw, good_width, height)
 
     def _arrange(self, data, width, height):
         ''' Reorganises data when the origin of the image is in the
             bottom-left corner and converts BGR triple to RGB. '''
+
+        self.debug('_arrange')
 
         total = width * height
         scanlines = [b'0'] * total
