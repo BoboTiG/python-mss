@@ -308,7 +308,10 @@ class MSSLinux(MSS):
         display = None
         self.display = None
         try:
-            display = environ[b'DISPLAY']
+            try:  # python3
+                display = bytes(environ['DISPLAY'], 'utf-8')
+            except TypeError:  # python2
+                display = environ['DISPLAY']
         except KeyError:
             err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
             raise ValueError(err)
