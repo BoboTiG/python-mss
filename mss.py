@@ -586,21 +586,16 @@ class MSSWindows(MSS):
         ''' Reorganises data when the origin of the image is in the
             bottom-left corner and converts BGR triple to RGB. '''
 
-        padding = 0 if width % 8 == 0 else (width % 8) // 2
         total = width * height
-        y = height - 1
-        i = 1
-        scanlines = b''
-        while y >= 0:
-            offset = total-(width*i)
+        scanlines = [b'0'] * total
+        for y in range(height):
+            off = width * (y + 1)
+            offset = total - off
             x = 0
             while x < width - 2:
-                scanlines += data[offset+x+2] + data[offset+x+1] + data[offset+x]
+                scanlines[off+x:off+x+3] = data[offset+x+2], data[offset+x+1], data[offset+x]
                 x += 3
-            y -= 1
-            i += 1
-            scanlines += b'0' * padding
-        return scanlines
+        return b''.join(scanlines)
 
 
 class MSSImage(object):
