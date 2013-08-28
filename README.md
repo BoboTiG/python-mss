@@ -1,5 +1,3 @@
-**WARNING**: this project is under heavy development, do not use in prod.
-
 Python MSS
 ===
 
