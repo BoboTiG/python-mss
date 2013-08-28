@@ -16,7 +16,7 @@
 
     Many thanks to all those who helped (in no particular order):
 
-      Oros
+      Oros, Eownis
 
     History:
 
@@ -54,7 +54,11 @@ from struct import pack
 import zlib
 from platform import system
 
-if system() == 'Linux':
+if system() == 'Darwin':
+    from Quartz import *
+    from LaunchServices import kUTTypeJPEG, kUTTypePNG
+
+elif system() == 'Linux':
     from os import environ
     from os.path import expanduser, isfile
     import xml.etree.ElementTree as ET
@@ -226,8 +230,11 @@ class MSS(object):
             if pixels is None:
                 raise ValueError('MSS: no data to process.')
 
-            img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
-            img_out = img.dump(filename, ext=ext, ftype=ftype)
+            if hasattr(self, 'save_'):
+                 img_out = self.save_(output=filename, ext=ext)
+            else:
+                img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
+                img_out = img.dump(filename, ext=ext, ftype=ftype)
             self.debug('save', 'img_out', img_out)
             if img_out is not None:
                 yield img_out
@@ -264,6 +271,92 @@ class MSS(object):
 
         '''
         pass
+
+
+class MSSMac(MSS):
+    ''' Mutli-screen shot implementation for Mac OSX.
+        It uses intensively the Quartz.
+    '''
+
+    def init(self):
+        ''' Mac initialisations '''
+        self.debug('init')
+        pass
+
+    def enum_display_monitors(self):
+        ''' Get positions of one or more monitors.
+            Returns a dict with minimal requirements (see MSS class).
+        '''
+
+        self.debug('enum_display_monitors')
+
+        results = []
+        if self.oneshot:
+            rect = CGRectInfinite
+            results.append({
+                b'left'    : int(rect.origin.x),
+                b'top'     : int(rect.origin.y),
+                b'width'   : int(rect.size.width),
+                b'height'  : int(rect.size.height)
+            })
+        else:
+            max_displays = 32  # Peut-être augmenté, si besoin...
+            rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
+            res, ids, count = CGGetActiveDisplayList(max_displays, None, None)
+            for display in ids:
+                rect = CGRectStandardize(CGDisplayBounds(display))
+                left, top = rect.origin.x, rect.origin.y
+                width, height = rect.size.width, rect.size.height
+                rot = CGDisplayRotation(display)
+                rotation = rotations[rot]
+                if rotation in ['left', 'right']:
+                    width, height = height, width
+                results.append({
+                    b'left'    : int(left),
+                    b'top'     : int(top),
+                    b'width'   : int(width),
+                    b'height'  : int(height),
+                    b'rotation': rotation
+                })
+        return results
+
+    def get_pixels(self, monitor):
+        ''' Retreive all pixels from a monitor. Pixels have to be RGB.
+        '''
+
+        self.debug('get_pixels')
+
+        width, height = monitor[b'width'], monitor[b'height']
+        left, top = monitor[b'left'], monitor[b'top']
+
+        rect = CGRect((left, top), (width, height))
+        self.image = CGWindowListCreateImage(
+                    rect, kCGWindowListOptionOnScreenOnly,
+                    kCGNullWindowID, kCGWindowImageDefault)
+        return 1
+
+    def save_(self, output, ext, *args, **kargs):
+        ''' Special method to not use MSSImage class. Speedy. '''
+
+        self.debug('save_')
+
+        ext = ext.lower()
+        type_ = {'jpg': kUTTypeJPEG, 'jpeg': kUTTypeJPEG, 'png': kUTTypePNG}
+        if ext not in ['jpg', 'jpeg', 'png']:
+            ext = 'png'
+
+        filename = output + '.' + ext
+        dpi = 72
+        url = NSURL.fileURLWithPath_(filename)
+        dest = CGImageDestinationCreateWithURL(url, type_[ext], 1, None)
+        properties = {
+            kCGImagePropertyDPIWidth: dpi,
+            kCGImagePropertyDPIHeight: dpi,
+        }
+        CGImageDestinationAddImage(dest, self.image, properties)
+        if not CGImageDestinationFinalize(dest):
+            filename = None
+        return filename
 
 
 class MSSLinux(MSS):
@@ -397,7 +490,7 @@ class MSSLinux(MSS):
                     rotation = output.find('rotation')
                     if None not in [x, y, width, height] and name not in conf:
                         conf.append(name)
-                        if rotation.text == 'left' or rotation.text == 'right':
+                        if rotation.text in ['left', 'right']:
                             width, height = height, width
                         results.append({
                             b'left'    : int(x.text),
@@ -807,13 +900,15 @@ class MSSImage(object):
 
 if __name__ == '__main__':
 
-    this_is = system()
-    if this_is == 'Linux':
-        MSS = MSSLinux
-    elif this_is == 'Windows':
-        MSS = MSSWindows
-    else:
-        err = 'System "{0}" not implemented.'.format(this_is)
+    systems = {
+        'Linux'  : MSSLinux,
+        'Windows': MSSWindows,
+        'Darwin' : MSSMac
+    }
+    try:
+        MSS = systems[system()]
+    except KeyError:
+        err = 'System "{0}" not implemented.'.format(system())
         raise NotImplementedError(err)
 
     try:
