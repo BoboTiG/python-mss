@@ -46,7 +46,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSSLinux', 'MSSWindows', 'MSSImage']
+__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'MSSImage']
 
 
 from ctypes.util import find_library
