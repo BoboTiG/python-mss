@@ -35,6 +35,7 @@ If you just want to try MSS on your system:
 If you want to use MSS on your project, just call a new instance of `MSS*()` and then `save()`.
 You can pass `oneshot=True` to create one screen shot of all monitors.
 
+    # You can determine automatically which class to use:
     from platform import system
     from mss import *
 
@@ -48,6 +49,9 @@ You can pass `oneshot=True` to create one screen shot of all monitors.
     except KeyError:
         err = 'System "{0}" not implemented.'.format(system())
         raise NotImplementedError(err)
+
+    # Or simply import the good class:
+    # from mss import MSSLinux as MSS
 
     try:
         mss = MSS(debug=False)
