@@ -38,17 +38,19 @@ You can pass `oneshot=True` to create one screen shot of all monitors.
     from platform import system
     from mss import *
 
-    this_is = system()
-    if this_is == 'Linux':
-        MSS = MSSLinux
-    elif this_is == 'Windows':
-        MSS = MSSWindows
-    else:
-        err = 'System "{0}" not implemented.'.format(this_is)
+    systems = {
+        'Linux'  : MSSLinux,
+        'Windows': MSSWindows,
+        'Darwin' : MSSMac
+    }
+    try:
+        MSS = systems[system()]
+    except KeyError:
+        err = 'System "{0}" not implemented.'.format(system())
         raise NotImplementedError(err)
 
     try:
-        mss = MSS()
+        mss = MSS(debug=False)
 
         # One screen shot per monitor
         for filename in mss.save():
