@@ -19,12 +19,12 @@ ctypes has been introduced in Python 2.5, before it will need ctypes modules to 
 Support
 ---
 
-|            | GNU/linux | Windows   | Mac       |
+|            | GNU/linux | Windows   | Mac OS X  |
 |------------|:---------:|:---------:|:---------:|
-| python 3.3 | NO        | NO        | ?         |
-| python 3.2 | NO        | NO        | ?         |
-| python 3.1 | NO        | NO        | ?         |
-| python 3.0 | NO        | NO        | ?         |
+| python 3.3 | no        | no        | ?         |
+| python 3.2 | no        | no        | ?         |
+| python 3.1 | no        | no        | ?         |
+| python 3.0 | no        | no        | ?         |
 | **python 2.7** | **YES**       | **YES**       | **YES**       |
 | python 2.6 | YES       | YES       | YES       |
 
