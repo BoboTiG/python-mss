@@ -901,9 +901,9 @@ class MSSImage(object):
 if __name__ == '__main__':
 
     systems = {
+        'Darwin' : MSSMac,
         'Linux'  : MSSLinux,
-        'Windows': MSSWindows,
-        'Darwin' : MSSMac
+        'Windows': MSSWindows
     }
     try:
         MSS = systems[system()]

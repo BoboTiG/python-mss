@@ -12,8 +12,8 @@ MSS is for *Multi-Screen Shot*.
 Dependancies & requirements
 ---
 
-Python. And that is all :)
-MSS is writen in pure python, it uses ctypes.
+Python. And that is all :)  
+MSS is writen in pure python, it uses ctypes.  
 ctypes has been introduced in Python 2.5, before it will need ctypes modules to be installed separately.
 
 Support
@@ -47,9 +47,9 @@ You can determine automatically which class to use:
     from mss import *
 
     systems = {
+        'Darwin' : MSSMac,
         'Linux'  : MSSLinux,
-        'Windows': MSSWindows,
-        'Darwin' : MSSMac
+        'Windows': MSSWindows
     }
     try:
         MSS = systems[system()]
@@ -59,7 +59,7 @@ You can determine automatically which class to use:
 
 Or simply import the good class:
 
-    # from mss import MSSLinux as MSS
+    from mss import MSSLinux as MSS
 
 Then, it is quite simple:
 
