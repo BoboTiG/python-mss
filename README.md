@@ -26,7 +26,7 @@ Support
 | python 3.1 | no        | no        | ?         |
 | python 3.0 | no        | no        | ?         |
 | **python 2.7** | **YES**       | **YES**       | **YES**       |
-| python 2.6 | YES       | YES       | YES       |
+| python 2.6 | yes       | yes       | yes       |
 
 Feel free to try MSS on a system we had not tested, and let report us by creating an [issue](https://github.com/BoboTiG/python-mss/issues).
 
