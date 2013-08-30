@@ -19,7 +19,15 @@ ctypes has been introduced in Python 2.5, before it will need ctypes modules to 
 Support
 ---
 
-You can see the [support table](https://tiger-222.fr/tout/python-mss/support.html).
+|            | GNU/linux | Windows   | Mac       |
+|------------|:---------:|:---------:|:---------:|
+| python 3.3 | NO        | NO        | ?         |
+| python 3.2 | NO        | NO        | ?         |
+| python 3.1 | NO        | NO        | ?         |
+| python 3.0 | NO        | NO        | ?         |
+| **python 2.7** | **YES**       | **YES**       | **YES**       |
+| python 2.6 | YES       | YES       | YES       |
+
 Feel free to try MSS on a system we had not tested, and let report us by creating an [issue](https://github.com/BoboTiG/python-mss/issues).
 
 Usage
