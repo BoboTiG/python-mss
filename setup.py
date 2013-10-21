@@ -15,9 +15,9 @@ setup(
     name="mss",
     version=__version__,
     author="Tiger-222",
-    py_modules=['MSS'],
+    py_modules=['mss'],
     author_email="contact@tiger-222.fr",
-    description="A cross-platform multi-screen shot module in pure python using ctypes.",
+    description="A cross-platform multi-screen shot module in pure python using ctypes",
     long_description=open('README.rst').read(),
     classifiers=[
         'Programming Language :: Python',
