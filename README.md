@@ -12,8 +12,8 @@ MSS is for *Multi-Screen Shot*.
 Dependancies & requirements
 ---
 
-Python. And that is all :)  
-MSS is writen in pure python, it uses ctypes.  
+Python. And that is all :)
+MSS is writen in pure python, it uses ctypes.
 ctypes has been introduced in Python 2.5, before it will need ctypes modules to be installed separately.
 
 Support
@@ -21,10 +21,10 @@ Support
 
 |            | GNU/linux | Windows   | Mac OS X  |
 |------------|:---------:|:---------:|:---------:|
-| python 3.3 | no        | no        | ?         |
-| python 3.2 | no        | no        | ?         |
-| python 3.1 | no        | no        | ?         |
-| python 3.0 | no        | no        | ?         |
+| python 3.3 | **YES**       | **YES**       | ?         |
+| python 3.2 | yes       | yes       | ?         |
+| python 3.1 | yes       | yes       | ?         |
+| python 3.0 | yes       | yes       | ?         |
 | **python 2.7** | **YES**       | **YES**       | **YES**       |
 | python 2.6 | yes       | yes       | yes       |
 
