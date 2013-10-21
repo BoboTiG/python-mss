@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-''' An attempt to create a full functionnal multi-screen shot module
-    in _pure_ python using ctypes.
+''' A cross-platform multi-screen shot module in pure python using ctypes.
 
     This module is maintained by Mickaël Schoentgen <contact@tiger-222.fr>.
     If you find problems, please submit bug reports/patches via the
@@ -202,7 +201,7 @@ class MSS(object):
 
             Parameters:
              - output - string - the output filename without extension
-             - oneshot - boolean -grab only one screen shot of all monitors
+             - oneshot - boolean - grab only one screen shot of all monitors
              - ext - string - file format to save
              - ftype - int - PNG filter type (0..4 [slower])
 
