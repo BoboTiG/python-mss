@@ -23,6 +23,7 @@
     <see Git checkin messages for history>
 
     0.0.1 - first release
+    0.0.2 - add support for python 3 on Windows and GNU/Linux
 
     You can always get the latest version of this module at:
 
@@ -34,7 +35,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
