@@ -51,8 +51,9 @@ __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'MSSImage']
 
 from ctypes.util import find_library
 from struct import pack
-import zlib
 from platform import system
+import sys
+import zlib
 
 if system() == 'Darwin':
     from Quartz import *
@@ -158,6 +159,13 @@ elif system() == 'Windows':
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
+
+if sys.version < '3':
+    def b(x):
+        return x
+else:
+    def b(x):
+        return pack('<B', x)
 
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
@@ -688,7 +696,7 @@ class MSSWindows(MSS):
             offset = total - off
             x = 0
             while x < width - 2:
-                scanlines[off+x:off+x+3] = data[offset+x+2], data[offset+x+1], data[offset+x]
+                scanlines[off+x:off+x+3] = b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
                 x += 3
         return b''.join(scanlines)
 
