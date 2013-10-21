@@ -118,6 +118,9 @@ elif system() == 'Linux':
             ('blue_mask'        , c_ulong)
         ]
 
+    def b(x):
+        return pack(b'<B', x)
+
 elif system() == 'Windows':
     from ctypes import (
         byref, memset, pointer, sizeof, windll,
@@ -154,18 +157,18 @@ elif system() == 'Windows':
             ('bmiColors', DWORD * 3)
         ]
 
+    if sys.version < '3':
+        def b(x):
+            return x
+    else:
+        def b(x):
+            return pack(b'<B', x)
+
 
 
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
-
-if sys.version < '3':
-    def b(x):
-        return x
-else:
-    def b(x):
-        return pack('<B', x)
 
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
@@ -530,15 +533,15 @@ class MSSLinux(MSS):
         if image is None:
             raise ValueError('MSSLinux: XGetImage() failed.')
 
-        pixels = [None] * (3 * width * height)
+        pixels = [b'0'] * (3 * width * height)
         for x in range(width):
             for y in range(height):
                 pixel = self.XGetPixel(image, x, y)
-                b = pixel & 255
-                g = (pixel & 65280) >> 8
-                r = (pixel & 16711680) >> 16
+                blue = pixel & 255
+                green = (pixel & 65280) >> 8
+                red = (pixel & 16711680) >> 16
                 offset = (x + width * y) * 3
-                pixels[offset:offset+3] = pack(b'3B', r, g, b)
+                pixels[offset:offset+3] = b(red), b(green), b(blue)
         self.XFree(image)
         return b''.join(pixels)
 
