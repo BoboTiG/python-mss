@@ -1,3 +1,4 @@
-*.pyc
+dist/
 tests/
-MANIFEST.in
+*.pyc
+MANIFEST*
