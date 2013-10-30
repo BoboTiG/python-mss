@@ -10,7 +10,6 @@
     Note: please keep this module compatible to Python 2.6.
 
     Still needed:
-    * support for built-in JPEG format
     * support for additional systems
 
     Many thanks to all those who helped (in no particular order):
@@ -29,7 +28,7 @@
 
     You can always get the latest version of this module at:
 
-            https://raw.github.com/BoboTiG/python-mss/mss.py
+            https://raw.github.com/BoboTiG/python-mss/master/mss.py
 
     If that URL should fail, try contacting the author.
 '''
@@ -244,12 +243,12 @@ class MSS(object):
                     raise ValueError('MSS: no data to process.')
 
                 if hasattr(self, 'save_'):
-                     img_out = self.save_(output=filename)
+                    img_out = self.save_(output=filename)
                 else:
                     img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
                     img_out = img.dump(filename)
                 self.debug('save', 'img_out', img_out)
-                if img_out is not None:
+                if img_out:
                     yield img_out
             else:
                 yield filename + ' (already exists)'
@@ -342,7 +341,6 @@ class MSSMac(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
-
         rect = CGRect((left, top), (width, height))
         self.image = CGWindowListCreateImage(
                     rect, kCGWindowListOptionOnScreenOnly,
@@ -350,7 +348,7 @@ class MSSMac(MSS):
         return 1
 
     def save_(self, output):
-        ''' Special method to not use MSSImage class. Speedy. '''
+        ''' Special method to not use MSSImage class. '''
 
         self.debug('save_')
 
@@ -719,7 +717,7 @@ class MSSImage(object):
         self.height = int(height)
 
     def dump(self, output=None):
-        ''' Dump data to the image file using file format specified by ext.
+        ''' Dump data to the image file.
             Returns to created file name if success, else None.
         '''
 
@@ -727,10 +725,9 @@ class MSSImage(object):
             raise ValueError('MSSImage: no data to process.')
 
         contents = self.png()
-        if contents:
-            with open(output, 'wb') as fileh:
-                fileh.write(contents)
-                return output
+        with open(output, 'wb') as fileh:
+            fileh.write(contents)
+            return output
         return None
 
     def png(self):

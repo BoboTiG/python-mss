@@ -2,7 +2,7 @@
 A cross-platform multi-screen shot module in pure python using ctypes
 **********************************************************************
 
-Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to an optimised/progressive PNG/JPEG file, Python 2.7/3.3 compatible.
+Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to an optimised PNG file, Python 2.7/3.3 compatible.
 
 So, while you can `pip install mss`, you may just drop it in your project and forget about it.
 
@@ -43,7 +43,7 @@ When initalising an instance of MSS, you can enable debug output::
     mss = MSS(debug=True)
 
 
-save(output='mss', oneshot=False, ext='png', ftype=0)
+save(output='mss', oneshot=False)
 -----------------------------------------------------
 
 For each monitor, grab a screen shot and save it to a file.
@@ -52,17 +52,15 @@ Parameters::
 
     output - string - the output filename without extension
     oneshot - boolean - grab only one screen shot of all monitors
-    ext - string - file format to save
-    ftype - int - PNG filter type (0..4 [slower])
 
 This is a generator which returns created files::
 
-    'output-1.ext',
-    'output-2.ext',
+    'output-1.png',
+    'output-2.png',
     ...,
-    'output-NN.ext'
+    'output-NN.png'
     or
-    'output-full.ext'
+    'output-full.png'
 
 
 Example
