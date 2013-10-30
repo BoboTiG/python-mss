@@ -25,6 +25,7 @@
     0.0.3 - remove PNG filters
           - remove 'ext' argument, using only PNG
           - do not overwrite existing image files
+          - few optimizations into MSSLinux::get_pixels()
 
     You can always get the latest version of this module at:
 
@@ -528,6 +529,8 @@ class MSSLinux(MSS):
         if image is None:
             raise ValueError('MSSLinux: XGetImage() failed.')
 
+        # TODO: how to optimize this part? pixels[offset:offset+3] is too long.
+        '''
         pixels = [b'0'] * (3 * width * height)
         for x in range(width):
             for y in range(height):
@@ -537,6 +540,16 @@ class MSSLinux(MSS):
                 red = (pixel & 16711680) >> 16
                 offset = (x + width * y) * 3
                 pixels[offset:offset+3] = b(red), b(green), b(blue)
+        #'''
+
+        # This code is a little bit better (19% faster)
+        def pix(pixel):
+            ''' Apply shifts to a pixel to get the RGB values. '''
+            return b((pixel & 16711680) >> 16) + b((pixel & 65280) >> 8) + b(pixel & 255)
+
+        get_pix = self.XGetPixel
+        pixels = [pix(get_pix(image, x, y)) for y in range(height) for x in range(width)]
+
         self.XFree(image)
         return b''.join(pixels)
 
