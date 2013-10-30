@@ -26,6 +26,7 @@
           - remove 'ext' argument, using only PNG
           - do not overwrite existing image files
           - few optimizations into MSSLinux::get_pixels()
+          - few optimizations into MSSImage::png()
 
     You can always get the latest version of this module at:
 
@@ -749,27 +750,22 @@ class MSSImage(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
-        width, height, data = self.width, self.height, self.data
-        to_take = (width * 3 + 3) & -4
+        to_take = (self.width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
-        offset = 0
-        scanlines = b''
-
-        for y in range(height):
-            scanlines += b'0' + data[offset:offset+to_take-padding]
-            offset += to_take
+        height, data = self.height, self.data
+        scanlines = [b''.join([b'0', data[to_take*y:to_take*y+to_take-padding]]) for y in range(height)]
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
         # Header: size, marker, data, CRC32
         ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = pack(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+        ihdr[2] = pack(b'>2I5B', self.width, self.height, 8, 2, 0, 0, 0)
         ihdr[3] = pack(b'>I', zlib.crc32(b''.join(ihdr[1:3])) & 0xffffffff)
         ihdr[0] = pack(b'>I', len(ihdr[2]))
 
         # Data: size, marker, data, CRC32
         idat = [b'', b'IDAT', b'', b'']
-        idat[2] = zlib.compress(scanlines, 9)
+        idat[2] = zlib.compress(b''.join(scanlines), 9)
         idat[3] = pack(b'>I', zlib.crc32(b''.join(idat[1:3])) & 0xffffffff)
         idat[0] = pack(b'>I', len(idat[2]))
 
