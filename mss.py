@@ -24,6 +24,7 @@
     0.0.1 - first release
     0.0.2 - add support for python 3 on Windows and GNU/Linux
     0.0.3 - remove PNG filters
+          - remove 'ext' argument, using only PNG
 
     You can always get the latest version of this module at:
 
@@ -58,7 +59,7 @@ import zlib
 
 if system() == 'Darwin':
     from Quartz import *
-    from LaunchServices import kUTTypeJPEG, kUTTypePNG
+    from LaunchServices import kUTTypePNG
 
 elif system() == 'Linux':
     from os import environ
@@ -197,21 +198,20 @@ class MSS(object):
             else:
                 print(method + '()', scalar, type(value).__name__, value)
 
-    def save(self, output='mss', oneshot=False, ext='png'):
+    def save(self, output='mss', oneshot=False):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
              - output - string - the output filename without extension
              - oneshot - boolean - grab only one screen shot of all monitors
-             - ext - string - file format to save
 
             This is a generator which returns created files:
-                'output-1.ext',
-                'output-2.ext',
+                'output-1.png',
+                'output-2.png',
                 ...,
-                'output-NN.ext'
+                'output-NN.png'
                 or
-                'output-full.ext'
+                'output-full.png'
         '''
 
         self.debug('save')
@@ -220,7 +220,6 @@ class MSS(object):
         self.monitors = self.enum_display_monitors() or []
 
         self.debug('save', 'oneshot', self.oneshot)
-        self.debug('save', 'extension', ext)
 
         if len(self.monitors) < 1:
             raise ValueError('MSS: no monitor found.')
@@ -235,16 +234,17 @@ class MSS(object):
             else:
                 filename = output + '-' + str(i)
                 i += 1
+            filename += '.png'
 
             pixels = self.get_pixels(monitor)
             if pixels is None:
                 raise ValueError('MSS: no data to process.')
 
             if hasattr(self, 'save_'):
-                 img_out = self.save_(output=filename, ext=ext)
+                 img_out = self.save_(output=filename)
             else:
                 img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
-                img_out = img.dump(filename, ext=ext)
+                img_out = img.dump(filename)
             self.debug('save', 'img_out', img_out)
             if img_out is not None:
                 yield img_out
@@ -344,28 +344,22 @@ class MSSMac(MSS):
                     kCGNullWindowID, kCGWindowImageDefault)
         return 1
 
-    def save_(self, output, ext, *args, **kargs):
+    def save_(self, output):
         ''' Special method to not use MSSImage class. Speedy. '''
 
         self.debug('save_')
 
-        ext = ext.lower()
-        type_ = {'jpg': kUTTypeJPEG, 'jpeg': kUTTypeJPEG, 'png': kUTTypePNG}
-        if ext not in ['jpg', 'jpeg', 'png']:
-            ext = 'png'
-
-        filename = output + '.' + ext
         dpi = 72
-        url = NSURL.fileURLWithPath_(filename)
-        dest = CGImageDestinationCreateWithURL(url, type_[ext], 1, None)
+        url = NSURL.fileURLWithPath_(output)
+        dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
         properties = {
             kCGImagePropertyDPIWidth: dpi,
             kCGImagePropertyDPIHeight: dpi,
         }
         CGImageDestinationAddImage(dest, self.image, properties)
         if not CGImageDestinationFinalize(dest):
-            filename = None
-        return filename
+            output = None
+        return output
 
 
 class MSSLinux(MSS):
@@ -706,12 +700,6 @@ class MSSImage(object):
     ''' This is a class to save data (raw pixels) to a picture file.
     '''
 
-    # Known extensions
-    ext_ok = [
-        #'libjpg',  # ctypes over libjpeg
-        'png',     # pure python PNG implementation
-    ]
-
     def __init__(self, data=None, width=1, height=1):
         ''' This method is light and should not change. It is like this
             to allow the call of extensions() without manipulating
@@ -725,16 +713,7 @@ class MSSImage(object):
         self.width = int(width)
         self.height = int(height)
 
-    def extensions(self):
-        ''' List all known and working extensions. '''
-
-        exts = []
-        for ext in self.ext_ok:
-            if hasattr(self, ext):
-                exts.append(ext)
-        return exts
-
-    def dump(self, output=None, ext='png', quality=80):
+    def dump(self, output=None):
         ''' Dump data to the image file using file format specified by ext.
             Returns to created file name if success, else None.
         '''
@@ -742,31 +721,12 @@ class MSSImage(object):
         if self.data is None:
             raise ValueError('MSSImage: no data to process.')
 
-        self.filename = output
-        self.ext = ext
-        self.quality = max(0, min(int(quality), 100))
-        contents = None
-
-        if not hasattr(self, self.ext):
-            err = 'MSSImage: {0}() not implemented. '.format(self.ext)
-            err += 'Check MSSImage.extensions() to have more informations.'
-            raise ValueError(err)
-
-        contents = getattr(self, self.ext)()
-        if contents is not None:
-            self.filename += '.' + self.ext
-            with open(self.filename, 'wb') as fileh:
+        contents = self.png()
+        if contents:
+            with open(output, 'wb') as fileh:
                 fileh.write(contents)
-                return self.filename
+                return output
         return None
-
-    def libjpg(self):
-        ''' JPEG implementation using ctypes over libjpeg.
-        '''
-
-        self.ext = 'jpg'
-        print('ctypes over libjpeg still not implemented.')
-        pass
 
     def png(self):
         ''' Pure python PNG implementation.
@@ -774,7 +734,6 @@ class MSSImage(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
-        self.ext = 'png'
         width, height, data = self.width, self.height, self.data
         to_take = (width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
