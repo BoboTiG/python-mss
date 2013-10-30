@@ -46,7 +46,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'MSSImage']
+__all__ = ['MSSImage', 'MSSLinux', 'MSSMac', 'MSSWindows']
 
 
 from ctypes.util import find_library
@@ -172,8 +172,8 @@ elif system() == 'Windows':
 
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
-    It checkes if there is a class available for the current system.
-    Raise an exception if no one found.
+        It checkes if there is a class available for the current system.
+        Raise an exception if no one found.
     '''
 
     DEBUG = False
@@ -279,7 +279,6 @@ class MSS(object):
             }
 
             Returns a dict with pixels.
-
         '''
         pass
 
@@ -412,9 +411,9 @@ class MSSLinux(MSS):
         display = None
         self.display = None
         try:
-            try:  # python3
+            if sys.version > '3':
                 display = bytes(environ['DISPLAY'], 'utf-8')
-            except TypeError:  # python2
+            else:
                 display = environ['DISPLAY']
         except KeyError:
             err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
