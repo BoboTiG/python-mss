@@ -27,6 +27,7 @@
           - do not overwrite existing image files
           - few optimizations into MSSLinux::get_pixels()
           - few optimizations into MSSImage::png()
+    0.0.4 - MSSLinux: use of memoization => huge time/operations gains
 
     You can always get the latest version of this module at:
 
@@ -38,7 +39,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
