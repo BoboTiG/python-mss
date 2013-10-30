@@ -25,6 +25,7 @@
     0.0.2 - add support for python 3 on Windows and GNU/Linux
     0.0.3 - remove PNG filters
           - remove 'ext' argument, using only PNG
+          - do not overwrite existing image files
 
     You can always get the latest version of this module at:
 
@@ -53,6 +54,7 @@ __all__ = ['MSSImage', 'MSSLinux', 'MSSMac', 'MSSWindows']
 
 from ctypes.util import find_library
 from struct import pack
+from os.path import isfile
 from platform import system
 import sys
 import zlib
@@ -63,7 +65,7 @@ if system() == 'Darwin':
 
 elif system() == 'Linux':
     from os import environ
-    from os.path import expanduser, isfile
+    from os.path import expanduser
     import xml.etree.ElementTree as ET
     from ctypes import byref, cast, cdll
     from ctypes import (
@@ -236,18 +238,21 @@ class MSS(object):
                 i += 1
             filename += '.png'
 
-            pixels = self.get_pixels(monitor)
-            if pixels is None:
-                raise ValueError('MSS: no data to process.')
+            if not isfile(filename):
+                pixels = self.get_pixels(monitor)
+                if pixels is None:
+                    raise ValueError('MSS: no data to process.')
 
-            if hasattr(self, 'save_'):
-                 img_out = self.save_(output=filename)
+                if hasattr(self, 'save_'):
+                     img_out = self.save_(output=filename)
+                else:
+                    img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
+                    img_out = img.dump(filename)
+                self.debug('save', 'img_out', img_out)
+                if img_out is not None:
+                    yield img_out
             else:
-                img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
-                img_out = img.dump(filename)
-            self.debug('save', 'img_out', img_out)
-            if img_out is not None:
-                yield img_out
+                yield filename + ' (already exists)'
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
