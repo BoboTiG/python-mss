@@ -23,6 +23,7 @@
 
     0.0.1 - first release
     0.0.2 - add support for python 3 on Windows and GNU/Linux
+    0.0.3 - remove PNG filters
 
     You can always get the latest version of this module at:
 
@@ -34,7 +35,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
@@ -196,14 +197,13 @@ class MSS(object):
             else:
                 print(method + '()', scalar, type(value).__name__, value)
 
-    def save(self, output='mss', oneshot=False, ext='png', ftype=0):
+    def save(self, output='mss', oneshot=False, ext='png'):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
              - output - string - the output filename without extension
              - oneshot - boolean - grab only one screen shot of all monitors
              - ext - string - file format to save
-             - ftype - int - PNG filter type (0..4 [slower])
 
             This is a generator which returns created files:
                 'output-1.ext',
@@ -221,7 +221,6 @@ class MSS(object):
 
         self.debug('save', 'oneshot', self.oneshot)
         self.debug('save', 'extension', ext)
-        self.debug('save', 'filter_type', ftype)
 
         if len(self.monitors) < 1:
             raise ValueError('MSS: no monitor found.')
@@ -245,7 +244,7 @@ class MSS(object):
                  img_out = self.save_(output=filename, ext=ext)
             else:
                 img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
-                img_out = img.dump(filename, ext=ext, ftype=ftype)
+                img_out = img.dump(filename, ext=ext)
             self.debug('save', 'img_out', img_out)
             if img_out is not None:
                 yield img_out
@@ -735,7 +734,7 @@ class MSSImage(object):
                 exts.append(ext)
         return exts
 
-    def dump(self, output=None, ext='png', quality=80, ftype=0):
+    def dump(self, output=None, ext='png', quality=80):
         ''' Dump data to the image file using file format specified by ext.
             Returns to created file name if success, else None.
         '''
@@ -746,7 +745,6 @@ class MSSImage(object):
         self.filename = output
         self.ext = ext
         self.quality = max(0, min(int(quality), 100))
-        self.filtertype = max(0, min(int(ftype), 4))
         contents = None
 
         if not hasattr(self, self.ext):
@@ -777,113 +775,14 @@ class MSSImage(object):
         '''
 
         self.ext = 'png'
-
-        def filter_scanline(ftype, line, fo, prev=None):
-            ''' http://pypng.googlecode.com/svn/trunk/code/png.py
-                Apply a scanline filter to a scanline. `ftype` specifies the
-                filter type (0 to 4); `line` specifies the current (unfiltered)
-                scanline as a sequence of bytes; `prev` specifies the previous
-                (unfiltered) scanline as a sequence of bytes. `fo` specifies the
-                filter offset; normally this is size of a pixel in bytes (the number
-                of bytes per sample times the number of channels), but when this is
-                < 1 (for bit depths < 8) then the filter offset is 1.
-            '''
-
-            scanline = pack(b'B', ftype)
-
-            def sub():
-                out = b''
-                ai = -fo
-                for x in line:
-                    if ai >= 0:
-                        x = (x - line[ai]) & 0xff
-                    out += pack(b'B', x)
-                    ai += 1
-                return out
-
-            def up():
-                out = b''
-                for i, x in enumerate(line):
-                    x = (x - prev[i]) & 0xff
-                    out += pack(b'B', x)
-                return out
-
-            def average():
-                out = b''
-                ai = -fo
-                for i, x in enumerate(line):
-                    if ai >= 0:
-                        x = (x - ((line[ai] + prev[i]) >> 1)) & 0xff
-                    else:
-                        x = (x - (prev[i] >> 1)) & 0xff
-                    out += pack(b'B', x)
-                    ai += 1
-                return out
-
-            def paeth():
-                out = b''
-                ai = -fo
-                i = 0
-                for x in line:
-                    a = 0
-                    b = prev[i]
-                    c = 0
-                    if ai >= 0:
-                        a = line[ai]
-                        c = prev[ai]
-
-                    p = a + b - c
-                    pa = abs(p - a)
-                    pb = abs(p - b)
-                    pc = abs(p - c)
-                    if pa <= pb and pa <= pc:
-                        Pr = a
-                    elif pb <= pc:
-                        Pr = b
-                    else:
-                        Pr = c
-
-                    x = (x - Pr) & 0xff
-                    out += pack(b'B', x)
-                    ai += 1
-                    i += 1
-                return out
-
-            if not prev:
-                # We're on the first line.  Some of the filters can be reduced
-                # to simpler cases which makes handling the line "off the top"
-                # of the image simpler.  "up" becomes "none"; "paeth" becomes
-                # "left" (non-trivial, but true). "average" needs to be handled
-                # specially.
-                if ftype == 2: # "up"
-                    return bytes(line) # type = 0
-                elif ftype == 3:
-                    prev = [0] * len(line)
-                elif ftype == 4: # "paeth"
-                    ftype = 1
-            if ftype == 0:
-                scanline += bytes(line)
-            elif ftype == 1:
-                scanline += sub()
-            elif ftype == 2:
-                scanline += up()
-            elif ftype == 3:
-                scanline += average()
-            else: # type == 4
-                scanline += paeth()
-            return scanline
-
         width, height, data = self.width, self.height, self.data
-
         to_take = (width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
         offset = 0
         scanlines = b''
-        prev = None
+
         for y in range(height):
-            line = bytearray(data[offset:offset+to_take-padding])
-            scanlines += filter_scanline(self.filtertype, line, 3, prev)
-            prev = line
+            scanlines += b'0' + data[offset:offset+to_take-padding]
             offset += to_take
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
