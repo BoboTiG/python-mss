@@ -19,11 +19,12 @@ setup(
     description='A cross-platform multi-screen shot module in pure python using ctypes',
     long_description=open('README.rst').read(),
     classifiers=[
-        'Programming Language :: Python',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: zlib/libpng License',
         'Natural Language :: English',
+        'Programming Language :: Python',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
