@@ -534,7 +534,7 @@ class MSSLinux(MSS):
         resultats={}
         def pix(pixel):
             ''' Apply shifts to a pixel to get the RGB values.
-                This method uses of memoization, reducing time by a factor of 4.
+                This method uses of memoization.
             '''
             if not pixel in resultats:
                 resultats[pixel] = b((pixel & 16711680) >> 16) + b((pixel & 65280) >> 8) + b(pixel & 255)
