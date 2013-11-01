@@ -311,10 +311,10 @@ class MSSMac(MSS):
         if self.oneshot:
             rect = CGRectInfinite
             results.append({
-                b'left'    : int(rect.origin.x),
-                b'top'     : int(rect.origin.y),
-                b'width'   : int(rect.size.width),
-                b'height'  : int(rect.size.height)
+                b'left'  : int(rect.origin.x),
+                b'top'   : int(rect.origin.y),
+                b'width' : int(rect.size.width),
+                b'height': int(rect.size.height)
             })
         else:
             max_displays = 32  # Peut-être augmenté, si besoin...
