@@ -28,6 +28,7 @@
           - few optimizations into MSSLinux::get_pixels()
           - few optimizations into MSSImage::png()
     0.0.4 - MSSLinux: use of memoization => huge time/operations gains
+    0.0.5 - few optimizations into MSSWindows: _arrange()
 
     You can always get the latest version of this module at:
 
@@ -39,7 +40,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
@@ -697,10 +698,8 @@ class MSSWindows(MSS):
         for y in range(height):
             off = width * (y + 1)
             offset = total - off
-            x = 0
-            while x < width - 2:
+            for x in range(0, width - 2, 3):
                 scanlines[off+x:off+x+3] = b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
-                x += 3
         return b''.join(scanlines)
 
 
