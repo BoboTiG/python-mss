@@ -295,7 +295,7 @@ class MSSMac(MSS):
     '''
 
     def init(self):
-        ''' Mac initialisations '''
+        ''' Mac OSX initialisations '''
         self.debug('init')
         pass
 
