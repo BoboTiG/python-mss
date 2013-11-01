@@ -531,14 +531,13 @@ class MSSLinux(MSS):
         if image is None:
             raise ValueError('MSSLinux: XGetImage() failed.')
 
-        resultats = {}
-        def pix(pixel):
+        def pix(pixel, _resultats={}):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
-            if not pixel in resultats:
-                resultats[pixel] = b((pixel & 16711680) >> 16) + b((pixel & 65280) >> 8) + b(pixel & 255)
-            return resultats[pixel]
+            if not pixel in _resultats:
+                _resultats[pixel] = b((pixel & 16711680) >> 16) + b((pixel & 65280) >> 8) + b(pixel & 255)
+            return _resultats[pixel]
 
         get_pix = self.XGetPixel
         pixels = [pix(get_pix(image, x, y)) for y in range(height) for x in range(width)]
