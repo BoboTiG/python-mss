@@ -22,13 +22,14 @@
 
     0.0.1 - first release
     0.0.2 - add support for python 3 on Windows and GNU/Linux
-    0.0.3 - remove PNG filters
-          - remove 'ext' argument, using only PNG
-          - do not overwrite existing image files
-          - few optimizations into MSSLinux::get_pixels()
-          - few optimizations into MSSImage::png()
+    0.0.3 - MSSImage: remove PNG filters
+          - MSSImage: remove 'ext' argument, using only PNG
+          - MSSImage: do not overwrite existing image files
+          - MSSImage: few optimizations into png()
+          - MSSLinux: few optimizations into get_pixels()
     0.0.4 - MSSLinux: use of memoization => huge time/operations gains
-    0.0.5 - few optimizations into MSSWindows: _arrange()
+    0.0.5 - MSSWindows: few optimizations into _arrange()
+          - MSSImage: code simplified
 
     You can always get the latest version of this module at:
 
@@ -708,34 +709,18 @@ class MSSImage(object):
     '''
 
     def __init__(self, data=None, width=1, height=1):
-        ''' This method is light and should not change. It is like this
-            to allow the call of extensions() without manipulating
-            real data.
-        '''
-
-        if width < 1 or height < 1:
+        if self.data is None:
+            raise ValueError('MSSImage: no data to process.')
+        elif width < 1 or height < 1:
             raise ValueError('MSSImage: width or height must be positive.')
 
         self.data = data
         self.width = int(width)
         self.height = int(height)
 
-    def dump(self, output=None):
+    def dump(self, output):
         ''' Dump data to the image file.
-            Returns to created file name if success, else None.
-        '''
-
-        if self.data is None:
-            raise ValueError('MSSImage: no data to process.')
-
-        contents = self.png()
-        with open(output, 'wb') as fileh:
-            fileh.write(contents)
-            return output
-        return None
-
-    def png(self):
-        ''' Pure python PNG implementation.
+            Pure python PNG implementation.
             Image represented as RGB tuples, no interlacing.
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
@@ -764,7 +749,10 @@ class MSSImage(object):
         iend[3] = pack(b'>I', zlib.crc32(iend[1]) & 0xffffffff)
         iend[0] = pack(b'>I', len(iend[2]))
 
-        return magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
+        with open(output, 'wb') as fileh:
+            fileh.write(magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
+            return output
+        return None
 
 
 if __name__ == '__main__':
