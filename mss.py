@@ -202,9 +202,9 @@ class MSS(object):
 
         if self.DEBUG:
             if scalar is None:
-                print(':: ' + method + '()')
+                print(':: {0}()'.format(method))
             else:
-                print(method + '()', scalar, type(value).__name__, value)
+                print('{0}() {1} {2} {3}'.format(method, scalar, type(value).__name__, value))
 
     def save(self, output='mss', oneshot=False):
         ''' For each monitor, grab a screen shot and save it to a file.
