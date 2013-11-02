@@ -30,6 +30,7 @@
     0.0.4 - MSSLinux: use of memoization => huge time/operations gains
     0.0.5 - MSSWindows: few optimizations into _arrange()
           - MSSImage: code simplified
+    0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
 
     You can always get the latest version of this module at:
 
@@ -41,7 +42,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.5'
+__version__ = '0.0.6'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
@@ -779,7 +780,7 @@ def main():
         # A shot to grab them all :)
         for filename in mss.save(oneshot=True):
             print('File "{0}" created.'.format(filename))
-    except Exception as ex:
+    except (OSError, ValueError) as ex:
         print(ex)
         return 2
 

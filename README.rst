@@ -78,7 +78,7 @@ Then, it is quite simple::
         # A shot to grab them all :)
         for filename in mss.save(oneshot=True):
             print('File "{0}" created.'.format(filename))
-    except Exception as ex:
+    except (OSError, ValueError) as ex:
         print(ex)
         raise
 
