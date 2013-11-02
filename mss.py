@@ -206,6 +206,38 @@ class MSS(object):
             else:
                 print('{0}() {1} {2} {3}'.format(method, scalar, type(value).__name__, value))
 
+    def enum_display_monitors(self):
+        ''' Get positions of all monitors.
+
+            If self.oneshot is True, this function has to return a dict
+            with dimensions of all monitors at the same time.
+            If the monitor has rotation, you have to deal with inside this method.
+
+            Must returns a dict with a minima:
+            {
+                'left':   the x-coordinate of the upper-left corner,
+                'top':    the y-coordinate of the upper-left corner,
+                'width':  the width,
+                'height': the height
+            }
+        '''
+        pass
+
+    def get_pixels(self, monitor_infos):
+        ''' Retrieve screen pixels for a given monitor.
+
+            monitor_infos should contain at least:
+            {
+                'left':   the x-coordinate of the upper-left corner,
+                'top':    the y-coordinate of the upper-left corner,
+                'width':  the width,
+                'heigth': the height
+            }
+
+            Returns a dict with pixels.
+        '''
+        pass
+
     def save(self, output='mss', oneshot=False):
         ''' For each monitor, grab a screen shot and save it to a file.
 
@@ -259,38 +291,6 @@ class MSS(object):
                     yield img_out
             else:
                 yield filename + ' (already exists)'
-
-    def enum_display_monitors(self):
-        ''' Get positions of all monitors.
-
-            If self.oneshot is True, this function has to return a dict
-            with dimensions of all monitors at the same time.
-            If the monitor has rotation, you have to deal with inside this method.
-
-            Must returns a dict with a minima:
-            {
-                'left':   the x-coordinate of the upper-left corner,
-                'top':    the y-coordinate of the upper-left corner,
-                'width':  the width,
-                'height': the height
-            }
-        '''
-        pass
-
-    def get_pixels(self, monitor_infos):
-        ''' Retrieve screen pixels for a given monitor.
-
-            monitor_infos should contain at least:
-            {
-                'left':   the x-coordinate of the upper-left corner,
-                'top':    the y-coordinate of the upper-left corner,
-                'width':  the width,
-                'heigth': the height
-            }
-
-            Returns a dict with pixels.
-        '''
-        pass
 
 
 class MSSMac(MSS):
