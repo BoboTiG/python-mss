@@ -190,10 +190,11 @@ class MSS(object):
     def __init__(self, debug=False):
         ''' Global vars and class overload. '''
 
-        self.DEBUG = debug
+        self.DEBUG = bool(debug)
         self.monitors = []
         self.oneshot = False
 
+        self.debug('__init__', 'DEBUG', self.DEBUG)
         self.init()
 
     def debug(self, method='', scalar=None, value=None):
