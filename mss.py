@@ -709,14 +709,15 @@ class MSSImage(object):
     '''
 
     def __init__(self, data=None, width=1, height=1):
-        if data is None:
-            raise ValueError('MSSImage: no data to process.')
-        elif width < 1 or height < 1:
-            raise ValueError('MSSImage: width or height must be positive.')
-
         self.data = data
         self.width = int(width)
         self.height = int(height)
+
+        if self.data is None:
+            raise ValueError('MSSImage: no data to process.')
+        elif self.width < 1 or self.height < 1:
+            raise ValueError('MSSImage: width or height must be positive.')
+
 
     def dump(self, output):
         ''' Dump data to the image file.
