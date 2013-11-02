@@ -755,7 +755,8 @@ class MSSImage(object):
         return None
 
 
-if __name__ == '__main__':
+def main():
+    ''' Usage example. '''
 
     systems = {
         'Darwin' : MSSMac,
@@ -765,8 +766,8 @@ if __name__ == '__main__':
     try:
         MSS = systems[system()]
     except KeyError:
-        err = 'System "{0}" not implemented.'.format(system())
-        raise NotImplementedError(err)
+        print('System "{0}" not implemented.'.format(system()))
+        return 1
 
     try:
         mss = MSS(debug=False)
@@ -780,4 +781,9 @@ if __name__ == '__main__':
             print('File "{0}" created.'.format(filename))
     except Exception as ex:
         print(ex)
-        raise
+        return 2
+
+
+if __name__ == '__main__':
+    status = main()
+    sys.exit(status)
