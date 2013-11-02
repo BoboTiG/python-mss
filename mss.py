@@ -275,6 +275,7 @@ class MSS(object):
                 filename = output + '-' + str(i)
                 i += 1
             filename += '.png'
+            self.debug('save', 'filename', filename)
 
             if not isfile(filename):
                 pixels = self.get_pixels(monitor)
@@ -282,13 +283,12 @@ class MSS(object):
                     raise ValueError('MSS: no data to process.')
 
                 if hasattr(self, 'save_'):
-                    img_out = self.save_(output=filename)
+                    self.save_(output=filename)
                 else:
-                    img = MSSImage(pixels, monitor[b'width'], monitor[b'height'])
-                    img_out = img.dump(filename)
-                self.debug('save', 'img_out', img_out)
-                if img_out:
-                    yield img_out
+                    MSSImage(data=pixels, width=monitor[b'width'],
+                            height=monitor[b'height'], output=filename)
+                if isfile(filename):
+                    yield filename
             else:
                 yield filename + ' (already exists)'
 
@@ -367,9 +367,6 @@ class MSSMac(MSS):
             kCGImagePropertyDPIHeight: dpi,
         }
         CGImageDestinationAddImage(dest, self.image, properties)
-        if not CGImageDestinationFinalize(dest):
-            output = None
-        return output
 
 
 class MSSLinux(MSS):
@@ -710,7 +707,11 @@ class MSSImage(object):
     ''' This is a class to save data (raw pixels) to a picture file.
     '''
 
-    def __init__(self, data=None, width=1, height=1):
+    def __init__(self, data=None, width=1, height=1, output=None):
+        ''' If the output parameter is set, the method dump() is automatically
+            called, else you will have to call dump(output) yourself.
+        '''
+
         self.data = data
         self.width = int(width)
         self.height = int(height)
@@ -719,6 +720,9 @@ class MSSImage(object):
             raise ValueError('MSSImage: no data to process.')
         elif self.width < 1 or self.height < 1:
             raise ValueError('MSSImage: width or height must be positive.')
+
+        if output:
+            self.dump(output=output)
 
     def dump(self, output):
         ''' Dump data to the image file.
@@ -753,8 +757,6 @@ class MSSImage(object):
             iend[0] = pack(b'>I', len(iend[2]))
 
             fileh.write(magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
-            return output
-        return None
 
 
 def main():
