@@ -17,12 +17,12 @@ Instance the good class
 You can determine automatically which class to use::
 
     from platform import system
-    from mss import *
+    import mss
 
     systems = {
-        'Darwin' : MSSMac,
-        'Linux'  : MSSLinux,
-        'Windows': MSSWindows
+        'Darwin' : mss.MSSMac,
+        'Linux'  : mss.MSSLinux,
+        'Windows': mss.MSSWindows
     }
     try:
         MSS = systems[system()]

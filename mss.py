@@ -718,7 +718,6 @@ class MSSImage(object):
         elif self.width < 1 or self.height < 1:
             raise ValueError('MSSImage: width or height must be positive.')
 
-
     def dump(self, output):
         ''' Dump data to the image file.
             Pure python PNG implementation.
