@@ -72,10 +72,9 @@ elif system() == 'Linux':
     from os import environ
     from os.path import expanduser
     import xml.etree.ElementTree as ET
-    from ctypes import byref, cast, cdll
     from ctypes import (
-        c_char_p, c_int, c_int32, c_uint, c_uint32,
-        c_ulong, c_void_p, POINTER, Structure
+        byref, cast, cdll, POINTER, Structure,
+        c_char_p, c_int, c_int32, c_uint, c_uint32, c_ulong, c_void_p
     )
 
     class Display(Structure):
