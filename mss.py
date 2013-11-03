@@ -730,6 +730,8 @@ class MSSImage(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
+        if output[-4:] != '.png':
+            output += '.png'
         to_take = (self.width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
         height, data = self.height, self.data
