@@ -767,6 +767,16 @@ class MSSImage(object):
 def main():
     ''' Usage example. '''
 
+    import contextlib
+    from time import time
+
+    @contextlib.contextmanager
+    def timer(msg):
+        start = time()
+        yield
+        end = time()
+        print('{0}: {1} ms'.format(msg, (end-start)*1000))
+
     systems = {
         'Darwin' : MSSMac,
         'Linux'  : MSSLinux,
@@ -782,12 +792,14 @@ def main():
         mss = MSS(debug=False)
 
         # One screen shot per monitor
-        for filename in mss.save():
-            print('File "{0}" created.'.format(filename))
+        with timer('Screen shots'):
+            for filename in mss.save():
+                print('    {0}'.format(filename))
 
         # A shot to grab them all :)
-        for filename in mss.save(oneshot=True):
-            print('File "{0}" created.'.format(filename))
+        with timer('Oneshot=True'):
+            for filename in mss.save(oneshot=True):
+                print('    {0}'.format(filename))
     except (OSError, ValueError) as ex:
         print(ex)
         return 2
