@@ -767,10 +767,10 @@ class MSSImage(object):
 def main():
     ''' Usage example. '''
 
-    import contextlib
+    from contextlib import contextmanager
     from time import time
 
-    @contextlib.contextmanager
+    @contextmanager
     def timer(msg):
         start = time()
         yield
@@ -803,6 +803,7 @@ def main():
     except (OSError, ValueError) as ex:
         print(ex)
         return 2
+    return 0
 
 
 if __name__ == '__main__':
