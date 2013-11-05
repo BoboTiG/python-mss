@@ -734,12 +734,12 @@ class MSSImage(object):
             output += '.png'
         to_take = (self.width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
-        height, data = self.height, self.data
+        data = self.data
 
         def scan(offset):
             offset *= to_take
             return b''.join([b'0', data[offset:offset+to_take-padding]])
-        scanlines = b''.join([scan(y) for y in range(height)])
+        scanlines = b''.join([scan(y) for y in range(self.height)])
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
@@ -794,12 +794,12 @@ def main():
         # One screen shot per monitor
         with timer('Screen shots'):
             for filename in mss.save():
-                print('    {0}'.format(filename))
+                print('        File: {0}'.format(filename))
 
         # A shot to grab them all :)
         with timer('Oneshot=True'):
             for filename in mss.save(oneshot=True):
-                print('    {0}'.format(filename))
+                print('        File: {0}'.format(filename))
     except (OSError, ValueError) as ex:
         print(ex)
         return 2
