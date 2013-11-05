@@ -732,14 +732,11 @@ class MSSImage(object):
 
         if output[-4:] != '.png':
             output += '.png'
+
         to_take = (self.width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
         data = self.data
-
-        def scan(offset):
-            offset *= to_take
-            return b''.join([b'0', data[offset:offset+to_take-padding]])
-        scanlines = b''.join([scan(y) for y in range(self.height)])
+        scanlines = b''.join([b'0' + data[(y*to_take):(y*to_take)+to_take-padding] for y in range(self.height)])
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
