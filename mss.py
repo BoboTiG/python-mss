@@ -664,6 +664,20 @@ class MSSWindows(MSS):
 
         self.debug('enum_display_monitors')
 
+        if self.oneshot:
+            SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
+            SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 78, 79
+            left = self.GetSystemMetrics(SM_XVIRTUALSCREEN)
+            right = self.GetSystemMetrics(SM_CXVIRTUALSCREEN)
+            top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
+            bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+            return [{
+                b'left'  : int(left),
+                b'top'   : int(top),
+                b'width' : int(right - left),
+                b'height': int(bottom - top)
+            }]
+
         def _callback(monitor, dc, rect, data):
             rct = rect.contents
             results.append({
@@ -675,24 +689,8 @@ class MSSWindows(MSS):
             return 1
 
         results = []
-        if self.oneshot:
-            SM_XVIRTUALSCREEN = 76
-            SM_YVIRTUALSCREEN = 77
-            SM_CXVIRTUALSCREEN = 78
-            SM_CYVIRTUALSCREEN = 79
-            left = self.GetSystemMetrics(SM_XVIRTUALSCREEN)
-            right = self.GetSystemMetrics(SM_CXVIRTUALSCREEN)
-            top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
-            bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
-            results.append({
-                b'left'  : int(left),
-                b'top'   : int(top),
-                b'width' : int(right - left),
-                b'height': int(bottom - top)
-            })
-        else:
-            callback = self.MONITORENUMPROC(_callback)
-            self.EnumDisplayMonitors(0, 0, callback, 0)
+        callback = self.MONITORENUMPROC(_callback)
+        self.EnumDisplayMonitors(0, 0, callback, 0)
         return results
 
     def get_pixels(self, monitor):
