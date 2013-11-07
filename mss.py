@@ -312,31 +312,31 @@ class MSSMac(MSS):
         results = []
         if self.oneshot:
             rect = CGRectInfinite
-            results.append({
+            return [{
                 b'left'  : int(rect.origin.x),
                 b'top'   : int(rect.origin.y),
                 b'width' : int(rect.size.width),
                 b'height': int(rect.size.height)
+            }]
+
+        max_displays = 32  # Could be augmented, if needed ...
+        rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
+        res, ids, count = CGGetActiveDisplayList(max_displays, None, None)
+        for display in ids:
+            rect = CGRectStandardize(CGDisplayBounds(display))
+            left, top = rect.origin.x, rect.origin.y
+            width, height = rect.size.width, rect.size.height
+            rot = CGDisplayRotation(display)
+            rotation = rotations[rot]
+            if rotation in ['left', 'right']:
+                width, height = height, width
+            results.append({
+                b'left'    : int(left),
+                b'top'     : int(top),
+                b'width'   : int(width),
+                b'height'  : int(height),
+                b'rotation': rotation
             })
-        else:
-            max_displays = 32  # Peut-être augmenté, si besoin...
-            rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
-            res, ids, count = CGGetActiveDisplayList(max_displays, None, None)
-            for display in ids:
-                rect = CGRectStandardize(CGDisplayBounds(display))
-                left, top = rect.origin.x, rect.origin.y
-                width, height = rect.size.width, rect.size.height
-                rot = CGDisplayRotation(display)
-                rotation = rotations[rot]
-                if rotation in ['left', 'right']:
-                    width, height = height, width
-                results.append({
-                    b'left'    : int(left),
-                    b'top'     : int(top),
-                    b'width'   : int(width),
-                    b'height'  : int(height),
-                    b'rotation': rotation
-                })
         return results
 
     def get_pixels(self, monitor):
