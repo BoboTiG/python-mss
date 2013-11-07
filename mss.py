@@ -460,6 +460,81 @@ class MSSLinux(MSS):
         self.XFree.restype = c_void_p
         self.XCloseDisplay.restype = c_void_p
 
+    def _x11_config(self):
+        ''' Try to determine display monitors from X11 configuration file:
+            ~/.config/monitors.xml
+        '''
+
+        self.debug('_x11_config')
+
+        results = []
+        monitors = expanduser('~/.config/monitors.xml')
+        if not isfile(monitors):
+            self.debug('ERROR', 'MSSLinux: _x11_config() failed.')
+            return results
+
+        tree = ET.parse(monitors)
+        root = tree.getroot()
+        config = root.findall('configuration')[-1]
+        conf = []
+        for output in config.findall('output'):
+            name = output.get('name')
+            if name != 'default':
+                x = output.find('x')
+                y = output.find('y')
+                width = output.find('width')
+                height = output.find('height')
+                rotation = output.find('rotation')
+                if None not in [x, y, width, height] and name not in conf:
+                    conf.append(name)
+                    if rotation.text in ['left', 'right']:
+                        width, height = height, width
+                    results.append({
+                        b'left'    : int(x.text),
+                        b'top'     : int(y.text),
+                        b'width'   : int(width.text),
+                        b'height'  : int(height.text),
+                        b'rotation': rotation.text
+                    })
+        return results
+
+    def _xfce4_config(self):
+        ''' Try to determine display monitors from XFCE4 configuration file:
+            ~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml
+        '''
+
+        self.debug('_xfce4_config')
+
+        results = []
+        monitors = expanduser('~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml')
+        if not isfile(monitors):
+            self.debug('ERROR', 'MSSLinux: _xfce4_config() failed.')
+            return results
+
+        rotations = {0: 'normal', 90: 'left', 270: 'right'}
+        tree = ET.parse(monitors)
+        root = tree.getroot()
+        config = root.findall('property')[0]
+        for output in config.findall('property'):
+            name = output.get('name')
+            if name != 'default':
+                active, res, False, rot, False, False, pos = output.findall('property')
+                if active.get('value') == 'true':
+                    width, height = res.get('value').split('x')
+                    rotation = rotations[int(rot.get('value'))]
+                    if rotation in ['left', 'right']:
+                        width, height = height, width
+                    posx, posy = pos.findall('property')
+                    results.append({
+                        b'left'    : int(posx.get('value')),
+                        b'top'     : int(posy.get('value')),
+                        b'width'   : int(width),
+                        b'height'  : int(height),
+                        b'rotation': rotation
+                    })
+        return results
+
+
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
@@ -467,48 +542,29 @@ class MSSLinux(MSS):
 
         self.debug('enum_display_monitors')
 
-        results = []
         if self.oneshot:
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            results.append({
+            return [{
                 b'left'  : int(gwa.x),
                 b'top'   : int(gwa.y),
                 b'width' : int(gwa.width),
                 b'height': int(gwa.height)
-            })
-        else:
-            # It is a little more complicated, we have to guess all stuff
-            # from ~/.config/monitors.xml, if present.
-            monitors = expanduser('~/.config/monitors.xml')
-            if not isfile(monitors):
-                self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed (no monitors.xml).')
-                self.oneshot = True
-                return self.enum_display_monitors()
-            tree = ET.parse(monitors)
-            root = tree.getroot()
-            config = root.findall('configuration')[-1]
-            conf = []
-            for output in config.findall('output'):
-                name = output.get('name')
-                if name != 'default':
-                    x = output.find('x')
-                    y = output.find('y')
-                    width = output.find('width')
-                    height = output.find('height')
-                    rotation = output.find('rotation')
-                    if None not in [x, y, width, height] and name not in conf:
-                        conf.append(name)
-                        if rotation.text in ['left', 'right']:
-                            width, height = height, width
-                        results.append({
-                            b'left'    : int(x.text),
-                            b'top'     : int(y.text),
-                            b'width'   : int(width.text),
-                            b'height'  : int(height.text),
-                            b'rotation': rotation.text
-                        })
-        return results
+            }]
+
+        # It is a little more complicated, we have to guess all stuff
+        # from differents XML configuration files.
+        for config in ['_x11', '_xfce4']:
+            results = getattr(self, '{0}_config'.format(config))()
+            if results:
+                return results
+
+        # If we are there, it is because there are no configuration files
+        # found, so we re-try with the oneshot parameter to True: it will
+        # use a C function instead of reading XML files.
+        self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed. Using onshot=True.')
+        self.oneshot = True
+        return self.enum_display_monitors()
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
