@@ -562,7 +562,7 @@ class MSSLinux(MSS):
         # If we are there, it is because there are no configuration files
         # found, so we re-try with the oneshot parameter to True: it will
         # use a C function instead of reading XML files.
-        self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed. Using onshot=True.')
+        self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed. Using oneshot=True.')
         self.oneshot = True
         return self.enum_display_monitors()
 
