@@ -11,6 +11,16 @@ MSS stands for Multi-Screen Shot.
 It's under zlib licence.
 
 
+Testing
+=======
+
+You can try the MSS module directly from the console::
+
+    python mss.py [--debug]
+
+Passing the `--debug` argument will make it more verbose.
+
+
 Instance the good class
 ========================
 
