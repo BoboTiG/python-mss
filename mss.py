@@ -31,6 +31,8 @@
     0.0.5 - MSSWindows: few optimizations into _arrange()
           - MSSImage: code simplified
     0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
+          - refactoring of all enum_display_monitors() methods
+          - MSSLinux: add XFCE4 support
 
     You can always get the latest version of this module at:
 
