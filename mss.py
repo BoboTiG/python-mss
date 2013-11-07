@@ -189,7 +189,7 @@ class MSS(object):
     def __init__(self, debug=False):
         ''' Global vars and class overload. '''
 
-        self.DEBUG = bool(debug)
+        self.DEBUG = debug in [True, 'on' 'yes', 'oui', 1]
         self.monitors = []
         self.oneshot = False
 
@@ -761,7 +761,7 @@ class MSSImage(object):
             fileh.write(magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
 
 
-def main():
+def main(argv=[]):
     ''' Usage example. '''
 
     from contextlib import contextmanager
@@ -786,7 +786,7 @@ def main():
         return 1
 
     try:
-        mss = MSS(debug=False)
+        mss = MSS(debug='--debug' in argv)
 
         # One screen shot per monitor
         with timer('Screen shots'):
@@ -804,5 +804,5 @@ def main():
 
 
 if __name__ == '__main__':
-    status = main()
+    status = main(sys.argv)
     sys.exit(status)
