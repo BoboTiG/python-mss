@@ -6,7 +6,7 @@ except ImportError:
 
 open('MANIFEST.in', 'w').write("\n".join((
     'include *.rst',
-    'doc/*'
+    'include doc/*'
 )))
 
 from mss import __version__
