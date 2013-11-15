@@ -322,7 +322,7 @@ class MSSMac(MSS):
 
         max_displays = 32  # Could be augmented, if needed ...
         rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
-        res, ids, count = CGGetActiveDisplayList(max_displays, None, None)
+        _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
         for display in ids:
             rect = CGRectStandardize(CGDisplayBounds(display))
             left, top = rect.origin.x, rect.origin.y
