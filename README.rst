@@ -35,14 +35,14 @@ You can determine automatically which class to use::
         'Windows': mss.MSSWindows
     }
     try:
-        MSS = systems[system()]
+        mss_class = systems[system()]
     except KeyError:
         err = 'System "{0}" not implemented.'.format(system())
         raise NotImplementedError(err)
 
 Or simply import the good one::
 
-    from mss import MSSLinux as MSS
+    from mss import MSSLinux as mss_class
 
 
 init(debug=False)
@@ -50,7 +50,7 @@ init(debug=False)
 
 When initalising an instance of MSS, you can enable debug output::
 
-    mss = MSS(debug=True)
+    mss = mss_class(debug=True)
 
 
 save(output='mss', oneshot=False)
@@ -79,7 +79,7 @@ Example
 Then, it is quite simple::
 
     try:
-        mss = MSS()
+        mss = mss_class()
 
         # One screen shot per monitor
         for filename in mss.save():
