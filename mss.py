@@ -519,7 +519,7 @@ class MSSLinux(MSS):
         for output in config.findall('property'):
             name = output.get('name')
             if name != 'default':
-                active, res, False, rot, False, False, pos = output.findall('property')
+                active, res, _, rot, _, _, pos = output.findall('property')
                 if active.get('value') == 'true':
                     width, height = res.get('value').split('x')
                     rotation = rotations[int(rot.get('value'))]
