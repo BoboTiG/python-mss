@@ -133,7 +133,7 @@ elif system() == 'Linux':
 
 elif system() == 'Windows':
     from ctypes import (
-        byref, memset, pointer, sizeof, windll,
+        byref, pointer, sizeof, windll,
         c_void_p as LPRECT,
         c_void_p as LPVOID,
         create_string_buffer,
@@ -142,8 +142,8 @@ elif system() == 'Windows':
         WINFUNCTYPE,
     )
     from ctypes.wintypes import (
-        BOOL, DOUBLE, DWORD, HANDLE, HBITMAP, HDC, HGDIOBJ,
-        HWND, INT, LPARAM, LONG,RECT,SHORT, UINT, WORD
+        BOOL, DOUBLE, DWORD, HBITMAP, HDC, HGDIOBJ,
+        HWND, INT, LPARAM, LONG, RECT, UINT, WORD
     )
 
     class BITMAPINFOHEADER(Structure):
