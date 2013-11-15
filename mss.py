@@ -229,7 +229,7 @@ class MSS(object):
         self.debug('save')
 
         self.oneshot = oneshot
-        self.monitors = self.enum_display_monitors() or []
+        self.monitors = self.enum_display_monitors()
 
         self.debug('save', 'oneshot', self.oneshot)
 
@@ -651,6 +651,9 @@ class MSSWindows(MSS):
             }]
 
         def _callback(monitor, dc, rect, data):
+            ''' Callback for MONITORENUMPROC() function, it will return
+                a RECT with appropriate values.
+            '''
             rct = rect.contents
             results.append({
                 b'left'  : int(rct.left),
@@ -795,6 +798,7 @@ def main(argv=[]):
 
     @contextmanager
     def timer(msg):
+        ''' A little timer '''
         start = time()
         yield
         end = time()
