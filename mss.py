@@ -835,13 +835,13 @@ def main(argv=[]):
         'Windows': MSSWindows
     }
     try:
-        MSS = systems[system()]
+        mss_class = systems[system()]
     except KeyError:
         print('System "{0}" not implemented.'.format(system()))
         return 1
 
     try:
-        mss = MSS(debug='--debug' in argv)
+        mss = mss_class(debug='--debug' in argv)
 
         # One screen shot per monitor
         with timer('Screen shots'):
