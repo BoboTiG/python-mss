@@ -54,7 +54,7 @@ When initalising an instance of MSS, you can enable debug output::
 
 
 save(output='mss', oneshot=False)
------------------------------------------------------
+---------------------------------
 
 For each monitor, grab a screen shot and save it to a file.
 

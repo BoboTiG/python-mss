@@ -4,40 +4,11 @@
 ''' A cross-platform multi-screen shot module in pure python using ctypes.
 
     This module is maintained by Mickaël Schoentgen <contact@tiger-222.fr>.
-    If you find problems, please submit bug reports/patches via the
-    GitHub issue tracker (https://github.com/BoboTiG/python-mss/issues).
 
     Note: please keep this module compatible to Python 2.6.
 
-    Still needed:
-    * support for additional systems
-
-    Many thanks to all those who helped (in no particular order):
-
-      Oros, Eownis
-
-    History:
-
-    <see Git checkin messages for history>
-
-    0.0.1 - first release
-    0.0.2 - add support for python 3 on Windows and GNU/Linux
-    0.0.3 - MSSImage: remove PNG filters
-          - MSSImage: remove 'ext' argument, using only PNG
-          - MSSImage: do not overwrite existing image files
-          - MSSImage: few optimizations into png()
-          - MSSLinux: few optimizations into get_pixels()
-    0.0.4 - MSSLinux: use of memoization => huge time/operations gains
-    0.0.5 - MSSWindows: few optimizations into _arrange()
-          - MSSImage: code simplified
-    0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
-          - refactoring of all enum_display_monitors() methods
-          - MSSLinux: add XFCE4 support
-
     You can always get the latest version of this module at:
-
-            https://raw.github.com/BoboTiG/python-mss/master/mss.py
-
+        https://raw.github.com/BoboTiG/python-mss/master/mss.py
     If that URL should fail, try contacting the author.
 '''
 
