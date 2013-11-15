@@ -302,7 +302,6 @@ class MSSMac(MSS):
     def init(self):
         ''' Mac OSX initialisations '''
         self.debug('init')
-        pass
 
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
