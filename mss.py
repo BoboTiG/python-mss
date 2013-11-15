@@ -859,5 +859,4 @@ def main(argv=[]):
 
 
 if __name__ == '__main__':
-    status = main(sys.argv)
-    sys.exit(status)
+    sys.exit(main(sys.argv))
