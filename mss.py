@@ -192,7 +192,7 @@ class MSS(object):
                 'height': the height
             }
         '''
-        pass
+        return NotImplemented
 
     def get_pixels(self, monitor_infos):
         ''' Retrieve screen pixels for a given monitor.
@@ -207,7 +207,7 @@ class MSS(object):
 
             Returns a dict with pixels.
         '''
-        pass
+        return NotImplemented
 
     def save(self, output='mss', oneshot=False):
         ''' For each monitor, grab a screen shot and save it to a file.
