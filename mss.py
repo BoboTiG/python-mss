@@ -283,9 +283,9 @@ class MSSMac(MSS):
         if self.oneshot:
             rect = CGRectInfinite
             return [{
-                b'left'  : int(rect.origin.x),
-                b'top'   : int(rect.origin.y),
-                b'width' : int(rect.size.width),
+                b'left':   int(rect.origin.x),
+                b'top':    int(rect.origin.y),
+                b'width':  int(rect.size.width),
                 b'height': int(rect.size.height)
             }]
 
@@ -301,10 +301,10 @@ class MSSMac(MSS):
             if rotation in ['left', 'right']:
                 width, height = height, width
             results.append({
-                b'left'    : int(left),
-                b'top'     : int(top),
-                b'width'   : int(width),
-                b'height'  : int(height),
+                b'left':     int(left),
+                b'top':      int(top),
+                b'width':    int(width),
+                b'height':   int(height),
                 b'rotation': rotation
             })
         return results
@@ -460,10 +460,10 @@ class MSSLinux(MSS):
                     if rotation.text in ['left', 'right']:
                         width, height = height, width
                     results.append({
-                        b'left'    : int(x.text),
-                        b'top'     : int(y.text),
-                        b'width'   : int(width.text),
-                        b'height'  : int(height.text),
+                        b'left': int(x.text),
+                        b'top': int(y.text),
+                        b'width': int(width.text),
+                        b'height': int(height.text),
                         b'rotation': rotation.text
                     })
         return results
@@ -496,10 +496,10 @@ class MSSLinux(MSS):
                         width, height = height, width
                     posx, posy = pos.findall('property')
                     results.append({
-                        b'left'    : int(posx.get('value')),
-                        b'top'     : int(posy.get('value')),
-                        b'width'   : int(width),
-                        b'height'  : int(height),
+                        b'left': int(posx.get('value')),
+                        b'top': int(posy.get('value')),
+                        b'width': int(width),
+                        b'height': int(height),
                         b'rotation': rotation
                     })
         return results
@@ -516,9 +516,9 @@ class MSSLinux(MSS):
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
             return [{
-                b'left'  : int(gwa.x),
-                b'top'   : int(gwa.y),
-                b'width' : int(gwa.width),
+                b'left': int(gwa.x),
+                b'top': int(gwa.y),
+                b'width': int(gwa.width),
                 b'height': int(gwa.height)
             }]
 
@@ -642,9 +642,9 @@ class MSSWindows(MSS):
             top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
             bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
             return [{
-                b'left'  : int(left),
-                b'top'   : int(top),
-                b'width' : int(right - left),
+                b'left': int(left),
+                b'top': int(top),
+                b'width': int(right - left),
                 b'height': int(bottom - top)
             }]
 
@@ -654,9 +654,9 @@ class MSSWindows(MSS):
             '''
             rct = rect.contents
             results.append({
-                b'left'  : int(rct.left),
-                b'top'   : int(rct.top),
-                b'width' : int(rct.right - rct.left),
+                b'left': int(rct.left),
+                b'top': int(rct.top),
+                b'width': int(rct.right - rct.left),
                 b'height': int(rct.bottom -rct.top)
             })
             return 1
@@ -803,8 +803,8 @@ def main(argv=[]):
         print('{0}: {1} ms'.format(msg, (end-start)*1000))
 
     systems = {
-        'Darwin' : MSSMac,
-        'Linux'  : MSSLinux,
+        'Darwin': MSSMac,
+        'Linux': MSSLinux,
         'Windows': MSSWindows
     }
     try:

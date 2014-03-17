@@ -30,8 +30,8 @@ You can determine automatically which class to use::
     import mss
 
     systems = {
-        'Darwin' : mss.MSSMac,
-        'Linux'  : mss.MSSLinux,
+        'Darwin': mss.MSSMac,
+        'Linux': mss.MSSLinux,
         'Windows': mss.MSSWindows
     }
     try:
