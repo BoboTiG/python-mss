@@ -144,11 +144,9 @@ elif system() == 'Windows':
             return pack(b'<B', x)
 
 
-
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
-
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
         It checkes if there is a class available for the current system.
@@ -503,7 +501,6 @@ class MSSLinux(MSS):
                         b'rotation': rotation
                     })
         return results
-
 
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
