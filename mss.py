@@ -82,21 +82,21 @@ elif system() == 'Linux':
 
     class XImage(Structure):
         _fields_ = [
-            ('width'            , c_int),
-            ('height'           , c_int),
-            ('xoffset'          , c_int),
-            ('format'           , c_int),
-            ('data'             , c_char_p),
-            ('byte_order'       , c_int),
-            ('bitmap_unit'      , c_int),
-            ('bitmap_bit_order' , c_int),
-            ('bitmap_pad'       , c_int),
-            ('depth'            , c_int),
-            ('bytes_per_line'   , c_int),
-            ('bits_per_pixel'   , c_int),
-            ('red_mask'         , c_ulong),
-            ('green_mask'       , c_ulong),
-            ('blue_mask'        , c_ulong)
+            ('width',             c_int),
+            ('height',            c_int),
+            ('xoffset',           c_int),
+            ('format',            c_int),
+            ('data',              c_char_p),
+            ('byte_order',        c_int),
+            ('bitmap_unit',       c_int),
+            ('bitmap_bit_order',  c_int),
+            ('bitmap_pad',        c_int),
+            ('depth',             c_int),
+            ('bytes_per_line',    c_int),
+            ('bits_per_pixel',    c_int),
+            ('red_mask',          c_ulong),
+            ('green_mask',        c_ulong),
+            ('blue_mask',         c_ulong)
         ]
 
     def b(x):
