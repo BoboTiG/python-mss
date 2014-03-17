@@ -147,6 +147,11 @@ elif system() == 'Windows':
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
+class ScreenshotError(Exception):
+    ''' Error handling class. '''
+    pass
+
+
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
         It checkes if there is a class available for the current system.
@@ -232,12 +237,11 @@ class MSS(object):
 
         self.debug('save', 'oneshot', self.oneshot)
 
-        if len(self.monitors) < 1:
-            raise ValueError('MSS: no monitor found.')
+        if not self.monitors:
+            raise ScreenshotError('MSS: no monitor found.')
 
         # Monitors screen shots!
-        i = 1
-        for monitor in self.monitors:
+        for i, monitor in enumerate(self.monitors):
             self.debug('save', 'monitor', monitor)
 
             if self.oneshot:
