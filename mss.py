@@ -414,7 +414,7 @@ class MSSLinux(MSS):
                 display = environ['DISPLAY']
         except KeyError:
             err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
-            raise ValueError(err)
+            raise ScreenshotError(err)
         self.debug('init', '$DISPLAY', display)
 
         # At this point, if there is no running server, it could end on
@@ -574,7 +574,7 @@ class MSSLinux(MSS):
 
         image = self.XGetImage(self.display, root, left, top, width,
                                height, allplanes, ZPixmap)
-        if image is None:
+        if not image:
             raise ScreenshotError('MSSLinux: XGetImage() failed.')
 
         def pix(pixel, _resultats={}):
