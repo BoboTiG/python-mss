@@ -254,7 +254,7 @@ class MSS(object):
                     self.save_(output=filename)
                 else:
                     MSSImage(data=pixels, width=monitor[b'width'],
-                            height=monitor[b'height'], output=filename)
+                             height=monitor[b'height'], output=filename)
                 if isfile(filename):
                     yield filename
             else:
@@ -317,8 +317,8 @@ class MSSMac(MSS):
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
         self.image = CGWindowListCreateImage(
-                    rect, kCGWindowListOptionOnScreenOnly,
-                    kCGNullWindowID, kCGWindowImageDefault)
+            rect, kCGWindowListOptionOnScreenOnly,
+            kCGNullWindowID, kCGWindowImageDefault)
         return 1
 
     def save_(self, output):
@@ -405,10 +405,12 @@ class MSSLinux(MSS):
         self.XDefaultScreen.argtypes = [POINTER(Display)]
         self.XDefaultRootWindow.argtypes = [POINTER(Display), c_int]
         self.XGetWindowAttributes.argtypes = [POINTER(Display),
-            POINTER(XWindowAttributes), POINTER(XWindowAttributes)]
+                                              POINTER(XWindowAttributes),
+                                              POINTER(XWindowAttributes)]
         self.XAllPlanes.argtypes = []
         self.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
-            c_int, c_int, c_uint, c_uint, c_ulong, c_int]
+                                   c_int, c_int, c_uint, c_uint,
+                                   c_ulong, c_int]
         self.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.XFree.argtypes = [POINTER(XImage)]
         self.XCloseDisplay.argtypes = [POINTER(Display)]
@@ -550,7 +552,7 @@ class MSSLinux(MSS):
         root = cast(self.root, POINTER(Display))
 
         image = self.XGetImage(self.display, root, left, top, width,
-            height, allplanes, ZPixmap)
+                               height, allplanes, ZPixmap)
         if image is None:
             raise ValueError('MSSLinux: XGetImage() failed.')
 
@@ -596,10 +598,11 @@ class MSSWindows(MSS):
         self.debug('_set_argtypes')
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
-            POINTER(RECT), DOUBLE)
+                                           POINTER(RECT), DOUBLE)
         self.GetSystemMetrics.argtypes = [INT]
         self.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
-            self.MONITORENUMPROC, LPARAM]
+                                             self.MONITORENUMPROC,
+                                             LPARAM]
         self.GetWindowDC.argtypes = [HWND]
         self.CreateCompatibleDC.argtypes = [HDC]
         self.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
@@ -607,7 +610,7 @@ class MSSWindows(MSS):
         self.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
         self.DeleteObject.argtypes = [HGDIOBJ]
         self.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
-            POINTER(BITMAPINFO), UINT]
+                                   POINTER(BITMAPINFO), UINT]
 
     def _set_restypes(self):
         ''' Functions return type '''
@@ -688,7 +691,7 @@ class MSSWindows(MSS):
         buffer_len = height * good_width
         pixels = create_string_buffer(buffer_len)
         bits = self.GetDIBits(memdc, bmp, 0, height, byref(pixels),
-            pointer(bmi), DIB_RGB_COLORS)
+                              pointer(bmi), DIB_RGB_COLORS)
 
         self.debug('get_pixels', 'srcdc', srcdc)
         self.debug('get_pixels', 'memdc', memdc)
