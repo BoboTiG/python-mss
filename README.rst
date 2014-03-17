@@ -16,7 +16,8 @@ Testing
 
 You can try the MSS module directly from the console::
 
-    python mss.py [--debug]
+    python2 mss.py [--debug]
+    python3 -X faulthandler mss.py
 
 Passing the `--debug` argument will make it more verbose.
 
