@@ -105,7 +105,6 @@ elif system() == 'Linux':
 elif system() == 'Windows':
     from ctypes import (
         byref, pointer, sizeof, windll,
-        c_void_p as LPRECT,
         c_void_p as LPVOID,
         create_string_buffer,
         Structure,
@@ -603,7 +602,7 @@ class MSSWindows(MSS):
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
             POINTER(RECT), DOUBLE)
         self.GetSystemMetrics.argtypes = [INT]
-        self.EnumDisplayMonitors.argtypes = [HDC, LPRECT,
+        self.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
             self.MONITORENUMPROC, LPARAM]
         self.GetWindowDC.argtypes = [HWND]
         self.CreateCompatibleDC.argtypes = [HDC]
