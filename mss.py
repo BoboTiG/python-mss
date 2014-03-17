@@ -172,14 +172,17 @@ class MSS(object):
             if scalar is None:
                 print(':: {0}()'.format(method))
             else:
-                print('{0}() {1} {2} {3}'.format(method, scalar, type(value).__name__, value))
+                print('{0}() {1} {2} {3}'.format(method, scalar,
+                                                 type(value).__name__,
+                                                 value))
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
 
             If self.oneshot is True, this function has to return a dict
             with dimensions of all monitors at the same time.
-            If the monitor has rotation, you have to deal with inside this method.
+            If the monitor has rotation, you have to deal with inside
+            this method.
 
             Must returns a dict with a minima:
             {
@@ -476,7 +479,8 @@ class MSSLinux(MSS):
         self.debug('_xfce4_config')
 
         results = []
-        monitors = expanduser('~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml')
+        path_ = '~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml'
+        monitors = expanduser(path_)
         if not isfile(monitors):
             self.debug('ERROR', 'MSSLinux: _xfce4_config() failed.')
             return results
@@ -548,7 +552,8 @@ class MSSLinux(MSS):
         allplanes = self.XAllPlanes()
         self.debug('get_pixels', 'allplanes', allplanes)
 
-        # Fix for XGetImage: expected LP_Display instance instead of LP_XWindowAttributes
+        # Fix for XGetImage:
+        # expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
 
         image = self.XGetImage(self.display, root, left, top, width,
@@ -565,7 +570,8 @@ class MSSLinux(MSS):
             return _resultats[pixel]
 
         get_pix = self.XGetPixel
-        pixels = [pix(get_pix(image, x, y)) for y in range(height) for x in range(width)]
+        pixels = [pix(get_pix(image, x, y))
+                  for y in range(height) for x in range(width)]
 
         self.XFree(image)
         return b''.join(pixels)
@@ -725,7 +731,8 @@ class MSSWindows(MSS):
             off = width * (y + 1)
             offset = total - off
             for x in range(0, width - 2, 3):
-                scanlines[off+x:off+x+3] = b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
+                scanlines[off+x:off+x+3] = \
+                    b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
         return b''.join(scanlines)
 
 
@@ -763,7 +770,10 @@ class MSSImage(object):
         to_take = (self.width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
         data = self.data
-        scanlines = b''.join([b'0' + data[(y*to_take):(y*to_take)+to_take-padding] for y in range(self.height)])
+        scanlines = b''.join(
+            [b'0' + data[(y*to_take):(y*to_take)+to_take-padding]
+             for y in range(self.height)]
+        )
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
@@ -785,7 +795,9 @@ class MSSImage(object):
         iend[0] = pack(b'>I', len(iend[2]))
 
         with open(output, 'wb') as fileh:
-            fileh.write(magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
+            fileh.write(
+                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
+            )
 
 
 def main(argv=[]):
