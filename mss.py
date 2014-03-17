@@ -37,6 +37,7 @@ from platform import system
 import sys
 import zlib
 
+
 class ScreenshotError(Exception):
     ''' Error handling class. '''
     pass
@@ -174,11 +175,11 @@ class MSS(object):
 
         if self.DEBUG:
             if scalar is None:
-                print(':: {0}()'.format(method))
+                print(':: {}()'.format(method))
             else:
-                print('{0}() {1} {2} {3}'.format(method, scalar,
-                                                 type(value).__name__,
-                                                 value))
+                print('{}() {} {} {}'.format(method, scalar,
+                                             type(value).__name__,
+                                             value))
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
@@ -353,7 +354,7 @@ class MSSMac(MSS):
     def save_img(self, data, width, height, output):
         ''' Use our own save_img() method. Because I'm Mac ... '''
 
-        self.debug('MSSMac::save_img')
+        self.debug('MSSMac: save_img()')
 
         dpi = 72
         url = NSURL.fileURLWithPath_(output)
@@ -758,12 +759,12 @@ def main(argv=[]):
     # One screen shot per monitor
     with timer('Screen shots'):
         for filename in mss.save():
-            print('        File: {0}'.format(filename))
+            print('        File: {}'.format(filename))
 
     # A shot to grab them all :)
     with timer('Oneshot=True'):
         for filename in mss.save(oneshot=True):
-            print('        File: {0}'.format(filename))
+            print('        File: {}'.format(filename))
     return 0
 
 

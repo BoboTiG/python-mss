@@ -79,11 +79,11 @@ Then, it is quite simple::
 
     # One screen shot per monitor
     for filename in mss.save():
-        print('File "{0}" created.'.format(filename))
+        print('File "{}" created.'.format(filename))
 
     # A shot to grab them all :)
     for filename in mss.save(oneshot=True):
-        print('File "{0}" created.'.format(filename))
+        print('File "{}" created.'.format(filename))
 
 
 Bonus
