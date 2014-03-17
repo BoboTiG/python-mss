@@ -18,7 +18,7 @@ from __future__ import (unicode_literals, absolute_import,
 __version__ = '0.0.6'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
-    Copyright (c) 2013, Mickaël 'Tiger-222' Schoentgen
+    Copyright (c) 2013-2014, Mickaël 'Tiger-222' Schoentgen
 
     Permission to use, copy, modify, and distribute this software and its
     documentation for any purpose and without fee or royalty is hereby
