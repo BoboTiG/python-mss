@@ -27,7 +27,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSSImage', 'MSSLinux', 'MSSMac', 'MSSWindows']
+__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'save_img']
 
 
 from ctypes.util import find_library
@@ -238,25 +238,60 @@ class MSS(object):
         # Monitors screen shots!
         for i, monitor in enumerate(self.enum_display_monitors()):
             self.debug('save', 'monitor', monitor)
-
             if self.oneshot:
                 filename = output + '-full'
             else:
                 filename = output + '-' + str(i)
             filename += '.png'
             self.debug('save', 'filename', filename)
+            self.save_img(data=self.get_pixels(monitor),
+                          width=monitor[b'width'],
+                          height=monitor[b'height'],
+                          output=filename)
+            yield filename
 
-            pixels = self.get_pixels(monitor)
-            if pixels is None:
-                raise ScreenshotError('MSS: no data to process.')
+    def save_img(self, data, width, height, output):
+        ''' Dump data to the image file.
+            Pure python PNG implementation.
+            Image represented as RGB tuples, no interlacing.
+            http://inaps.org/journal/comment-fonctionne-le-png
+        '''
 
-            if hasattr(self, 'save_'):
-                self.save_(output=filename)
-            else:
-                MSSImage(data=pixels, width=monitor[b'width'],
-                         height=monitor[b'height'], output=filename)
-            if isfile(filename):
-                yield filename
+        self.debug('save_img')
+
+        if output[-4:] != '.png':
+            output += '.png'
+
+        to_take = (width * 3 + 3) & -4
+        padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
+        scanlines = b''.join(
+            [b'0' + data[(y*to_take):(y*to_take)+to_take-padding]
+             for y in range(height)]
+        )
+
+        magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
+
+        # Header: size, marker, data, CRC32
+        ihdr = [b'', b'IHDR', b'', b'']
+        ihdr[2] = pack(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+        ihdr[3] = pack(b'>I', zlib.crc32(b''.join(ihdr[1:3])) & 0xffffffff)
+        ihdr[0] = pack(b'>I', len(ihdr[2]))
+
+        # Data: size, marker, data, CRC32
+        idat = [b'', b'IDAT', b'', b'']
+        idat[2] = zlib.compress(scanlines, 9)
+        idat[3] = pack(b'>I', zlib.crc32(b''.join(idat[1:3])) & 0xffffffff)
+        idat[0] = pack(b'>I', len(idat[2]))
+
+        # Footer: size, marker, None, CRC32
+        iend = [b'', b'IEND', b'', b'']
+        iend[3] = pack(b'>I', zlib.crc32(iend[1]) & 0xffffffff)
+        iend[0] = pack(b'>I', len(iend[2]))
+
+        with open(output, 'wb') as fileh:
+            fileh.write(
+                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
+            )
 
 
 class MSSMac(MSS):
@@ -317,10 +352,10 @@ class MSSMac(MSS):
             kCGNullWindowID, kCGWindowImageDefault)
         return 1
 
-    def save_(self, output):
-        ''' Special method to not use MSSImage class. '''
+    def save_img(self, data, width, height, output):
+        ''' Use our own save_img() method. Because I'm Mac ... '''
 
-        self.debug('save_')
+        self.debug('MSSMac::save_img')
 
         dpi = 72
         url = NSURL.fileURLWithPath_(output)
@@ -521,7 +556,6 @@ class MSSLinux(MSS):
                     if mon:
                         yield mon
 
-
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
         '''
@@ -549,7 +583,8 @@ class MSSLinux(MSS):
                 This method uses of memoization.
             '''
             if not pixel in _resultats:
-                _resultats[pixel] = b((pixel & 16711680) >> 16) + b((pixel & 65280) >> 8) + b(pixel & 255)
+                _resultats[pixel] = b((pixel & 16711680) >> 16) + \
+                    b((pixel & 65280) >> 8) + b(pixel & 255)
             return _resultats[pixel]
 
         get_pix = self.XGetPixel
@@ -694,7 +729,7 @@ class MSSWindows(MSS):
         self.DeleteObject(bmp)
 
         if bits != height or len(pixels.raw) != buffer_len:
-            raise ValueError('MSSWindows: GetDIBits() failed.')
+            raise ScreenshotError('MSSWindows: GetDIBits() failed.')
 
         # Note that the origin of the returned image is in the
         # bottom-left corner, 32-bit aligned. And it is BGR.
@@ -716,70 +751,6 @@ class MSSWindows(MSS):
                 scanlines[off+x:off+x+3] = \
                     b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
         return b''.join(scanlines)
-
-
-class MSSImage(object):
-    ''' This is a class to save data (raw pixels) to a picture file.
-    '''
-
-    def __init__(self, data=None, width=1, height=1, output=None):
-        ''' If the output parameter is set, the method dump() is automatically
-            called, else you will have to call dump(output) yourself.
-        '''
-
-        self.data = data
-        self.width = int(width)
-        self.height = int(height)
-
-        if self.data is None:
-            raise ValueError('MSSImage: no data to process.')
-        elif self.width < 1 or self.height < 1:
-            raise ValueError('MSSImage: width or height must be positive.')
-
-        if output:
-            self.dump(output=output)
-
-    def dump(self, output):
-        ''' Dump data to the image file.
-            Pure python PNG implementation.
-            Image represented as RGB tuples, no interlacing.
-            http://inaps.org/journal/comment-fonctionne-le-png
-        '''
-
-        if output[-4:] != '.png':
-            output += '.png'
-
-        to_take = (self.width * 3 + 3) & -4
-        padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
-        data = self.data
-        scanlines = b''.join(
-            [b'0' + data[(y*to_take):(y*to_take)+to_take-padding]
-             for y in range(self.height)]
-        )
-
-        magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
-
-        # Header: size, marker, data, CRC32
-        ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = pack(b'>2I5B', self.width, self.height, 8, 2, 0, 0, 0)
-        ihdr[3] = pack(b'>I', zlib.crc32(b''.join(ihdr[1:3])) & 0xffffffff)
-        ihdr[0] = pack(b'>I', len(ihdr[2]))
-
-        # Data: size, marker, data, CRC32
-        idat = [b'', b'IDAT', b'', b'']
-        idat[2] = zlib.compress(scanlines, 9)
-        idat[3] = pack(b'>I', zlib.crc32(b''.join(idat[1:3])) & 0xffffffff)
-        idat[0] = pack(b'>I', len(idat[2]))
-
-        # Footer: size, marker, None, CRC32
-        iend = [b'', b'IEND', b'', b'']
-        iend[3] = pack(b'>I', zlib.crc32(iend[1]) & 0xffffffff)
-        iend[0] = pack(b'>I', len(iend[2]))
-
-        with open(output, 'wb') as fileh:
-            fileh.write(
-                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
-            )
 
 
 def main(argv=[]):
