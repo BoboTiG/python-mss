@@ -222,10 +222,10 @@ class MSS(object):
              - oneshot - boolean - grab only one screen shot of all monitors
 
             This is a generator which returns created files:
+                'output-0.png',
                 'output-1.png',
-                'output-2.png',
                 ...,
-                'output-NN.png'
+                'output-N.png'
                 or
                 'output-full.png'
         '''
@@ -233,39 +233,30 @@ class MSS(object):
         self.debug('save')
 
         self.oneshot = oneshot
-        self.monitors = self.enum_display_monitors()
-
         self.debug('save', 'oneshot', self.oneshot)
 
-        if not self.monitors:
-            raise ScreenshotError('MSS: no monitor found.')
-
         # Monitors screen shots!
-        for i, monitor in enumerate(self.monitors):
+        for i, monitor in enumerate(self.enum_display_monitors()):
             self.debug('save', 'monitor', monitor)
 
             if self.oneshot:
                 filename = output + '-full'
             else:
                 filename = output + '-' + str(i)
-                i += 1
             filename += '.png'
             self.debug('save', 'filename', filename)
 
-            if not isfile(filename):
-                pixels = self.get_pixels(monitor)
-                if pixels is None:
-                    raise ValueError('MSS: no data to process.')
+            pixels = self.get_pixels(monitor)
+            if pixels is None:
+                raise ScreenshotError('MSS: no data to process.')
 
-                if hasattr(self, 'save_'):
-                    self.save_(output=filename)
-                else:
-                    MSSImage(data=pixels, width=monitor[b'width'],
-                             height=monitor[b'height'], output=filename)
-                if isfile(filename):
-                    yield filename
+            if hasattr(self, 'save_'):
+                self.save_(output=filename)
             else:
-                yield filename + ' (already exists)'
+                MSSImage(data=pixels, width=monitor[b'width'],
+                         height=monitor[b'height'], output=filename)
+            if isfile(filename):
+                yield filename
 
 
 class MSSMac(MSS):
@@ -284,35 +275,33 @@ class MSSMac(MSS):
 
         self.debug('enum_display_monitors')
 
-        results = []
         if self.oneshot:
             rect = CGRectInfinite
-            return [{
-                b'left':   int(rect.origin.x),
-                b'top':    int(rect.origin.y),
-                b'width':  int(rect.size.width),
+            yield ({
+                b'left': int(rect.origin.x),
+                b'top': int(rect.origin.y),
+                b'width': int(rect.size.width),
                 b'height': int(rect.size.height)
-            }]
-
-        max_displays = 32  # Could be augmented, if needed ...
-        rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
-        _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
-        for display in ids:
-            rect = CGRectStandardize(CGDisplayBounds(display))
-            left, top = rect.origin.x, rect.origin.y
-            width, height = rect.size.width, rect.size.height
-            rot = CGDisplayRotation(display)
-            rotation = rotations[rot]
-            if rotation in ['left', 'right']:
-                width, height = height, width
-            results.append({
-                b'left':     int(left),
-                b'top':      int(top),
-                b'width':    int(width),
-                b'height':   int(height),
-                b'rotation': rotation
             })
-        return results
+        else:
+            max_displays = 32  # Could be augmented, if needed ...
+            rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
+            _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
+            for display in ids:
+                rect = CGRectStandardize(CGDisplayBounds(display))
+                left, top = rect.origin.x, rect.origin.y
+                width, height = rect.size.width, rect.size.height
+                rot = CGDisplayRotation(display)
+                rotation = rotations[rot]
+                if rotation in ['left', 'right']:
+                    width, height = height, width
+                yield ({
+                    b'left': int(left),
+                    b'top': int(top),
+                    b'width': int(width),
+                    b'height': int(height),
+                    b'rotation': rotation
+                })
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -444,11 +433,10 @@ class MSSLinux(MSS):
 
         self.debug('_x11_config')
 
-        results = []
         monitors = expanduser('~/.config/monitors.xml')
         if not isfile(monitors):
             self.debug('ERROR', 'MSSLinux: _x11_config() failed.')
-            return results
+            return
 
         tree = ET.parse(monitors)
         root = tree.getroot()
@@ -466,14 +454,13 @@ class MSSLinux(MSS):
                     conf.append(name)
                     if rotation.text in ['left', 'right']:
                         width, height = height, width
-                    results.append({
+                    yield ({
                         b'left': int(x.text),
                         b'top': int(y.text),
                         b'width': int(width.text),
                         b'height': int(height.text),
                         b'rotation': rotation.text
                     })
-        return results
 
     def _xfce4_config(self):
         ''' Try to determine display monitors from XFCE4 configuration file:
@@ -482,12 +469,11 @@ class MSSLinux(MSS):
 
         self.debug('_xfce4_config')
 
-        results = []
         path_ = '~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml'
         monitors = expanduser(path_)
         if not isfile(monitors):
             self.debug('ERROR', 'MSSLinux: _xfce4_config() failed.')
-            return results
+            return
 
         rotations = {0: 'normal', 90: 'left', 270: 'right'}
         tree = ET.parse(monitors)
@@ -503,14 +489,13 @@ class MSSLinux(MSS):
                     if rotation in ['left', 'right']:
                         width, height = height, width
                     posx, posy = pos.findall('property')
-                    results.append({
+                    yield ({
                         b'left': int(posx.get('value')),
                         b'top': int(posy.get('value')),
                         b'width': int(width),
                         b'height': int(height),
                         b'rotation': rotation
                     })
-        return results
 
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
@@ -522,26 +507,20 @@ class MSSLinux(MSS):
         if self.oneshot:
             gwa = XWindowAttributes()
             self.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            return [{
+            yield ({
                 b'left': int(gwa.x),
                 b'top': int(gwa.y),
                 b'width': int(gwa.width),
                 b'height': int(gwa.height)
-            }]
+            })
+        else:
+            # It is a little more complicated, we have to guess all stuff
+            # from differents XML configuration files.
+            for config in ['x11', 'xfce4']:
+                for mon in getattr(self, '_{}_config'.format(config))():
+                    if mon:
+                        yield mon
 
-        # It is a little more complicated, we have to guess all stuff
-        # from differents XML configuration files.
-        for config in ['_x11', '_xfce4']:
-            results = getattr(self, '{0}_config'.format(config))()
-            if results:
-                return results
-
-        # If we are there, it is because there are no configuration files
-        # found, so we re-try with the oneshot parameter to True: it will
-        # use a C function instead of reading XML files.
-        self.debug('ERROR', 'MSSLinux: enum_display_monitors() failed. Using oneshot=True.')
-        self.oneshot = True
-        return self.enum_display_monitors()
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -563,7 +542,7 @@ class MSSLinux(MSS):
         image = self.XGetImage(self.display, root, left, top, width,
                                height, allplanes, ZPixmap)
         if image is None:
-            raise ValueError('MSSLinux: XGetImage() failed.')
+            raise ScreenshotError('MSSLinux: XGetImage() failed.')
 
         def pix(pixel, _resultats={}):
             ''' Apply shifts to a pixel to get the RGB values.
@@ -651,30 +630,29 @@ class MSSWindows(MSS):
             right = self.GetSystemMetrics(SM_CXVIRTUALSCREEN)
             top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
             bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
-            return [{
+            yield ({
                 b'left': int(left),
                 b'top': int(top),
                 b'width': int(right - left),
                 b'height': int(bottom - top)
-            }]
-
-        def _callback(monitor, dc, rect, data):
-            ''' Callback for MONITORENUMPROC() function, it will return
-                a RECT with appropriate values.
-            '''
-            rct = rect.contents
-            results.append({
-                b'left': int(rct.left),
-                b'top': int(rct.top),
-                b'width': int(rct.right - rct.left),
-                b'height': int(rct.bottom - rct.top)
             })
-            return 1
+        else:
+            def _callback(monitor, dc, rect, data):
+                ''' Callback for MONITORENUMPROC() function, it will return
+                    a RECT with appropriate values.
+                '''
+                rct = rect.contents
+                yield ({
+                    b'left': int(rct.left),
+                    b'top': int(rct.top),
+                    b'width': int(rct.right - rct.left),
+                    b'height': int(rct.bottom - rct.top)
+                })
 
-        results = []
-        callback = self.MONITORENUMPROC(_callback)
-        self.EnumDisplayMonitors(0, 0, callback, 0)
-        return results
+            callback = self.MONITORENUMPROC(_callback)
+            for mon in self.EnumDisplayMonitors(0, 0, callback, 0):
+                if mon:
+                    yield mon
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
