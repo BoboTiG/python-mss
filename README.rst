@@ -2,7 +2,7 @@
 A cross-platform multi-screen shot module in pure python using ctypes
 **********************************************************************
 
-Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to an optimised PNG file, Python 2.7/3.4 compatible.
+Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to an optimised PNG file, Python 2.7/3.4 compatible & PEP8 compliant.
 
 So, while you can `pip install --upgrade mss`, you may just drop it in your project and forget about it.
 

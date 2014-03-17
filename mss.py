@@ -104,7 +104,7 @@ elif system() == 'Linux':
 
 elif system() == 'Windows':
     from ctypes import (
-        byref, pointer, sizeof, windll,
+        byref, c_void_p, pointer, sizeof, windll,
         create_string_buffer,
         Structure,
         POINTER,
@@ -377,7 +377,7 @@ class MSSLinux(MSS):
         self.debug('__del__')
 
         if self.display:
-            self.XCloseDisplay(self.display)
+            self.xlib.XCloseDisplay(self.display)
 
     def init(self):
         ''' GNU/Linux initialisations '''
@@ -385,45 +385,34 @@ class MSSLinux(MSS):
         self.debug('init')
 
         x11 = find_library('X11')
-        if x11 is None:
-            raise OSError('MSSLinux: no X11 library found.')
-        else:
-            xlib = cdll.LoadLibrary(x11)
+        if not x11:
+            raise ScreenshotError('MSSLinux: no X11 library found.')
 
-        self.debug('init', 'xlib', xlib)
-
-        self.XOpenDisplay = xlib.XOpenDisplay
-        self.XDefaultScreen = xlib.XDefaultScreen
-        self.XDefaultRootWindow = xlib.XDefaultRootWindow
-        self.XGetWindowAttributes = xlib.XGetWindowAttributes
-        self.XAllPlanes = xlib.XAllPlanes
-        self.XGetImage = xlib.XGetImage
-        self.XGetPixel = xlib.XGetPixel
-        self.XFree = xlib.XFree
-        self.XCloseDisplay = xlib.XCloseDisplay
+        self.xlib = cdll.LoadLibrary(x11)
+        self.debug('init', 'xlib', self.xlib)
 
         self._set_argtypes()
         self._set_restypes()
 
-        display = None
+        disp = None
         self.display = None
         try:
             if sys.version > '3':
-                display = bytes(environ['DISPLAY'], 'utf-8')
+                disp = bytes(environ['DISPLAY'], 'utf-8')
             else:
-                display = environ['DISPLAY']
+                disp = environ['DISPLAY']
         except KeyError:
             err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
             raise ScreenshotError(err)
-        self.debug('init', '$DISPLAY', display)
+        self.debug('init', '$DISPLAY', disp)
 
         # At this point, if there is no running server, it could end on
         # a segmentation fault. And we cannot catch it.
-        self.display = self.XOpenDisplay(display)
+        self.display = self.xlib.XOpenDisplay(disp)
         self.debug('init', 'display', self.display)
-        self.screen = self.XDefaultScreen(self.display)
+        self.screen = self.xlib.XDefaultScreen(self.display)
         self.debug('init', 'screen', self.screen)
-        self.root = self.XDefaultRootWindow(self.display, self.screen)
+        self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
         self.debug('init', 'root', self.root)
 
     def _set_argtypes(self):
@@ -431,34 +420,34 @@ class MSSLinux(MSS):
 
         self.debug('_set_argtypes')
 
-        self.XOpenDisplay.argtypes = [c_char_p]
-        self.XDefaultScreen.argtypes = [POINTER(Display)]
-        self.XDefaultRootWindow.argtypes = [POINTER(Display), c_int]
-        self.XGetWindowAttributes.argtypes = [POINTER(Display),
-                                              POINTER(XWindowAttributes),
-                                              POINTER(XWindowAttributes)]
-        self.XAllPlanes.argtypes = []
-        self.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
-                                   c_int, c_int, c_uint, c_uint,
-                                   c_ulong, c_int]
-        self.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
-        self.XFree.argtypes = [POINTER(XImage)]
-        self.XCloseDisplay.argtypes = [POINTER(Display)]
+        self.xlib.XOpenDisplay.argtypes = [c_char_p]
+        self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
+        self.xlib.XDefaultRootWindow.argtypes = [POINTER(Display), c_int]
+        self.xlib.XGetWindowAttributes.argtypes = [POINTER(Display),
+                                                   POINTER(XWindowAttributes),
+                                                   POINTER(XWindowAttributes)]
+        self.xlib.XAllPlanes.argtypes = []
+        self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
+                                        c_int, c_int, c_uint, c_uint,
+                                        c_ulong, c_int]
+        self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
+        self.xlib.XFree.argtypes = [POINTER(XImage)]
+        self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
 
     def _set_restypes(self):
         ''' Functions return type '''
 
         self.debug('_set_restypes')
 
-        self.XOpenDisplay.restype = POINTER(Display)
-        self.XDefaultScreen.restype = c_int
-        self.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
-        self.XGetWindowAttributes.restype = c_int
-        self.XAllPlanes.restype = c_ulong
-        self.XGetImage.restype = POINTER(XImage)
-        self.XGetPixel.restype = c_ulong
-        self.XFree.restype = c_void_p
-        self.XCloseDisplay.restype = c_void_p
+        self.xlib.XOpenDisplay.restype = POINTER(Display)
+        self.xlib.XDefaultScreen.restype = c_int
+        self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
+        self.xlib.XGetWindowAttributes.restype = c_int
+        self.xlib.XAllPlanes.restype = c_ulong
+        self.xlib.XGetImage.restype = POINTER(XImage)
+        self.xlib.XGetPixel.restype = c_ulong
+        self.xlib.XFree.restype = c_void_p
+        self.xlib.XCloseDisplay.restype = c_void_p
 
     def _x11_config(self):
         ''' Try to determine display monitors from X11 configuration file:
@@ -540,7 +529,7 @@ class MSSLinux(MSS):
 
         if self.oneshot:
             gwa = XWindowAttributes()
-            self.XGetWindowAttributes(self.display, self.root, byref(gwa))
+            self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
             yield ({
                 b'left': int(gwa.x),
                 b'top': int(gwa.y),
@@ -565,15 +554,15 @@ class MSSLinux(MSS):
         left, top = monitor[b'left'], monitor[b'top']
         ZPixmap = 2
 
-        allplanes = self.XAllPlanes()
+        allplanes = self.xlib.XAllPlanes()
         self.debug('get_pixels', 'allplanes', allplanes)
 
         # Fix for XGetImage:
         # expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
 
-        image = self.XGetImage(self.display, root, left, top, width,
-                               height, allplanes, ZPixmap)
+        image = self.xlib.XGetImage(self.display, root, left, top, width,
+                                    height, allplanes, ZPixmap)
         if not image:
             raise ScreenshotError('MSSLinux: XGetImage() failed.')
 
@@ -586,11 +575,11 @@ class MSSLinux(MSS):
                     b((pixel & 65280) >> 8) + b(pixel & 255)
             return _resultats[pixel]
 
-        get_pix = self.XGetPixel
+        get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(image, x, y))
                   for y in range(height) for x in range(width)]
 
-        self.XFree(image)
+        self.xlib.XFree(image)
         return b''.join(pixels)
 
 
@@ -602,16 +591,6 @@ class MSSWindows(MSS):
 
         self.debug('init')
 
-        self.GetSystemMetrics = windll.user32.GetSystemMetrics
-        self.EnumDisplayMonitors = windll.user32.EnumDisplayMonitors
-        self.GetWindowDC = windll.user32.GetWindowDC
-        self.CreateCompatibleDC = windll.gdi32.CreateCompatibleDC
-        self.CreateCompatibleBitmap = windll.gdi32.CreateCompatibleBitmap
-        self.SelectObject = windll.gdi32.SelectObject
-        self.BitBlt = windll.gdi32.BitBlt
-        self.GetDIBits = windll.gdi32.GetDIBits
-        self.DeleteObject = windll.gdi32.DeleteObject
-
         self._set_argtypes()
         self._set_restypes()
 
@@ -622,33 +601,34 @@ class MSSWindows(MSS):
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
                                            POINTER(RECT), DOUBLE)
-        self.GetSystemMetrics.argtypes = [INT]
-        self.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
-                                             self.MONITORENUMPROC,
-                                             LPARAM]
-        self.GetWindowDC.argtypes = [HWND]
-        self.CreateCompatibleDC.argtypes = [HDC]
-        self.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
-        self.SelectObject.argtypes = [HDC, HGDIOBJ]
-        self.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
-        self.DeleteObject.argtypes = [HGDIOBJ]
-        self.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
-                                   POINTER(BITMAPINFO), UINT]
+        windll.user32.GetSystemMetrics.argtypes = [INT]
+        windll.user32.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
+                                                      self.MONITORENUMPROC,
+                                                      LPARAM]
+        windll.user32.GetWindowDC.argtypes = [HWND]
+        windll.gdi32.CreateCompatibleDC.argtypes = [HDC]
+        windll.gdi32.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
+        windll.gdi32.SelectObject.argtypes = [HDC, HGDIOBJ]
+        windll.gdi32.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC,
+                                        INT, INT, DWORD]
+        windll.gdi32.DeleteObject.argtypes = [HGDIOBJ]
+        windll.gdi32.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
+                                           POINTER(BITMAPINFO), UINT]
 
     def _set_restypes(self):
         ''' Functions return type '''
 
         self.debug('_set_restypes')
 
-        self.GetSystemMetrics.restypes = INT
-        self.EnumDisplayMonitors.restypes = BOOL
-        self.GetWindowDC.restypes = HDC
-        self.CreateCompatibleDC.restypes = HDC
-        self.CreateCompatibleBitmap.restypes = HBITMAP
-        self.SelectObject.restypes = HGDIOBJ
-        self.BitBlt.restypes = BOOL
-        self.GetDIBits.restypes = INT
-        self.DeleteObject.restypes = BOOL
+        windll.user32.GetSystemMetrics.restypes = INT
+        windll.user32.EnumDisplayMonitors.restypes = BOOL
+        windll.user32.GetWindowDC.restypes = HDC
+        windll.gdi32.CreateCompatibleDC.restypes = HDC
+        windll.gdi32.CreateCompatibleBitmap.restypes = HBITMAP
+        windll.gdi32.SelectObject.restypes = HGDIOBJ
+        windll.gdi32.BitBlt.restypes = BOOL
+        windll.gdi32.GetDIBits.restypes = INT
+        windll.gdi32.DeleteObject.restypes = BOOL
 
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
@@ -660,10 +640,10 @@ class MSSWindows(MSS):
         if self.oneshot:
             SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
             SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 78, 79
-            left = self.GetSystemMetrics(SM_XVIRTUALSCREEN)
-            right = self.GetSystemMetrics(SM_CXVIRTUALSCREEN)
-            top = self.GetSystemMetrics(SM_YVIRTUALSCREEN)
-            bottom = self.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+            left = windll.user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
+            right = windll.user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
+            top = windll.user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
+            bottom = windll.user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
             yield ({
                 b'left': int(left),
                 b'top': int(top),
@@ -676,17 +656,19 @@ class MSSWindows(MSS):
                     a RECT with appropriate values.
                 '''
                 rct = rect.contents
-                yield ({
+                monitors.append({
                     b'left': int(rct.left),
                     b'top': int(rct.top),
                     b'width': int(rct.right - rct.left),
                     b'height': int(rct.bottom - rct.top)
                 })
+                return 1
 
+            monitors = []
             callback = self.MONITORENUMPROC(_callback)
-            for mon in self.EnumDisplayMonitors(0, 0, callback, 0):
-                if mon:
-                    yield mon
+            windll.user32.EnumDisplayMonitors(0, 0, callback, 0)
+            for mon in monitors:
+                yield mon
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
@@ -699,11 +681,12 @@ class MSSWindows(MSS):
         SRCCOPY = 0xCC0020
         DIB_RGB_COLORS = 0
 
-        srcdc = self.GetWindowDC(0)
-        memdc = self.CreateCompatibleDC(srcdc)
-        bmp = self.CreateCompatibleBitmap(srcdc, width, height)
-        self.SelectObject(memdc, bmp)
-        self.BitBlt(memdc, 0, 0, width, height, srcdc, left, top, SRCCOPY)
+        srcdc = windll.user32.GetWindowDC(0)
+        memdc = windll.gdi32.CreateCompatibleDC(srcdc)
+        bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
+        windll.gdi32.SelectObject(memdc, bmp)
+        windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left,
+                            top, SRCCOPY)
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
         bmi.bmiHeader.biWidth = width
@@ -712,8 +695,8 @@ class MSSWindows(MSS):
         bmi.bmiHeader.biPlanes = 1
         buffer_len = height * good_width
         pixels = create_string_buffer(buffer_len)
-        bits = self.GetDIBits(memdc, bmp, 0, height, byref(pixels),
-                              pointer(bmi), DIB_RGB_COLORS)
+        bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, byref(pixels),
+                                      pointer(bmi), DIB_RGB_COLORS)
 
         self.debug('get_pixels', 'srcdc', srcdc)
         self.debug('get_pixels', 'memdc', memdc)
@@ -723,9 +706,9 @@ class MSSWindows(MSS):
         self.debug('get_pixels', 'len(pixels.raw)', len(pixels.raw))
 
         # Clean up
-        self.DeleteObject(srcdc)
-        self.DeleteObject(memdc)
-        self.DeleteObject(bmp)
+        windll.gdi32.DeleteObject(srcdc)
+        windll.gdi32.DeleteObject(memdc)
+        windll.gdi32.DeleteObject(bmp)
 
         if bits != height or len(pixels.raw) != buffer_len:
             raise ScreenshotError('MSSWindows: GetDIBits() failed.')
