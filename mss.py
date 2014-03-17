@@ -620,7 +620,7 @@ class MSSWindows(MSS):
         self.CreateCompatibleDC.restypes = HDC
         self.CreateCompatibleBitmap.restypes = HBITMAP
         self.SelectObject.restypes = HGDIOBJ
-        self.BitBlt.restypes =  BOOL
+        self.BitBlt.restypes = BOOL
         self.GetDIBits.restypes = INT
         self.DeleteObject.restypes = BOOL
 
@@ -654,7 +654,7 @@ class MSSWindows(MSS):
                 b'left': int(rct.left),
                 b'top': int(rct.top),
                 b'width': int(rct.right - rct.left),
-                b'height': int(rct.bottom -rct.top)
+                b'height': int(rct.bottom - rct.top)
             })
             return 1
 
