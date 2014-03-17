@@ -239,10 +239,9 @@ class MSS(object):
         for i, monitor in enumerate(self.enum_display_monitors()):
             self.debug('save', 'monitor', monitor)
             if self.oneshot:
-                filename = output + '-full'
+                filename = '{}-full.png'.format(output)
             else:
-                filename = output + '-' + str(i)
-            filename += '.png'
+                filename = '{}-{}.png'.format(output, i)
             self.debug('save', 'filename', filename)
             self.save_img(data=self.get_pixels(monitor),
                           width=monitor[b'width'],
