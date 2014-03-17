@@ -105,7 +105,6 @@ elif system() == 'Linux':
 elif system() == 'Windows':
     from ctypes import (
         byref, pointer, sizeof, windll,
-        c_void_p as LPVOID,
         create_string_buffer,
         Structure,
         POINTER,
@@ -610,7 +609,7 @@ class MSSWindows(MSS):
         self.SelectObject.argtypes = [HDC, HGDIOBJ]
         self.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
         self.DeleteObject.argtypes = [HGDIOBJ]
-        self.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, LPVOID,
+        self.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
             POINTER(BITMAPINFO), UINT]
 
     def _set_restypes(self):
