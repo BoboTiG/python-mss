@@ -35,11 +35,7 @@ You can determine automatically which class to use::
         'Linux': mss.MSSLinux,
         'Windows': mss.MSSWindows
     }
-    try:
-        mss_class = systems[system()]
-    except KeyError:
-        err = 'System "{0}" not implemented.'.format(system())
-        raise NotImplementedError(err)
+    mss_class = systems[system()]
 
 Or simply import the good one::
 
@@ -79,19 +75,15 @@ Example
 
 Then, it is quite simple::
 
-    try:
-        mss = mss_class()
+    mss = mss_class()
 
-        # One screen shot per monitor
-        for filename in mss.save():
-            print('File "{0}" created.'.format(filename))
+    # One screen shot per monitor
+    for filename in mss.save():
+        print('File "{0}" created.'.format(filename))
 
-        # A shot to grab them all :)
-        for filename in mss.save(oneshot=True):
-            print('File "{0}" created.'.format(filename))
-    except (OSError, ValueError) as ex:
-        print(ex)
-        raise
+    # A shot to grab them all :)
+    for filename in mss.save(oneshot=True):
+        print('File "{0}" created.'.format(filename))
 
 
 Bonus

@@ -37,10 +37,13 @@ from platform import system
 import sys
 import zlib
 
+class ScreenshotError(Exception):
+    ''' Error handling class. '''
+    pass
+
 if system() == 'Darwin':
     from Quartz import *
     from LaunchServices import kUTTypePNG
-
 elif system() == 'Linux':
     from os import environ
     from os.path import expanduser
@@ -101,7 +104,6 @@ elif system() == 'Linux':
 
     def b(x):
         return pack(b'<B', x)
-
 elif system() == 'Windows':
     from ctypes import (
         byref, c_void_p, pointer, sizeof, windll,
@@ -142,16 +144,13 @@ elif system() == 'Windows':
     else:
         def b(x):
             return pack(b'<B', x)
+else:
+    raise ScreenshotError('System "{}" not implemented.'.format(system()))
 
 
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
-class ScreenshotError(Exception):
-    ''' Error handling class. '''
-    pass
-
-
 class MSS(object):
     ''' This class will be overloaded by a system specific one.
         It checkes if there is a class available for the current system.
@@ -747,34 +746,24 @@ def main(argv=[]):
         start = time()
         yield
         end = time()
-        print('{0}: {1} ms'.format(msg, (end-start)*1000))
+        print('{}: {} ms'.format(msg, (end-start)*1000))
 
     systems = {
         'Darwin': MSSMac,
         'Linux': MSSLinux,
         'Windows': MSSWindows
     }
-    try:
-        mss_class = systems[system()]
-    except KeyError:
-        print('System "{0}" not implemented.'.format(system()))
-        return 1
+    mss = systems[system()](debug='--debug' in argv)
 
-    try:
-        mss = mss_class(debug='--debug' in argv)
+    # One screen shot per monitor
+    with timer('Screen shots'):
+        for filename in mss.save():
+            print('        File: {0}'.format(filename))
 
-        # One screen shot per monitor
-        with timer('Screen shots'):
-            for filename in mss.save():
-                print('        File: {0}'.format(filename))
-
-        # A shot to grab them all :)
-        with timer('Oneshot=True'):
-            for filename in mss.save(oneshot=True):
-                print('        File: {0}'.format(filename))
-    except (OSError, ValueError) as ex:
-        print(ex)
-        return 2
+    # A shot to grab them all :)
+    with timer('Oneshot=True'):
+        for filename in mss.save(oneshot=True):
+            print('        File: {0}'.format(filename))
     return 0
 
 
