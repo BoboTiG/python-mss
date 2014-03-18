@@ -3,3 +3,4 @@ tests/
 *.pyc
 MANIFEST*
 *.png
+*.png.old
