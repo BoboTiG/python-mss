@@ -2,4 +2,4 @@ dist/
 tests/
 *.pyc
 MANIFEST*
-mss*.png
+*.png
