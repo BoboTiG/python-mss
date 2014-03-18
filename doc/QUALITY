@@ -1,0 +1,8 @@
+# PEP8
+pep8 mss.py
+pep8 --hang-closing mss.py
+
+# Mispellings
+codespell mss.py
+codespell README.rst
+codespell doc/*
