@@ -31,6 +31,7 @@ __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
 
 
 from struct import pack
+from os.path import isfile
 from platform import system
 import sys
 import zlib
@@ -45,7 +46,7 @@ if system() == 'Darwin':
     from LaunchServices import kUTTypePNG
 elif system() == 'Linux':
     from os import environ
-    from os.path import expanduser, isfile
+    from os.path import expanduser
     import xml.etree.ElementTree as ET
     from ctypes.util import find_library
     from ctypes import byref, cast, cdll, POINTER, Structure, \
@@ -202,7 +203,7 @@ class MSS(object):
         '''
         return NotImplemented
 
-    def save(self, output='screenshot', screen=0):
+    def save(self, output='screenshot', screen=0, callback=lambda *x: True):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
@@ -210,6 +211,11 @@ class MSS(object):
              - screen - int - grab one screen shot of all monitors (screen=-1)
                               grab one screen shot by monitor (screen=0)
                               grab the screen shot of the monitor N (screen=N)
+             - callback - function - in case where output already exists, call
+                                     the defined callback function with output
+                                     as parameter. If it returns True, then
+                                     continue; else ignores the monitor and
+                                     switches to ne next.
 
             This is a generator which returns created files:
                 'screenshot-1.png',
@@ -235,6 +241,8 @@ class MSS(object):
                 filename = '{}.png'.format(output)
 
             if screen <= 0 or (screen > 0 and i+1 == screen):
+                if isfile(filename) and not callback(filename):
+                    continue
                 self.debug('save', 'filename', filename)
                 self.save_img(data=self.get_pixels(monitor),
                               width=monitor[b'width'],
@@ -762,6 +770,21 @@ def main(argv=[]):
     # A shot to grab them all :)
     with timer('All in one  '):
         for filename in mss.save(screen=-1):
+            print('        File: {}'.format(filename))
+
+    # Example with a callback
+    def on_exists(fname):
+        ''' Callback example when we try to overwrite an existing screen shot. '''
+
+        from os import rename
+        newfile = fname + '.old'
+        print('        Renaming {} to {}'.format(fname, newfile))
+        rename(fname, newfile)
+        return True
+
+    # Screen shot of the monitor 1, with callback
+    with timer('Monitor 1   '):
+        for filename in mss.save(output='monitor-1', screen=1, callback=on_exists):
             print('        File: {}'.format(filename))
     return 0
 
