@@ -31,7 +31,6 @@ __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
 
 
 from struct import pack
-from os.path import isfile
 from platform import system
 import sys
 import zlib
@@ -46,7 +45,7 @@ if system() == 'Darwin':
     from LaunchServices import kUTTypePNG
 elif system() == 'Linux':
     from os import environ
-    from os.path import expanduser
+    from os.path import expanduser, isfile
     import xml.etree.ElementTree as ET
     from ctypes.util import find_library
     from ctypes import byref, cast, cdll, POINTER, Structure, \
