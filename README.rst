@@ -50,7 +50,7 @@ When initialising an instance of MSS, you can enable debug output::
     mss = mss_class(debug=True)
 
 
-save(output='mss', oneshot=False)
+save(output='screenshot', screen=-1)
 ---------------------------------
 
 For each monitor, grab a screen shot and save it to a file.
@@ -58,16 +58,18 @@ For each monitor, grab a screen shot and save it to a file.
 Parameters::
 
     output - string - the output filename without extension
-    oneshot - boolean - grab only one screen shot of all monitors
+    screen - integer - grab one screen shot of all monitors (-1)
+                       grab one screen shot by monitor (0)
+                       grab the screen shot of the monitor $screen
 
 This is a generator which returns created files::
 
-    'output-0.png',
-    'output-1.png',
+    'screenshot-0.png',
+    'screenshot-1.png',
     ...,
-    'output-N.png'
+    'screenshot-N.png'
     or
-    'output-full.png'
+    'screenshot-full.png'
 
 
 Example
@@ -79,11 +81,15 @@ Then, it is quite simple::
 
     # One screen shot per monitor
     for filename in mss.save():
-        print('File "{}" created.'.format(filename))
+        print('File: "{}" created.'.format(filename))
+
+    # Screen shot of the monitor 1
+    for filename in mss.save(output='monitor-1', screen=1):
+        print('File: "{}" created.'.format(filename))
 
     # A shot to grab them all :)
-    for filename in mss.save(oneshot=True):
-        print('File "{}" created.'.format(filename))
+    for filename in mss.save(screen=-1):
+        print('File: "{}" created.'.format(filename))
 
 
 Bonus

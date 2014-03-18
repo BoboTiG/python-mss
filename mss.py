@@ -154,8 +154,6 @@ class MSS(object):
         ''' Global vars and class overload. '''
 
         self.DEBUG = debug in [True, 'on' 'yes', 'oui', 1]
-        self.monitors = []
-        self.oneshot = False
 
         self.debug('__init__', 'DEBUG', self.DEBUG)
         self.init()
@@ -204,40 +202,45 @@ class MSS(object):
         '''
         return NotImplemented
 
-    def save(self, output='mss', oneshot=False):
+    def save(self, output='screenshot', screen=0):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
              - output - string - the output filename without extension
-             - oneshot - boolean - grab only one screen shot of all monitors
+             - screen - integer - grab one screen shot of all monitors (-1)
+                                  grab one screen shot by monitor (0)
+                                  grab the screen shot of the monitor $screen
 
             This is a generator which returns created files:
-                'output-0.png',
-                'output-1.png',
+                'screenshot-1.png',
+                'screenshot-2.png',
                 ...,
-                'output-N.png'
+                'screenshot-N.png'
                 or
-                'output-full.png'
+                'screenshot-full.png'
         '''
 
         self.debug('save')
-
-        self.oneshot = oneshot
-        self.debug('save', 'oneshot', self.oneshot)
+        self.debug('save', 'screen', screen)
+        self.debug('save', 'output', output)
 
         # Monitors screen shots!
-        for i, monitor in enumerate(self.enum_display_monitors()):
+        for i, monitor in enumerate(self.enum_display_monitors(screen)):
             self.debug('save', 'monitor', monitor)
-            if self.oneshot:
+            if screen == -1:
                 filename = '{}-full.png'.format(output)
+            elif screen == 0:
+                filename = '{}-{}.png'.format(output, i+1)
             else:
-                filename = '{}-{}.png'.format(output, i)
-            self.debug('save', 'filename', filename)
-            self.save_img(data=self.get_pixels(monitor),
-                          width=monitor[b'width'],
-                          height=monitor[b'height'],
-                          output=filename)
-            yield filename
+                filename = '{}.png'.format(output)
+
+            if screen <= 0 or (screen > 0 and i+1 == screen):
+                self.debug('save', 'filename', filename)
+                self.save_img(data=self.get_pixels(monitor),
+                              width=monitor[b'width'],
+                              height=monitor[b'height'],
+                              output=filename)
+                yield filename
 
     def save_img(self, data, width, height, output):
         ''' Dump data to the image file.
@@ -292,14 +295,14 @@ class MSSMac(MSS):
         ''' Mac OSX initialisations '''
         self.debug('init')
 
-    def enum_display_monitors(self):
+    def enum_display_monitors(self, screen=-1):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
         self.debug('enum_display_monitors')
 
-        if self.oneshot:
+        if screen == -1:
             rect = CGRectInfinite
             yield ({
                 b'left': int(rect.origin.x),
@@ -510,14 +513,14 @@ class MSSLinux(MSS):
                         b'rotation': rotation
                         })
 
-    def enum_display_monitors(self):
+    def enum_display_monitors(self, screen=-1):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
         self.debug('enum_display_monitors')
 
-        if self.oneshot:
+        if screen == -1:
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
             yield ({
@@ -620,14 +623,14 @@ class MSSWindows(MSS):
         windll.gdi32.GetDIBits.restypes = INT
         windll.gdi32.DeleteObject.restypes = BOOL
 
-    def enum_display_monitors(self):
+    def enum_display_monitors(self, screen=-1):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
 
         self.debug('enum_display_monitors')
 
-        if self.oneshot:
+        if screen == -1:
             SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
             SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 78, 79
             left = windll.user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
@@ -751,9 +754,14 @@ def main(argv=[]):
         for filename in mss.save():
             print('        File: {}'.format(filename))
 
+    # Screen shot of the monitor 1
+    with timer('Monitor 1   '):
+        for filename in mss.save(output='monitor-1', screen=1):
+            print('        File: {}'.format(filename))
+
     # A shot to grab them all :)
-    with timer('Oneshot=True'):
-        for filename in mss.save(oneshot=True):
+    with timer('All in one  '):
+        for filename in mss.save(screen=-1):
             print('        File: {}'.format(filename))
     return 0
 
