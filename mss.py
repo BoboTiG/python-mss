@@ -575,6 +575,7 @@ class MSSLinux(MSS):
                     b((pixel & 65280) >> 8) + b(pixel & 255)
             return _resultats[pixel]
 
+        # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(image, x, y))
                   for y in range(height) for x in range(width)]
@@ -775,8 +776,9 @@ def main(argv=[]):
 
     # Example with a callback
     def on_exists(fname):
-        ''' Callback example when we try to overwrite an existing screen shot. '''
-
+        ''' Callback example when we try to overwrite an existing
+            screen shot.
+        '''
         from os import rename
         newfile = fname + '.old'
         print('        Renaming {} to {}'.format(fname, newfile))
@@ -785,8 +787,8 @@ def main(argv=[]):
 
     # Screen shot of the monitor 1, with callback
     with timer('Monitor 1   '):
-        for filename in mss.save(output='monitor-1', screen=1, callback=on_exists):
-            print('        File: {}'.format(filename))
+        for fname in mss.save(output='mon-1', screen=1, callback=on_exists):
+            print('        File: {}'.format(fname))
     return 0
 
 
