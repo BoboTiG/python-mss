@@ -30,7 +30,6 @@ __copyright__ = '''
 __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
 
 
-from ctypes.util import find_library
 from struct import pack
 from os.path import isfile
 from platform import system
@@ -49,6 +48,7 @@ elif system() == 'Linux':
     from os import environ
     from os.path import expanduser
     import xml.etree.ElementTree as ET
+    from ctypes.util import find_library
     from ctypes import (
         byref, cast, cdll, POINTER, Structure,
         c_char_p, c_int, c_int32, c_uint, c_uint32, c_ulong, c_void_p
