@@ -155,7 +155,6 @@ class MSS(object):
         ''' Global vars and class overload. '''
 
         self.DEBUG = debug in [True, 'on' 'yes', 'oui', 1]
-
         self.debug('__init__', 'DEBUG', self.DEBUG)
         self.init()
 
@@ -350,10 +349,10 @@ class MSSMac(MSS):
         self.image = CGWindowListCreateImage(
             rect, kCGWindowListOptionOnScreenOnly,
             kCGNullWindowID, kCGWindowImageDefault)
-        return 1
+        return self.image
 
     def save_img(self, data, width, height, output):
-        ''' Use our own save_img() method. Because I'm Mac ... '''
+        ''' Use my own save_img() method. Because I'm Mac ... '''
 
         self.debug('MSSMac: save_img()')
 
@@ -364,7 +363,7 @@ class MSSMac(MSS):
             kCGImagePropertyDPIWidth: dpi,
             kCGImagePropertyDPIHeight: dpi,
             }
-        CGImageDestinationAddImage(dest, self.image, properties)
+        CGImageDestinationAddImage(dest, data, properties)
 
 
 class MSSLinux(MSS):
@@ -581,7 +580,8 @@ class MSSLinux(MSS):
                   for y in range(height) for x in range(width)]
 
         self.xlib.XFree(image)
-        return b''.join(pixels)
+        self.image = b''.join(pixels)
+        return self.image
 
 
 class MSSWindows(MSS):
@@ -733,7 +733,8 @@ class MSSWindows(MSS):
             for x in range(0, width - 2, 3):
                 scanlines[off+x:off+x+3] = \
                     b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
-        return b''.join(scanlines)
+        self.image = b''.join(scanlines)
+        return self.image
 
 
 def main(argv=[]):
