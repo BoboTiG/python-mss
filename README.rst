@@ -34,7 +34,7 @@ You can determine automatically which class to use::
         'Darwin': mss.MSSMac,
         'Linux': mss.MSSLinux,
         'Windows': mss.MSSWindows
-    }
+        }
     mss_class = systems[system()]
 
 Or simply import the good one::

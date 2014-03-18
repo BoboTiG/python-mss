@@ -49,10 +49,8 @@ elif system() == 'Linux':
     from os.path import expanduser
     import xml.etree.ElementTree as ET
     from ctypes.util import find_library
-    from ctypes import (
-        byref, cast, cdll, POINTER, Structure,
+    from ctypes import byref, cast, cdll, POINTER, Structure, \
         c_char_p, c_int, c_int32, c_uint, c_uint32, c_ulong, c_void_p
-    )
 
     class Display(Structure):
         pass
@@ -82,7 +80,7 @@ elif system() == 'Linux':
             ('do_not_propagate_mask', c_ulong),
             ('override_redirect',     c_int32),
             ('screen',                c_ulong)
-        ]
+            ]
 
     class XImage(Structure):
         _fields_ = [
@@ -101,22 +99,15 @@ elif system() == 'Linux':
             ('red_mask',          c_ulong),
             ('green_mask',        c_ulong),
             ('blue_mask',         c_ulong)
-        ]
+            ]
 
     def b(x):
         return pack(b'<B', x)
 elif system() == 'Windows':
-    from ctypes import (
-        byref, c_void_p, pointer, sizeof, windll,
-        create_string_buffer,
-        Structure,
-        POINTER,
-        WINFUNCTYPE,
-    )
-    from ctypes.wintypes import (
-        BOOL, DOUBLE, DWORD, HBITMAP, HDC, HGDIOBJ,
-        HWND, INT, LPARAM, LONG, RECT, UINT, WORD
-    )
+    from ctypes import byref, c_void_p, create_string_buffer, pointer, \
+        sizeof, windll, Structure, POINTER, WINFUNCTYPE
+    from ctypes.wintypes import BOOL, DOUBLE, DWORD, HBITMAP, HDC, \
+        HGDIOBJ, HWND, INT, LPARAM, LONG, RECT, UINT, WORD
 
     class BITMAPINFOHEADER(Structure):
         _fields_ = [
@@ -131,13 +122,13 @@ elif system() == 'Windows':
             ('biYPelsPerMeter', LONG),
             ('biClrUsed',       DWORD),
             ('biClrImportant',  DWORD)
-        ]
+            ]
 
     class BITMAPINFO(Structure):
         _fields_ = [
             ('bmiHeader', BITMAPINFOHEADER),
             ('bmiColors', DWORD * 3)
-        ]
+            ]
 
     if sys.version < '3':
         def b(x):
@@ -266,7 +257,7 @@ class MSS(object):
         scanlines = b''.join(
             [b'0' + data[(y*to_take):(y*to_take)+to_take-padding]
              for y in range(height)]
-        )
+            )
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
@@ -290,7 +281,7 @@ class MSS(object):
         with open(output, 'wb') as fileh:
             fileh.write(
                 magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
-            )
+                )
 
 
 class MSSMac(MSS):
@@ -316,7 +307,7 @@ class MSSMac(MSS):
                 b'top': int(rect.origin.y),
                 b'width': int(rect.size.width),
                 b'height': int(rect.size.height)
-            })
+                })
         else:
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
@@ -335,7 +326,7 @@ class MSSMac(MSS):
                     b'width': int(width),
                     b'height': int(height),
                     b'rotation': rotation
-                })
+                    })
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -362,7 +353,7 @@ class MSSMac(MSS):
         properties = {
             kCGImagePropertyDPIWidth: dpi,
             kCGImagePropertyDPIHeight: dpi,
-        }
+            }
         CGImageDestinationAddImage(dest, self.image, properties)
 
 
@@ -483,7 +474,7 @@ class MSSLinux(MSS):
                         b'width': int(width.text),
                         b'height': int(height.text),
                         b'rotation': rotation.text
-                    })
+                        })
 
     def _xfce4_config(self):
         ''' Try to determine display monitors from XFCE4 configuration file:
@@ -518,7 +509,7 @@ class MSSLinux(MSS):
                         b'width': int(width),
                         b'height': int(height),
                         b'rotation': rotation
-                    })
+                        })
 
     def enum_display_monitors(self):
         ''' Get positions of one or more monitors.
@@ -535,7 +526,7 @@ class MSSLinux(MSS):
                 b'top': int(gwa.y),
                 b'width': int(gwa.width),
                 b'height': int(gwa.height)
-            })
+                })
         else:
             # It is a little more complicated, we have to guess all stuff
             # from differents XML configuration files.
@@ -649,7 +640,7 @@ class MSSWindows(MSS):
                 b'top': int(top),
                 b'width': int(right - left),
                 b'height': int(bottom - top)
-            })
+                })
         else:
             def _callback(monitor, dc, rect, data):
                 ''' Callback for MONITORENUMPROC() function, it will return
@@ -661,7 +652,7 @@ class MSSWindows(MSS):
                     b'top': int(rct.top),
                     b'width': int(rct.right - rct.left),
                     b'height': int(rct.bottom - rct.top)
-                })
+                    })
                 return 1
 
             monitors = []
@@ -753,7 +744,7 @@ def main(argv=[]):
         'Darwin': MSSMac,
         'Linux': MSSLinux,
         'Windows': MSSWindows
-    }
+        }
     mss = systems[system()](debug='--debug' in argv)
 
     # One screen shot per monitor
