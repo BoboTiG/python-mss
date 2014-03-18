@@ -207,9 +207,9 @@ class MSS(object):
 
             Parameters:
              - output - string - the output filename without extension
-             - screen - integer - grab one screen shot of all monitors (-1)
-                                  grab one screen shot by monitor (0)
-                                  grab the screen shot of the monitor $screen
+             - screen - int - grab one screen shot of all monitors (screen=-1)
+                              grab one screen shot by monitor (screen=0)
+                              grab the screen shot of the monitor N (screen=N)
 
             This is a generator which returns created files:
                 'screenshot-1.png',
