@@ -202,11 +202,16 @@ class MSS(object):
         '''
         return NotImplemented
 
-    def save(self, output='screenshot', screen=0, callback=lambda *x: True):
+    def save(self,
+             output='screenshot-%d.png',
+             screen=0,
+             callback=lambda *x: True
+             ):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
-             - output - string - the output filename without extension
+             - output - string - the output filename. It can contain '%d' which
+                                 will be replaced by the monitor number.
              - screen - int - grab one screen shot of all monitors (screen=-1)
                               grab one screen shot by monitor (screen=0)
                               grab the screen shot of the monitor N (screen=N)
@@ -216,13 +221,7 @@ class MSS(object):
                                      continue; else ignores the monitor and
                                      switches to ne next.
 
-            This is a generator which returns created files:
-                'screenshot-1.png',
-                'screenshot-2.png',
-                ...,
-                'screenshot-N.png'
-                or
-                'screenshot-full.png'
+            This is a generator which returns created files.
         '''
 
         self.debug('save')

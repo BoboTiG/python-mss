@@ -42,22 +42,23 @@ Or simply import the good one::
     from mss import MSSLinux as mss_class
 
 
-init(debug=False)
------------------
+init(debug)
+-----------
 
 When initialising an instance of MSS, you can enable debug output::
 
     mss = mss_class(debug=True)
 
 
-save(output='screenshot', screen=-1, callback=lambda *x: True)
---------------------------------------------------------------
+save(output, screen, callback)
+------------------------------
 
 For each monitor, grab a screen shot and save it to a file.
 
 Parameters::
 
-    output - string - the output filename without extension
+    output - string - the output filename. It can contain '%d' which
+                      will be replaced by the monitor number.
     screen - integer - grab one screen shot of all monitors (screen=-1)
                        grab one screen shot by monitor (screen=0)
                        grab the screen shot of the monitor N (screen=N)
@@ -67,14 +68,7 @@ Parameters::
                           continue; else ignores the monitor and
                           switches to ne next.
 
-This is a generator which returns created files::
-
-    'screenshot-1.png',
-    'screenshot-2.png',
-    ...,
-    'screenshot-N.png'
-    or
-    'screenshot-full.png'
+This is a generator which returns created files.
 
 
 Examples
