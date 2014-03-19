@@ -78,31 +78,34 @@ Then, it is quite simple::
 
     mss = mss_class()
 
-    # One screen shot per monitor
-    for filename in mss.save():
-        print('File: "{}" created.'.format(filename))
+    try:
+        # One screen shot per monitor
+        for filename in mss.save():
+            print('File: "{}" created.'.format(filename))
 
-    # Screen shot of the monitor 1
-    for filename in mss.save(output='monitor-1', screen=1):
-        print('File: "{}" created.'.format(filename))
+        # Screen shot of the monitor 1
+        for filename in mss.save(output='monitor-%d.png', screen=1):
+            print('File: "{}" created.'.format(filename))
 
-    # A shot to grab them all :)
-    for filename in mss.save(screen=-1):
-        print('File: "{}" created.'.format(filename))
+        # A shot to grab them all :)
+        for filename in mss.save(output='full-screenshot.png', screen=-1):
+            print('File: "{}" created.'.format(filename))
 
-    # Example with a callback
-    def on_exists(fname):
-        ''' Callback example when we try to overwrite an existing screen shot. '''
+        # Example with a callback
+        def on_exists(fname):
+            ''' Callback example when we try to overwrite an existing screen shot. '''
 
-        from os import rename
-        newfile = fname + '.old'
-        print('Renaming "{}" to "{}"'.format(fname, newfile))
-        rename(fname, newfile)
-        return True
+            from os import rename
+            newfile = fname + '.old'
+            print('Renaming "{}" to "{}"'.format(fname, newfile))
+            rename(fname, newfile)
+            return True
 
-    # Screen shot of the monitor 1, with callback
-    for filename in mss.save(output='monitor-1', screen=1, callback=on_exists):
-        print('File: "{}" created.'.format(filename))
+        # Screen shot of the monitor 1, with callback
+        for fname in mss.save(output='mon-%d.png', screen=1, callback=on_exists):
+            print('File: "{}" created.'.format(fname))
+    except ScreenshotError as ex:
+        print(ex)
 
 
 Bonus

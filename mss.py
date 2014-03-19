@@ -31,8 +31,8 @@ __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
 
 
 from struct import pack
-from os.path import isfile
 from platform import system
+import os.path
 import sys
 import zlib
 
@@ -229,24 +229,22 @@ class MSS(object):
         self.debug('save', 'output', output)
 
         # Monitors screen shots!
+        dir_ = os.path.dirname(os.path.abspath(__file__))
         for i, monitor in enumerate(self.enum_display_monitors(screen)):
             self.debug('save', 'monitor', monitor)
-            if screen == -1:
-                filename = '{}-full.png'.format(output)
-            elif screen == 0:
-                filename = '{}-{}.png'.format(output, i+1)
-            else:
-                filename = '{}.png'.format(output)
-
             if screen <= 0 or (screen > 0 and i+1 == screen):
-                if isfile(filename) and not callback(filename):
+                fname = output
+                if '%d' in output:
+                    fname = output.replace('%d', str(i+1))
+                fname = os.path.join(dir_, os.path.basename(fname))
+                self.debug('save', 'fname', fname)
+                if os.path.isfile(fname) and not callback(fname):
                     continue
-                self.debug('save', 'filename', filename)
                 self.save_img(data=self.get_pixels(monitor),
                               width=monitor[b'width'],
                               height=monitor[b'height'],
-                              output=filename)
-                yield filename
+                              output=fname)
+                yield fname
 
     def save_img(self, data, width, height, output):
         ''' Dump data to the image file.
@@ -256,9 +254,6 @@ class MSS(object):
         '''
 
         self.debug('save_img')
-
-        if output[-4:] != '.png':
-            output += '.png'
 
         to_take = (width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
@@ -290,6 +285,9 @@ class MSS(object):
             fileh.write(
                 magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
                 )
+        if not os.path.isfile(output):
+            msg = 'Impossible to write data to file "{}".'.format(output)
+            raise ScreenshotError(msg)
 
 
 class MSSMac(MSS):
@@ -301,7 +299,7 @@ class MSSMac(MSS):
         ''' Mac OSX initialisations '''
         self.debug('init')
 
-    def enum_display_monitors(self, screen=-1):
+    def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
@@ -345,24 +343,28 @@ class MSSMac(MSS):
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
-        self.image = CGWindowListCreateImage(
+        image = CGWindowListCreateImage(
             rect, kCGWindowListOptionOnScreenOnly,
             kCGNullWindowID, kCGWindowImageDefault)
-        return self.image
+        if not image:
+            raise ScreenshotError('CGWindowListCreateImage() failed.')
+        return image
 
     def save_img(self, data, width, height, output):
-        ''' Use my own save_img() method. Because I'm Mac ... '''
+        ''' Use my own save_img() method. Because I'm Mac! '''
 
-        self.debug('MSSMac: save_img()')
+        self.debug('MSSMac: save_img')
 
-        dpi = 72
         url = NSURL.fileURLWithPath_(output)
         dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
-        properties = {
-            kCGImagePropertyDPIWidth: dpi,
-            kCGImagePropertyDPIHeight: dpi,
-            }
-        CGImageDestinationAddImage(dest, data, properties)
+        if not dest:
+            msg = 'Error while trying to create the image destination ' \
+                  'to "{}".'.format(output)
+            raise ScreenshotError(msg)
+        CGImageDestinationAddImage(dest, data, None)
+        if not CGImageDestinationFinalize(dest):
+            msg = 'Impossible to write data to file "{}".'.format(output)
+            raise ScreenshotError(msg)
 
 
 class MSSLinux(MSS):
@@ -385,7 +387,7 @@ class MSSLinux(MSS):
 
         x11 = find_library('X11')
         if not x11:
-            raise ScreenshotError('MSSLinux: no X11 library found.')
+            raise ScreenshotError('No X11 library found.')
 
         self.xlib = cdll.LoadLibrary(x11)
         self.debug('init', 'xlib', self.xlib)
@@ -401,7 +403,7 @@ class MSSLinux(MSS):
             else:
                 disp = environ['DISPLAY']
         except KeyError:
-            err = 'MSSLinux: $DISPLAY not set. Stopping to prevent segfault.'
+            err = '$DISPLAY not set. Stopping to prevent segfault.'
             raise ScreenshotError(err)
         self.debug('init', '$DISPLAY', disp)
 
@@ -456,7 +458,7 @@ class MSSLinux(MSS):
         self.debug('_x11_config')
 
         monitors = expanduser('~/.config/monitors.xml')
-        if not isfile(monitors):
+        if not os.path.isfile(monitors):
             self.debug('ERROR', 'MSSLinux: _x11_config() failed.')
             return
 
@@ -493,7 +495,7 @@ class MSSLinux(MSS):
 
         path_ = '~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml'
         monitors = expanduser(path_)
-        if not isfile(monitors):
+        if not os.path.isfile(monitors):
             self.debug('ERROR', 'MSSLinux: _xfce4_config() failed.')
             return
 
@@ -519,7 +521,7 @@ class MSSLinux(MSS):
                         b'rotation': rotation
                         })
 
-    def enum_display_monitors(self, screen=-1):
+    def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
@@ -560,10 +562,10 @@ class MSSLinux(MSS):
         # expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
 
-        image = self.xlib.XGetImage(self.display, root, left, top, width,
-                                    height, allplanes, ZPixmap)
-        if not image:
-            raise ScreenshotError('MSSLinux: XGetImage() failed.')
+        ximage = self.xlib.XGetImage(self.display, root, left, top, width,
+                                     height, allplanes, ZPixmap)
+        if not ximage:
+            raise ScreenshotError('XGetImage() failed.')
 
         def pix(pixel, _resultats={}):
             ''' Apply shifts to a pixel to get the RGB values.
@@ -576,12 +578,12 @@ class MSSLinux(MSS):
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
         get_pix = self.xlib.XGetPixel
-        pixels = [pix(get_pix(image, x, y))
+        pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]
 
-        self.xlib.XFree(image)
-        self.image = b''.join(pixels)
-        return self.image
+        self.xlib.XFree(ximage)
+        image = b''.join(pixels)
+        return image
 
 
 class MSSWindows(MSS):
@@ -712,7 +714,7 @@ class MSSWindows(MSS):
         windll.gdi32.DeleteObject(bmp)
 
         if bits != height or len(pixels.raw) != buffer_len:
-            raise ScreenshotError('MSSWindows: GetDIBits() failed.')
+            raise ScreenshotError('GetDIBits() failed.')
 
         # Note that the origin of the returned image is in the
         # bottom-left corner, 32-bit aligned. And it is BGR.
@@ -733,8 +735,8 @@ class MSSWindows(MSS):
             for x in range(0, width - 2, 3):
                 scanlines[off+x:off+x+3] = \
                     b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
-        self.image = b''.join(scanlines)
-        return self.image
+        image = b''.join(scanlines)
+        return image
 
 
 def main(argv=[]):
@@ -758,36 +760,41 @@ def main(argv=[]):
         }
     mss = systems[system()](debug='--debug' in argv)
 
-    # One screen shot per monitor
-    with timer('Screen shots'):
-        for filename in mss.save():
-            print('        File: {}'.format(filename))
+    try:
+        # One screen shot per monitor
+        with timer('Screen shots'):
+            for filename in mss.save():
+                print('        File: {}'.format(filename))
 
-    # Screen shot of the monitor 1
-    with timer('Monitor 1   '):
-        for filename in mss.save(output='monitor-1', screen=1):
-            print('        File: {}'.format(filename))
+        # Screen shot of the monitor 1
+        with timer('Monitor 1   '):
+            for filename in mss.save(output='monitor-%d.png', screen=1):
+                print('        File: {}'.format(filename))
 
-    # A shot to grab them all :)
-    with timer('All in one  '):
-        for filename in mss.save(screen=-1):
-            print('        File: {}'.format(filename))
+        # A shot to grab them all :)
+        with timer('All in one  '):
+            for filename in mss.save(output='full-screenshot.png', screen=-1):
+                print('        File: {}'.format(filename))
 
-    # Example with a callback
-    def on_exists(fname):
-        ''' Callback example when we try to overwrite an existing
-            screen shot.
-        '''
-        from os import rename
-        newfile = fname + '.old'
-        print('        Renaming {} to {}'.format(fname, newfile))
-        rename(fname, newfile)
-        return True
+        # Example with a callback
+        def on_exists(fname):
+            ''' Callback example when we try to overwrite an existing
+                screen shot.
+            '''
+            from os import rename
+            newfile = fname + '.old'
+            print('        Renaming {} to {}'.format(fname, newfile))
+            rename(fname, newfile)
+            return True
 
-    # Screen shot of the monitor 1, with callback
-    with timer('Monitor 1   '):
-        for fname in mss.save(output='mon-1', screen=1, callback=on_exists):
-            print('        File: {}'.format(fname))
+        # Screen shot of the monitor 1, with callback
+        with timer('Monitor 1   '):
+            for fname in mss.save(output='mon-%d.png',
+                                  screen=1, callback=on_exists):
+                print('        File: {}'.format(fname))
+    except ScreenshotError as ex:
+        print(ex)
+        return 1
     return 0
 
 
