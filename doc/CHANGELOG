@@ -5,12 +5,18 @@ History:
 0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
       - refactoring of all enum_display_monitors() methods
       - MSSLinux: add XFCE4 support
-      - several fixes here and there
-
-0.0.4 - MSSLinux: use of memoization => huge time/operations gains
+      - MSSImage: moved into a MSS:save_img() method
+      - PEP8 compliant
+      - Python 3.4 ready
+      - fix misspellings using 'codespell' tool
+      - possibility to append '--debug' to the command line
+      - better way to manage output filenames (callback)
+      - several fixes here and there, code refactoring
 
 0.0.5 - MSSWindows: few optimizations into _arrange()
       - MSSImage: code simplified
+
+0.0.4 - MSSLinux: use of memoization => huge time/operations gains
 
 0.0.3 - MSSImage: remove PNG filters
       - MSSImage: remove 'ext' argument, using only PNG
