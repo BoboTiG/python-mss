@@ -2,6 +2,8 @@ History:
 
 <see Git checkin messages for history>
 
+0.0.7 - fix path where screenshots are saved
+
 0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
       - refactoring of all enum_display_monitors() methods
       - MSSLinux: add XFCE4 support
