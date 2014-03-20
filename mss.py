@@ -15,7 +15,7 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.6'
+__version__ = '0.0.7'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013-2014, Mickaël 'Tiger-222' Schoentgen
@@ -229,7 +229,7 @@ class MSS(object):
         self.debug('save', 'output', output)
 
         # Monitors screen shots!
-        dir_ = os.path.dirname(os.path.abspath(__file__))
+        dir_ = os.getcwd()
         for i, monitor in enumerate(self.enum_display_monitors(screen)):
             self.debug('save', 'monitor', monitor)
             if screen <= 0 or (screen > 0 and i+1 == screen):
