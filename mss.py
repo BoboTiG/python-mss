@@ -229,14 +229,12 @@ class MSS(object):
         self.debug('save', 'output', output)
 
         # Monitors screen shots!
-        dir_ = os.getcwd()
         for i, monitor in enumerate(self.enum_display_monitors(screen)):
             self.debug('save', 'monitor', monitor)
             if screen <= 0 or (screen > 0 and i+1 == screen):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i+1))
-                fname = os.path.join(dir_, os.path.basename(fname))
                 self.debug('save', 'fname', fname)
                 if os.path.isfile(fname) and not callback(fname):
                     continue
