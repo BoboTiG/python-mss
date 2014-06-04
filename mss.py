@@ -681,38 +681,43 @@ class MSSWindows(MSS):
         good_width = (width * 3 + 3) & -4
         SRCCOPY = 0xCC0020
         DIB_RGB_COLORS = 0
+        memdc = bmp = srcdc = None
 
-        srcdc = windll.user32.GetWindowDC(0)
-        memdc = windll.gdi32.CreateCompatibleDC(srcdc)
-        bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
-        windll.gdi32.SelectObject(memdc, bmp)
-        windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left,
-                            top, SRCCOPY)
-        bmi = BITMAPINFO()
-        bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
-        bmi.bmiHeader.biWidth = width
-        bmi.bmiHeader.biHeight = height
-        bmi.bmiHeader.biBitCount = 24
-        bmi.bmiHeader.biPlanes = 1
-        buffer_len = height * good_width
-        pixels = create_string_buffer(buffer_len)
-        bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, byref(pixels),
-                                      pointer(bmi), DIB_RGB_COLORS)
+        try:
+            srcdc = windll.user32.GetWindowDC(0)
+            memdc = windll.gdi32.CreateCompatibleDC(srcdc)
+            bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
+            windll.gdi32.SelectObject(memdc, bmp)
+            windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left,
+                                top, SRCCOPY)
+            bmi = BITMAPINFO()
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+            bmi.bmiHeader.biWidth = width
+            bmi.bmiHeader.biHeight = height
+            bmi.bmiHeader.biBitCount = 24
+            bmi.bmiHeader.biPlanes = 1
+            buffer_len = height * good_width
+            pixels = create_string_buffer(buffer_len)
+            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, byref(pixels),
+                                          pointer(bmi), DIB_RGB_COLORS)
 
-        self.debug('get_pixels', 'srcdc', srcdc)
-        self.debug('get_pixels', 'memdc', memdc)
-        self.debug('get_pixels', 'bmp', bmp)
-        self.debug('get_pixels', 'buffer_len', buffer_len)
-        self.debug('get_pixels', 'bits', bits)
-        self.debug('get_pixels', 'len(pixels.raw)', len(pixels.raw))
+            self.debug('get_pixels', 'srcdc', srcdc)
+            self.debug('get_pixels', 'memdc', memdc)
+            self.debug('get_pixels', 'bmp', bmp)
+            self.debug('get_pixels', 'buffer_len', buffer_len)
+            self.debug('get_pixels', 'bits', bits)
+            self.debug('get_pixels', 'len(pixels.raw)', len(pixels.raw))
 
-        # Clean up
-        windll.gdi32.DeleteObject(srcdc)
-        windll.gdi32.DeleteObject(memdc)
-        windll.gdi32.DeleteObject(bmp)
-
-        if bits != height or len(pixels.raw) != buffer_len:
-            raise ScreenshotError('GetDIBits() failed.')
+            if bits != height or len(pixels.raw) != buffer_len:
+                raise ScreenshotError('GetDIBits() failed.')
+        finally:
+            # Clean up
+            if srcdc:
+                windll.gdi32.DeleteObject(srcdc)
+            if memdc:
+                windll.gdi32.DeleteObject(memdc)
+            if bmp:
+                windll.gdi32.DeleteObject(bmp)
 
         # Note that the origin of the returned image is in the
         # bottom-left corner, 32-bit aligned. And it is BGR.
