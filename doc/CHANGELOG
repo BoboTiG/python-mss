@@ -2,6 +2,11 @@ History:
 
 <see Git checkin messages for history>
 
+devel - fix #3: filename's dir is not used when saving
+      - fix #4: robustness to MSSWindows.get_pixels
+      - raise an exception for unimplemented methods
+      - new contributor: Alexander 'thehesiod' Mohr
+
 0.0.7 - fix path where screenshots are saved
 
 0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
