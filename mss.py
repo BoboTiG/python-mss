@@ -185,7 +185,7 @@ class MSS(object):
                 'height': the height
             }
         '''
-        return NotImplemented
+        raise NotImplementedError('Subclasses need to implement this!')
 
     def get_pixels(self, monitor_infos):
         ''' Retrieve screen pixels for a given monitor.
@@ -200,7 +200,7 @@ class MSS(object):
 
             Returns a dict with pixels.
         '''
-        return NotImplemented
+        raise NotImplementedError('Subclasses need to implement this!')
 
     def save(self,
              output='screenshot-%d.png',
