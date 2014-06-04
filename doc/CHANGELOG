@@ -2,14 +2,17 @@ History:
 
 <see Git checkin messages for history>
 
-devel - fix #3: filename's dir is not used when saving
+devel   201y/mm/dd
+      - fix #3: filename's dir is not used when saving
       - fix #4: robustness to MSSWindows.get_pixels
       - raise an exception for unimplemented methods
-      - new contributor: Alexander 'thehesiod' Mohr
+      - new contributors: sergey-vin, Alexander 'thehesiod' Mohr
 
-0.0.7 - fix path where screenshots are saved
+0.0.7   2014/03/20
+      - fix path where screenshots are saved
 
-0.0.6 - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
+0.0.6   2014/03/19
+      - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
       - refactoring of all enum_display_monitors() methods
       - MSSLinux: add XFCE4 support
       - MSSImage: moved into a MSS:save_img() method
@@ -19,18 +22,25 @@ devel - fix #3: filename's dir is not used when saving
       - possibility to append '--debug' to the command line
       - better way to manage output filenames (callback)
       - several fixes here and there, code refactoring
+      - new contributor: Sam from sametmax.com
 
-0.0.5 - MSSWindows: few optimizations into _arrange()
+0.0.5   2013/11/01
+      - MSSWindows: few optimizations into _arrange()
       - MSSImage: code simplified
 
-0.0.4 - MSSLinux: use of memoization => huge time/operations gains
+0.0.4   2013/10/31
+      - MSSLinux: use of memoization => huge time/operations gains
 
-0.0.3 - MSSImage: remove PNG filters
+0.0.3   2013/10/30
+      - MSSImage: remove PNG filters
       - MSSImage: remove 'ext' argument, using only PNG
       - MSSImage: do not overwrite existing image files
       - MSSImage: few optimizations into png()
       - MSSLinux: few optimizations into get_pixels()
 
-0.0.2 - add support for python 3 on Windows and GNU/Linux
+0.0.2   2013/10/21
+      - add support for python 3 on Windows and GNU/Linux
+      - new contributors: Oros, Eownis
 
-0.0.1 - first release
+0.0.1   2013/07/01
+      - first release
