@@ -569,7 +569,7 @@ class MSSLinux(MSS):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
-            if not pixel in _resultats:
+            if pixel not in _resultats:
                 _resultats[pixel] = b((pixel & 16711680) >> 16) + \
                     b((pixel & 65280) >> 8) + b(pixel & 255)
             return _resultats[pixel]
@@ -681,7 +681,7 @@ class MSSWindows(MSS):
         good_width = (width * 3 + 3) & -4
         SRCCOPY = 0xCC0020
         DIB_RGB_COLORS = 0
-        memdc = bmp = srcdc = None
+        srcdc = memdc = bmp = None
 
         try:
             srcdc = windll.user32.GetWindowDC(0)
