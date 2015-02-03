@@ -1,2 +1,4 @@
-Still needed:
-    * support for additional systems
+
+[  ] GNU/Linux: do not trust XML config files, use pure cpython
+[  ] Mac OSX: use pure ctype, no Quartz
+[  ] Support for additional systems

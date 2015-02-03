@@ -3,7 +3,7 @@
 
 ''' A cross-platform multi-screen shot module in pure python using ctypes.
 
-    This module is maintained by Mickaël Schoentgen <contact@tiger-222.fr>.
+    This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
 
     Note: please keep this module compatible to Python 2.6.
 
@@ -15,10 +15,10 @@
 from __future__ import (unicode_literals, absolute_import,
                         division, print_function)
 
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
-    Copyright (c) 2013-2014, Mickaël 'Tiger-222' Schoentgen
+    Copyright (c) 2013-2015, Mickaël 'Tiger-222' Schoentgen
 
     Permission to use, copy, modify, and distribute this software and its
     documentation for any purpose and without fee or royalty is hereby

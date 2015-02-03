@@ -3,8 +3,11 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
+
+0.0.8   2015/02/04
       - fix #3: filename's dir is not used when saving
       - fix #4: robustness to MSSWindows.get_pixels
+      - fix "E713 test for membership should be 'not in'"
       - raise an exception for unimplemented methods
       - new contributors: sergey-vin, Alexander 'thehesiod' Mohr
 
