@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 ''' A cross-platform multi-screen shot module in pure python using ctypes.
 
     This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
@@ -12,8 +11,8 @@
     If that URL should fail, try contacting the author.
 '''
 
-from __future__ import (unicode_literals, absolute_import,
-                        division, print_function)
+from __future__ import (unicode_literals, absolute_import, division,
+                        print_function)
 
 __version__ = '0.0.8'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
@@ -29,7 +28,6 @@ __copyright__ = '''
 '''
 __all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
 
-
 from struct import pack
 from platform import system
 import os.path
@@ -40,6 +38,7 @@ import zlib
 class ScreenshotError(Exception):
     ''' Error handling class. '''
     pass
+
 
 if system() == 'Darwin':
     from Quartz import *
@@ -56,50 +55,26 @@ elif system() == 'Linux':
         pass
 
     class XWindowAttributes(Structure):
-        _fields_ = [
-            ('x',                     c_int32),
-            ('y',                     c_int32),
-            ('width',                 c_int32),
-            ('height',                c_int32),
-            ('border_width',          c_int32),
-            ('depth',                 c_int32),
-            ('visual',                c_ulong),
-            ('root',                  c_ulong),
-            ('class',                 c_int32),
-            ('bit_gravity',           c_int32),
-            ('win_gravity',           c_int32),
-            ('backing_store',         c_int32),
-            ('backing_planes',        c_ulong),
-            ('backing_pixel',         c_ulong),
-            ('save_under',            c_int32),
-            ('colourmap',             c_ulong),
-            ('mapinstalled',          c_uint32),
-            ('map_state',             c_uint32),
-            ('all_event_masks',       c_ulong),
-            ('your_event_mask',       c_ulong),
-            ('do_not_propagate_mask', c_ulong),
-            ('override_redirect',     c_int32),
-            ('screen',                c_ulong)
-            ]
+        _fields_ = [('x', c_int32), ('y', c_int32), ('width', c_int32),
+                    ('height', c_int32), ('border_width', c_int32),
+                    ('depth', c_int32), ('visual', c_ulong), ('root', c_ulong),
+                    ('class', c_int32), ('bit_gravity', c_int32),
+                    ('win_gravity', c_int32), ('backing_store', c_int32),
+                    ('backing_planes', c_ulong), ('backing_pixel', c_ulong),
+                    ('save_under', c_int32), ('colourmap', c_ulong),
+                    ('mapinstalled', c_uint32), ('map_state', c_uint32),
+                    ('all_event_masks', c_ulong), ('your_event_mask', c_ulong),
+                    ('do_not_propagate_mask', c_ulong),
+                    ('override_redirect', c_int32), ('screen', c_ulong)]
 
     class XImage(Structure):
-        _fields_ = [
-            ('width',             c_int),
-            ('height',            c_int),
-            ('xoffset',           c_int),
-            ('format',            c_int),
-            ('data',              c_char_p),
-            ('byte_order',        c_int),
-            ('bitmap_unit',       c_int),
-            ('bitmap_bit_order',  c_int),
-            ('bitmap_pad',        c_int),
-            ('depth',             c_int),
-            ('bytes_per_line',    c_int),
-            ('bits_per_pixel',    c_int),
-            ('red_mask',          c_ulong),
-            ('green_mask',        c_ulong),
-            ('blue_mask',         c_ulong)
-            ]
+        _fields_ = [('width', c_int), ('height', c_int), ('xoffset', c_int),
+                    ('format', c_int), ('data', c_char_p),
+                    ('byte_order', c_int), ('bitmap_unit', c_int),
+                    ('bitmap_bit_order', c_int), ('bitmap_pad', c_int),
+                    ('depth', c_int), ('bytes_per_line', c_int),
+                    ('bits_per_pixel', c_int), ('red_mask', c_ulong),
+                    ('green_mask', c_ulong), ('blue_mask', c_ulong)]
 
     def b(x):
         return pack(b'<B', x)
@@ -110,30 +85,21 @@ elif system() == 'Windows':
         HGDIOBJ, HWND, INT, LPARAM, LONG, RECT, UINT, WORD
 
     class BITMAPINFOHEADER(Structure):
-        _fields_ = [
-            ('biSize',          DWORD),
-            ('biWidth',         LONG),
-            ('biHeight',        LONG),
-            ('biPlanes',        WORD),
-            ('biBitCount',      WORD),
-            ('biCompression',   DWORD),
-            ('biSizeImage',     DWORD),
-            ('biXPelsPerMeter', LONG),
-            ('biYPelsPerMeter', LONG),
-            ('biClrUsed',       DWORD),
-            ('biClrImportant',  DWORD)
-            ]
+        _fields_ = [('biSize', DWORD), ('biWidth', LONG), ('biHeight', LONG),
+                    ('biPlanes', WORD), ('biBitCount', WORD),
+                    ('biCompression', DWORD), ('biSizeImage', DWORD),
+                    ('biXPelsPerMeter', LONG), ('biYPelsPerMeter', LONG),
+                    ('biClrUsed', DWORD), ('biClrImportant', DWORD)]
 
     class BITMAPINFO(Structure):
-        _fields_ = [
-            ('bmiHeader', BITMAPINFOHEADER),
-            ('bmiColors', DWORD * 3)
-            ]
+        _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 
     if sys.version < '3':
+
         def b(x):
             return x
     else:
+
         def b(x):
             return pack(b'<B', x)
 else:
@@ -166,8 +132,7 @@ class MSS(object):
                 print(':: {}()'.format(method))
             else:
                 print('{}() {} {} {}'.format(method, scalar,
-                                             type(value).__name__,
-                                             value))
+                                             type(value).__name__, value))
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
@@ -205,8 +170,7 @@ class MSS(object):
     def save(self,
              output='screenshot-%d.png',
              screen=0,
-             callback=lambda *x: True
-             ):
+             callback=lambda *x: True):
         ''' For each monitor, grab a screen shot and save it to a file.
 
             Parameters:
@@ -231,10 +195,10 @@ class MSS(object):
         # Monitors screen shots!
         for i, monitor in enumerate(self.enum_display_monitors(screen)):
             self.debug('save', 'monitor', monitor)
-            if screen <= 0 or (screen > 0 and i+1 == screen):
+            if screen <= 0 or (screen > 0 and i + 1 == screen):
                 fname = output
                 if '%d' in output:
-                    fname = output.replace('%d', str(i+1))
+                    fname = output.replace('%d', str(i + 1))
                 self.debug('save', 'fname', fname)
                 if os.path.isfile(fname) and not callback(fname):
                     continue
@@ -256,9 +220,8 @@ class MSS(object):
         to_take = (width * 3 + 3) & -4
         padding = 0 if to_take % 8 == 0 else (to_take % 8) // 2
         scanlines = b''.join(
-            [b'0' + data[(y*to_take):(y*to_take)+to_take-padding]
-             for y in range(height)]
-            )
+            [b'0' + data[(y * to_take):(y * to_take) + to_take - padding]
+             for y in range(height)])
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
@@ -281,8 +244,7 @@ class MSS(object):
 
         with open(output, 'wb') as fileh:
             fileh.write(
-                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend)
-                )
+                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
         if not os.path.isfile(output):
             msg = 'Impossible to write data to file "{}".'.format(output)
             raise ScreenshotError(msg)
@@ -311,7 +273,7 @@ class MSSMac(MSS):
                 b'top': int(rect.origin.y),
                 b'width': int(rect.size.width),
                 b'height': int(rect.size.height)
-                })
+            })
         else:
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
@@ -330,7 +292,7 @@ class MSSMac(MSS):
                     b'width': int(width),
                     b'height': int(height),
                     b'rotation': rotation
-                    })
+                })
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -341,9 +303,8 @@ class MSSMac(MSS):
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
-        image = CGWindowListCreateImage(
-            rect, kCGWindowListOptionOnScreenOnly,
-            kCGNullWindowID, kCGWindowImageDefault)
+        image = CGWindowListCreateImage(rect, kCGWindowListOptionOnScreenOnly,
+                                        kCGNullWindowID, kCGWindowImageDefault)
         if not image:
             raise ScreenshotError('CGWindowListCreateImage() failed.')
         return image
@@ -427,8 +388,8 @@ class MSSLinux(MSS):
                                                    POINTER(XWindowAttributes)]
         self.xlib.XAllPlanes.argtypes = []
         self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
-                                        c_int, c_int, c_uint, c_uint,
-                                        c_ulong, c_int]
+                                        c_int, c_int, c_uint, c_uint, c_ulong,
+                                        c_int]
         self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.xlib.XFree.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
@@ -482,7 +443,7 @@ class MSSLinux(MSS):
                         b'width': int(width.text),
                         b'height': int(height.text),
                         b'rotation': rotation.text
-                        })
+                    })
 
     def _xfce4_config(self):
         ''' Try to determine display monitors from XFCE4 configuration file:
@@ -517,7 +478,7 @@ class MSSLinux(MSS):
                         b'width': int(width),
                         b'height': int(height),
                         b'rotation': rotation
-                        })
+                    })
 
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
@@ -534,7 +495,7 @@ class MSSLinux(MSS):
                 b'top': int(gwa.y),
                 b'width': int(gwa.width),
                 b'height': int(gwa.height)
-                })
+            })
         else:
             # It is a little more complicated, we have to guess all stuff
             # from differents XML configuration files.
@@ -600,8 +561,8 @@ class MSSWindows(MSS):
 
         self.debug('_set_argtypes')
 
-        self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD,
-                                           POINTER(RECT), DOUBLE)
+        self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
+                                           DOUBLE)
         windll.user32.GetSystemMetrics.argtypes = [INT]
         windll.user32.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
                                                       self.MONITORENUMPROC,
@@ -610,8 +571,8 @@ class MSSWindows(MSS):
         windll.gdi32.CreateCompatibleDC.argtypes = [HDC]
         windll.gdi32.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
         windll.gdi32.SelectObject.argtypes = [HDC, HGDIOBJ]
-        windll.gdi32.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC,
-                                        INT, INT, DWORD]
+        windll.gdi32.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT,
+                                        DWORD]
         windll.gdi32.DeleteObject.argtypes = [HGDIOBJ]
         windll.gdi32.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
                                            POINTER(BITMAPINFO), UINT]
@@ -650,8 +611,9 @@ class MSSWindows(MSS):
                 b'top': int(top),
                 b'width': int(right - left),
                 b'height': int(bottom - top)
-                })
+            })
         else:
+
             def _callback(monitor, dc, rect, data):
                 ''' Callback for MONITORENUMPROC() function, it will return
                     a RECT with appropriate values.
@@ -662,7 +624,7 @@ class MSSWindows(MSS):
                     b'top': int(rct.top),
                     b'width': int(rct.right - rct.left),
                     b'height': int(rct.bottom - rct.top)
-                    })
+                })
                 return 1
 
             monitors = []
@@ -688,8 +650,8 @@ class MSSWindows(MSS):
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             windll.gdi32.SelectObject(memdc, bmp)
-            windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left,
-                                top, SRCCOPY)
+            windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
+                                SRCCOPY)
             bmi = BITMAPINFO()
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
             bmi.bmiHeader.biWidth = width
@@ -736,8 +698,8 @@ class MSSWindows(MSS):
             off = width * (y + 1)
             offset = total - off
             for x in range(0, width - 2, 3):
-                scanlines[off+x:off+x+3] = \
-                    b(data[offset+x+2]), b(data[offset+x+1]), b(data[offset+x])
+                scanlines[off + x:off + x + 3] = \
+                    b(data[offset + x + 2]), b(data[offset + x + 1]), b(data[offset + x])
         image = b''.join(scanlines)
         return image
 
@@ -754,13 +716,9 @@ def main(argv=[]):
         start = time()
         yield
         end = time()
-        print('{}: {} ms'.format(msg, (end-start)*1000))
+        print('{}: {} ms'.format(msg, (end - start) * 1000))
 
-    systems = {
-        'Darwin': MSSMac,
-        'Linux': MSSLinux,
-        'Windows': MSSWindows
-        }
+    systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
     mss = systems[system()](debug='--debug' in argv)
 
     try:
@@ -793,7 +751,8 @@ def main(argv=[]):
         # Screen shot of the monitor 1, with callback
         with timer('Monitor 1   '):
             for fname in mss.save(output='mon-%d.png',
-                                  screen=1, callback=on_exists):
+                                  screen=1,
+                                  callback=on_exists):
                 print('        File: {}'.format(fname))
     except ScreenshotError as ex:
         print(ex)

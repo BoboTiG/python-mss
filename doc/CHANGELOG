@@ -3,6 +3,7 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
+      - fix code with yapf
 
 0.0.8   2015/02/04
       - fix #3: filename's dir is not used when saving
