@@ -433,7 +433,6 @@ class MSSLinux(MSS):
 
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
-        self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
@@ -442,6 +441,7 @@ class MSSLinux(MSS):
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
         self.xrandr.XRRGetScreenResources.restype = POINTER(XRRScreenResources)
+        self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
 
