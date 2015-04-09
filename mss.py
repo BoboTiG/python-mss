@@ -11,8 +11,7 @@
     If that URL should fail, try contacting the author.
 '''
 
-from __future__ import (unicode_literals, absolute_import, division,
-                        print_function)
+from __future__ import (unicode_literals, print_function)
 
 __version__ = '0.0.8'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
@@ -45,11 +44,9 @@ if system() == 'Darwin':
     from LaunchServices import kUTTypePNG
 elif system() == 'Linux':
     from os import environ
-    from os.path import expanduser
-    import xml.etree.ElementTree as ET
     from ctypes.util import find_library
-    from ctypes import byref, cast, cdll, POINTER, Structure, \
-        c_char_p, c_int, c_int32, c_uint, c_uint32, c_ulong, c_void_p
+    from ctypes import byref, cast, cdll, POINTER, Structure, c_char_p,\
+        c_int, c_int32, c_long, c_uint, c_uint32, c_ulong, c_ushort, c_void_p
 
     class Display(Structure):
         pass
@@ -75,6 +72,22 @@ elif system() == 'Linux':
                     ('depth', c_int), ('bytes_per_line', c_int),
                     ('bits_per_pixel', c_int), ('red_mask', c_ulong),
                     ('green_mask', c_ulong), ('blue_mask', c_ulong)]
+
+    class XRRModeInfo(Structure):
+       pass
+
+    class XRRScreenResources(Structure):
+        _fields_ = [("timestamp", c_ulong), ("configTimestamp", c_ulong),
+                    ("ncrtc", c_int), ("crtcs", POINTER(c_long)),
+                    ("noutput", c_int), ("outputs", POINTER(c_long)),
+                    ("nmode", c_int), ("modes", POINTER(XRRModeInfo))]
+
+    class XRRCrtcInfo(Structure):
+        _fields_ = [("timestamp", c_ulong), ("x", c_int), ("y", c_int),
+                    ("width", c_int), ("height", c_int), ("mode", c_long),
+                    ("rotation", c_int), ("noutput", c_int),
+                    ("outputs", POINTER(c_long)), ("rotations", c_ushort),
+                    ("npossible", c_int), ("possible", POINTER(c_long))]
 
     def b(x):
         return pack(b'<B', x)
@@ -352,9 +365,14 @@ class MSSLinux(MSS):
         x11 = find_library('X11')
         if not x11:
             raise ScreenshotError('No X11 library found.')
-
         self.xlib = cdll.LoadLibrary(x11)
         self.debug('init', 'xlib', self.xlib)
+
+        xrandr = find_library('Xrandr')
+        if not xrandr:
+            raise ScreenshotError('No Xrandr library found.')
+        self.xrandr = cdll.LoadLibrary(xrandr)
+        self.debug('init', 'xrandr', self.xrandr)
 
         self._set_argtypes()
         self._set_restypes()
@@ -398,6 +416,15 @@ class MSSLinux(MSS):
         self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.xlib.XFree.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
+        self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
+                                                      POINTER(Display)]
+        self.xrandr.XRRGetCrtcInfo.argtypes = [POINTER(Display),
+                                               POINTER(XRRScreenResources),
+                                               c_long]
+        self.xrandr.XRRFreeScreenResources.argtypes = [
+            POINTER(XRRScreenResources)
+        ]
+        self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
 
     def _set_restypes(self):
         ''' Functions return type '''
@@ -406,84 +433,17 @@ class MSSLinux(MSS):
 
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
-        self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
+        self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
         self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XFree.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
-
-    def _x11_config(self):
-        ''' Try to determine display monitors from X11 configuration file:
-            ~/.config/monitors.xml
-        '''
-
-        self.debug('_x11_config')
-
-        monitors = expanduser('~/.config/monitors.xml')
-        if not os.path.isfile(monitors):
-            self.debug('ERROR', 'MSSLinux: _x11_config() failed.')
-            return
-
-        tree = ET.parse(monitors)
-        root = tree.getroot()
-        config = root.findall('configuration')[-1]
-        conf = []
-        for output in config.findall('output'):
-            name = output.get('name')
-            if name != 'default':
-                x = output.find('x')
-                y = output.find('y')
-                width = output.find('width')
-                height = output.find('height')
-                rotation = output.find('rotation')
-                if None not in [x, y, width, height] and name not in conf:
-                    conf.append(name)
-                    if rotation.text in ['left', 'right']:
-                        width, height = height, width
-                    yield ({
-                        b'left': int(x.text),
-                        b'top': int(y.text),
-                        b'width': int(width.text),
-                        b'height': int(height.text),
-                        b'rotation': rotation.text
-                    })
-
-    def _xfce4_config(self):
-        ''' Try to determine display monitors from XFCE4 configuration file:
-            ~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml
-        '''
-
-        self.debug('_xfce4_config')
-
-        path_ = '~/.config/xfce4/xfconf/xfce-perchannel-xml/displays.xml'
-        monitors = expanduser(path_)
-        if not os.path.isfile(monitors):
-            self.debug('ERROR', 'MSSLinux: _xfce4_config() failed.')
-            return
-
-        rotations = {0: 'normal', 90: 'left', 270: 'right'}
-        tree = ET.parse(monitors)
-        root = tree.getroot()
-        config = root.findall('property')[0]
-        for output in config.findall('property'):
-            name = output.get('name')
-            if name != 'default':
-                active, res, _, rot, _, _, pos = output.findall('property')
-                if active.get('value') == 'true':
-                    width, height = res.get('value').split('x')
-                    rotation = rotations[int(rot.get('value'))]
-                    if rotation in ['left', 'right']:
-                        width, height = height, width
-                    posx, posy = pos.findall('property')
-                    yield ({
-                        b'left': int(posx.get('value')),
-                        b'top': int(posy.get('value')),
-                        b'width': int(width),
-                        b'height': int(height),
-                        b'rotation': rotation
-                    })
+        self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
+        self.xrandr.XRRGetScreenResources.restype = POINTER(XRRScreenResources)
+        self.xrandr.XRRFreeScreenResources.restype = c_void_p
+        self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
 
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
@@ -502,12 +462,23 @@ class MSSLinux(MSS):
                 b'height': int(gwa.height)
             })
         else:
-            # It is a little more complicated, we have to guess all stuff
-            # from differents XML configuration files.
-            for config in ['x11', 'xfce4']:
-                for mon in getattr(self, '_{}_config'.format(config))():
-                    if mon:
-                        yield mon
+            # Fix for XRRGetScreenResources:
+            # expected LP_Display instance instead of LP_XWindowAttributes
+            root = cast(self.root, POINTER(Display))
+            mon = self.xrandr.XRRGetScreenResources(self.display, root)
+            self.debug('enum_display_monitors', 'number of monitors',
+                       mon.contents.noutput - 1)
+            for num in range(mon.contents.noutput - 1):
+                crtc_info = self.xrandr.XRRGetCrtcInfo(self.display, mon,
+                                                       mon.contents.crtcs[num])
+                yield ({
+                    b'left': int(crtc_info.contents.x),
+                    b'top': int(crtc_info.contents.y),
+                    b'width': int(crtc_info.contents.width),
+                    b'height': int(crtc_info.contents.height)
+                })
+                self.xrandr.XRRFreeCrtcInfo(crtc_info)
+            self.xrandr.XRRFreeScreenResources(mon)
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
