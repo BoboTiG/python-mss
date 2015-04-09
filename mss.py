@@ -698,20 +698,20 @@ def main(argv=[]):
     mss = systems[system()](debug='--debug' in argv)
 
     try:
-        # One screen shot per monitor
-        with timer('Screen shots'):
+        with timer('One screen shot per monitor'):
             for filename in mss.save():
                 print('        File: {}'.format(filename))
+        print('')
 
-        # Screen shot of the monitor 1
-        with timer('Monitor 1   '):
+        with timer('Screen shot of the monitor 1'):
             for filename in mss.save(output='monitor-%d.png', screen=1):
                 print('        File: {}'.format(filename))
+        print('')
 
-        # A shot to grab them all :)
-        with timer('All in one  '):
+        with timer('A shot to grab them all'):
             for filename in mss.save(output='full-screenshot.png', screen=-1):
                 print('        File: {}'.format(filename))
+        print('')
 
         # Example with a callback
         def on_exists(fname):
@@ -724,8 +724,7 @@ def main(argv=[]):
             rename(fname, newfile)
             return True
 
-        # Screen shot of the monitor 1, with callback
-        with timer('Monitor 1   '):
+        with timer('Screen shot of the monitor 1, with callback'):
             for fname in mss.save(output='mon-%d.png',
                                   screen=1,
                                   callback=on_exists):
