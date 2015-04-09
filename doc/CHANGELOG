@@ -3,7 +3,7 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      - test the MSS version for test-raw.py
+      - [test] warn the user in case of outdated MSS version
 
 0.1.0   2015/04/10
       - fix code with YAPF tool
