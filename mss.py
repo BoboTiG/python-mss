@@ -134,6 +134,11 @@ class MSS(object):
                 print('{}() {} {} {}'.format(method, scalar,
                                              type(value).__name__, value))
 
+    def init(self):
+        ''' OS dependent initialiations. '''
+
+        pass
+
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
 

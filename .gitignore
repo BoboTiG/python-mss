@@ -4,3 +4,4 @@ tests/
 MANIFEST*
 *.png
 *.png.old
+*.raw
