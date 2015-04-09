@@ -13,7 +13,7 @@
 
 from __future__ import (unicode_literals, print_function)
 
-__version__ = '0.0.8'
+__version__ = '0.1.0'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013-2015, Mickaël 'Tiger-222' Schoentgen

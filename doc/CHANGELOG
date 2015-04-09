@@ -3,7 +3,12 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      - fix code with yapf
+
+0.1.0   2015/04/10
+      - fix code with YAPF tool
+      - better tests and examples
+      - MSSLinux: fully functional using Xrandr library
+      - MSSLinux: code purgation (no more XML files to parse)
 
 0.0.8   2015/02/04
       - fix #3: filename's dir is not used when saving
