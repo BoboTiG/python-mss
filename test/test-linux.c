@@ -151,6 +151,7 @@ void each_screen(void) {
             }
         }
         XFree(image);
+        XRRFreeCrtcInfo(crtc_info);
 
         gettimeofday(&end, NULL);
         printf("Screen %d: %dx%d @ %u msec\n", n, width, height, (1000000 * end.tv_sec + end.tv_usec) - (1000000 * start.tv_sec + start.tv_usec));
@@ -161,6 +162,7 @@ void each_screen(void) {
         fwrite(pixels, sizeof(unsigned char), sizeof(unsigned char) * width * height * 3, fh);
         fclose(fh);
     }
+    XRRFreeScreenResources(monitors);
     XCloseDisplay(display);
 
     return;
