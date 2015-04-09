@@ -3,6 +3,7 @@
 
 # Test raw data.
 
+import mss
 from struct import pack
 import os.path
 import zlib
@@ -55,4 +56,10 @@ else:
         data = f.read()
         width = int(sys.argv[2])
         height = int(sys.argv[3])
-        save_img(data, width, height, sys.argv[1] + '.png')
+        if mss.__version__ < '0.1.0':
+            print('Outdated version of MSS, please `pip install --upgrade mss`')
+            save_img(data, width, height, sys.argv[1] + '.png')
+        else:
+            mss = mss.MSS()
+            mss.save_img(data, width, height, sys.argv[1] + '.png')
+        print('File {}.png created.'.format(sys.argv[1]))
