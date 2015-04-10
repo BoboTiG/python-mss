@@ -467,8 +467,8 @@ class MSSLinux(MSS):
             root = cast(self.root, POINTER(Display))
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
             self.debug('enum_display_monitors', 'number of monitors',
-                       mon.contents.noutput - 1)
-            for num in range(mon.contents.noutput - 1):
+                       mon.contents.ncrtc)
+            for num in range(mon.contents.ncrtc):
                 crtc_info = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                        mon.contents.crtcs[num])
                 yield ({

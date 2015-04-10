@@ -120,7 +120,7 @@ void each_screen(void) {
     display = XOpenDisplay(NULL);
     root = XDefaultRootWindow(display);
     monitors = XRRGetScreenResources(display, root);
-    for ( n = 0; n < monitors->noutput - 1; ++n ) {
+    for ( n = 0; n < monitors->ncrtc; ++n ) {
         gettimeofday(&start, NULL);
         crtc_info = XRRGetCrtcInfo(display, monitors, monitors->crtcs[n]);
 
@@ -151,7 +151,7 @@ void each_screen(void) {
             }
         }
         XFree(image);
-        XRRFreeCrtcInfo(crtc_info);
+        XFree(crtc_info);
 
         gettimeofday(&end, NULL);
         printf("Screen %d: %dx%d @ %u msec\n", n, width, height, (1000000 * end.tv_sec + end.tv_usec) - (1000000 * start.tv_sec + start.tv_usec));
@@ -162,7 +162,7 @@ void each_screen(void) {
         fwrite(pixels, sizeof(unsigned char), sizeof(unsigned char) * width * height * 3, fh);
         fclose(fh);
     }
-    XRRFreeScreenResources(monitors);
+    XFree(monitors);
     XCloseDisplay(display);
 
     return;
