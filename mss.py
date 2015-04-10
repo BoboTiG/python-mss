@@ -74,7 +74,7 @@ elif system() == 'Linux':
                     ('green_mask', c_ulong), ('blue_mask', c_ulong)]
 
     class XRRModeInfo(Structure):
-       pass
+        pass
 
     class XRRScreenResources(Structure):
         _fields_ = [('timestamp', c_ulong), ('configTimestamp', c_ulong),
