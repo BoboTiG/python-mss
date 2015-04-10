@@ -3,7 +3,14 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      - [test] warn the user in case of outdated MSS version
+      -
+
+0.1.1   2015/04/10
+      - little code review
+      - add doc/TESTING
+      - remove Bonus section from README.rst
+      - tests: remove test-linux binary
+      - MSSLinux: fix monitor count
 
 0.1.0   2015/04/10
       - fix code with YAPF tool

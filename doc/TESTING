@@ -1,0 +1,19 @@
+The current MSS version was succesfully tested on these OS.
+You have another OS to add? Let us know, open a ticket on GitHub :)
+
+GNU/Linux:
+	Debian 8.0 (jessie)
+	Mageia 4.1
+	Ubuntu 14.04.2 LTS (Trusty Tahr)
+	Ubuntu 14.10 (Utopic Unicorn)
+	Zorin OS 9
+
+Mac OS X:
+	OS X 10.7 (Lion)
+	OS X 10.8 (Mountain Lion)
+
+Microsoft Windows:
+	Windows XP
+	Windows 7
+	Windows 8
+	Windows 8.1
