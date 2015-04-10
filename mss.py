@@ -77,17 +77,17 @@ elif system() == 'Linux':
        pass
 
     class XRRScreenResources(Structure):
-        _fields_ = [("timestamp", c_ulong), ("configTimestamp", c_ulong),
-                    ("ncrtc", c_int), ("crtcs", POINTER(c_long)),
-                    ("noutput", c_int), ("outputs", POINTER(c_long)),
-                    ("nmode", c_int), ("modes", POINTER(XRRModeInfo))]
+        _fields_ = [('timestamp', c_ulong), ('configTimestamp', c_ulong),
+                    ('ncrtc', c_int), ('crtcs', POINTER(c_long)),
+                    ('noutput', c_int), ('outputs', POINTER(c_long)),
+                    ('nmode', c_int), ('modes', POINTER(XRRModeInfo))]
 
     class XRRCrtcInfo(Structure):
-        _fields_ = [("timestamp", c_ulong), ("x", c_int), ("y", c_int),
-                    ("width", c_int), ("height", c_int), ("mode", c_long),
-                    ("rotation", c_int), ("noutput", c_int),
-                    ("outputs", POINTER(c_long)), ("rotations", c_ushort),
-                    ("npossible", c_int), ("possible", POINTER(c_long))]
+        _fields_ = [('timestamp', c_ulong), ('x', c_int), ('y', c_int),
+                    ('width', c_int), ('height', c_int), ('mode', c_long),
+                    ('rotation', c_int), ('noutput', c_int),
+                    ('outputs', POINTER(c_long)), ('rotations', c_ushort),
+                    ('npossible', c_int), ('possible', POINTER(c_long))]
 
     def b(x):
         return pack(b'<B', x)
