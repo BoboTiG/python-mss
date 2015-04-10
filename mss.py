@@ -517,8 +517,7 @@ class MSSLinux(MSS):
                   for y in range(height) for x in range(width)]
 
         self.xlib.XFree(ximage)
-        image = b''.join(pixels)
-        return image
+        return b''.join(pixels)
 
 
 class MSSWindows(MSS):
@@ -676,8 +675,7 @@ class MSSWindows(MSS):
             for x in range(0, width - 2, 3):
                 scanlines[off + x:off + x + 3] = \
                     b(data[offset + x + 2]), b(data[offset + x + 1]), b(data[offset + x])
-        image = b''.join(scanlines)
-        return image
+        return b''.join(scanlines)
 
 
 def main(argv=[]):
