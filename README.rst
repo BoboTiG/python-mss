@@ -106,12 +106,3 @@ Then, it is quite simple::
             print('File: "{}" created.'.format(fname))
     except ScreenshotError as ex:
         print(ex)
-
-
-Bonus
-=====
-
-Just for fun ...
-Show us your screen shot with all monitors in one file, we will update the gallery.
-
-Link to the galley: https://tiger-222.fr/tout/python-mss/galerie/
