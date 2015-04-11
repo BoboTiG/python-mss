@@ -2,7 +2,7 @@
 A cross-platform multi-screen shot module in pure python using ctypes
 **********************************************************************
 
-Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to an optimised PNG file, Python 2.7/3.4 compatible & PEP8 compliant.
+Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file, Python 2.7/3.4 compatible & PEP8 compliant.
 
 So, while you can `pip install --upgrade mss`, you may just drop it in your project and forget about it.
 
@@ -16,8 +16,7 @@ Testing
 
 You can try the MSS module directly from the console::
 
-    python2 mss.py [--debug]
-    python3 -X faulthandler mss.py
+    python mss.py
 
 Passing the `--debug` argument will make it more verbose.
 
@@ -74,35 +73,30 @@ This is a generator which returns created files.
 Examples
 ========
 
-Then, it is quite simple::
+One screen shot per monitor::
 
-    mss = mss_class()
+    for filename in mss.save():
+        print(filename)
 
-    try:
-        # One screen shot per monitor
-        for filename in mss.save():
-            print('File: "{}" created.'.format(filename))
+Screen shot of the monitor 1::
 
-        # Screen shot of the monitor 1
-        for filename in mss.save(output='monitor-%d.png', screen=1):
-            print('File: "{}" created.'.format(filename))
+    for filename in mss.save(screen=1):
+        print(filename)
 
-        # A shot to grab them all :)
-        for filename in mss.save(output='full-screenshot.png', screen=-1):
-            print('File: "{}" created.'.format(filename))
+Screen shot of the monitor 1, with callback::
 
-        # Example with a callback
-        def on_exists(fname):
-            ''' Callback example when we try to overwrite an existing screen shot. '''
+    def on_exists(fname):
+        ''' Callback example when we try to overwrite an existing screen shot. '''
+        from os import rename
+        newfile = fname + '.old'
+        print('Renaming "{}" to "{}"'.format(fname, newfile))
+        rename(fname, newfile)
+        return True
 
-            from os import rename
-            newfile = fname + '.old'
-            print('Renaming "{}" to "{}"'.format(fname, newfile))
-            rename(fname, newfile)
-            return True
+    for filename in mss.save(screen=1, callback=on_exists):
+        print(filename)
 
-        # Screen shot of the monitor 1, with callback
-        for fname in mss.save(output='mon-%d.png', screen=1, callback=on_exists):
-            print('File: "{}" created.'.format(fname))
-    except ScreenshotError as ex:
-        print(ex)
+A shot to grab them all (fullscreen shot)::
+
+    for filename in mss.save(output='fullscreen-shot.png', screen=-1):
+        print(filename)
