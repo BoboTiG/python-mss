@@ -106,15 +106,6 @@ elif system() == 'Windows':
 
     class BITMAPINFO(Structure):
         _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
-
-    if sys.version < '3':
-
-        def b(x):
-            return x
-    else:
-
-        def b(x):
-            return pack(b'<B', x)
 else:
     raise ScreenshotError('System "{}" not implemented.'.format(system()))
 
@@ -149,7 +140,6 @@ class MSS(object):
 
     def init(self):
         ''' OS dependent initialiations. '''
-
         pass
 
     def enum_display_monitors(self):
@@ -669,12 +659,33 @@ class MSSWindows(MSS):
 
         total = width * height
         scanlines = [b'0'] * total
-        for y in range(height):
-            off = width * (y + 1)
-            offset = total - off
-            for x in range(0, width - 2, 3):
-                scanlines[off + x:off + x + 3] = \
-                    b(data[offset + x + 2]), b(data[offset + x + 1]), b(data[offset + x])
+        # Here we do the same thing but in Python 3, the use of struct.pack
+        # slowns down the process by a factor of 2.5 or more.
+        if sys.version < '3':
+            for y in range(height):
+                shift = width * (y + 1)
+                offset = total - shift
+                for x in range(0, width - 2, 3):
+                    off = offset + x
+                    scanlines[shift + x:shift + x + 3] = \
+                        data[off + 2], data[off + 1], data[off]
+        else:
+            def pix(pixel, _resultats={}, b=pack):
+                ''' Apply conversion to a pixel to get the right value.
+                    This method uses of memoization.
+                '''
+                if pixel not in _resultats:
+                    _resultats[pixel] = b(b'<B', pixel)
+                return _resultats[pixel]
+
+            for y in range(height):
+                shift = width * (y + 1)
+                offset = total - shift
+                for x in range(0, width - 2, 3):
+                    off = offset + x
+                    scanlines[shift + x:shift + x + 3] = \
+                        pix(data[off + 2]), pix(data[off + 1]), pix(data[off])
+
         return b''.join(scanlines)
 
 
