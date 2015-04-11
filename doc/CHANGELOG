@@ -3,7 +3,8 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      -
+      - MSSLinux: optimisation of get_pixels()
+      - MSSWindows: optimisation of _arrange()
 
 0.1.1   2015/04/10
       - little code review

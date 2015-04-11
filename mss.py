@@ -88,9 +88,6 @@ elif system() == 'Linux':
                     ('rotation', c_int), ('noutput', c_int),
                     ('outputs', POINTER(c_long)), ('rotations', c_ushort),
                     ('npossible', c_int), ('possible', POINTER(c_long))]
-
-    def b(x):
-        return pack(b'<B', x)
 elif system() == 'Windows':
     from ctypes import byref, c_void_p, create_string_buffer, pointer, \
         sizeof, windll, Structure, POINTER, WINFUNCTYPE
@@ -492,13 +489,13 @@ class MSSLinux(MSS):
         if not ximage:
             raise ScreenshotError('XGetImage() failed.')
 
-        def pix(pixel, _resultats={}):
+        def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = b((pixel & 16711680) >> 16) + \
-                    b((pixel & 65280) >> 8) + b(pixel & 255)
+                _resultats[pixel] = b(b'<B', (pixel & 16711680) >> 16) + \
+                    b(b'<B', (pixel & 65280) >> 8) + b(b'<B', pixel & 255)
             return _resultats[pixel]
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
