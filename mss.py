@@ -202,8 +202,7 @@ class MSS(object):
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))
                 self.debug('save', 'fname', fname)
-                if os.path.isfile(fname) and not callback(fname):
-                    continue
+                callback(fname)
                 self.save_img(data=self.get_pixels(monitor),
                               width=monitor[b'width'],
                               height=monitor[b'height'],
