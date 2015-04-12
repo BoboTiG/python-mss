@@ -18,8 +18,6 @@ You can try the MSS module directly from the console::
 
     python mss.py
 
-Passing the `--debug` argument will make it more verbose.
-
 
 Instance the good class
 =======================
@@ -34,7 +32,8 @@ You can determine automatically which class to use::
         'Linux': mss.MSSLinux,
         'Windows': mss.MSSWindows
         }
-    mss_class = systems[system()]
+    mss_class = systems[system()]()
+    #mss_class.DEBUG = True
 
 Or simply import the good one::
 
@@ -86,11 +85,15 @@ Screen shot of the monitor 1::
 Screen shot of the monitor 1, with callback::
 
     def on_exists(fname):
-        ''' Callback example when we try to overwrite an existing screen shot. '''
+        ''' Callback example when we try to overwrite an existing
+            screen shot.
+        '''
         from os import rename
-        newfile = fname + '.old'
-        print('Renaming "{}" to "{}"'.format(fname, newfile))
-        rename(fname, newfile)
+        from os.path import isfile
+        if isfile(fname):
+            newfile = fname + '.old'
+            print('{} -> {}'.format(fname, newfile))
+            rename(fname, newfile)
         return True
 
     for filename in mss.save(screen=1, callback=on_exists):
