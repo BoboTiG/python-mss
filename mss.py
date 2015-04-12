@@ -25,7 +25,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows']
+__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'ScreenshotError']
 
 from struct import pack
 from platform import system
@@ -104,24 +104,21 @@ elif system() == 'Windows':
     class BITMAPINFO(Structure):
         _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 else:
-    raise ScreenshotError('System "{}" not implemented.'.format(system()))
+    raise ScreenshotError('MSS: system "{}" not implemented.'.format(system()))
 
 
 # ----------------------------------------------------------------------
 # --- [ C'est parti mon kiki ! ] ---------------------------------------
 # ----------------------------------------------------------------------
 class MSS(object):
-    ''' This class will be overloaded by a system specific one.
-        It checkes if there is a class available for the current system.
-        Raise an exception if no one found.
-    '''
+    ''' This class will be overloaded by a system specific one. '''
 
     DEBUG = False
 
     def __init__(self, debug=False):
         ''' Global vars and class overload. '''
 
-        self.DEBUG = debug in [True, 'on' 'yes', 'oui', 1]
+        self.DEBUG = debug in [True, 1, 'on' 'yes', 'oui']
         self.debug('__init__', 'DEBUG', self.DEBUG)
         self.init()
 
@@ -311,7 +308,7 @@ class MSSMac(MSS):
         image = CGWindowListCreateImage(rect, kCGWindowListOptionOnScreenOnly,
                                         kCGNullWindowID, kCGWindowImageDefault)
         if not image:
-            raise ScreenshotError('CGWindowListCreateImage() failed.')
+            raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
         return image
 
     def save_img(self, data, width, height, output):
@@ -320,20 +317,16 @@ class MSSMac(MSS):
         self.debug('MSSMac: save_img')
 
         url = NSURL.fileURLWithPath_(output)
-        dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
-        if not dest:
-            msg = 'Error while trying to create the image destination ' \
-                  'to "{}".'.format(output)
-            raise ScreenshotError(msg)
-        CGImageDestinationAddImage(dest, data, None)
-        if not CGImageDestinationFinalize(dest):
-            msg = 'Impossible to write data to file "{}".'.format(output)
-            raise ScreenshotError(msg)
+        if CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None):
+            CGImageDestinationAddImage(dest, data, None)
+            if CGImageDestinationFinalize(dest):
+                return
+        raise ScreenshotError('MSS: error writing to file "{}".'.format(output))
 
 
 class MSSLinux(MSS):
     ''' Mutli-screen shot implementation for GNU/Linux.
-        It uses intensively the Xlib.
+        It uses intensively the Xlib and Xrandr.
     '''
 
     def __del__(self):
@@ -351,13 +344,13 @@ class MSSLinux(MSS):
 
         x11 = find_library('X11')
         if not x11:
-            raise ScreenshotError('No X11 library found.')
+            raise ScreenshotError('MSS: no X11 library found.')
         self.xlib = cdll.LoadLibrary(x11)
         self.debug('init', 'xlib', self.xlib)
 
         xrandr = find_library('Xrandr')
         if not xrandr:
-            raise ScreenshotError('No Xrandr library found.')
+            raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
         self.debug('init', 'xrandr', self.xrandr)
 
@@ -372,7 +365,7 @@ class MSSLinux(MSS):
             else:
                 disp = environ['DISPLAY']
         except KeyError:
-            err = '$DISPLAY not set. Stopping to prevent segfault.'
+            err = 'MSS: $DISPLAY not set. Stopping to prevent segfault.'
             raise ScreenshotError(err)
         self.debug('init', '$DISPLAY', disp)
 
@@ -469,6 +462,8 @@ class MSSLinux(MSS):
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
+
+            @TODO: this function takes the most time. Need better solution.
         '''
 
         self.debug('get_pixels')
