@@ -684,52 +684,37 @@ class MSSWindows(MSS):
 def main(argv=[]):
     ''' Usage example. '''
 
-    from contextlib import contextmanager
-    from time import time
-
-    @contextmanager
-    def timer(msg):
-        ''' A little timer '''
-        start = time()
-        yield
-        end = time()
-        print('{}: {} ms'.format(msg, (end - start) * 1000))
-
     systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
     mss = systems[system()](debug='--debug' in argv)
 
+    def on_exists(fname):
+        ''' Callback example when we try to overwrite an existing
+            screen shot.
+        '''
+        from os import rename
+        newfile = fname + '.old'
+        print('{} -> {}'.format(fname, newfile))
+        rename(fname, newfile)
+        return True
+
     try:
-        with timer('One screen shot per monitor'):
-            for filename in mss.save():
-                print('        File: {}'.format(filename))
-        print('')
+        print('One screen shot per monitor')
+        for filename in mss.save():
+            print(filename)
 
-        with timer('Screen shot of the monitor 1'):
-            for filename in mss.save(output='monitor-%d.png', screen=1):
-                print('        File: {}'.format(filename))
-        print('')
+        print("\nScreen shot of the monitor 1")
+        for filename in mss.save(output='monitor-%d.png', screen=1):
+            print(filename)
 
-        with timer('A shot to grab them all'):
-            for filename in mss.save(output='full-screenshot.png', screen=-1):
-                print('        File: {}'.format(filename))
-        print('')
+        print("\nA shot to grab them all")
+        for filename in mss.save(output='full-screenshot.png', screen=-1):
+            print(filename)
 
-        # Example with a callback
-        def on_exists(fname):
-            ''' Callback example when we try to overwrite an existing
-                screen shot.
-            '''
-            from os import rename
-            newfile = fname + '.old'
-            print('        Renaming {} to {}'.format(fname, newfile))
-            rename(fname, newfile)
-            return True
-
-        with timer('Screen shot of the monitor 1, with callback'):
-            for fname in mss.save(output='mon-%d.png',
-                                  screen=1,
-                                  callback=on_exists):
-                print('        File: {}'.format(fname))
+        print("\nScreen shot of the monitor 1, with callback")
+        for filename in mss.save(output='mon-%d.png',
+                                 screen=1,
+                                 callback=on_exists):
+            print(filename)
     except ScreenshotError as ex:
         print(ex)
         return 1
