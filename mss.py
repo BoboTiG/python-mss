@@ -114,13 +114,6 @@ class MSS(object):
 
     DEBUG = False
 
-    def __init__(self, debug=False):
-        ''' Global vars and class overload. '''
-
-        self.DEBUG = debug in [True, 1, 'on' 'yes', 'oui']
-        self.debug('__init__', 'DEBUG', self.DEBUG)
-        self.init()
-
     def debug(self, method='', scalar=None, value=None):
         ''' Simple debug output. '''
 
@@ -130,10 +123,6 @@ class MSS(object):
             else:
                 print('{}() {} {} {}'.format(method, scalar,
                                              type(value).__name__, value))
-
-    def init(self):
-        ''' OS dependent initialiations. '''
-        pass
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
@@ -253,10 +242,6 @@ class MSSMac(MSS):
         It uses intensively the Quartz.
     '''
 
-    def init(self):
-        ''' Mac OSX initialisations '''
-        self.debug('init')
-
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
@@ -301,11 +286,11 @@ class MSSMac(MSS):
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
-        image = CGWindowListCreateImage(rect, kCGWindowListOptionOnScreenOnly,
-                                        kCGNullWindowID, kCGWindowImageDefault)
-        if not image:
+        self.image = CGWindowListCreateImage(rect, kCGWindowListOptionOnScreenOnly,
+                                             kCGNullWindowID, kCGWindowImageDefault)
+        if not self.image:
             raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
-        return image
+        return self.image
 
     def save_img(self, data, width, height, output):
         ''' Use my own save_img() method. Because I'm Mac! '''
@@ -333,10 +318,10 @@ class MSSLinux(MSS):
         if self.display:
             self.xlib.XCloseDisplay(self.display)
 
-    def init(self):
+    def __init__(self):
         ''' GNU/Linux initialisations '''
 
-        self.debug('init')
+        self.debug('__init__')
 
         x11 = find_library('X11')
         if not x11:
@@ -478,7 +463,7 @@ class MSSLinux(MSS):
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
                                      height, allplanes, ZPixmap)
         if not ximage:
-            raise ScreenshotError('XGetImage() failed.')
+            raise ScreenshotError('MSS: XGetImage() failed.')
 
         def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
@@ -495,16 +480,17 @@ class MSSLinux(MSS):
                   for y in range(height) for x in range(width)]
 
         self.xlib.XFree(ximage)
-        return b''.join(pixels)
+        self.image = b''.join(pixels)
+        return self.image
 
 
 class MSSWindows(MSS):
     ''' Mutli-screen shot implementation for Microsoft Windows. '''
 
-    def init(self):
+    def __init__(self):
         ''' Windows initialisations '''
 
-        self.debug('init')
+        self.debug('__init__')
 
         self._set_argtypes()
         self._set_restypes()
@@ -677,20 +663,23 @@ class MSSWindows(MSS):
         return b''.join(scanlines)
 
 
-def main(argv=[]):
+def main():
     ''' Usage example. '''
 
     systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
-    mss = systems[system()](debug='--debug' in argv)
+    mss = systems[system()]()
+    #mss.DEBUG = True
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing
             screen shot.
         '''
         from os import rename
-        newfile = fname + '.old'
-        print('{} -> {}'.format(fname, newfile))
-        rename(fname, newfile)
+        from os.path import isfile
+        if isfile(fname):
+            newfile = fname + '.old'
+            print('{} -> {}'.format(fname, newfile))
+            rename(fname, newfile)
         return True
 
     try:
@@ -718,4 +707,4 @@ def main(argv=[]):
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    sys.exit(main())
