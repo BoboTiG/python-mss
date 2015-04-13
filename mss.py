@@ -266,15 +266,13 @@ class MSSMac(MSS):
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
                 rot = CGDisplayRotation(display)
-                rotation = rotations[rot]
-                if rotation in ['left', 'right']:
+                if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 yield ({
                     b'left': int(left),
                     b'top': int(top),
                     b'width': int(width),
-                    b'height': int(height),
-                    b'rotation': rotation
+                    b'height': int(height)
                 })
 
     def get_pixels(self, monitor):
