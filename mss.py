@@ -132,7 +132,7 @@ class MSS(object):
             If the monitor has rotation, you have to deal with inside
             this method.
 
-            Must returns a dict with at minima:
+            Must returns a dict with:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -140,7 +140,7 @@ class MSS(object):
                 'height': the height
             }
         '''
-        raise NotImplementedError('Subclasses need to implement this!')
+        raise NotImplementedError('MSS: subclasses need to implement this!')
 
     def get_pixels(self, monitor_infos):
         ''' Retrieve screen pixels for a given monitor.
@@ -155,7 +155,7 @@ class MSS(object):
 
             Returns a dict with pixels.
         '''
-        raise NotImplementedError('Subclasses need to implement this!')
+        raise NotImplementedError('MSS: subclasses need to implement this!')
 
     def save(self,
              output='screenshot-%d.png',
@@ -311,7 +311,7 @@ class MSSLinux(MSS):
     '''
 
     def __del__(self):
-        ''' Disconnect from X server '''
+        ''' Disconnect from X server. '''
 
         self.debug('__del__')
 
@@ -363,7 +363,7 @@ class MSSLinux(MSS):
         self.debug('init', 'root', self.root)
 
     def _set_argtypes(self):
-        ''' Functions arguments '''
+        ''' Functions arguments. '''
 
         self.debug('_set_argtypes')
 
@@ -391,7 +391,7 @@ class MSSLinux(MSS):
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
 
     def _set_restypes(self):
-        ''' Functions return type '''
+        ''' Functions return type. '''
 
         self.debug('_set_restypes')
 
@@ -489,7 +489,7 @@ class MSSWindows(MSS):
     ''' Mutli-screen shot implementation for Microsoft Windows. '''
 
     def __init__(self):
-        ''' Windows initialisations '''
+        ''' Windows initialisations. '''
 
         self.debug('__init__')
 
@@ -497,7 +497,7 @@ class MSSWindows(MSS):
         self._set_restypes()
 
     def _set_argtypes(self):
-        ''' Functions arguments '''
+        ''' Functions arguments. '''
 
         self.debug('_set_argtypes')
 
@@ -518,7 +518,7 @@ class MSSWindows(MSS):
                                            POINTER(BITMAPINFO), UINT]
 
     def _set_restypes(self):
-        ''' Functions return type '''
+        ''' Functions return type. '''
 
         self.debug('_set_restypes')
 
