@@ -295,17 +295,17 @@ class MSSMac(MSS):
         return self.image
 
     def save_img(self, data, width, height, output):
-        ''' Use my own save_img() method. Because I'm Mac! '''
+        ''' Use my own save_img() method. Because I'm a Mac! '''
 
-        self.debug('MSSMac: save_img')
+        self.debug('save_img')
 
         url = NSURL.fileURLWithPath_(output)
-        if CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None):
-            CGImageDestinationAddImage(dest, data, None)
-            if CGImageDestinationFinalize(dest):
-                return
-        err = 'MSS: error writing to file "{0}".'.format(output)
-        raise ScreenshotError(err)
+        if not CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None):
+            err = 'MSS : CGImageDestinationCreateWithURL() failed.'
+            raise ScreenshotError(err)
+        CGImageDestinationAddImage(dest, data, None)
+        if not CGImageDestinationFinalize(dest):
+            raise ScreenshotError('MSS: CGImageDestinationFinalize() failed.')
 
 
 class MSSLinux(MSS):
