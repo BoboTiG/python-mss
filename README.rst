@@ -92,7 +92,7 @@ Screen shot of the monitor 1, with callback::
         from os.path import isfile
         if isfile(fname):
             newfile = fname + '.old'
-            print('{} -> {}'.format(fname, newfile))
+            print('{0} -> {1}'.format(fname, newfile))
             rename(fname, newfile)
         return True
 
