@@ -88,8 +88,8 @@ elif system() == 'Linux':
                     ('outputs', POINTER(c_long)), ('rotations', c_ushort),
                     ('npossible', c_int), ('possible', POINTER(c_long))]
 elif system() == 'Windows':
-    from ctypes import byref, c_void_p, create_string_buffer, pointer, \
-        sizeof, windll, Structure, POINTER, WINFUNCTYPE
+    from ctypes import c_void_p, create_string_buffer, sizeof, \
+        windll, Structure, POINTER, WINFUNCTYPE
     from ctypes.wintypes import BOOL, DOUBLE, DWORD, HBITMAP, HDC, \
         HGDIOBJ, HWND, INT, LPARAM, LONG, RECT, UINT, WORD
 
@@ -442,10 +442,7 @@ class MSSLinux(MSS):
             self.xrandr.XRRFreeScreenResources(mon)
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
-
-            @TODO: this function takes the most time. Need better solution.
-        '''
+        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
         self.debug('get_pixels')
 
@@ -465,6 +462,7 @@ class MSSLinux(MSS):
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
+        # @TODO: this part takes most of the time. Need a better solution.
         def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
@@ -573,44 +571,50 @@ class MSSWindows(MSS):
                 yield mon
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
+        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
+
+            [1] A bottom-up DIB is specified by setting the height to a positive number,
+            while a top-down DIB is specified by setting the height to a negative number.
+            https://msdn.microsoft.com/en-us/library/ms787796.aspx
+            https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
+        '''
 
         self.debug('get_pixels')
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
-        good_width = (width * 3 + 3) & -4
         SRCCOPY = 0xCC0020
-        DIB_RGB_COLORS = 0
+        DIB_RGB_COLORS = BI_RGB = 0
         srcdc = memdc = bmp = None
 
         try:
+            bmi = BITMAPINFO()
+            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
+            bmi.bmiHeader.biWidth = width
+            bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
+            bmi.bmiHeader.biPlanes = 1  # Always 1
+            bmi.bmiHeader.biBitCount = 24
+            bmi.bmiHeader.biCompression = BI_RGB;
+            buffer_len = height * width * 3
+            self.image = create_string_buffer(buffer_len)
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             windll.gdi32.SelectObject(memdc, bmp)
             windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
                                 SRCCOPY)
-            bmi = BITMAPINFO()
-            bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
-            bmi.bmiHeader.biWidth = width
-            bmi.bmiHeader.biHeight = height
-            bmi.bmiHeader.biBitCount = 24
-            bmi.bmiHeader.biPlanes = 1
-            buffer_len = height * good_width
-            pixels = create_string_buffer(buffer_len)
-            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, byref(pixels),
-                                          pointer(bmi), DIB_RGB_COLORS)
+            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, self.image,
+                                          bmi, DIB_RGB_COLORS)
 
             self.debug('get_pixels', 'srcdc', srcdc)
             self.debug('get_pixels', 'memdc', memdc)
             self.debug('get_pixels', 'bmp', bmp)
             self.debug('get_pixels', 'buffer_len', buffer_len)
+            self.debug('get_pixels', 'len(self.image)', len(self.image))
             self.debug('get_pixels', 'bits', bits)
-            self.debug('get_pixels', 'len(pixels.raw)', len(pixels.raw))
 
-            if bits != height or len(pixels.raw) != buffer_len:
-                raise ScreenshotError('GetDIBits() failed.')
+            if bits != height:
+                raise ScreenshotError('MSS: GetDIBits() failed.')
         finally:
             # Clean up
             if srcdc:
@@ -620,47 +624,11 @@ class MSSWindows(MSS):
             if bmp:
                 windll.gdi32.DeleteObject(bmp)
 
-        # Note that the origin of the returned image is in the
-        # bottom-left corner, 32-bit aligned. And it is BGR.
-        # Need to "arrange" that.
-        return self._arrange(pixels.raw, good_width, height)
-
-    def _arrange(self, data, width, height):
-        ''' Reorganises data when the origin of the image is in the
-            bottom-left corner and converts BGR triple to RGB. '''
-
-        self.debug('_arrange')
-
-        total = width * height
-        scanlines = [b'0'] * total
-        # Here we do the same thing but in Python 3, the use of struct.pack
-        # slowns down the process by a factor of 2.5 or more.
-        if sys.version < '3':
-            for y in range(height):
-                shift = width * (y + 1)
-                offset = total - shift
-                for x in range(0, width - 2, 3):
-                    off = offset + x
-                    scanlines[shift + x:shift + x + 3] = \
-                        data[off + 2], data[off + 1], data[off]
-        else:
-            def pix(pixel, _resultats={}, b=pack):
-                ''' Apply conversion to a pixel to get the right value.
-                    This method uses of memoization.
-                '''
-                if pixel not in _resultats:
-                    _resultats[pixel] = b(b'<B', pixel)
-                return _resultats[pixel]
-
-            for y in range(height):
-                shift = width * (y + 1)
-                offset = total - shift
-                for x in range(0, width - 2, 3):
-                    off = offset + x
-                    scanlines[shift + x:shift + x + 3] = \
-                        pix(data[off + 2]), pix(data[off + 1]), pix(data[off])
-
-        return b''.join(scanlines)
+        # Replace pixels values: BGR to RGB
+        # @TODO: this part takes most of the time. Need a better solution.
+        for idx in range(0, buffer_len - 2, 3):
+            self.image[idx + 2], self.image[idx] = self.image[idx], self.image[idx + 2]
+        return self.image
 
 
 def main():
