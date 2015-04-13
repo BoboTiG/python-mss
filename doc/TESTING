@@ -1,6 +1,15 @@
 The current MSS version was succesfully tested on these OS.
 You have another OS to add? Let us know, open a ticket on GitHub :)
 
+Python:
+	2.6.9
+	2.7.9
+	3.1.5
+	3.2.6
+	3.3.6
+	3.4.3
+	3.5.0a3
+
 GNU/Linux:
 	Debian 8.0 (jessie)
 	Mageia 4.1
