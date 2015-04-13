@@ -315,8 +315,11 @@ class MSSLinux(MSS):
 
         self.debug('__del__')
 
-        if self.display:
-            self.xlib.XCloseDisplay(self.display)
+        try:
+            if self.display:
+                self.xlib.XCloseDisplay(self.display)
+        except AttributeError:
+            pass
 
     def __init__(self):
         ''' GNU/Linux initialisations '''
