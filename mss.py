@@ -132,7 +132,7 @@ class MSS(object):
             If the monitor has rotation, you have to deal with inside
             this method.
 
-            Must returns a dict with a minima:
+            Must returns a dict with at minima:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -375,7 +375,7 @@ class MSSLinux(MSS):
                                         c_int, c_int, c_uint, c_uint, c_ulong,
                                         c_int]
         self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
-        self.xlib.XFree.argtypes = [POINTER(XImage)]
+        self.xlib.XDestroyImage.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
         self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
                                                       POINTER(Display)]
@@ -398,7 +398,7 @@ class MSSLinux(MSS):
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
         self.xlib.XGetPixel.restype = c_ulong
-        self.xlib.XFree.restype = c_void_p
+        self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
         self.xrandr.XRRGetScreenResources.restype = POINTER(XRRScreenResources)
@@ -477,7 +477,7 @@ class MSSLinux(MSS):
         pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]
 
-        self.xlib.XFree(ximage)
+        self.xlib.XDestroyImage(ximage)
         self.image = b''.join(pixels)
         return self.image
 
