@@ -103,7 +103,7 @@ elif system() == 'Windows':
     class BITMAPINFO(Structure):
         _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 else:
-    raise ScreenshotError('MSS: system "{}" not implemented.'.format(system()))
+    raise ScreenshotError('MSS: system "{0}" not implemented.'.format(system()))
 
 
 # ----------------------------------------------------------------------
@@ -119,9 +119,9 @@ class MSS(object):
 
         if self.DEBUG:
             if scalar is None:
-                print(':: {}()'.format(method))
+                print(':: {0}()'.format(method))
             else:
-                print('{}() {} {} {}'.format(method, scalar,
+                print('{0}() {1} {2} {3}'.format(method, scalar,
                                              type(value).__name__, value))
 
     def enum_display_monitors(self):
@@ -234,7 +234,7 @@ class MSS(object):
             fileh.write(
                 magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
             return
-        raise ScreenshotError('MSS: error writing data to "{}".'.format(output))
+        raise ScreenshotError('MSS: error writing data to "{0}".'.format(output))
 
 
 class MSSMac(MSS):
@@ -300,7 +300,7 @@ class MSSMac(MSS):
             CGImageDestinationAddImage(dest, data, None)
             if CGImageDestinationFinalize(dest):
                 return
-        raise ScreenshotError('MSS: error writing to file "{}".'.format(output))
+        raise ScreenshotError('MSS: error writing to file "{0}".'.format(output))
 
 
 class MSSLinux(MSS):
@@ -647,7 +647,7 @@ def main():
         from os.path import isfile
         if isfile(fname):
             newfile = fname + '.old'
-            print('{} -> {}'.format(fname, newfile))
+            print('{0} -> {1}'.format(fname, newfile))
             rename(fname, newfile)
         return True
 
