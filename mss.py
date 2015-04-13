@@ -103,7 +103,8 @@ elif system() == 'Windows':
     class BITMAPINFO(Structure):
         _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 else:
-    raise ScreenshotError('MSS: system "{0}" not implemented.'.format(system()))
+    err = 'MSS: system "{0}" not implemented.'.format(system())
+    raise ScreenshotError(err)
 
 
 # ----------------------------------------------------------------------
@@ -122,7 +123,7 @@ class MSS(object):
                 print(':: {0}()'.format(method))
             else:
                 print('{0}() {1} {2} {3}'.format(method, scalar,
-                                             type(value).__name__, value))
+                                                 type(value).__name__, value))
 
     def enum_display_monitors(self):
         ''' Get positions of all monitors.
@@ -234,7 +235,8 @@ class MSS(object):
             fileh.write(
                 magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
             return
-        raise ScreenshotError('MSS: error writing data to "{0}".'.format(output))
+        err = 'MSS: error writing data to "{0}".'.format(output)
+        raise ScreenshotError(err)
 
 
 class MSSMac(MSS):
@@ -284,8 +286,10 @@ class MSSMac(MSS):
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
-        self.image = CGWindowListCreateImage(rect, kCGWindowListOptionOnScreenOnly,
-                                             kCGNullWindowID, kCGWindowImageDefault)
+        options = kCGWindowListOptionOnScreenOnly
+        winid = kCGNullWindowID
+        default = kCGWindowImageDefault
+        self.image = CGWindowListCreateImage(rect, options, winid, default)
         if not self.image:
             raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
         return self.image
@@ -300,7 +304,8 @@ class MSSMac(MSS):
             CGImageDestinationAddImage(dest, data, None)
             if CGImageDestinationFinalize(dest):
                 return
-        raise ScreenshotError('MSS: error writing to file "{0}".'.format(output))
+        err = 'MSS: error writing to file "{0}".'.format(output)
+        raise ScreenshotError(err)
 
 
 class MSSLinux(MSS):
@@ -574,8 +579,9 @@ class MSSWindows(MSS):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
 
-            [1] A bottom-up DIB is specified by setting the height to a positive number,
-            while a top-down DIB is specified by setting the height to a negative number.
+            [1] A bottom-up DIB is specified by setting the height to a
+            positive number, while a top-down DIB is specified by
+            setting the height to a negative number.
             https://msdn.microsoft.com/en-us/library/ms787796.aspx
             https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
         '''
@@ -595,7 +601,7 @@ class MSSWindows(MSS):
             bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 24
-            bmi.bmiHeader.biCompression = BI_RGB;
+            bmi.bmiHeader.biCompression = BI_RGB
             buffer_len = height * width * 3
             self.image = create_string_buffer(buffer_len)
             srcdc = windll.user32.GetWindowDC(0)
@@ -628,7 +634,8 @@ class MSSWindows(MSS):
         # Replace pixels values: BGR to RGB
         # @TODO: this part takes most of the time. Need a better solution.
         for idx in range(0, buffer_len - 2, 3):
-            self.image[idx + 2], self.image[idx] = self.image[idx], self.image[idx + 2]
+            self.image[idx + 2], self.image[idx] = \
+                self.image[idx], self.image[idx + 2]
         return self.image
 
 
@@ -637,7 +644,7 @@ def main():
 
     systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
     mss = systems[system()]()
-    #mss.DEBUG = True
+    # mss.DEBUG = True
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing
