@@ -40,14 +40,6 @@ Or simply import the good one::
     from mss import MSSLinux as mss_class
 
 
-init(debug)
------------
-
-When initialising an instance of MSS, you can enable debug output::
-
-    mss = mss_class(debug=True)
-
-
 save(output, screen, callback)
 ------------------------------
 
