@@ -1,5 +1,5 @@
-The current MSS version was succesfully tested on these OS.
-You have another OS to add? Let us know, open a ticket on GitHub :)
+The current MSS version was succesfully tested on these Python version.
+You have another version to add or a patch to support a new one? Let us know, open a pull-request on GitHub :)
 
 Python:
 	2.6.9
@@ -10,6 +10,11 @@ Python:
 	3.3.6
 	3.4.3
 	3.5.0a3
+
+
+---
+The current MSS version was succesfully tested on these OS.
+You have another OS to add? Let us know, open a ticket on GitHub :)
 
 GNU/Linux:
 	Debian 8.0 (jessie)
