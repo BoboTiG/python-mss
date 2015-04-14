@@ -3,8 +3,15 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      - MSSLinux: optimisation of get_pixels()
-      - MSSWindows: optimisation of _arrange()
+      - Python 2.6 to 3.5 ready
+      - code purgation and review, more debug informations
+      - delete --debug argument
+      - MSS: few optimizations into save_img()
+      - MSSMac: remove rotation from informations returned by enum_display_monitors()
+      - MSSLinux: fix object has no attribute 'display' into __del__
+      - MSSLinux: use of XDestroyImage() instead of XFree()
+      - MSSLinux: few optimizations into get_pixels()
+      - MSSWindows: optimization of get_pixels()
 
 0.1.1   2015/04/10
       - little code review
