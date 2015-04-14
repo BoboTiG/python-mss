@@ -1,4 +1,5 @@
 
 [OK] GNU/Linux: do not trust XML config files, use pure cpython
 [  ] Mac OSX: use pure ctype, no Quartz
+[  ] Test ReactOS (should be the same as Windows)
 [  ] Support for additional systems
