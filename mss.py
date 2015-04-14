@@ -253,6 +253,7 @@ class MSSMac(MSS):
 
         if screen == -1:
             rect = CGRectInfinite
+            self.debug('enum_display_monitors', 'rect', rect)
             yield ({
                 b'left': int(rect.origin.x),
                 b'top': int(rect.origin.y),
@@ -263,11 +264,14 @@ class MSSMac(MSS):
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
+            self.debug('enum_display_monitors', 'ids', ids)
             for display in ids:
                 rect = CGRectStandardize(CGDisplayBounds(display))
+                self.debug('enum_display_monitors', 'rect', rect)
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
                 rot = CGDisplayRotation(display)
+                self.debug('enum_display_monitors', 'rot', rot)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 yield ({
@@ -290,6 +294,12 @@ class MSSMac(MSS):
         winid = kCGNullWindowID
         default = kCGWindowImageDefault
         self.image = CGWindowListCreateImage(rect, options, winid, default)
+
+        self.debug('get_pixels', 'rect', rect)
+        self.debug('get_pixels', 'options', options)
+        self.debug('get_pixels', 'winid', winid)
+        self.debug('get_pixels', 'default', default)
+
         if not self.image:
             raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
         return self.image
@@ -300,9 +310,13 @@ class MSSMac(MSS):
         self.debug('save_img')
 
         url = NSURL.fileURLWithPath_(output)
-        if not CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None):
+        dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
+        self.debug('save_img', 'url', url)
+        self.debug('save_img', 'dest', dest)
+        if not dest:
             err = 'MSS : CGImageDestinationCreateWithURL() failed.'
             raise ScreenshotError(err)
+
         CGImageDestinationAddImage(dest, data, None)
         if not CGImageDestinationFinalize(dest):
             raise ScreenshotError('MSS: CGImageDestinationFinalize() failed.')
@@ -333,13 +347,13 @@ class MSSLinux(MSS):
         if not x11:
             raise ScreenshotError('MSS: no X11 library found.')
         self.xlib = cdll.LoadLibrary(x11)
-        self.debug('init', 'xlib', self.xlib)
+        self.debug('__init__', 'self.xlib', self.xlib)
 
         xrandr = find_library('Xrandr')
         if not xrandr:
             raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
-        self.debug('init', 'xrandr', self.xrandr)
+        self.debug('__init__', 'self.xrandr', self.xrandr)
 
         self._set_argtypes()
         self._set_restypes()
@@ -354,16 +368,16 @@ class MSSLinux(MSS):
         except KeyError:
             err = 'MSS: $DISPLAY not set. Stopping to prevent segfault.'
             raise ScreenshotError(err)
-        self.debug('init', '$DISPLAY', disp)
+        self.debug('__init__', '$DISPLAY', disp)
 
         # At this point, if there is no running server, it could end on
         # a segmentation fault. And we cannot catch it.
         self.display = self.xlib.XOpenDisplay(disp)
-        self.debug('init', 'display', self.display)
+        self.debug('__init__', 'self.display', self.display)
         self.screen = self.xlib.XDefaultScreen(self.display)
-        self.debug('init', 'screen', self.screen)
+        self.debug('__init__', 'self.screen', self.screen)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
-        self.debug('init', 'root', self.root)
+        self.debug('__init__', 'self.root', self.root)
 
     def _set_argtypes(self):
         ''' Functions arguments. '''
@@ -422,6 +436,7 @@ class MSSLinux(MSS):
         if screen == -1:
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
+            self.debug('enum_display_monitors', 'gwa', gwa)
             yield ({
                 b'left': int(gwa.x),
                 b'top': int(gwa.y),
@@ -433,6 +448,8 @@ class MSSLinux(MSS):
             # expected LP_Display instance instead of LP_XWindowAttributes
             root = cast(self.root, POINTER(Display))
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
+            self.debug('enum_display_monitors', 'root', root)
+            self.debug('enum_display_monitors', 'mon', mon)
             self.debug('enum_display_monitors', 'number of monitors',
                        mon.contents.ncrtc)
             for num in range(mon.contents.ncrtc):
@@ -462,9 +479,11 @@ class MSSLinux(MSS):
         # Fix for XGetImage:
         # expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
+        self.debug('get_pixels', 'root', root)
 
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
                                      height, allplanes, ZPixmap)
+        self.debug('get_pixels', 'ximage', ximage)
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
@@ -474,17 +493,23 @@ class MSSLinux(MSS):
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = b(b'<B', (pixel & 16711680) >> 16) + \
-                    b(b'<B', (pixel & 65280) >> 8) + b(b'<B', pixel & 255)
+                _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
+                    b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
         get_pix = self.xlib.XGetPixel
+        rmask = ximage.contents.red_mask
+        gmask = ximage.contents.green_mask
+        bmask = ximage.contents.blue_mask
+        self.debug('get_pixels', 'rmask', rmask)
+        self.debug('get_pixels', 'gmask', gmask)
+        self.debug('get_pixels', 'bmask', bmask)
         pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]
+        self.image = b''.join(pixels)
 
         self.xlib.XDestroyImage(ximage)
-        self.image = b''.join(pixels)
         return self.image
 
 
@@ -644,7 +669,6 @@ def main():
 
     systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
     mss = systems[system()]()
-    # mss.DEBUG = True
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing

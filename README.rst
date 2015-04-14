@@ -33,7 +33,6 @@ You can determine automatically which class to use::
         'Windows': mss.MSSWindows
         }
     mss_class = systems[system()]()
-    # mss_class.DEBUG = True
 
 Or simply import the good one::
 
