@@ -6,3 +6,4 @@ MANIFEST*
 *.png.old
 *.raw
 test/test-linux
+test/.*

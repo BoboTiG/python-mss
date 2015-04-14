@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# coding: utf-8
 ''' A cross-platform multi-screen shot module in pure python using ctypes.
 
     This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
@@ -314,7 +314,7 @@ class MSSMac(MSS):
         self.debug('save_img', 'url', url)
         self.debug('save_img', 'dest', dest)
         if not dest:
-            err = 'MSS : CGImageDestinationCreateWithURL() failed.'
+            err = 'MSS: CGImageDestinationCreateWithURL() failed.'
             raise ScreenshotError(err)
 
         CGImageDestinationAddImage(dest, data, None)
@@ -507,9 +507,8 @@ class MSSLinux(MSS):
         self.debug('get_pixels', 'bmask', bmask)
         pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]
-        self.image = b''.join(pixels)
-
         self.xlib.XDestroyImage(ximage)
+        self.image = b''.join(pixels)
         return self.image
 
 

@@ -92,7 +92,7 @@ void full_screen(void) {
     }
     */
 
-    XFree(image);
+    XDestroyImage(image);
     XCloseDisplay(display);
 
     gettimeofday(&end, NULL);
@@ -150,8 +150,8 @@ void each_screen(void) {
                 pixels[x * 3 + offset + 2] =  pixel & image->blue_mask;
             }
         }
-        XFree(image);
-        XFree(crtc_info);
+        XDestroyImage(image);
+        XRRFreeCrtcInfo(crtc_info);
 
         gettimeofday(&end, NULL);
         printf("Screen %d: %dx%d @ %u msec\n", n, width, height, (1000000 * end.tv_sec + end.tv_usec) - (1000000 * start.tv_sec + start.tv_usec));
@@ -162,7 +162,7 @@ void each_screen(void) {
         fwrite(pixels, sizeof(unsigned char), sizeof(unsigned char) * width * height * 3, fh);
         fclose(fh);
     }
-    XFree(monitors);
+    XRRFreeScreenResources(monitors);
     XCloseDisplay(display);
 
     return;
