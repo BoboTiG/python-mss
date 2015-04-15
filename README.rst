@@ -34,7 +34,9 @@ Python     GNU/linux  Mac OS X  Windows
 2.6.9      True       True      True
 =========  =========  ========  =======
 
-Feel free to try MSS on a system we had not tested, and let report us by creating an [issue](https://github.com/BoboTiG/python-mss/issues).
+Feel free to try MSS on a system we had not tested, and let report us by creating an issue_.
+
+.. _issue: https://github.com/BoboTiG/python-mss/issues
 
 
 Testing
