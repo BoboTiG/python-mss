@@ -354,7 +354,7 @@ class MSSLinux(MSS):
         self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
                                         c_int, c_int, c_uint, c_uint, c_ulong,
                                         c_int]
-        #self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
+        # self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.xlib.XDestroyImage.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
         self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
@@ -380,7 +380,7 @@ class MSSLinux(MSS):
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
-        #self.xlib.XGetPixel.restype = c_ulong
+        # self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -421,7 +421,11 @@ class MSSLinux(MSS):
             self.xrandr.XRRFreeScreenResources(mon)
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
+        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
+
+            The XGetPixel() C code can be found at this URL:
+            http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
+        '''
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
@@ -438,6 +442,8 @@ class MSSLinux(MSS):
             raise ScreenshotError('MSS: XGetImage() failed.')
 
         '''
+        C code as quick as XGetPixel() to translate into ctypes:
+
         pixels = malloc(sizeof(unsigned char) * width * height * 3);
 
         for ( x = 0; x < width; ++x )
@@ -450,13 +456,17 @@ class MSSLinux(MSS):
                 pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
                 pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
         '''
-        """from ctypes import create_string_buffer, c_char, sizeof
+        '''
+        # @TODO: see if it is quicker than using XGetPixel().
+        from ctypes import create_string_buffer, c_char, sizeof
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
         bpl = ximage.contents.bytes_per_line
-        data = cast(ximage.contents.data, POINTER(c_char * width * height * 3)).contents
-        self.image = create_string_buffer(sizeof(c_char) * width * height * 3)
+        buffer_len = width * height * 3
+        xdata = ximage.contents.data
+        data = cast(xdata, POINTER(c_char * buffer_len)).contents
+        self.image = create_string_buffer(sizeof(c_char) * buffer_len)
         xrange = getattr(__builtins__, 'xrange', range)
         for x in xrange(width):
             for y in xrange(height):
@@ -466,10 +476,9 @@ class MSSLinux(MSS):
                 self.image[x * 3 + offset]     = (pixel & rmask) >> 16
                 self.image[x * 3 + offset + 1] = (pixel & gmask) >> 8
                 self.image[x * 3 + offset + 2] =  pixel & bmask
-                #~ self.image[x * 3 + offset:x * 3 + offset + 2] = \
-                    #~ (pixel & rmask) >> 16, (pixel & gmask) >> 8, pixel & bmask
+        return self.image
+        '''
 
-        """
         # @TODO: this part takes most of the time. Need a better solution.
         def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
@@ -480,7 +489,6 @@ class MSSLinux(MSS):
                     b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
-        # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
@@ -489,7 +497,6 @@ class MSSLinux(MSS):
         pixels = [pix(get_pix(ximage, x, y))
                   for y in xrange(height) for x in xrange(width)]
         self.image = b''.join(pixels)
-        #"""
 
         self.xlib.XDestroyImage(ximage)
         return self.image
