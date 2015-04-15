@@ -1,4 +1,4 @@
-The current MSS version was succesfully tested on these Python version.
+The current MSS version was successfully tested on these Python version.
 You have another version to add or a patch to support a new one? Let us know, open a pull-request on GitHub :)
 
 Python:
@@ -13,7 +13,7 @@ Python:
 
 
 ---
-The current MSS version was succesfully tested on these OS.
+The current MSS version was successfully tested on these OS.
 You have another OS to add? Let us know, open a ticket on GitHub :)
 
 GNU/Linux:
@@ -27,6 +27,8 @@ GNU/Linux:
 Mac OS X:
 	OS X 10.7 (Lion)
 	OS X 10.8 (Mountain Lion)
+	OS X 10.9 (Mavericks)
+	OS X 10.10 (Yosemite)
 
 Microsoft Windows:
 	Windows XP

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' A cross-platform multi-screen shot module in pure python using ctypes.
+''' A cross-platform multiple screenshots module in pure python using ctypes.
 
     This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
 
@@ -125,15 +125,18 @@ class MSS(object):
                 print('{0}() {1} {2} {3}'.format(method, scalar,
                                                  type(value).__name__, value))
 
-    def enum_display_monitors(self):
-        ''' Get positions of all monitors.
+    def enum_display_monitors(self, screen=0):
+        ''' Get positions of one or more monitors.
 
-            If self.oneshot is True, this function has to return a dict
-            with dimensions of all monitors at the same time.
-            If the monitor has rotation, you have to deal with inside
-            this method.
+            If the monitor has rotation, you have to deal with it
+            inside this method.
 
-            Must returns a dict with:
+            Parameters:
+             - screen - int - grab one screenshot of all monitors (screen=-1)
+                              grab one screenshot by monitor (screen=0)
+                              grab the screenshot of the monitor N (screen=N)
+
+            Returns a dict:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -143,10 +146,10 @@ class MSS(object):
         '''
         raise NotImplementedError('MSS: subclasses need to implement this!')
 
-    def get_pixels(self, monitor_infos):
+    def get_pixels(self, monitor):
         ''' Retrieve screen pixels for a given monitor.
 
-            monitor_infos should contain at least:
+            `monitor` is a dict with:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -154,7 +157,7 @@ class MSS(object):
                 'heigth': the height
             }
 
-            Returns a dict with pixels.
+            Returns a dict of pixels.
         '''
         raise NotImplementedError('MSS: subclasses need to implement this!')
 
@@ -162,14 +165,14 @@ class MSS(object):
              output='screenshot-%d.png',
              screen=0,
              callback=lambda *x: True):
-        ''' For each monitor, grab a screen shot and save it to a file.
+        ''' Grab a screenshot and save it to a file.
 
             Parameters:
              - output - string - the output filename. It can contain '%d' which
                                  will be replaced by the monitor number.
-             - screen - int - grab one screen shot of all monitors (screen=-1)
-                              grab one screen shot by monitor (screen=0)
-                              grab the screen shot of the monitor N (screen=N)
+             - screen - int - grab one screenshot of all monitors (screen=-1)
+                              grab one screenshot by monitor (screen=0)
+                              grab the screenshot of the monitor N (screen=N)
              - callback - function - in case where output already exists, call
                                      the defined callback function with output
                                      as parameter. If it returns True, then
@@ -240,7 +243,7 @@ class MSS(object):
 
 
 class MSSMac(MSS):
-    ''' Mutli-screen shot implementation for Mac OSX.
+    ''' Mutliple ScreenShots implementation for Mac OS X.
         It uses intensively the Quartz.
     '''
 
@@ -323,7 +326,7 @@ class MSSMac(MSS):
 
 
 class MSSLinux(MSS):
-    ''' Mutli-screen shot implementation for GNU/Linux.
+    ''' Mutliple ScreenShots implementation for GNU/Linux.
         It uses intensively the Xlib and Xrandr.
     '''
 
@@ -487,33 +490,41 @@ class MSSLinux(MSS):
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
+        from ctypes import c_ubyte, c_char
+        bpl = ximage.contents.bytes_per_line
+        data = cast(ximage.contents.data, POINTER(width * height * c_ubyte)).contents
+
         # @TODO: this part takes most of the time. Need a better solution.
         def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
-                    b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
+                _resultats[pixel] = b(b'<B', pixel >> 24) + \
+                    b(b'<B', pixel>> 16) + b(b'<B', pixel)
             return _resultats[pixel]
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
-        get_pix = self.xlib.XGetPixel
+        #~ get_pix = self.xlib.XGetPixel
+        #~ def get_pix(x, y):
+
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
+        bpl = ximage.contents.bytes_per_line
         self.debug('get_pixels', 'rmask', rmask)
         self.debug('get_pixels', 'gmask', gmask)
         self.debug('get_pixels', 'bmask', bmask)
-        pixels = [pix(get_pix(ximage, x, y))
-                  for y in range(height) for x in range(width)]
+        xrange = getattr(__builtins__, 'xrange', range)
+        pixels = [pix(data[idx])
+                  for idx in xrange(0, (width * height) - 2, 3)]
         self.xlib.XDestroyImage(ximage)
         self.image = b''.join(pixels)
         return self.image
 
 
 class MSSWindows(MSS):
-    ''' Mutli-screen shot implementation for Microsoft Windows. '''
+    ''' Mutliple ScreenShots implementation for Microsoft Windows. '''
 
     def __init__(self):
         ''' Windows initialisations. '''
@@ -671,7 +682,7 @@ def main():
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing
-            screen shot.
+            screenshot.
         '''
         from os import rename
         from os.path import isfile
