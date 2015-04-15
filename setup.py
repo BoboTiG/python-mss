@@ -49,11 +49,13 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Topic :: Desktop Environment',
         'Topic :: Multimedia :: Graphics :: Capture',
         'Topic :: Multimedia :: Graphics :: Capture :: Screen Capture',
-        'Topic :: Software Development'
-        'Topic :: Software Development :: Libraries'
-        'Topic :: Software Development :: Libraries :: Python Modules'
+        'Topic :: Software Development',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: Utilities'
     ],
     url='https://github.com/BoboTiG/python-mss'
 )
