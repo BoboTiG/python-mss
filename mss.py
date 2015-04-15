@@ -476,18 +476,18 @@ class MSSLinux(MSS):
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                 _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
+                _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
                     b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
-        xrange = getattr(__builtins__, 'xrange', range)
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
+        xrange = getattr(__builtins__, 'xrange', range)
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(ximage, x, y))
-                  for y in range(height) for x in range(width)]
+                  for y in xrange(height) for x in xrange(width)]
         self.image = b''.join(pixels)
         #"""
 
@@ -673,13 +673,13 @@ def main():
             print(filename)
 
         print("\nA screenshot to grab them all")
-        for filename in screenshotter.save(output='full-screenshot.png', screen=-1):
+        for filename in screenshotter.save(output='fullscreen.png', screen=-1):
             print(filename)
 
         print("\nScreenshot of the monitor 1, with callback")
         for filename in screenshotter.save(output='mon-%d.png',
-                                              screen=1,
-                                              callback=on_exists):
+                                           screen=1,
+                                           callback=on_exists):
             print(filename)
     except ScreenshotError as ex:
         print(ex)
