@@ -337,7 +337,12 @@ class MSSLinux(MSS):
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
     def _set_argtypes(self):
-        ''' Functions arguments. '''
+        ''' Functions arguments.
+
+            Curiously, if we set up self.xlib.XGetPixel.argtypes,
+            the entire process takes twice more time.
+            So, no need to waste this precious time :)
+        '''
 
         self.xlib.XOpenDisplay.argtypes = [c_char_p]
         self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
@@ -363,7 +368,12 @@ class MSSLinux(MSS):
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
 
     def _set_restypes(self):
-        ''' Functions return type. '''
+        ''' Functions return type.
+
+            Curiously, if we set up self.xlib.XGetPixel.restype,
+            the entire process takes twice more time.
+            So, no need to waste this precious time :)
+        '''
 
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
