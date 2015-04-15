@@ -65,7 +65,7 @@ elif system() == 'Linux':
 
     class XImage(Structure):
         _fields_ = [('width', c_int), ('height', c_int), ('xoffset', c_int),
-                    ('format', c_int), ('data', c_char_p),
+                    ('format', c_int), ('data', c_void_p),
                     ('byte_order', c_int), ('bitmap_unit', c_int),
                     ('bitmap_bit_order', c_int), ('bitmap_pad', c_int),
                     ('depth', c_int), ('bytes_per_line', c_int),
@@ -349,7 +349,7 @@ class MSSLinux(MSS):
         self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
                                         c_int, c_int, c_uint, c_uint, c_ulong,
                                         c_int]
-        self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
+        #self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.xlib.XDestroyImage.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
         self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
@@ -370,7 +370,7 @@ class MSSLinux(MSS):
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
-        self.xlib.XGetPixel.restype = c_ulong
+        #self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -427,33 +427,61 @@ class MSSLinux(MSS):
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
-        from ctypes import c_ubyte, c_char
-        bpl = ximage.contents.bytes_per_line
-        data = cast(ximage.contents.data, POINTER(width * height * c_ubyte)).contents
+        '''
+        pixels = malloc(sizeof(unsigned char) * width * height * 3);
 
+        for ( x = 0; x < width; ++x )
+            for ( y = 0; y < height; ++y )
+                offset =  width * y * 3;
+                //~ pixel = XGetPixel(ximage, x, y);
+                addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
+                pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
+                pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+                pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+                pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
+        '''
+        """from ctypes import create_string_buffer, c_char, sizeof
+        rmask = ximage.contents.red_mask
+        gmask = ximage.contents.green_mask
+        bmask = ximage.contents.blue_mask
+        bpl = ximage.contents.bytes_per_line
+        data = cast(ximage.contents.data, POINTER(c_char * width * height * 3)).contents
+        self.image = create_string_buffer(sizeof(c_char) * width * height * 3)
+        xrange = getattr(__builtins__, 'xrange', range)
+        for x in xrange(width):
+            for y in xrange(height):
+                offset =  width * y * 3
+                addr = data[y * bpl + (x << 2)][0]
+                pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0]
+                self.image[x * 3 + offset]     = (pixel & rmask) >> 16
+                self.image[x * 3 + offset + 1] = (pixel & gmask) >> 8
+                self.image[x * 3 + offset + 2] =  pixel & bmask
+                #~ self.image[x * 3 + offset:x * 3 + offset + 2] = \
+                    #~ (pixel & rmask) >> 16, (pixel & gmask) >> 8, pixel & bmask
+
+        """
         # @TODO: this part takes most of the time. Need a better solution.
         def pix(pixel, _resultats={}, b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = b(b'<B', pixel >> 24) + \
-                    b(b'<B', pixel>> 16) + b(b'<B', pixel)
+                 _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
+                    b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         # http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
-        #~ get_pix = self.xlib.XGetPixel
-        #~ def get_pix(x, y):
-
+        xrange = getattr(__builtins__, 'xrange', range)
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
-        bpl = ximage.contents.bytes_per_line
-        xrange = getattr(__builtins__, 'xrange', range)
-        pixels = [pix(data[idx])
-                  for idx in xrange(0, (width * height) - 2, 3)]
-        self.xlib.XDestroyImage(ximage)
+        get_pix = self.xlib.XGetPixel
+        pixels = [pix(get_pix(ximage, x, y))
+                  for y in range(height) for x in range(width)]
         self.image = b''.join(pixels)
+        #"""
+
+        self.xlib.XDestroyImage(ximage)
         return self.image
 
 
