@@ -20,11 +20,11 @@ void full_screen(void) {
     Display *display;
     Window screen, root;
     XWindowAttributes gwa;
-    XImage *image;
+    XImage *ximage;
     int left, top;
     unsigned int x, y, width, height, offset;
     unsigned long allplanes, pixel;
-    unsigned char *pixels;
+    unsigned char *pixels, *addr;
 
     gettimeofday(&start, NULL);
 
@@ -37,7 +37,7 @@ void full_screen(void) {
     width  = gwa.width;
     height = gwa.height;
     allplanes = XAllPlanes();
-    image = XGetImage(display, root, left, top, width, height, allplanes, ZPixmap);
+    ximage = XGetImage(display, root, left, top, width, height, allplanes, ZPixmap);
     pixels = malloc(sizeof(unsigned char) * width * height * 3);
 
     /*printf("display        = %d\n", display);
@@ -48,51 +48,37 @@ void full_screen(void) {
     printf("width          = %d\n", width);
     printf("height         = %d\n", height);
     printf("allplanes      = %u\n", allplanes);
-    printf("bits_per_pixel = %d\n", image->bits_per_pixel);
-    printf("bytes_per_line = %d\n", image->bytes_per_line);
-    printf("depth          = %d\n", image->depth);
+    printf("bits_per_pixel = %d\n", ximage->bits_per_pixel);
+    printf("bytes_per_line = %d\n", ximage->bytes_per_line);
+    printf("depth          = %d\n", ximage->depth);
     */
 
     // Processus habituel
     for ( x = 0; x < width; ++x ) {
         for ( y = 0; y < height; ++y ) {
-            pixel = XGetPixel(image, x, y);
+            pixel = XGetPixel(ximage, x, y);
             offset =  width * y * 3;
-            pixels[x * 3 + offset]     = (pixel & image->red_mask) >> 16;
-            pixels[x * 3 + offset + 1] = (pixel & image->green_mask) >> 8;
-            pixels[x * 3 + offset + 2] =  pixel & image->blue_mask;
+            pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+            pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+            pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
         }
     }
 
-    // Processus sans passer par XGetPixel (pas vraiment mieux...)
+    // Processus sans passer par XGetPixel (ça se vaut)
     /*
-    unsigned int shift = 0xffffffff;
-    if ( image->depth == 24 ) {
-        shift = 0x00ffffff;
-    }
-    unsigned long px;
-    register char *src, *dst;
-    register int i, j;
     for ( x = 0; x < width; ++x ) {
         for ( y = 0; y < height; ++y ) {
-            offset =  (y * image->bytes_per_line + ((x * image->bits_per_pixel) >> 3)) + 4;
-            src = &image->data[offset];
-            dst = (char*)&px;
-            px = 0;
-            for ( i = (image->bits_per_pixel + 7) >> 3; --i >= 0; )
-                *dst++ = *src++;
-            pixel = 0;
-            for ( i = sizeof(unsigned long); --i >= 0; )
-                pixel = (pixel << 8) | ((unsigned char *)&px)[i];
             offset =  width * y * 3;
-            pixels[x * 3 + offset]     = (pixel & image->red_mask) >> 16;
-            pixels[x * 3 + offset + 1] = (pixel & image->green_mask) >> 8;
-            pixels[x * 3 + offset + 2] =  pixel & image->blue_mask;
+            addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
+            pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
+            pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+            pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+            pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
         }
     }
     */
 
-    XDestroyImage(image);
+    XDestroyImage(ximage);
     XCloseDisplay(display);
 
     gettimeofday(&end, NULL);
@@ -110,8 +96,7 @@ void each_screen(void) {
     Window root;
     XRRScreenResources *monitors;
     XRRCrtcInfo *crtc_info;
-    XWindowAttributes gwa;
-    XImage *image;
+    XImage *ximage;
     int left, top;
     unsigned int n, x, y, width, height, offset;
     unsigned long allplanes, pixel;
@@ -132,25 +117,24 @@ void each_screen(void) {
         printf("    mode = %d\n", crtc_info->mode);
         printf("    rotation = %d\n", crtc_info->rotation);*/
 
-        XGetWindowAttributes(display, root, &gwa);
         left   = crtc_info->x;
         top    = crtc_info->y;
         width  = crtc_info->width;
         height = crtc_info->height;
         allplanes = XAllPlanes();
-        image = XGetImage(display, root, left, top, width, height, allplanes, ZPixmap);
+        ximage = XGetImage(display, root, left, top, width, height, allplanes, ZPixmap);
         pixels = malloc(sizeof(unsigned char) * width * height * 3);
 
         for ( x = 0; x < width; ++x ) {
             for ( y = 0; y < height; ++y ) {
-                pixel = XGetPixel(image, x, y);
                 offset =  width * y * 3;
-                pixels[x * 3 + offset]     = (pixel & image->red_mask) >> 16;
-                pixels[x * 3 + offset + 1] = (pixel & image->green_mask) >> 8;
-                pixels[x * 3 + offset + 2] =  pixel & image->blue_mask;
+                pixel = XGetPixel(ximage, x, y);
+                pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+                pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+                pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
             }
         }
-        XDestroyImage(image);
+        XDestroyImage(ximage);
         XRRFreeCrtcInfo(crtc_info);
 
         gettimeofday(&end, NULL);
