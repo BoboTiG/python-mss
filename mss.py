@@ -25,7 +25,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['MSSLinux', 'MSSMac', 'MSSWindows', 'ScreenshotError']
+__all__ = ['mss', 'MSSLinux', 'MSSMac', 'MSSWindows', 'ScreenshotError']
 
 from struct import pack
 from platform import system
@@ -588,11 +588,28 @@ class MSSWindows(MSS):
         return self.image
 
 
+def mss(*args, **kwargs):
+    ''' Factory returning a proper MSS class instance.
+
+        It detects the plateform we are running on
+        and choose the most adapted mss_class to take
+        screenshots.
+
+        It then proxies its arguments to the class for
+        instantiation.
+    '''
+
+    mss_class = {
+        'Darwin': MSSMac,
+        'Linux': MSSLinux,
+        'Windows': MSSWindows
+    }[system()]
+
+    return mss_class(*args, **kwargs)
+
+
 def main():
     ''' Usage example. '''
-
-    systems = {'Darwin': MSSMac, 'Linux': MSSLinux, 'Windows': MSSWindows}
-    mss = systems[system()]()
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing
@@ -607,22 +624,24 @@ def main():
         return True
 
     try:
-        print('One screen shot per monitor')
-        for filename in mss.save():
+        screenshotter = mss()
+
+        print('One screenshot per monitor')
+        for filename in screenshotter.save():
             print(filename)
 
-        print("\nScreen shot of the monitor 1")
-        for filename in mss.save(output='monitor-%d.png', screen=1):
+        print("\nScreenshot of the monitor 1")
+        for filename in screenshotter.save(output='monitor-%d.png', screen=1):
             print(filename)
 
-        print("\nA shot to grab them all")
-        for filename in mss.save(output='full-screenshot.png', screen=-1):
+        print("\nA screenshot to grab them all")
+        for filename in screenshotter.save(output='full-screenshot.png', screen=-1):
             print(filename)
 
-        print("\nScreen shot of the monitor 1, with callback")
-        for filename in mss.save(output='mon-%d.png',
-                                 screen=1,
-                                 callback=on_exists):
+        print("\nScreenshot of the monitor 1, with callback")
+        for filename in screenshotter.save(output='mon-%d.png',
+                                              screen=1,
+                                              callback=on_exists):
             print(filename)
     except ScreenshotError as ex:
         print(ex)

@@ -6,6 +6,7 @@ devel   201y/mm/dd
       - Python 2.6 to 3.5 ready
       - code purgation and review, more debug informations
       - delete --debug argument
+      - fix #5: add a shortcut to take automatically use the proper MSS class
       - MSS: few optimizations into save_img()
       - MSSMac: remove rotation from informations returned by enum_display_monitors()
       - MSSLinux: fix object has no attribute 'display' into __del__
