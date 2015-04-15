@@ -113,18 +113,6 @@ else:
 class MSS(object):
     ''' This class will be overloaded by a system specific one. '''
 
-    DEBUG = False
-
-    def debug(self, method='', scalar=None, value=None):
-        ''' Simple debug output. '''
-
-        if self.DEBUG:
-            if scalar is None:
-                print(':: {0}()'.format(method))
-            else:
-                print('{0}() {1} {2} {3}'.format(method, scalar,
-                                                 type(value).__name__, value))
-
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
 
@@ -182,18 +170,12 @@ class MSS(object):
             This is a generator which returns created files.
         '''
 
-        self.debug('save')
-        self.debug('save', 'screen', screen)
-        self.debug('save', 'output', output)
-
         # Monitors screen shots!
         for i, monitor in enumerate(self.enum_display_monitors(screen)):
-            self.debug('save', 'monitor', monitor)
             if screen <= 0 or (screen > 0 and i + 1 == screen):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))
-                self.debug('save', 'fname', fname)
                 callback(fname)
                 self.save_img(data=self.get_pixels(monitor),
                               width=monitor[b'width'],
@@ -252,11 +234,8 @@ class MSSMac(MSS):
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('enum_display_monitors')
-
         if screen == -1:
             rect = CGRectInfinite
-            self.debug('enum_display_monitors', 'rect', rect)
             yield ({
                 b'left': int(rect.origin.x),
                 b'top': int(rect.origin.y),
@@ -267,14 +246,11 @@ class MSSMac(MSS):
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
-            self.debug('enum_display_monitors', 'ids', ids)
             for display in ids:
                 rect = CGRectStandardize(CGDisplayBounds(display))
-                self.debug('enum_display_monitors', 'rect', rect)
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
                 rot = CGDisplayRotation(display)
-                self.debug('enum_display_monitors', 'rot', rot)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 yield ({
@@ -288,8 +264,6 @@ class MSSMac(MSS):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
         '''
 
-        self.debug('get_pixels')
-
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
@@ -297,12 +271,6 @@ class MSSMac(MSS):
         winid = kCGNullWindowID
         default = kCGWindowImageDefault
         self.image = CGWindowListCreateImage(rect, options, winid, default)
-
-        self.debug('get_pixels', 'rect', rect)
-        self.debug('get_pixels', 'options', options)
-        self.debug('get_pixels', 'winid', winid)
-        self.debug('get_pixels', 'default', default)
-
         if not self.image:
             raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
         return self.image
@@ -310,12 +278,8 @@ class MSSMac(MSS):
     def save_img(self, data, width, height, output):
         ''' Use my own save_img() method. Because I'm a Mac! '''
 
-        self.debug('save_img')
-
         url = NSURL.fileURLWithPath_(output)
         dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
-        self.debug('save_img', 'url', url)
-        self.debug('save_img', 'dest', dest)
         if not dest:
             err = 'MSS: CGImageDestinationCreateWithURL() failed.'
             raise ScreenshotError(err)
@@ -333,8 +297,6 @@ class MSSLinux(MSS):
     def __del__(self):
         ''' Disconnect from X server. '''
 
-        self.debug('__del__')
-
         try:
             if self.display:
                 self.xlib.XCloseDisplay(self.display)
@@ -344,19 +306,15 @@ class MSSLinux(MSS):
     def __init__(self):
         ''' GNU/Linux initialisations '''
 
-        self.debug('__init__')
-
         x11 = find_library('X11')
         if not x11:
             raise ScreenshotError('MSS: no X11 library found.')
         self.xlib = cdll.LoadLibrary(x11)
-        self.debug('__init__', 'self.xlib', self.xlib)
 
         xrandr = find_library('Xrandr')
         if not xrandr:
             raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
-        self.debug('__init__', 'self.xrandr', self.xrandr)
 
         self._set_argtypes()
         self._set_restypes()
@@ -371,21 +329,15 @@ class MSSLinux(MSS):
         except KeyError:
             err = 'MSS: $DISPLAY not set. Stopping to prevent segfault.'
             raise ScreenshotError(err)
-        self.debug('__init__', '$DISPLAY', disp)
 
         # At this point, if there is no running server, it could end on
         # a segmentation fault. And we cannot catch it.
         self.display = self.xlib.XOpenDisplay(disp)
-        self.debug('__init__', 'self.display', self.display)
         self.screen = self.xlib.XDefaultScreen(self.display)
-        self.debug('__init__', 'self.screen', self.screen)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
-        self.debug('__init__', 'self.root', self.root)
 
     def _set_argtypes(self):
         ''' Functions arguments. '''
-
-        self.debug('_set_argtypes')
 
         self.xlib.XOpenDisplay.argtypes = [c_char_p]
         self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
@@ -413,8 +365,6 @@ class MSSLinux(MSS):
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        self.debug('_set_restypes')
-
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
         self.xlib.XGetWindowAttributes.restype = c_int
@@ -434,12 +384,9 @@ class MSSLinux(MSS):
             Returns a dict with minimal requirements (see MSS class).
         '''
 
-        self.debug('enum_display_monitors')
-
         if screen == -1:
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            self.debug('enum_display_monitors', 'gwa', gwa)
             yield ({
                 b'left': int(gwa.x),
                 b'top': int(gwa.y),
@@ -451,42 +398,32 @@ class MSSLinux(MSS):
             # expected LP_Display instance instead of LP_XWindowAttributes
             root = cast(self.root, POINTER(Display))
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
-            self.debug('enum_display_monitors', 'root', root)
-            self.debug('enum_display_monitors', 'mon', mon)
-            self.debug('enum_display_monitors', 'number of monitors',
-                       mon.contents.ncrtc)
             for num in range(mon.contents.ncrtc):
-                crtc_info = self.xrandr.XRRGetCrtcInfo(self.display, mon,
-                                                       mon.contents.crtcs[num])
+                crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
+                                                  mon.contents.crtcs[num])
                 yield ({
-                    b'left': int(crtc_info.contents.x),
-                    b'top': int(crtc_info.contents.y),
-                    b'width': int(crtc_info.contents.width),
-                    b'height': int(crtc_info.contents.height)
+                    b'left': int(crtc.contents.x),
+                    b'top': int(crtc.contents.y),
+                    b'width': int(crtc.contents.width),
+                    b'height': int(crtc.contents.height)
                 })
-                self.xrandr.XRRFreeCrtcInfo(crtc_info)
+                self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
-        self.debug('get_pixels')
-
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         ZPixmap = 2
-
         allplanes = self.xlib.XAllPlanes()
-        self.debug('get_pixels', 'allplanes', allplanes)
 
         # Fix for XGetImage:
         # expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
-        self.debug('get_pixels', 'root', root)
 
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
                                      height, allplanes, ZPixmap)
-        self.debug('get_pixels', 'ximage', ximage)
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
@@ -512,9 +449,6 @@ class MSSLinux(MSS):
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
         bpl = ximage.contents.bytes_per_line
-        self.debug('get_pixels', 'rmask', rmask)
-        self.debug('get_pixels', 'gmask', gmask)
-        self.debug('get_pixels', 'bmask', bmask)
         xrange = getattr(__builtins__, 'xrange', range)
         pixels = [pix(data[idx])
                   for idx in xrange(0, (width * height) - 2, 3)]
@@ -529,15 +463,11 @@ class MSSWindows(MSS):
     def __init__(self):
         ''' Windows initialisations. '''
 
-        self.debug('__init__')
-
         self._set_argtypes()
         self._set_restypes()
 
     def _set_argtypes(self):
         ''' Functions arguments. '''
-
-        self.debug('_set_argtypes')
 
         self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
                                            DOUBLE)
@@ -558,8 +488,6 @@ class MSSWindows(MSS):
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        self.debug('_set_restypes')
-
         windll.user32.GetSystemMetrics.restypes = INT
         windll.user32.EnumDisplayMonitors.restypes = BOOL
         windll.user32.GetWindowDC.restypes = HDC
@@ -574,8 +502,6 @@ class MSSWindows(MSS):
         ''' Get positions of one or more monitors.
             Returns a dict with minimal requirements (see MSS class).
         '''
-
-        self.debug('enum_display_monitors')
 
         if screen == -1:
             SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
@@ -621,8 +547,6 @@ class MSSWindows(MSS):
             https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
         '''
 
-        self.debug('get_pixels')
-
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         SRCCOPY = 0xCC0020
@@ -647,14 +571,6 @@ class MSSWindows(MSS):
                                 SRCCOPY)
             bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, self.image,
                                           bmi, DIB_RGB_COLORS)
-
-            self.debug('get_pixels', 'srcdc', srcdc)
-            self.debug('get_pixels', 'memdc', memdc)
-            self.debug('get_pixels', 'bmp', bmp)
-            self.debug('get_pixels', 'buffer_len', buffer_len)
-            self.debug('get_pixels', 'len(self.image)', len(self.image))
-            self.debug('get_pixels', 'bits', bits)
-
             if bits != height:
                 raise ScreenshotError('MSS: GetDIBits() failed.')
         finally:
