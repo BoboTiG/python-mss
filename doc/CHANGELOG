@@ -3,15 +3,18 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
+      -
+
+1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
-      - code purgation and review, more debug informations
+      - code purgation and review, no more debug informations
       - delete --debug argument
       - fix #5: add a shortcut to take automatically use the proper MSS class
       - MSS: few optimizations into save_img()
       - MSSMac: remove rotation from informations returned by enum_display_monitors()
       - MSSLinux: fix object has no attribute 'display' into __del__
       - MSSLinux: use of XDestroyImage() instead of XFree()
-      - MSSLinux: few optimizations into get_pixels()
+      - MSSLinux: optimizations of get_pixels()
       - MSSWindows: huge optimization of get_pixels()
 
 0.1.1   2015/04/10
