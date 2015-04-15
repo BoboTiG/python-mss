@@ -449,7 +449,6 @@ class MSSLinux(MSS):
         for ( x = 0; x < width; ++x )
             for ( y = 0; y < height; ++y )
                 offset =  width * y * 3;
-                //~ pixel = XGetPixel(ximage, x, y);
                 addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
                 pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
                 pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
