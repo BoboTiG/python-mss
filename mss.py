@@ -11,7 +11,7 @@
     If that URL should fail, try contacting the author.
 '''
 
-from __future__ import (unicode_literals, print_function)
+from __future__ import unicode_literals, print_function, division
 
 __version__ = '1.0.0'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
@@ -25,7 +25,7 @@ __copyright__ = '''
     in supporting documentation or portions thereof, including
     modifications, that you make.
 '''
-__all__ = ['mss', 'MSSLinux', 'MSSMac', 'MSSWindows', 'ScreenshotError']
+__all__ = ['mss', 'ScreenshotError']
 
 from struct import pack
 from platform import system
