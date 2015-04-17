@@ -209,7 +209,7 @@ class MSS(object):
 
         # Data: size, marker, data, CRC32
         idat = [b'', b'IDAT', b'', b'']
-        idat[2] = zcompr(scanlines, 9)
+        idat[2] = zcompr(scanlines)
         idat[3] = b(b'>I', zcrc32(b''.join(idat[1:3])) & 0xffffffff)
         idat[0] = b(b'>I', len(idat[2]))
 
