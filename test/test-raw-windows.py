@@ -3,6 +3,9 @@
 
 ''' Fichier test pour IndexError::Swap.efficient().
 
+    Usage : python2 test-raw-windows.py
+            python3 test-raw-windows.py
+
     `pixels` est rapatrié depuis test-windows.raw et casté sous
     son bon type afin d'être dans la situation exacte du
     module MSS.
@@ -11,13 +14,14 @@
     quel pour GNU/Linux aussi. Sauf si une optimisation est
     possible, je pense notament à la création de `scanlines`.
 
-    Le fichier test-windows.raw se trouve à l'adresse :
+    Le fichier data-windows.raw se trouve à l'adresse :
     https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/data-windows.raw
 '''
 
 from __future__ import print_function, unicode_literals
 
 from ctypes import cast, c_char, POINTER
+from os.path import isfile
 from time import time
 from struct import pack
 from sys import argv, exit
@@ -66,14 +70,16 @@ def to_rgb(pixels, buffer_len):
         yield pixels[i]
 
 
-if len(argv) != 2:
-    print('Usage: python2 {0} data-windows.raw'.format(argv[0]))
-    print('       python3 {0} data-windows.raw'.format(argv[0]))
+width, height = 1280, 929
+raw = 'data-windows.raw'
+output = '{0}.png'.format(raw)
+
+if not isfile(raw):
+    print('{0} requis:'.format(raw))
+    print('https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/data-windows.raw')
     exit(1)
 
-width, height = 1280, 929
-output = '{0}.png'.format(argv[1])
-with open(argv[1], 'rb') as fileh:
+with open(raw, 'rb') as fileh:
     data = fileh.read()
     buffer_len = len(data)
     pixels = cast(data, POINTER(c_char * buffer_len)).contents
@@ -92,7 +98,7 @@ with open(argv[1], 'rb') as fileh:
     #pixels = b''.join(to_rgb(pixels, buffer_len))
 
     # Version 3
-    # Fonctionne sous Python 2 seulement, ultra rapide.
+    # Ne fonctionne pas.
     #pixels = str(to_rgb(pixels, buffer_len))
 
     print(time() - start)
