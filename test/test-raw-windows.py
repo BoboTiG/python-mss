@@ -89,6 +89,11 @@ with open(raw, 'rb') as fileh:
     # Ici, on inverse le B et le R
     start = time()
 
+    # Version 0
+    # Fonctionne sous Python 2 et 3, lente.
+    #for idx in xrange(0, buffer_len - 2, 3):
+    #    pixels[idx + 2], pixels[idx] = pixels[idx], pixels[idx + 2]
+
     # Version 1
     # Fonctionne sous Python 2 et 3, rapide.
     pixels[2:buffer_len:3], pixels[0:buffer_len:3] = pixels[0:buffer_len:3], pixels[2:buffer_len:3]

@@ -6,16 +6,9 @@
 '''
 
 from platform import system
-import mss
-
-systems = {
-    'Darwin': mss.MSSMac,
-    'Linux': mss.MSSLinux,
-    'Windows': mss.MSSWindows
-}
-mss_class = systems[system()]
+from mss import mss
 
 if __name__ == '__main__':
-    mss = mss_class()
-    for filename in mss.save(output='monitor-%d.png', screen=1):
+    screnshotter = mss()
+    for filename in screnshotter.save(output='monitor-%d.png', screen=1):
         print('File: "{0}" created.'.format(filename))
