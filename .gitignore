@@ -1,9 +1,9 @@
 dist/
-tests/
-*.pyc
 MANIFEST*
 *.png
 *.png.old
-*.raw
-test/test-linux
+*.pyc
 test/.*
+test/test-linux*.raw
+tests/
+test/test-linux
