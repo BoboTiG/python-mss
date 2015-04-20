@@ -10,7 +10,7 @@
     son bon type afin d'être dans la situation exacte du
     module MSS.
 
-    save_img() ne peut être modifiée car elle fonctionne tel
+    to_png() ne peut être modifiée car elle fonctionne tel
     quel pour GNU/Linux aussi. Sauf si une optimisation est
     possible, je pense notament à la création de `scanlines`.
 
@@ -27,8 +27,8 @@ from struct import pack
 from sys import argv, exit
 from zlib import compress, crc32
 
-def save_img(data, width, height, output):
-    ''' Copied from MSS.save_img(). '''
+def to_png(data, width, height, output):
+    ''' Copied from MSS.to_png(). '''
 
     len_sl = (width * 3 + 3) & -4
     padding = 0 if len_sl % 8 == 0 else (len_sl % 8) // 2
@@ -91,7 +91,7 @@ with open(raw, 'rb') as fileh:
 
     # Version 1
     # Fonctionne sous Python 2 et 3, rapide.
-    #pixels[2:buffer_len:3], pixels[0:buffer_len:3] = pixels[0:buffer_len:3], pixels[2:buffer_len:3]
+    pixels[2:buffer_len:3], pixels[0:buffer_len:3] = pixels[0:buffer_len:3], pixels[2:buffer_len:3]
 
     # Version 2
     # Fonctionne sous Python 2 et 3, lente.
@@ -99,7 +99,7 @@ with open(raw, 'rb') as fileh:
 
     # Version 3
     # Ne fonctionne pas.
-    pixels = str(to_rgb(pixels, buffer_len))
+    #pixels = str(to_rgb(pixels, buffer_len))
 
     # Garde fou
     if len(pixels) != buffer_len:
@@ -109,4 +109,4 @@ with open(raw, 'rb') as fileh:
     print(time() - start)
 
     # Enregistrement de l'image
-    save_img(pixels, width, height, output)
+    to_png(pixels, width, height, output)

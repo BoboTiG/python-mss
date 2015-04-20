@@ -177,13 +177,13 @@ class MSS(object):
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))
                 callback(fname)
-                self.save_img(data=self.get_pixels(monitor),
-                              width=monitor[b'width'],
-                              height=monitor[b'height'],
-                              output=fname)
+                self.to_png(data=self.get_pixels(monitor),
+                            width=monitor[b'width'],
+                            height=monitor[b'height'],
+                            output=fname)
                 yield fname
 
-    def save_img(self, data, width, height, output):
+    def to_png(self, data, width, height, output):
         ''' Dump data to the image file.
             Pure python PNG implementation.
             Image represented as RGB tuples, no interlacing.
@@ -277,8 +277,8 @@ class MSSMac(MSS):
             raise ScreenshotError('MSS: CGWindowListCreateImage() failed.')
         return self.image
 
-    def save_img(self, data, width, height, output):
-        ''' Use my own save_img() method. Because I'm a Mac! '''
+    def to_png(self, data, width, height, output):
+        ''' Use of internal tools, faster and less code to write :) '''
 
         url = NSURL.fileURLWithPath_(output)
         dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)

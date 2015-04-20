@@ -9,12 +9,12 @@
 import mss
 import sys
 
-if mss.__version__ < '1.0.1':
+if mss.__version__ < '2.0.0':
      from struct import pack
      from zlib import compress, crc32
 
-     def save_img(data, width, height, output):
-          ''' Copied from MSS.save_img(). '''
+     def to_png(data, width, height, output):
+          ''' Copied from MSS.to_png(). '''
 
           len_sl = (width * 3 + 3) & -4
           padding = 0 if len_sl % 8 == 0 else (len_sl % 8) // 2
@@ -58,12 +58,12 @@ with open(sys.argv[1], 'rb') as fileh:
      width = int(sys.argv[2])
      height = int(sys.argv[3])
      output = '{0}.png'.format(sys.argv[1])
-     if mss.__version__ < '1.0.1':
+     if mss.__version__ < '2.0.0':
          print('Outdated version of MSS, please `pip install --upgrade mss`')
-         save_img(data, width, height, output)
+         to_png(data, width, height, output)
      else:
          mss = mss.MSS()
-         mss.save_img(data, width, height, output)
+         mss.to_png(data, width, height, output)
      print('File {0} created.'.format(output))
      sys.exit(0)
      print('Impossible to get contents of "{0}".'.format(sys.argv[1]))
