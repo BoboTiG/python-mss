@@ -76,7 +76,7 @@ output = '{0}.png'.format(raw)
 
 if not isfile(raw):
     print('{0} requis:'.format(raw))
-    print('https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/data-windows.raw')
+    print('https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/{0}'.format(raw))
     exit(1)
 
 with open(raw, 'rb') as fileh:
@@ -99,7 +99,12 @@ with open(raw, 'rb') as fileh:
 
     # Version 3
     # Ne fonctionne pas.
-    #pixels = str(to_rgb(pixels, buffer_len))
+    pixels = str(to_rgb(pixels, buffer_len))
+
+    # Garde fou
+    if len(pixels) != buffer_len:
+        print('Erreur lors du swap BGR -> RGB.')
+        exit(1)
 
     print(time() - start)
 
