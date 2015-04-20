@@ -4,7 +4,7 @@
 ''' Fichier test pour IndexError::Swap.efficient().
 
     `pixels` est rapatrié depuis test-windows.raw et casté sous
-    sont bon type afin d'être dans la situation exacte du
+    son bon type afin d'être dans la situation exacte du
     module MSS.
 
     save_img() ne peut être modifiée car elle fonctionne tel
