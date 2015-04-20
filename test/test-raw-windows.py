@@ -12,7 +12,7 @@
     possible, je pense notament à la création de `scanlines`.
 
     Le fichier test-windows.raw se trouve à l'adresse :
-    https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/test-windows.raw
+    https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/data-windows.raw
 '''
 
 from __future__ import print_function, unicode_literals
@@ -67,8 +67,8 @@ def to_rgb(pixels, buffer_len):
 
 
 if len(argv) != 2:
-    print('Usage: python2 {0} test-windows.raw'.format(argv[0]))
-    print('       python3 {0} test-windows.raw'.format(argv[0]))
+    print('Usage: python2 {0} data-windows.raw'.format(argv[0]))
+    print('       python3 {0} data-windows.raw'.format(argv[0]))
     exit(1)
 
 width, height = 1280, 929

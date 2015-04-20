@@ -4,6 +4,6 @@ MANIFEST*
 *.png.old
 *.pyc
 test/.*
-test/test-linux*.raw
+test/data-linux*.raw
 tests/
 test/test-linux

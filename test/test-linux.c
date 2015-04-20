@@ -84,7 +84,7 @@ void full_screen(void) {
     gettimeofday(&end, NULL);
     printf("Fullscreen: %dx%d %u msec\n", width, height, (1000000 * end.tv_sec + end.tv_usec) - (1000000 * start.tv_sec + start.tv_usec));
 
-    FILE* fh = fopen("test-linux_fullscreen.raw", "wb");
+    FILE* fh = fopen("data-linux_fullscreen.raw", "wb");
     fwrite(pixels, sizeof(unsigned char), sizeof(unsigned char) * width * height * 3, fh);
     fclose(fh);
     return;
@@ -141,7 +141,7 @@ void each_screen(void) {
         printf("Screen %d: %dx%d @ %u msec\n", n, width, height, (1000000 * end.tv_sec + end.tv_usec) - (1000000 * start.tv_sec + start.tv_usec));
 
         char output[128];
-        sprintf(output, "test-linux_screen-%d.raw", n);
+        sprintf(output, "data-linux_screen-%d.raw", n);
         FILE* fh = fopen(output, "wb");
         fwrite(pixels, sizeof(unsigned char), sizeof(unsigned char) * width * height * 3, fh);
         fclose(fh);
