@@ -188,6 +188,8 @@ class MSS(object):
             Pure python PNG implementation.
             Image represented as RGB tuples, no interlacing.
             http://inaps.org/journal/comment-fonctionne-le-png
+
+            Returns True if no error. Else raises ScreenshotError.
         '''
 
         len_sl = (width * 3 + 3) & -4
@@ -221,7 +223,7 @@ class MSS(object):
         with open(output, 'wb') as fileh:
             fileh.write(
                 magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
-            return
+            return True
         err = 'MSS: error writing data to "{0}".'.format(output)
         raise ScreenshotError(err)
 
@@ -287,8 +289,9 @@ class MSSMac(MSS):
             raise ScreenshotError(err)
 
         CGImageDestinationAddImage(dest, data, None)
-        if not CGImageDestinationFinalize(dest):
-            raise ScreenshotError('MSS: CGImageDestinationFinalize() failed.')
+        if CGImageDestinationFinalize(dest):
+            return True
+        raise ScreenshotError('MSS: CGImageDestinationFinalize() failed.')
 
 
 class MSSLinux(MSS):
