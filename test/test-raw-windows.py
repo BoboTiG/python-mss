@@ -106,12 +106,12 @@ with open(raw, 'rb') as fileh:
     # Ne fonctionne pas.
     #pixels = str(to_rgb(pixels, buffer_len))
 
+    print(time() - start)
+
     # Garde fou
     if len(pixels) != buffer_len:
         print('Erreur lors du swap BGR -> RGB.')
         exit(1)
-
-    print(time() - start)
 
     # Enregistrement de l'image
     to_png(pixels, width, height, output)
