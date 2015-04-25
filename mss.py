@@ -632,8 +632,10 @@ class MSSWindows(MSS):
                 windll.gdi32.DeleteObject(bmp)
 
         # Replace pixels values: BGR to RGB
+        self.image = bytearray(self.image)
         self.image[2:buffer_len:3], self.image[0:buffer_len:3] = \
             self.image[0:buffer_len:3], self.image[2:buffer_len:3]
+        self.image = bytes(self.image)
         return self.image
 
 
