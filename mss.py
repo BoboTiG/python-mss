@@ -430,6 +430,42 @@ class MSSLinux(MSS):
 
             The XGetPixel() C code can be found at this URL:
             http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
+
+
+            @TODO: see if it is quicker than using XGetPixel().
+
+            1) C code as quick as XGetPixel() to translate into ctypes:
+
+            pixels = malloc(sizeof(unsigned char) * width * height * 3);
+            for ( x = 0; x < width; ++x )
+                for ( y = 0; y < height; ++y )
+                    offset =  width * y * 3;
+                    addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
+                    pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
+                    pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+                    pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+                    pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
+
+            2) A first try in Python with ctypes
+
+            from ctypes import create_string_buffer, c_char
+            rmask = ximage.contents.red_mask
+            gmask = ximage.contents.green_mask
+            bmask = ximage.contents.blue_mask
+            bpl = ximage.contents.bytes_per_line
+            buffer_len = width * height * 3
+            xdata = ximage.contents.data
+            data = cast(xdata, POINTER(c_char * buffer_len)).contents
+            self.image = create_string_buffer(sizeof(c_char) * buffer_len)
+            for x in range(width):
+                for y in range(height):
+                    offset =  width * y * 3
+                    addr = data[y * bpl + (x << 2)][0]
+                    pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0]
+                    self.image[x * 3 + offset]     = (pixel & rmask) >> 16
+                    self.image[x * 3 + offset + 1] = (pixel & gmask) >> 8
+                    self.image[x * 3 + offset + 2] =  pixel & bmask
+            return self.image
         '''
 
         width, height = monitor[b'width'], monitor[b'height']
@@ -446,62 +482,23 @@ class MSSLinux(MSS):
         if not ximage:
             raise ScreenshotError('MSS: XGetImage() failed.')
 
-        '''
-        C code as quick as XGetPixel() to translate into ctypes:
-
-        pixels = malloc(sizeof(unsigned char) * width * height * 3);
-
-        for ( x = 0; x < width; ++x )
-            for ( y = 0; y < height; ++y )
-                offset =  width * y * 3;
-                addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
-                pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
-                pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
-                pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
-                pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
-        '''
-        '''
-        # @TODO: see if it is quicker than using XGetPixel().
-        from ctypes import create_string_buffer, c_char, sizeof
-        rmask = ximage.contents.red_mask
-        gmask = ximage.contents.green_mask
-        bmask = ximage.contents.blue_mask
-        bpl = ximage.contents.bytes_per_line
-        buffer_len = width * height * 3
-        xdata = ximage.contents.data
-        data = cast(xdata, POINTER(c_char * buffer_len)).contents
-        self.image = create_string_buffer(sizeof(c_char) * buffer_len)
-        xrange = getattr(__builtins__, 'xrange', range)
-        for x in xrange(width):
-            for y in xrange(height):
-                offset =  width * y * 3
-                addr = data[y * bpl + (x << 2)][0]
-                pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0]
-                self.image[x * 3 + offset]     = (pixel & rmask) >> 16
-                self.image[x * 3 + offset + 1] = (pixel & gmask) >> 8
-                self.image[x * 3 + offset + 2] =  pixel & bmask
-        return self.image
-        '''
-
         # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, b=pack):
+        def pix(pixel, _resultats={}, _b=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = b(b'<B', (pixel & rmask) >> 16) + \
-                    b(b'<B', (pixel & gmask) >> 8) + b(b'<B', pixel & bmask)
+                _resultats[pixel] = _b(b'<B', (pixel & rmask) >> 16) + \
+                    _b(b'<B', (pixel & gmask) >> 8) + _b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         rmask = ximage.contents.red_mask
         gmask = ximage.contents.green_mask
         bmask = ximage.contents.blue_mask
-        xrange = getattr(__builtins__, 'xrange', range)
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(ximage, x, y))
-                  for y in xrange(height) for x in xrange(width)]
+                  for y in range(height) for x in range(width)]
         self.image = b''.join(pixels)
-
         self.xlib.XDestroyImage(ximage)
         return self.image
 
@@ -650,11 +647,9 @@ def mss(*args, **kwargs):
         instantiation.
     '''
 
-    mss_class = {
-        'Darwin': MSSMac,
-        'Linux': MSSLinux,
-        'Windows': MSSWindows
-    }[system()]
+    mss_class = {'Darwin': MSSMac,
+                 'Linux': MSSLinux,
+                 'Windows': MSSWindows}[system()]
 
     return mss_class(*args, **kwargs)
 
