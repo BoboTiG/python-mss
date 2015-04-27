@@ -20,10 +20,6 @@
 
 from __future__ import print_function, unicode_literals
 
-from copy import copy
-from ctypes import cast, c_char, POINTER
-from os.path import isfile
-from time import time
 from struct import pack
 from sys import argv, exit
 from zlib import compress, crc32
@@ -64,6 +60,8 @@ def to_png(data, width, height, output):
             magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
 
 
+''' Ci-dessous, toutes la variantes pour le swap BGR -> RGB. '''
+
 def v0(pixels, buffer_len):
     ''' Fonctionne sous Python 2 et 3, lente. '''
 
@@ -103,31 +101,37 @@ def v3(pixels, buffer_len):
     return pixels
 
 
-width, height = 1280, 929
-raw = 'data-windows.raw'
-if not isfile(raw):
-    print('{0} requis:'.format(raw))
-    print('https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/{0}'.format(raw))
-    exit(1)
+if __name__ == '__main__':
+    from copy import copy
+    from ctypes import cast, c_char, POINTER
+    from os.path import isfile
+    from time import time
 
-with open(raw, 'rb') as fileh:
-    data = fileh.read()
-    buffer_len = len(data)
-    pixels_raw = cast(data, POINTER(c_char * buffer_len)).contents
-    xrange = getattr(__builtins__, 'xrange', range)
+    width, height = 1280, 929
+    raw = 'data-windows.raw'
+    if not isfile(raw):
+        print('{0} requis:'.format(raw))
+        print('https://raw.githubusercontent.com/BoboTiG/python-mss/develop/test/{0}'.format(raw))
+        exit(1)
 
-    tests = [(2, v2), (0, v0), (1, v1), (3, v3)]
-    for (n, funct) in tests:
-        print('Version {0}'.format(n), end=' ')
-        pix = copy(pixels_raw)
-        start = time()
-        # Ici, on inverse le B et le R
-        pixels = funct(pix, buffer_len)
-        if len(pixels) == buffer_len:
-            print(time() - start)
-            # Enregistrement de l'image
-            output = '{0}-v{1}.png'.format(raw, n)
-            to_png(pixels, width, height, output)
-        else:
-            print('Erreur lors du swap BGR -> RGB.')
+    with open(raw, 'rb') as fileh:
+        data = fileh.read()
+        buffer_len = len(data)
+        pixels_raw = cast(data, POINTER(c_char * buffer_len)).contents
+        xrange = getattr(__builtins__, 'xrange', range)
+
+        tests = [(2, v2), (0, v0), (1, v1), (3, v3)]
+        for (n, funct) in tests:
+            print('Version {0}'.format(n), end=' ')
+            pix = copy(pixels_raw)
+            start = time()
+            # Ici, on inverse le B et le R
+            pixels = funct(pix, buffer_len)
+            if len(pixels) == buffer_len:
+                print(time() - start)
+                # Enregistrement de l'image
+                output = '{0}-v{1}.png'.format(raw, n)
+                to_png(pixels, width, height, output)
+            else:
+                print('Erreur lors du swap BGR -> RGB.')
 

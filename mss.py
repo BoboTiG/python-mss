@@ -192,38 +192,33 @@ class MSS(object):
             Returns True if no error. Else raises ScreenshotError.
         '''
 
-        len_sl = (width * 3 + 3) & -4
-        padding = 0 if len_sl % 8 == 0 else (len_sl % 8) // 2
-        scanlines = b''.join(
-            [b'0' + data[y * len_sl:y * len_sl + len_sl - padding]
-             for y in range(height)])
-        zcrc32 = crc32
-        zcompr = compress
-        b = pack
-
-        magic = b(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
-
-        # Header: size, marker, data, CRC32
-        ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = b(b'>2I5B', width, height, 8, 2, 0, 0, 0)
-        ihdr[3] = b(b'>I', zcrc32(b''.join(ihdr[1:3])) & 0xffffffff)
-        ihdr[0] = b(b'>I', len(ihdr[2]))
-
-        # Data: size, marker, data, CRC32
-        idat = [b'', b'IDAT', b'', b'']
-        idat[2] = zcompr(scanlines)
-        idat[3] = b(b'>I', zcrc32(b''.join(idat[1:3])) & 0xffffffff)
-        idat[0] = b(b'>I', len(idat[2]))
-
-        # Footer: size, marker, None, CRC32
-        iend = [b'', b'IEND', b'', b'']
-        iend[3] = b(b'>I', zcrc32(iend[1]) & 0xffffffff)
-        iend[0] = b(b'>I', len(iend[2]))
-
         with open(output, 'wb') as fileh:
-            fileh.write(
-                magic + b''.join(ihdr) + b''.join(idat) + b''.join(iend))
+            b = pack
+            line = (width * 3 + 3) & -4
+            padding = 0 if line % 8 == 0 else (line % 8) // 2
+            scanlines = b''.join(
+                [b'0' + data[y * line:y * line + line - padding]
+                 for y in range(height)])
+
+            magic = b(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
+
+            # Header: size, marker, data, CRC32
+            ihdr = [b'', b'IHDR', b'', b'']
+            ihdr[2] = b(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+            ihdr[3] = b(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
+            ihdr[0] = b(b'>I', len(ihdr[2]))
+
+            # Data: size, marker, data, CRC32
+            idat = [b'', b'IDAT', compress(scanlines), b'']
+            idat[3] = b(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
+            idat[0] = b(b'>I', len(idat[2]))
+
+            # Footer: size, marker, None, CRC32
+            iend = b'4IEND'
+
+            fileh.write(magic + b''.join(ihdr) + b''.join(idat) + iend)
             return True
+
         err = 'MSS: error writing data to "{0}".'.format(output)
         raise ScreenshotError(err)
 
