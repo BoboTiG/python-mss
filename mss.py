@@ -186,10 +186,7 @@ class MSS(object):
     def to_png(self, data, width, height, output):
         ''' Dump data to the image file.
             Pure python PNG implementation.
-            Image represented as RGB tuples, no interlacing.
             http://inaps.org/journal/comment-fonctionne-le-png
-
-            Returns True if no error. Else raises ScreenshotError.
         '''
 
         with open(output, 'wb') as fileh:
@@ -217,7 +214,7 @@ class MSS(object):
             iend = b'4IEND'
 
             fileh.write(magic + b''.join(ihdr) + b''.join(idat) + iend)
-            return True
+            return
 
         err = 'MSS: error writing data to "{0}".'.format(output)
         raise ScreenshotError(err)
