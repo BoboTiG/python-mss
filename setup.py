@@ -20,7 +20,7 @@ setup(
     author='Tiger-222',
     py_modules=['mss'],
     author_email='mickael@jmsinfo.co',
-    description='A cross-platform multiple screenshots module in pure python using ctypes',
+    description='A very fast cross-platform multiple screenshots module in pure python using ctypes',
     long_description=open('README.rst').read(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' A cross-platform multiple screenshots module in pure python using ctypes.
+''' A very fast cross-platform multiple screenshots module in pure python
+    using ctypes.
 
     This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
 
@@ -43,6 +44,7 @@ if system() == 'Darwin':
     from LaunchServices import kUTTypePNG
 elif system() == 'Linux':
     from os import environ
+    from os.path import dirname
     from ctypes.util import find_library
     from ctypes import byref, cast, cdll, POINTER, Structure, c_char_p,\
         c_int, c_int32, c_long, c_uint, c_uint32, c_ulong, c_ushort, c_void_p, \
@@ -300,7 +302,13 @@ class MSSLinux(MSS):
             pass
 
     def __init__(self):
-        ''' GNU/Linux initialisations '''
+        ''' GNU/Linux initialisations.
+
+            Paths where the MSS library is loaded from:
+                - /usr/local/lib/pythonx.y/dist-packages/
+                - current working directory
+            if no one found, use of the _very_ slow method get_pixels_slow().
+        '''
 
         disp = None
         self.display = None
@@ -335,8 +343,14 @@ class MSSLinux(MSS):
                                                                 v_min)
                 self.mss = cdll.LoadLibrary(libmss)
             except OSError:
-                print('MSS: no MSS library found. Using slow native function.')
-                self.mss = False
+                try:
+                    libmss = '{0}/libmss.so'.format(dirname(__file__))
+                    self.mss = cdll.LoadLibrary(libmss)
+                except OSError:
+                    msg = 'MSS: no MSS library found. ' + \
+                          'Using slow native function.'
+                    print(msg)
+                    self.mss = False
 
         self._set_argtypes()
         self._set_restypes()
