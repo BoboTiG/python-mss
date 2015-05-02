@@ -45,7 +45,8 @@ elif system() == 'Linux':
     from os import environ
     from ctypes.util import find_library
     from ctypes import byref, cast, cdll, POINTER, Structure, c_char_p,\
-        c_int, c_int32, c_long, c_uint, c_uint32, c_ulong, c_ushort, c_void_p
+        c_int, c_int32, c_long, c_uint, c_uint32, c_ulong, c_ushort, c_void_p, \
+        create_string_buffer
 
     class Display(Structure):
         pass
@@ -144,8 +145,6 @@ class MSS(object):
                 'width':  the width,
                 'heigth': the height
             }
-
-            Returns a dict of pixels.
         '''
         raise NotImplementedError('MSS: subclasses need to implement this!')
 
@@ -324,6 +323,13 @@ class MSSLinux(MSS):
             raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
 
+        mss = find_library('libmss.so')
+        self.mss = False
+        if mss:
+            self.mss = cdll.LoadLibrary(mss)
+        else:
+            print('MSS: no MSS library found. Using native function (slow).')
+
         self._set_argtypes()
         self._set_restypes()
 
@@ -363,6 +369,10 @@ class MSSLinux(MSS):
             POINTER(XRRScreenResources)
         ]
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
+        if self.mss:
+            self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_uint,
+                                                 c_uint, c_uint, c_uint,
+                                                 c_uint, c_void_p]
 
     def _set_restypes(self):
         ''' Functions return type.
@@ -385,6 +395,8 @@ class MSSLinux(MSS):
         self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
+        if self.mss:
+            self.mss.GetXImagePixels.restype = c_void_p
 
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
@@ -394,12 +406,10 @@ class MSSLinux(MSS):
         if screen == -1:
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            yield ({
-                b'left': int(gwa.x),
-                b'top': int(gwa.y),
-                b'width': int(gwa.width),
-                b'height': int(gwa.height)
-            })
+            yield {b'left': int(gwa.x),
+                   b'top': int(gwa.y),
+                   b'width': int(gwa.width),
+                   b'height': int(gwa.height)}
         else:
             # Fix for XRRGetScreenResources:
             # expected LP_Display instance instead of LP_XWindowAttributes
@@ -408,17 +418,50 @@ class MSSLinux(MSS):
             for num in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                   mon.contents.crtcs[num])
-                yield ({
-                    b'left': int(crtc.contents.x),
-                    b'top': int(crtc.contents.y),
-                    b'width': int(crtc.contents.width),
-                    b'height': int(crtc.contents.height)
-                })
+                yield {b'left': int(crtc.contents.x),
+                       b'top': int(crtc.contents.y),
+                       b'width': int(crtc.contents.width),
+                       b'height': int(crtc.contents.height)}
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
 
     def get_pixels(self, monitor):
+        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
+
+        width, height = monitor[b'width'], monitor[b'height']
+        left, top = monitor[b'left'], monitor[b'top']
+        ZPixmap = 2
+        allplanes = self.xlib.XAllPlanes()
+
+        # Fix for XGetImage:
+        # expected LP_Display instance instead of LP_XWindowAttributes
+        root = cast(self.root, POINTER(Display))
+
+        ximage = self.xlib.XGetImage(self.display, root, left, top, width,
+                                     height, allplanes, ZPixmap)
+        if not ximage:
+            raise ScreenshotError('MSS: XGetImage() failed.')
+
+        if not self.mss:
+            self.image = self.get_pixels_slow(ximage, width, height,
+                                              ximage.contents.red_mask,
+                                              ximage.contents.green_mask,
+                                              ximage.contents.blue_mask)
+        else:
+            buffer_len = height * width * 3
+            self.image = create_string_buffer(buffer_len)
+            self.mss.GetXImagePixels(ximage, width, height,
+                                     ximage.contents.red_mask,
+                                     ximage.contents.green_mask,
+                                     ximage.contents.blue_mask,
+                                     self.image)
+        self.xlib.XDestroyImage(ximage)
+        return self.image
+
+    def get_pixels_slow(self, ximage, width, height, rmask, gmask, bmask):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
+
+            /!\ Insanely slow version using ctypes.
 
             The XGetPixel() C code can be found at this URL:
             http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
@@ -451,28 +494,14 @@ class MSSLinux(MSS):
             self.image = create_string_buffer(sizeof(c_char) * buffer_len)
             for x in range(width):
                 for y in range(height):
-                    offset =  width * y * 3
+                    offset =  x * 3 + width * y * 3
                     addr = data[y * bpl + (x << 2)][0]
                     pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0]
-                    self.image[x * 3 + offset]     = (pixel & rmask) >> 16
-                    self.image[x * 3 + offset + 1] = (pixel & gmask) >> 8
-                    self.image[x * 3 + offset + 2] =  pixel & bmask
+                    self.image[offset]     = (pixel & rmask) >> 16
+                    self.image[offset + 1] = (pixel & gmask) >> 8
+                    self.image[offset + 2] =  pixel & bmask
             return self.image
         '''
-
-        width, height = monitor[b'width'], monitor[b'height']
-        left, top = monitor[b'left'], monitor[b'top']
-        ZPixmap = 2
-        allplanes = self.xlib.XAllPlanes()
-
-        # Fix for XGetImage:
-        # expected LP_Display instance instead of LP_XWindowAttributes
-        root = cast(self.root, POINTER(Display))
-
-        ximage = self.xlib.XGetImage(self.display, root, left, top, width,
-                                     height, allplanes, ZPixmap)
-        if not ximage:
-            raise ScreenshotError('MSS: XGetImage() failed.')
 
         # @TODO: this part takes most of the time. Need a better solution.
         def pix(pixel, _resultats={}, _b=pack):
@@ -484,14 +513,10 @@ class MSSLinux(MSS):
                     _b(b'<B', (pixel & gmask) >> 8) + _b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
-        rmask = ximage.contents.red_mask
-        gmask = ximage.contents.green_mask
-        bmask = ximage.contents.blue_mask
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]
         self.image = b''.join(pixels)
-        self.xlib.XDestroyImage(ximage)
         return self.image
 
 
@@ -548,12 +573,10 @@ class MSSWindows(MSS):
             right = windll.user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
             top = windll.user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
             bottom = windll.user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
-            yield ({
-                b'left': int(left),
-                b'top': int(top),
-                b'width': int(right - left),
-                b'height': int(bottom - top)
-            })
+            yield {b'left': int(left),
+                   b'top': int(top),
+                   b'width': int(right - left),
+                   b'height': int(bottom - top)}
         else:
 
             def _callback(monitor, dc, rect, data):
@@ -561,12 +584,10 @@ class MSSWindows(MSS):
                     a RECT with appropriate values.
                 '''
                 rct = rect.contents
-                monitors.append({
-                    b'left': int(rct.left),
-                    b'top': int(rct.top),
-                    b'width': int(rct.right - rct.left),
-                    b'height': int(rct.bottom - rct.top)
-                })
+                monitors.append({b'left': int(rct.left),
+                                 b'top': int(rct.top),
+                                 b'width': int(rct.right - rct.left),
+                                 b'height': int(rct.bottom - rct.top)})
                 return 1
 
             monitors = []

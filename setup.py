@@ -1,15 +1,18 @@
 
-try:
-    from distutils.core import setup
-except ImportError:
-    from setuptools import setup
+from distutils.core import setup, Extension
+from platform import system
+from mss import __version__
+
 
 open('MANIFEST.in', 'w').write("\n".join((
     'include *.rst',
     'include doc/*'
 )))
 
-from mss import __version__
+libmss = False
+if system() == 'Linux':
+        libmss = [Extension('libmss', sources = ['dep/linux/mss.c'],
+                            libraries = ['X11'])]
 
 setup(
     name='mss',
@@ -57,6 +60,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities'
     ],
-    url='https://github.com/BoboTiG/python-mss'
+    url='https://github.com/BoboTiG/python-mss',
+    ext_modules = libmss
 )
 

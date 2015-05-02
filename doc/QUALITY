@@ -9,3 +9,6 @@ pep8 --hang-closing mss.py
 codespell mss.py
 codespell README.rst
 codespell doc/*
+
+# Dry run
+python setup.py check
