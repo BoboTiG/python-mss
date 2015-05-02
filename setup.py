@@ -17,7 +17,7 @@ if system() == 'Linux':
     if architecture()[0].startswith('64'):
         file_ = 'dep/linux/libmss-64.so'
     copy(file_, file_ok)
-    data_files.append(('/usr/local/lib/', [file_ok]))
+    data_files.append(('/usr/lib/', [file_ok]))
 
 setup(
     name='mss',
