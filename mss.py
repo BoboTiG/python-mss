@@ -303,6 +303,17 @@ class MSSLinux(MSS):
     def __init__(self):
         ''' GNU/Linux initialisations '''
 
+        disp = None
+        self.display = None
+        try:
+            if sys.version > '3':
+                disp = bytes(environ['DISPLAY'], 'utf-8')
+            else:
+                disp = environ['DISPLAY']
+        except KeyError:
+            err = 'MSS: $DISPLAY not set. Stopping to prevent segfault.'
+            raise ScreenshotError(err)
+
         x11 = find_library('X11')
         if not x11:
             raise ScreenshotError('MSS: no X11 library found.')
@@ -315,17 +326,6 @@ class MSSLinux(MSS):
 
         self._set_argtypes()
         self._set_restypes()
-
-        disp = None
-        self.display = None
-        try:
-            if sys.version > '3':
-                disp = bytes(environ['DISPLAY'], 'utf-8')
-            else:
-                disp = environ['DISPLAY']
-        except KeyError:
-            err = 'MSS: $DISPLAY not set. Stopping to prevent segfault.'
-            raise ScreenshotError(err)
 
         # At this point, if there is no running server, it could end on
         # a segmentation fault. And we cannot catch it.
