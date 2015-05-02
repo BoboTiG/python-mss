@@ -334,9 +334,11 @@ class MSSLinux(MSS):
         self._set_argtypes()
         self._set_restypes()
 
-        # At this point, if there is no running server, it could end on
-        # a segmentation fault. And we cannot catch it.
         self.display = self.xlib.XOpenDisplay(disp)
+        try:
+            data_ = self.display.contents
+        except ValueError:
+            raise ScreenshotError('MSS: XOpenDisplay() failed.')
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
