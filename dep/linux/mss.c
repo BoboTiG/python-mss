@@ -29,9 +29,6 @@ int GetXImagePixels(
     if ( !ximage ) {
         return -1;
     }
-    if ( !width || !height || !red_mask || !blue_mask || !green_mask ) {
-        return -1;
-    }
     if ( !pixels ) {
         return 0;
     }
