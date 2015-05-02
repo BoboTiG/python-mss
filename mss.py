@@ -44,7 +44,6 @@ if system() == 'Darwin':
     from LaunchServices import kUTTypePNG
 elif system() == 'Linux':
     from os import environ
-    from os.path import dirname
     from ctypes.util import find_library
     from ctypes import byref, cast, cdll, POINTER, Structure, c_char_p,\
         c_int, c_int32, c_long, c_uint, c_uint32, c_ulong, c_ushort, c_void_p, \
@@ -344,7 +343,7 @@ class MSSLinux(MSS):
                 self.mss = cdll.LoadLibrary(libmss)
             except OSError:
                 try:
-                    libmss = '{0}/libmss.so'.format(dirname(__file__))
+                    libmss = find_library('mss')
                     self.mss = cdll.LoadLibrary(libmss)
                 except OSError:
                     msg = 'MSS: no MSS library found. ' + \
