@@ -11,6 +11,7 @@ devel   201y/mm/dd
       - MSSLinux: get_pixels() insanely fast, use of MSS library (C code)
       - MSSWindows: get_pixels() insanely fast
       - MSSWindows: a fix to work on Windows 8.1
+      - MSSWindows: Windows 10 ready
 
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
