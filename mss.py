@@ -346,6 +346,7 @@ class MSSLinux(MSS):
             Curiously, if we set up self.xlib.XGetPixel.argtypes,
             the entire process takes twice more time.
             So, no need to waste this precious time :)
+            Note: this issue does not occur when using libmss.
         '''
 
         self.xlib.XOpenDisplay.argtypes = [c_char_p]
@@ -375,19 +376,14 @@ class MSSLinux(MSS):
                                                  c_uint, c_void_p]
 
     def _set_restypes(self):
-        ''' Functions return type.
-
-            Curiously, if we set up self.xlib.XGetPixel.restype,
-            the entire process takes twice more time.
-            So, no need to waste this precious time :)
-        '''
+        ''' Functions return type. '''
 
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
-        # self.xlib.XGetPixel.restype = c_ulong
+        self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
