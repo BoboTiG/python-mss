@@ -13,9 +13,9 @@ with open('MANIFEST.in', 'w') as fileh:
 data_files = []
 if system() == 'Linux':
     file_ok = 'libmss.so'
-    file_ = 'dep/linux/libmss.so'
+    file_ = 'dep/linux/32/libmss.so'
     if architecture()[0].startswith('64'):
-        file_ = 'dep/linux/libmss-64.so'
+        file_ = 'dep/linux/64/libmss.so'
     copy(file_, file_ok)
     data_files.append(('/usr/lib/', [file_ok]))
 
