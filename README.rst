@@ -23,7 +23,7 @@ Support
 -------
 
 =========  =========  ========  =======
-Python     GNU/linux  Mac OS X  Windows
+Python     GNU/linux   MacOS X  Windows
 =========  =========  ========  =======
 3.5.0a3    True       True      True
 **3.4.3**  **True**   **True**  **True**

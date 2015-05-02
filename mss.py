@@ -231,12 +231,12 @@ class MSSMac(MSS):
 
         if screen == -1:
             rect = CGRectInfinite
-            yield ({
+            yield {
                 b'left': int(rect.origin.x),
                 b'top': int(rect.origin.y),
                 b'width': int(rect.size.width),
                 b'height': int(rect.size.height)
-            })
+            }
         else:
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
@@ -248,12 +248,12 @@ class MSSMac(MSS):
                 rot = CGDisplayRotation(display)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
-                yield ({
+                yield {
                     b'left': int(left),
                     b'top': int(top),
                     b'width': int(width),
                     b'height': int(height)
-                })
+                }
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -331,12 +331,11 @@ class MSSLinux(MSS):
             self.mss = cdll.LoadLibrary(libmss)
         except OSError:
             try:
-                libmss = '{0}/libmss.cpython-{1}{2}m.so'.format(lib_dir,
-                                                                v_maj,
+                libmss = '{0}/libmss.cpython-{1}{2}m.so'.format(lib_dir, v_maj,
                                                                 v_min)
                 self.mss = cdll.LoadLibrary(libmss)
             except OSError:
-                print('MSS: no MSS library found. Using native function (slow).')
+                print('MSS: no MSS library found. Using slow native function.')
                 self.mss = False
 
         self._set_argtypes()
@@ -374,9 +373,8 @@ class MSSLinux(MSS):
         self.xrandr.XRRGetCrtcInfo.argtypes = [POINTER(Display),
                                                POINTER(XRRScreenResources),
                                                c_long]
-        self.xrandr.XRRFreeScreenResources.argtypes = [
-            POINTER(XRRScreenResources)
-        ]
+        self.xrandr.XRRFreeScreenResources.argtypes = \
+            [POINTER(XRRScreenResources)]
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
         if self.mss:
             self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_uint,
@@ -415,10 +413,12 @@ class MSSLinux(MSS):
         if screen == -1:
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            yield {b'left': int(gwa.x),
-                   b'top': int(gwa.y),
-                   b'width': int(gwa.width),
-                   b'height': int(gwa.height)}
+            yield {
+                b'left': int(gwa.x),
+                b'top': int(gwa.y),
+                b'width': int(gwa.width),
+                b'height': int(gwa.height)
+            }
         else:
             # Fix for XRRGetScreenResources:
             # expected LP_Display instance instead of LP_XWindowAttributes
@@ -427,10 +427,12 @@ class MSSLinux(MSS):
             for num in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                   mon.contents.crtcs[num])
-                yield {b'left': int(crtc.contents.x),
-                       b'top': int(crtc.contents.y),
-                       b'width': int(crtc.contents.width),
-                       b'height': int(crtc.contents.height)}
+                yield {
+                    b'left': int(crtc.contents.x),
+                    b'top': int(crtc.contents.y),
+                    b'width': int(crtc.contents.width),
+                    b'height': int(crtc.contents.height)
+                }
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
 
@@ -462,8 +464,7 @@ class MSSLinux(MSS):
             self.mss.GetXImagePixels(ximage, width, height,
                                      ximage.contents.red_mask,
                                      ximage.contents.green_mask,
-                                     ximage.contents.blue_mask,
-                                     self.image)
+                                     ximage.contents.blue_mask, self.image)
         self.xlib.XDestroyImage(ximage)
         return self.image
 
@@ -582,10 +583,12 @@ class MSSWindows(MSS):
             right = windll.user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
             top = windll.user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
             bottom = windll.user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
-            yield {b'left': int(left),
-                   b'top': int(top),
-                   b'width': int(right - left),
-                   b'height': int(bottom - top)}
+            yield {
+                b'left': int(left),
+                b'top': int(top),
+                b'width': int(right - left),
+                b'height': int(bottom - top)
+            }
         else:
 
             def _callback(monitor, dc, rect, data):
@@ -593,10 +596,12 @@ class MSSWindows(MSS):
                     a RECT with appropriate values.
                 '''
                 rct = rect.contents
-                monitors.append({b'left': int(rct.left),
-                                 b'top': int(rct.top),
-                                 b'width': int(rct.right - rct.left),
-                                 b'height': int(rct.bottom - rct.top)})
+                monitors.append({
+                    b'left': int(rct.left),
+                    b'top': int(rct.top),
+                    b'width': int(rct.right - rct.left),
+                    b'height': int(rct.bottom - rct.top)
+                })
                 return 1
 
             monitors = []
