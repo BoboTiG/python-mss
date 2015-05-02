@@ -1,4 +1,5 @@
 
+import sys
 from distutils.core import setup
 from os import unlink
 from platform import architecture, system
@@ -10,8 +11,9 @@ with open('MANIFEST.in', 'w') as fileh:
     files = ['include *.rst', 'include doc/*', 'prune test*']
     fileh.write("\n".join(files))
 
+todo = 'check' not in sys.argv and system() == 'Linux'
 data_files = []
-if system() == 'Linux':
+if todo:
     file_ok = 'libmss.so'
     file_ = 'dep/linux/32/libmss.so'
     if architecture()[0].startswith('64'):
@@ -69,7 +71,14 @@ setup(
     data_files=data_files
 )
 
-try:
+if todo and 'install' in sys.argv:
+    from subprocess import call
+    print('Removing {0}'.format(file_ok))
     unlink(file_ok)
-except NameError:
-    pass
+    try:
+        print('Removing /etc/ld.so.cache')
+        unlink('/etc/ld.so.cache')
+        print('Writing /etc/ld.so.cache')
+        ret = call(['ldconfig'])
+    except OSError:
+        pass
