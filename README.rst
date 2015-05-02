@@ -17,14 +17,6 @@ You can install it with pip::
 
     pip install --upgrade mss
 
-Or you may just drop it in your project and forget about it.
-
-**For GNU/Linux users concerned by speed**, you will certainly need the MSS library. It is built when using `pip` but if you want to do it manually::
-
-    gcc -shared -rdynamic -fPIC -s -O3 -lX11 -o libmss.so dep/linux/mss.c
-
-That's it! Ship the libmms.so file along with mss.py and you are ready to take screenshots at the light speed!
-
 Support
 -------
 

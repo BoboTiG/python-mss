@@ -1,18 +1,23 @@
 
-from distutils.core import setup, Extension
-from platform import system
+from distutils.core import setup
+from os import unlink
+from platform import architecture, system
+from shutil import copyfile as copy
 from mss import __version__
 
 
-open('MANIFEST.in', 'w').write("\n".join((
-    'include *.rst',
-    'include doc/*'
-)))
+with open('MANIFEST.in', 'w') as fileh:
+    files = ['include *.rst', 'include doc/*', 'prune test*']
+    fileh.write("\n".join(files))
 
-libmss = False
+data_files = []
 if system() == 'Linux':
-        libmss = [Extension('libmss', sources = ['dep/linux/mss.c'],
-                            libraries = ['X11'])]
+    file_ok = 'libmss.so'
+    file_ = 'dep/linux/libmss.so'
+    if architecture()[0].startswith('64'):
+        file_ = 'dep/linux/libmss-64.so'
+    copy(file_, file_ok)
+    data_files.append(('/usr/local/lib/', [file_ok]))
 
 setup(
     name='mss',
@@ -61,6 +66,10 @@ setup(
         'Topic :: Utilities'
     ],
     url='https://github.com/BoboTiG/python-mss',
-    ext_modules = libmss
+    data_files=data_files
 )
 
+try:
+    unlink(file_ok)
+except NameError:
+    pass

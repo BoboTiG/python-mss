@@ -301,13 +301,7 @@ class MSSLinux(MSS):
             pass
 
     def __init__(self):
-        ''' GNU/Linux initialisations.
-
-            Paths where the MSS library is loaded from:
-                - /usr/local/lib/pythonx.y/dist-packages/
-                - current working directory
-            if no one found, use of the _very_ slow method get_pixels_slow().
-        '''
+        ''' GNU/Linux initialisations. '''
 
         disp = None
         self.display = None
@@ -330,26 +324,12 @@ class MSSLinux(MSS):
             raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
 
-        v_maj, v_min, _, _, _ = sys.version_info
-        lib_dir = '/usr/local/lib/python{0}.{1}/dist-packages'.format(v_maj,
-                                                                      v_min)
-        libmss = '{0}/libmss.so'.format(lib_dir)
-        try:
+        libmss = find_library('mss')
+        if libmss:
             self.mss = cdll.LoadLibrary(libmss)
-        except OSError:
-            try:
-                libmss = '{0}/libmss.cpython-{1}{2}m.so'.format(lib_dir, v_maj,
-                                                                v_min)
-                self.mss = cdll.LoadLibrary(libmss)
-            except OSError:
-                try:
-                    libmss = find_library('mss')
-                    self.mss = cdll.LoadLibrary(libmss)
-                except OSError:
-                    msg = 'MSS: no MSS library found. ' + \
-                          'Using slow native function.'
-                    print(msg)
-                    self.mss = False
+        else:
+            print('MSS: no MSS library found. Using slow native function.')
+            self.mss = False
 
         self._set_argtypes()
         self._set_restypes()
@@ -416,7 +396,7 @@ class MSSLinux(MSS):
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
         if self.mss:
-            self.mss.GetXImagePixels.restype = c_void_p
+            self.mss.GetXImagePixels.restype = c_int
 
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
@@ -474,10 +454,15 @@ class MSSLinux(MSS):
         else:
             buffer_len = height * width * 3
             self.image = create_string_buffer(buffer_len)
-            self.mss.GetXImagePixels(ximage, width, height,
-                                     ximage.contents.red_mask,
-                                     ximage.contents.green_mask,
-                                     ximage.contents.blue_mask, self.image)
+            ret = self.mss.GetXImagePixels(ximage, width, height,
+                                           ximage.contents.red_mask,
+                                           ximage.contents.green_mask,
+                                           ximage.contents.blue_mask,
+                                           self.image)
+            if not ret:
+                self.xlib.XDestroyImage(ximage)
+                err = 'MSS: libmss.GetXImagePixels() failed ({0}).'.format(ret)
+                raise ScreenshotError(err)
         self.xlib.XDestroyImage(ximage)
         return self.image
 

@@ -1,6 +1,6 @@
 build/
-dep/linux/mss.so
 dist/
+libmss*
 MANIFEST*
 *.png
 *.png.old

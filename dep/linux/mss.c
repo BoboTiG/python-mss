@@ -7,10 +7,6 @@
  * See MSSLinux:get_pixels() for a real world example.
  *
  * Source: https://github.com/BoboTiG/python-mss
- *
- * Build: python setyp.py build_ext
- *    or: gcc -shared -rdynamic -fPIC -s -O3 -lX11 -o libmss.so mss.c
- *
  */
 
 #include <X11/Xlib.h>
@@ -18,7 +14,7 @@
 /* Prototype from Xutil.h */
 extern unsigned long XGetPixel(XImage *ximage, int x, int y);
 
-void GetXImagePixels(
+int GetXImagePixels(
     XImage *ximage,
     const unsigned int width,
     const unsigned int height,
@@ -30,6 +26,16 @@ void GetXImagePixels(
     unsigned int x, y, offset;
     unsigned long pixel;
 
+    if ( !ximage ) {
+        return -1;
+    }
+    if ( !width || !height || !red_mask || !blue_mask || !green_mask ) {
+        return -1;
+    }
+    if ( !pixels ) {
+        return 0;
+    }
+
     for ( x = 0; x < width; ++x ) {
         for ( y = 0; y < height; ++y ) {
             offset =  x * 3 + width * y * 3;
@@ -39,5 +45,5 @@ void GetXImagePixels(
             pixels[offset + 2] =  pixel & blue_mask;
         }
     }
-    return;
+    return 1;
 }
