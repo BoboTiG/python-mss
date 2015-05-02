@@ -27,8 +27,8 @@ __copyright__ = '''
 '''
 __all__ = ['mss', 'ScreenshotError']
 
-from struct import pack
 from platform import system
+from struct import pack
 from zlib import compress, crc32
 import sys
 
@@ -323,12 +323,21 @@ class MSSLinux(MSS):
             raise ScreenshotError('MSS: no Xrandr library found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
 
-        mss = find_library('libmss.so')
-        self.mss = False
-        if mss:
-            self.mss = cdll.LoadLibrary(mss)
-        else:
-            print('MSS: no MSS library found. Using native function (slow).')
+        v_maj, v_min, _, _, _ = sys.version_info
+        lib_dir = '/usr/local/lib/python{0}.{1}/dist-packages'.format(v_maj,
+                                                                      v_min)
+        libmss = '{0}/libmss.so'.format(lib_dir)
+        try:
+            self.mss = cdll.LoadLibrary(libmss)
+        except OSError:
+            try:
+                libmss = '{0}/libmss.cpython-{1}{2}m.so'.format(lib_dir,
+                                                                v_maj,
+                                                                v_min)
+                self.mss = cdll.LoadLibrary(libmss)
+            except OSError:
+                print('MSS: no MSS library found. Using native function (slow).')
+                self.mss = False
 
         self._set_argtypes()
         self._set_restypes()

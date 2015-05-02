@@ -1,7 +1,7 @@
 
 /*
  * This is part of the MSS python's module.
- * This will be compiled into mss.so and then
+ * This will be compiled into libmss.so and then
  * you can call it from ctypes.
  *
  * See MSSLinux:get_pixels() for a real world example.
@@ -9,7 +9,7 @@
  * Source: https://github.com/BoboTiG/python-mss
  *
  * Build: python setyp.py build_ext
- *    or: gcc -shared -rdynamic -fPIC -s -O3 -lX11 -o mss.so mss.c
+ *    or: gcc -shared -rdynamic -fPIC -s -O3 -lX11 -o libmss.so mss.c
  *
  */
 
