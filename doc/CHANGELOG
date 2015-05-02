@@ -3,14 +3,12 @@ History:
 <see Git checkin messages for history>
 
 devel   201y/mm/dd
-      -
-
-2.0.0   2015/04/16
       - fix README issues link
       - fix invalid classifier "Programming Language :: Python :: 3.5"
       - prevent export of MSS* classes in case of "from mss import *"
       - MSS: rename save_img() to to_png()
       - MSS: optimization of to_png()
+      - MSSLinux: get_pixels() insanely fast, use of MSS library (C code)
       - MSSWindows: get_pixels() insanely fast
       - MSSWindows: a fix to work on Windows 8.1
 
