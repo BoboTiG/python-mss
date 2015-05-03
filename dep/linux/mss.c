@@ -10,9 +10,7 @@
  */
 
 #include <X11/Xlib.h>
-
-/* Prototype from Xutil.h */
-extern unsigned long XGetPixel(XImage *ximage, int x, int y);
+#include <X11/Xutil.h>  /* For XGetPixel prototype */
 
 int GetXImagePixels(
     XImage *ximage,
