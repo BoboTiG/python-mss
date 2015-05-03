@@ -12,9 +12,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>  /* For XGetPixel prototype */
 
-int GetXImagePixels(
-    XImage *ximage, unsigned char *pixels
-) {
+int GetXImagePixels(XImage *ximage, unsigned char *pixels) {
     unsigned int x, y, offset;
     unsigned long pixel;
 
