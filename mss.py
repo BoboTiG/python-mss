@@ -373,9 +373,7 @@ class MSSLinux(MSS):
             [POINTER(XRRScreenResources)]
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
         if self.mss:
-            self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_uint,
-                                                 c_uint, c_uint, c_uint,
-                                                 c_uint, c_void_p]
+            self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_void_p]
 
     def _set_restypes(self):
         ''' Functions return type. '''
@@ -445,18 +443,11 @@ class MSSLinux(MSS):
             raise ScreenshotError('MSS: XGetImage() failed.')
 
         if not self.mss:
-            self.image = self.get_pixels_slow(ximage, width, height,
-                                              ximage.contents.red_mask,
-                                              ximage.contents.green_mask,
-                                              ximage.contents.blue_mask)
+            self.image = self.get_pixels_slow(ximage)
         else:
             buffer_len = height * width * 3
             self.image = create_string_buffer(buffer_len)
-            ret = self.mss.GetXImagePixels(ximage, width, height,
-                                           ximage.contents.red_mask,
-                                           ximage.contents.green_mask,
-                                           ximage.contents.blue_mask,
-                                           self.image)
+            ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
                 err = 'MSS: libmss.GetXImagePixels() failed ({0}).'.format(ret)
@@ -464,7 +455,7 @@ class MSSLinux(MSS):
         self.xlib.XDestroyImage(ximage)
         return self.image
 
-    def get_pixels_slow(self, ximage, width, height, rmask, gmask, bmask):
+    def get_pixels_slow(self, ximage):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
 
             /!\ Insanely slow version using ctypes.
@@ -519,6 +510,11 @@ class MSSLinux(MSS):
                     _b(b'<B', (pixel & gmask) >> 8) + _b(b'<B', pixel & bmask)
             return _resultats[pixel]
 
+        width = ximage.contents.width
+        height = ximage.contents.height
+        rmask = ximage.contents.red_mask
+        bmask = ximage.contents.blue_mask
+        gmask = ximage.contents.green_mask
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(ximage, x, y))
                   for y in range(height) for x in range(width)]

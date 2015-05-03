@@ -13,13 +13,7 @@
 #include <X11/Xutil.h>  /* For XGetPixel prototype */
 
 int GetXImagePixels(
-    XImage *ximage,
-    const unsigned int width,
-    const unsigned int height,
-    const unsigned int red_mask,
-    const unsigned int green_mask,
-    const unsigned int blue_mask,
-    unsigned char *pixels
+    XImage *ximage, unsigned char *pixels
 ) {
     unsigned int x, y, offset;
     unsigned long pixel;
@@ -31,13 +25,13 @@ int GetXImagePixels(
         return 0;
     }
 
-    for ( x = 0; x < width; ++x ) {
-        for ( y = 0; y < height; ++y ) {
-            offset =  x * 3 + width * y * 3;
+    for ( x = 0; x < ximage->width; ++x ) {
+        for ( y = 0; y < ximage->height; ++y ) {
+            offset =  x * 3 + ximage->width * y * 3;
             pixel = XGetPixel(ximage, x, y);
-            pixels[offset]     = (pixel & red_mask) >> 16;
-            pixels[offset + 1] = (pixel & green_mask) >> 8;
-            pixels[offset + 2] =  pixel & blue_mask;
+            pixels[offset]     = (pixel & ximage->red_mask) >> 16;
+            pixels[offset + 1] = (pixel & ximage->green_mask) >> 8;
+            pixels[offset + 2] =  pixel & ximage->blue_mask;
         }
     }
     return 1;
