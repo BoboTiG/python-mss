@@ -336,9 +336,9 @@ class MSSLinux(MSS):
 
         self.display = self.xlib.XOpenDisplay(disp)
         try:
-            data_ = self.display.contents
+            _ = self.display.contents
         except ValueError:
-            raise ScreenshotError('MSS: XOpenDisplay() failed.')
+            raise ScreenshotError('MSS: cannot open display: {0}'.format(disp))
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
