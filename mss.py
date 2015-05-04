@@ -214,7 +214,7 @@ class MSS(object):
 
             # Footer: size, marker, None, CRC32
             iend = [b'', b'IEND', b'', b'']
-            iend[3] = b(b'>I', crc32(b''.join(iend[1:3])) & 0xffffffff)
+            iend[3] = b(b'>I', crc32(iend[1]) & 0xffffffff)
             iend[0] = b(b'>I', len(iend[2]))
             iend = b''.join(iend)
 
