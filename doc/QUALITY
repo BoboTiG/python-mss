@@ -12,3 +12,6 @@ codespell doc/*
 
 # Dry run
 python setup.py check
+
+# Check generated PNG
+pngcheck -c *.png

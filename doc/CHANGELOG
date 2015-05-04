@@ -8,6 +8,7 @@ devel   201y/mm/dd
       - prevent export of MSS* classes in case of "from mss import *"
       - MSS: rename save_img() to to_png()
       - MSS: optimization of to_png()
+      - MSS: to_png() generate valid PNG files
       - MSSLinux: prevent segfault when DISPLAY is set but no X server started
       - MSSLinux: get_pixels() insanely fast, use of MSS library (C code)
       - MSSWindows: get_pixels() insanely fast

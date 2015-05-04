@@ -204,16 +204,21 @@ class MSS(object):
             ihdr[2] = b(b'>2I5B', width, height, 8, 2, 0, 0, 0)
             ihdr[3] = b(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
             ihdr[0] = b(b'>I', len(ihdr[2]))
+            ihdr = b''.join(ihdr)
 
             # Data: size, marker, data, CRC32
             idat = [b'', b'IDAT', compress(scanlines), b'']
             idat[3] = b(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
             idat[0] = b(b'>I', len(idat[2]))
+            idat = b''.join(idat)
 
             # Footer: size, marker, None, CRC32
-            iend = b'4IEND'
+            iend = [b'', b'IEND', b'', b'']
+            iend[3] = b(b'>I', crc32(b''.join(iend[1:3])) & 0xffffffff)
+            iend[0] = b(b'>I', len(iend[2]))
+            iend = b''.join(iend)
 
-            fileh.write(magic + b''.join(ihdr) + b''.join(idat) + iend)
+            fileh.write(magic + ihdr + idat + iend)
             return
 
         err = 'MSS: error writing data to "{0}".'.format(output)
