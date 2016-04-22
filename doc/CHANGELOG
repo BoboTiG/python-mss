@@ -5,6 +5,9 @@ History:
 devel   201y/mm/dd
       -
 
+1.0.2   2016/04/22
+      - Fix inexistant alias
+
 1.0.1   2016/04/22
       - Fix libpng warning: ignoring bad filter type
 
