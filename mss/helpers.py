@@ -98,9 +98,9 @@ class MSS(object):
         b = pack
         line = (width * 3 + 3) & -4
         padding = 0 if line % 8 == 0 else (line % 8) // 2
-        filter = b(b'>B', 0)
+        png_filter = b(b'>B', 0)
         scanlines = b''.join(
-            [filter + data[y * line:y * line + line - padding]
+            [png_filter + data[y * line:y * line + line - padding]
              for y in range(height)])
 
         magic = b(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
