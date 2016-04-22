@@ -214,7 +214,7 @@ class MSSLinux(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
-        ZPixmap = 2
+        zpixmap = 2
         allplanes = self.xlib.XAllPlanes()
 
         # Fix for XGetImage:
@@ -222,7 +222,7 @@ class MSSLinux(MSS):
         root = cast(self.root, POINTER(Display))
 
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
-                                     height, allplanes, ZPixmap)
+                                     height, allplanes, zpixmap)
         if not ximage:
             raise ScreenshotError('XGetImage() failed.')
 

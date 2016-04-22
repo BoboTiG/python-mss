@@ -77,12 +77,12 @@ class MSSWindows(MSS):
         '''
 
         if screen == -1:
-            SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN = 76, 77
-            SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 78, 79
-            left = windll.user32.GetSystemMetrics(SM_XVIRTUALSCREEN)
-            right = windll.user32.GetSystemMetrics(SM_CXVIRTUALSCREEN)
-            top = windll.user32.GetSystemMetrics(SM_YVIRTUALSCREEN)
-            bottom = windll.user32.GetSystemMetrics(SM_CYVIRTUALSCREEN)
+            sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
+            sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
+            left = windll.user32.GetSystemMetrics(sm_xvirtualscreen)
+            right = windll.user32.GetSystemMetrics(sm_cxvirtualscreen)
+            top = windll.user32.GetSystemMetrics(sm_yvirtualscreen)
+            bottom = windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
             yield {
                 b'left': int(left),
                 b'top': int(top),
@@ -124,9 +124,9 @@ class MSSWindows(MSS):
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
-        SRCCOPY = 0xCC0020
-        DIB_RGB_COLORS = 0
-        BI_RGB = 0
+        srccopy = 0xCC0020
+        dib_rgb_colors = 0
+        bi_rgb = 0
         srcdc = None
         memdc = None
         bmp = None
@@ -138,7 +138,7 @@ class MSSWindows(MSS):
             bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 24
-            bmi.bmiHeader.biCompression = BI_RGB
+            bmi.bmiHeader.biCompression = bi_rgb
             buffer_len = height * width * 3
             image_data = create_string_buffer(buffer_len)
             srcdc = windll.user32.GetWindowDC(0)
@@ -146,9 +146,9 @@ class MSSWindows(MSS):
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             windll.gdi32.SelectObject(memdc, bmp)
             windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
-                                SRCCOPY)
+                                srccopy)
             bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, image_data,
-                                          bmi, DIB_RGB_COLORS)
+                                          bmi, dib_rgb_colors)
             if bits != height:
                 raise ScreenshotError('GetDIBits() failed.')
         finally:
