@@ -1,0 +1,38 @@
+The XGetPixel() C code can be found at this URL:
+http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
+
+@TODO: see if it is quicker than using XGetPixel().
+
+1) C code as quick as XGetPixel() to translate into ctypes:
+
+pixels = malloc(sizeof(unsigned char) * width * height * 3);
+for ( x = 0; x < width; ++x )
+    for ( y = 0; y < height; ++y )
+        offset =  width * y * 3;
+        addr = &(ximage->data)[y * ximage->bytes_per_line + (x << 2)];
+        pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0];
+        pixels[x * 3 + offset]     = (pixel & ximage->red_mask) >> 16;
+        pixels[x * 3 + offset + 1] = (pixel & ximage->green_mask) >> 8;
+        pixels[x * 3 + offset + 2] =  pixel & ximage->blue_mask;
+
+
+2) A first try in Python with ctypes
+
+from ctypes import create_string_buffer, c_char
+rmask = ximage.contents.red_mask
+gmask = ximage.contents.green_mask
+bmask = ximage.contents.blue_mask
+bpl = ximage.contents.bytes_per_line
+buffer_len = width * height * 3
+xdata = ximage.contents.data
+data = cast(xdata, POINTER(c_char * buffer_len)).contents
+self.image = create_string_buffer(sizeof(c_char) * buffer_len)
+for x in range(width):
+    for y in range(height):
+        offset =  x * 3 + width * y * 3
+        addr = data[y * bpl + (x << 2)][0]
+        pixel = addr[3] << 24 | addr[2] << 16 | addr[1] << 8 | addr[0]
+        self.image[offset]     = (pixel & rmask) >> 16
+        self.image[offset + 1] = (pixel & gmask) >> 8
+        self.image[offset + 2] =  pixel & bmask
+return self.image
