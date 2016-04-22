@@ -193,7 +193,7 @@ class MSS(object):
         zcrc32 = crc32
         zcompr = compress
         len_sl = width * 3
-        png_filter = b(b'>B', 0)
+        png_filter = pack(b'>B', 0)
         scanlines = b''.join(
             [png_filter + data[y * len_sl:y * len_sl + len_sl]
              for y in range(height)])
