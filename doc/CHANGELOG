@@ -5,6 +5,9 @@ History:
 devel   201y/mm/dd
       -
 
+1.0.1   2016/04/22
+      - Fix libpng warning: ignoring bad filter type
+
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
       - code purgation and review, no more debug informations
