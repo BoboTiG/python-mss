@@ -16,7 +16,7 @@ from __future__ import division, print_function, unicode_literals
 
 from .helpers import ScreenshotError, mss
 
-__version__ = '2.0.0'
+__version__ = '2.0.0-dev'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013-2016, Mickaël 'Tiger-222' Schoentgen

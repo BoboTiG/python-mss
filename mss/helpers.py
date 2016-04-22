@@ -95,6 +95,8 @@ class MSS(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
+        # pylint: disable=R0201, R0914
+
         b = pack
         line = (width * 3 + 3) & -4
         padding = 0 if line % 8 == 0 else (line % 8) // 2

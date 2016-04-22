@@ -70,6 +70,8 @@ class MSSLinux(MSS):
         It uses intensively the Xlib and Xrandr.
     '''
 
+    # pylint: disable=R0902
+
     def __del__(self):
         ''' Disconnect from X server. '''
 
@@ -282,7 +284,7 @@ class MSSLinux(MSS):
         '''
 
         # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, _b=pack):
+        def pix(pixel, _resultats={}, _b=pack):  # pylint: disable=W0102
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''

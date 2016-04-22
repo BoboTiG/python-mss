@@ -59,6 +59,8 @@ class MSSWindows(MSS):
     def _set_restypes(self):
         ''' Functions return type. '''
 
+        # pylint: disable=R0201
+
         windll.user32.GetSystemMetrics.restypes = INT
         windll.user32.EnumDisplayMonitors.restypes = BOOL
         windll.user32.GetWindowDC.restypes = HDC
@@ -117,6 +119,8 @@ class MSSWindows(MSS):
             https://msdn.microsoft.com/en-us/library/ms787796.aspx
             https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
         '''
+
+        # pylint: disable=R0914
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
