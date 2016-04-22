@@ -161,7 +161,6 @@ def mss(*args, **kwargs):
 
 def arch():
     ''' Detect OS architecture.
-
         Returns an int: 32 or 64
     '''
 
