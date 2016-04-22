@@ -14,6 +14,11 @@
 
 from __future__ import division, print_function, unicode_literals
 
+import sys
+from platform import system
+from struct import pack
+from zlib import compress, crc32
+
 __version__ = '1.0.0'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
@@ -28,10 +33,6 @@ __copyright__ = '''
 '''
 __all__ = ['mss', 'ScreenshotError']
 
-from platform import system
-from struct import pack
-from zlib import compress, crc32
-import sys
 
 
 class ScreenshotError(Exception):
