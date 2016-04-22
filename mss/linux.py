@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import
 
+import struct
 import sys
 from ctypes import (
     POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_uint,
@@ -11,7 +12,6 @@ from ctypes import (
 from ctypes.util import find_library
 from os import environ
 from os.path import abspath, dirname, isfile, realpath
-from struct import pack
 
 from .helpers import MSS, ScreenshotError, arch
 
@@ -245,13 +245,14 @@ class MSSLinux(MSS):
         '''
 
         # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, _b=pack):  # pylint: disable=W0102
+        def pix(pixel, _resultats={}, pack=struct.pack):  # pylint: disable=W0102
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
             if pixel not in _resultats:
-                _resultats[pixel] = _b(b'<B', (pixel & rmask) >> 16) + \
-                    _b(b'<B', (pixel & gmask) >> 8) + _b(b'<B', pixel & bmask)
+                _resultats[pixel] = pack(b'<B', (pixel & rmask) >> 16) + \
+                    pack(b'<B', (pixel & gmask) >> 8) + \
+                    pack(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         width = ximage.contents.width

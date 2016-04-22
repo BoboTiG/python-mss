@@ -40,11 +40,11 @@ class MSSWindows(MSS):
     def _set_argtypes(self):
         ''' Functions arguments. '''
 
-        self.MONITORENUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
+        self.monitorenumproc = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
                                            DOUBLE)
         windll.user32.GetSystemMetrics.argtypes = [INT]
         windll.user32.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
-                                                      self.MONITORENUMPROC,
+                                                      self.monitorenumproc,
                                                       LPARAM]
         windll.user32.GetWindowDC.argtypes = [HWND]
         windll.gdi32.CreateCompatibleDC.argtypes = [HDC]
@@ -91,10 +91,13 @@ class MSSWindows(MSS):
             }
         else:
 
-            def _callback(monitor, dc, rect, data):
-                ''' Callback for MONITORENUMPROC() function, it will return
+            def _callback(monitor, data, rect, dc_):
+                ''' Callback for monitorenumproc() function, it will return
                     a RECT with appropriate values.
                 '''
+                del monitor
+                del data
+                del dc_
                 rct = rect.contents
                 monitors.append({
                     b'left': int(rct.left),
@@ -105,7 +108,7 @@ class MSSWindows(MSS):
                 return 1
 
             monitors = []
-            callback = self.MONITORENUMPROC(_callback)
+            callback = self.monitorenumproc(_callback)
             windll.user32.EnumDisplayMonitors(0, 0, callback, 0)
             for mon in monitors:
                 yield mon
