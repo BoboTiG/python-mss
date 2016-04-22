@@ -50,7 +50,7 @@ class MSS(object):
                 'height': the height
             }
         '''
-        raise NotImplementedError('MSS: subclasses need to implement this!')
+        raise NotImplementedError('Subclasses need to implement this!')
 
     def get_pixels(self, monitor):
         ''' Retrieve screen pixels for a given monitor.
@@ -63,7 +63,7 @@ class MSS(object):
                 'heigth': the height
             }
         '''
-        raise NotImplementedError('MSS: subclasses need to implement this!')
+        raise NotImplementedError('Subclasses need to implement this!')
 
     def save(self,
              output='screenshot-%d.png',
@@ -137,7 +137,7 @@ class MSS(object):
             fileh.write(magic + ihdr + idat + iend)
             return
 
-        err = 'MSS: error writing data to "{0}".'.format(output)
+        err = 'Error writing data to "{}".'.format(output)
         raise ScreenshotError(err)
 
 
@@ -162,14 +162,15 @@ def mss(*args, **kwargs):
     elif operating_system == 'windows':
         from .windows import MSSWindows as mss_class
     else:
-        err = 'MSS: system "{}" not implemented.'.format(system())
+        err = 'System "{}" not implemented.'.format(system())
         raise ScreenshotError(err)
 
     return mss_class(*args, **kwargs)
 
 
 def arch():
-    ''' Detect Os architecture.
+    ''' Detect OS architecture.
+
         Returns an int: 32 or 64
     '''
 
