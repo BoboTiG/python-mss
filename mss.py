@@ -13,7 +13,7 @@
 
 from __future__ import (unicode_literals, print_function)
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013-2015, Mickaël 'Tiger-222' Schoentgen
@@ -193,8 +193,9 @@ class MSS(object):
         zcrc32 = crc32
         zcompr = compress
         len_sl = width * 3
+        png_filter = b(b'>B', 0)
         scanlines = b''.join(
-            [b'0' + data[y * len_sl:y * len_sl + len_sl]
+            [png_filter + data[y * len_sl:y * len_sl + len_sl]
              for y in range(height)])
 
         magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
