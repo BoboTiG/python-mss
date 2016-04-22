@@ -95,36 +95,36 @@ class MSS(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
+        b = pack
+        line = (width * 3 + 3) & -4
+        padding = 0 if line % 8 == 0 else (line % 8) // 2
+        filter = b(b'>B', 0)
+        scanlines = b''.join(
+            [filter + data[y * line:y * line + line - padding]
+             for y in range(height)])
+
+        magic = b(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
+
+        # Header: size, marker, data, CRC32
+        ihdr = [b'', b'IHDR', b'', b'']
+        ihdr[2] = b(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+        ihdr[3] = b(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
+        ihdr[0] = b(b'>I', len(ihdr[2]))
+        ihdr = b''.join(ihdr)
+
+        # Data: size, marker, data, CRC32
+        idat = [b'', b'IDAT', compress(scanlines), b'']
+        idat[3] = b(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
+        idat[0] = b(b'>I', len(idat[2]))
+        idat = b''.join(idat)
+
+        # Footer: size, marker, None, CRC32
+        iend = [b'', b'IEND', b'', b'']
+        iend[3] = b(b'>I', crc32(iend[1]) & 0xffffffff)
+        iend[0] = b(b'>I', len(iend[2]))
+        iend = b''.join(iend)
+
         with open(output, 'wb') as fileh:
-            b = pack
-            line = (width * 3 + 3) & -4
-            padding = 0 if line % 8 == 0 else (line % 8) // 2
-            filter = b(b'>B', 0)
-            scanlines = b''.join(
-                [filter + data[y * line:y * line + line - padding]
-                 for y in range(height)])
-
-            magic = b(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
-
-            # Header: size, marker, data, CRC32
-            ihdr = [b'', b'IHDR', b'', b'']
-            ihdr[2] = b(b'>2I5B', width, height, 8, 2, 0, 0, 0)
-            ihdr[3] = b(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
-            ihdr[0] = b(b'>I', len(ihdr[2]))
-            ihdr = b''.join(ihdr)
-
-            # Data: size, marker, data, CRC32
-            idat = [b'', b'IDAT', compress(scanlines), b'']
-            idat[3] = b(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
-            idat[0] = b(b'>I', len(idat[2]))
-            idat = b''.join(idat)
-
-            # Footer: size, marker, None, CRC32
-            iend = [b'', b'IEND', b'', b'']
-            iend[3] = b(b'>I', crc32(iend[1]) & 0xffffffff)
-            iend[0] = b(b'>I', len(iend[2]))
-            iend = b''.join(iend)
-
             fileh.write(magic + ihdr + idat + iend)
             return
 
