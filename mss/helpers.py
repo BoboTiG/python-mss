@@ -1,16 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' A very fast cross-platform multiple screenshots module in pure python
-    using ctypes.
-
-    This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
-
-    Note: please keep this module compatible to Python 2.6.
-
-    You can always get the latest version of this module at:
-        https://github.com/BoboTiG/python-mss
-    If that URL should fail, try contacting the author.
-'''
+''' Helpers and base class of the MSS module. See __init__.py. '''
 
 from __future__ import division, print_function, unicode_literals
 
