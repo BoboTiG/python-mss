@@ -245,10 +245,13 @@ class MSSLinux(MSS):
         '''
 
         # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, pack=struct.pack):  # pylint: disable=W0102
+        def pix(pixel, _resultats={}, pack=struct.pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
+
+           # pylint: disable=W0102
+
             if pixel not in _resultats:
                 _resultats[pixel] = pack(b'<B', (pixel & rmask) >> 16) + \
                     pack(b'<B', (pixel & gmask) >> 8) + \

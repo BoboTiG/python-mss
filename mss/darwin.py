@@ -2,6 +2,8 @@
 # coding: utf-8
 ''' MacOS X version of the MSS module. See __init__.py. '''
 
+# pylint: disable=import-error
+
 from __future__ import absolute_import
 
 from LaunchServices import kUTTypePNG

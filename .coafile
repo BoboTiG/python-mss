@@ -3,4 +3,4 @@ bears = LineLengthBear, SpaceConsistencyBear, PEP8Bear, PyImportSortBear, PyLint
 files = mss/*.py
 use_spaces = yeah
 
-pylint_disable = locally-disabled, E0401, R0903
+pylint_disable = locally-disabled, E0401, R0903, C0111
