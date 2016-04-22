@@ -1,6 +1,5 @@
-
 /*
- * This is part of the MSS python's module.
+ * This is part of the MSS Python's module.
  * This will be compiled into libmss.so and then
  * you can call it from ctypes.
  *

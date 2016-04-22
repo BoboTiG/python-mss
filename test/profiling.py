@@ -15,12 +15,14 @@ from contextlib import contextmanager
 from mss import mss
 from time import time
 
+
 @contextmanager
 def timer(msg):
     ''' A little timer. '''
     start = time()
     yield
     print('{0}: {1} s'.format(msg, time() - start))
+
 
 def screenshot(screenshotter, monitor, screen):
     width = monitor[b'width']
@@ -46,4 +48,4 @@ if __name__ == '__main__':
     if i > 0:
         all_monitors = screenshotter.enum_display_monitors(screen=-1)
         for monitor in all_monitors:
-             screenshot(screenshotter, monitor, -1)
+            screenshot(screenshotter, monitor, -1)

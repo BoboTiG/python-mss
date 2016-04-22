@@ -1,6 +1,6 @@
-***********************************************************************************
-A very fast cross-platform multiple screenshots module in pure python using ctypes
-***********************************************************************************
+************************************************************************************
+An ultra fast cross-platform multiple screenshots module in pure python using ctypes
+************************************************************************************
 
 Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file, Python 2.6/3.5 compatible & PEP8 compliant.
 It could be easily embedded into games and other softwares which require fast and plateforme optimized methods to grab screenshots.
@@ -8,6 +8,25 @@ It could be easily embedded into games and other softwares which require fast an
 MSS stands for Multiple ScreenShots.
 
 It's under zlib licence.
+
+
+API change
+==========
+
+**Warning**: from the version 2.0.0 for specific system import, now you do as::
+
+    # MacOS X
+    from mss.darwin import MSSMac as mss
+
+    # GNU/Linux
+    from mss.linux import MSSLinux as mss
+
+    # Microsoft Windows
+    from mss.windows import MSSWindows as mss
+
+The second change is the split into several files. Each OS implementation is into a `platform.system()`.py. For GNU/Linux, you will find the `MSSLinux` class into the file "mss/linux.py".
+
+This make life easier for contributors and reviewers.
 
 
 Installation
@@ -23,13 +42,13 @@ Support
 =========  =========  ========  =======
 Python     GNU/linux   MacOS X  Windows
 =========  =========  ========  =======
-3.5.0a3    True       True      True
-**3.4.3**  **True**   **True**  **True**
+**3.5.1**  **True**   **True**  **True**
+3.4.3      True       True      True
 3.3.6      True       True      True
 3.2.6      True       True      True
 3.1.5      True       True      True
 3.0.1      True       True      True
-**2.7.9**  **True**   **True**  **True**
+**2.7.11** **True**   **True**  **True**
 2.6.9      True       True      True
 =========  =========  ========  =======
 
@@ -43,7 +62,7 @@ Testing
 
 You can try the MSS module directly from the console::
 
-    python mss.py
+    python tests.py
 
 
 Instance the good class
@@ -56,7 +75,9 @@ So MSS can be used as simply as::
 
 Or import the good one::
 
-    from mss import MSSLinux as mss
+    # from mss.darwin import MSSMac as mss
+    # from mss.windows import MSSWindows as mss
+    from mss.linux import MSSLinux as mss
     screenshotter = mss()
 
 

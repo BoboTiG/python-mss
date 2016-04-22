@@ -1,33 +1,15 @@
-
-import sys
 from distutils.core import setup
-from os import unlink
-from platform import architecture, system
-from shutil import copyfile as copy
 from mss import __version__
 
-
-with open('MANIFEST.in', 'w') as fileh:
-    files = ['include *.rst', 'include doc/*', 'prune test*']
-    fileh.write("\n".join(files))
-
-todo = 'check' not in sys.argv and system() == 'Linux'
-data_files = []
-if todo:
-    file_ok = 'libmss.so'
-    file_ = 'dep/linux/32/libmss.so'
-    if architecture()[0].startswith('64'):
-        file_ = 'dep/linux/64/libmss.so'
-    copy(file_, file_ok)
-    data_files.append(('/usr/lib/', [file_ok]))
 
 setup(
     name='mss',
     version=__version__,
     author='Tiger-222',
-    py_modules=['mss'],
+    packages=['mss'],
+    package_data={'mss': ['dep/linux/*', 'dep/linux/*/*']},
     author_email='mickael@jmsinfo.co',
-    description='A very fast cross-platform multiple screenshots module in pure python using ctypes',
+    description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
     long_description=open('README.rst').read(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -39,6 +21,7 @@ setup(
         'Intended Audience :: Other Audience',
         'License :: OSI Approved :: zlib/libpng License',
         'Natural Language :: English',
+        'Natural Language :: French',
         'Operating System :: MacOS',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft',
@@ -58,7 +41,7 @@ setup(
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
-        #'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Desktop Environment',
         'Topic :: Multimedia :: Graphics :: Capture',
         'Topic :: Multimedia :: Graphics :: Capture :: Screen Capture',
@@ -67,18 +50,5 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities'
     ],
-    url='https://github.com/BoboTiG/python-mss',
-    data_files=data_files
+    url='https://github.com/BoboTiG/python-mss'
 )
-
-if todo and 'install' in sys.argv:
-    from subprocess import call
-    print('Removing {0}'.format(file_ok))
-    unlink(file_ok)
-    try:
-        print('Removing /etc/ld.so.cache')
-        unlink('/etc/ld.so.cache')
-        print('Writing /etc/ld.so.cache')
-        ret = call(['ldconfig'])
-    except OSError:
-        pass

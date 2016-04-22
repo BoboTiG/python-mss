@@ -1,0 +1,7 @@
+include *.rst
+recursive-include mss *
+include doc/*
+
+exclude mss/*.pyc
+prune mss/__pycache__
+prune test*

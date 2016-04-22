@@ -1,6 +1,6 @@
 pylint_disable = locally-disabled[Default]
 bears = LineLengthBear, SpaceConsistencyBear, PEP8Bear, PyImportSortBear, PyLintBear, PyUnusedCodeBear
-files = mss.py
+files = mss/*.py
 use_spaces = yeah
 
 pylint_disable = locally-disabled

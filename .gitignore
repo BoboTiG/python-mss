@@ -1,6 +1,6 @@
 build/
 dist/
-MANIFEST*
+MANIFEST
 *.orig
 *.png
 *.png.old
