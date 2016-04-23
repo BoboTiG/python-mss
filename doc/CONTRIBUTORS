@@ -1,0 +1,28 @@
+# Many thanks to all those who helped :)
+# (sorted alphabeticaly)
+
+# Nickname or fullname <email> <email2> <emailN> [URL] [URL2] [URLN]
+#     - major contribution
+#     - major contribution 2
+#     - major contribution N
+
+Alexander 'thehesiod' Mohr [https://github.com/thehesiod]
+    - robustness to MSSWindows.get_pixels()
+
+bubulle [http://indexerror.net/user/bubulle]
+    - efficiency of MSSWindows.get_pixels()
+
+Condé Titouan <me@titouan.co> <eownis@eownis.me> [https://titouan.co]
+    - MacOS X tester
+
+Oros <oros@ecirtam.net> [https://ecirtam.net]
+    - GNU/Linux tester
+
+Sam [http://sametmax.com] [https://github.com/sametmax]
+    - the factory
+
+sergey-vin [https://github.com/sergey-vin]
+    - bug report
+
+yoch [http://indexerror.net/user/yoch]
+    - efficiency of MSSWindows.get_pixels()

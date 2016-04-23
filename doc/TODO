@@ -1,6 +1,6 @@
 
 [OK] GNU/Linux: do not trust XML config files, use pure cpython
 [OK] GNU/Linux: optimize get_pixels(), use of XGetPixel() is too slow (thanks libmss)
-[  ] Mac OSX: use pure ctype, no Quartz
+[  ] MacOS X: use pure ctype, no Quartz
 [  ] Test ReactOS (should be the same as Windows)
 [  ] Support for additional systems
