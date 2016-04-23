@@ -4,8 +4,6 @@
 
 # pylint: disable=import-error
 
-from __future__ import absolute_import
-
 from LaunchServices import kUTTypePNG
 from Quartz import (
     NSURL, CGDisplayBounds, CGDisplayRotation, CGGetActiveDisplayList,
@@ -14,12 +12,13 @@ from Quartz import (
     CGWindowListCreateImage, kCGNullWindowID, kCGWindowImageDefault,
     kCGWindowListOptionOnScreenOnly)
 
-from .helpers import MSS, ScreenshotError
+from .base import MSSBase
+from .exception import ScreenshotError
 
-__all__ = ['MSSMac']
+__all__ = ['MSS']
 
 
-class MSSMac(MSS):
+class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for Mac OS X.
         It uses intensively the Quartz.
     '''

@@ -16,15 +16,15 @@ API change
 **Warning**: from the version 2.0.0 for specific system import, now you do as::
 
     # MacOS X
-    from mss.darwin import MSSMac as mss
+    from mss.darwin import MSS
 
     # GNU/Linux
-    from mss.linux import MSSLinux as mss
+    from mss.linux import MSS
 
     # Microsoft Windows
-    from mss.windows import MSSWindows as mss
+    from mss.windows import MSS
 
-The second change is the split into several files. Each OS implementation is into a `platform.system()`.py. For GNU/Linux, you will find the `MSSLinux` class into the file "mss/linux.py".
+The second change is the split into several files. Each OS implementation is into a `platform.system()`.py. For GNU/Linux, you will find the `MSS` class into the file "mss/linux.py".
 
 This make life easier for contributors and reviewers.
 
@@ -75,9 +75,9 @@ So MSS can be used as simply as::
 
 Or import the good one::
 
-    # from mss.darwin import MSSMac as mss
-    # from mss.windows import MSSWindows as mss
-    from mss.linux import MSSLinux as mss
+    # from mss.darwin import MSS as mss
+    # from mss.windows import MSS as mss
+    from mss.linux import MSS as mss
     screenshotter = mss()
 
 

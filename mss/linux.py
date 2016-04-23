@@ -2,20 +2,19 @@
 # coding: utf-8
 ''' GNU/Linux version of the MSS module. See __init__.py. '''
 
-from __future__ import absolute_import
-
-import struct
-import sys
 from ctypes import (
     POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_uint,
     c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll, create_string_buffer)
 from ctypes.util import find_library
 from os import environ
 from os.path import abspath, dirname, isfile, realpath
+from struct import pack
+from sys import maxsize, version
 
-from .helpers import MSS, ScreenshotError, arch
+from .base import MSSBase
+from .exception import ScreenshotError
 
-__all__ = ['MSSLinux']
+__all__ = ['MSS']
 
 
 class Display(Structure):
@@ -65,7 +64,7 @@ class XRRCrtcInfo(Structure):
                 ('npossible', c_int), ('possible', POINTER(c_long))]
 
 
-class MSSLinux(MSS):
+class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for GNU/Linux.
         It uses intensively the Xlib and Xrandr.
     '''
@@ -88,7 +87,7 @@ class MSSLinux(MSS):
         disp = None
         self.display = None
         try:
-            if sys.version > '3':
+            if version > '3':
                 disp = bytes(environ['DISPLAY'], 'utf-8')
             else:
                 disp = environ['DISPLAY']
@@ -245,17 +244,17 @@ class MSSLinux(MSS):
         '''
 
         # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, pack=struct.pack):
+        def pix(pixel, _resultats={}, p__=pack):
             ''' Apply shifts to a pixel to get the RGB values.
                 This method uses of memoization.
             '''
 
-           # pylint: disable=W0102
+            # pylint: disable=W0102
 
             if pixel not in _resultats:
-                _resultats[pixel] = pack(b'<B', (pixel & rmask) >> 16) + \
-                    pack(b'<B', (pixel & gmask) >> 8) + \
-                    pack(b'<B', pixel & bmask)
+                _resultats[pixel] = p__(b'<B', (pixel & rmask) >> 16) + \
+                    p__(b'<B', (pixel & gmask) >> 8) + \
+                    p__(b'<B', pixel & bmask)
             return _resultats[pixel]
 
         width = ximage.contents.width
@@ -268,3 +267,11 @@ class MSSLinux(MSS):
                   for y in range(height) for x in range(width)]
         self.image = b''.join(pixels)
         return self.image
+
+
+def arch():
+    ''' Detect OS architecture.
+        Returns an int: 32 or 64
+    '''
+
+    return 64 if maxsize > 2 ** 32 else 32

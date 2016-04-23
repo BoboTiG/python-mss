@@ -2,8 +2,6 @@
 # coding: utf-8
 ''' Windows version of the MSS module. See __init__.py. '''
 
-from __future__ import absolute_import
-
 from ctypes import (
     POINTER, WINFUNCTYPE, Structure, c_void_p, create_string_buffer, sizeof,
     windll)
@@ -11,9 +9,10 @@ from ctypes.wintypes import (
     BOOL, DOUBLE, DWORD, HBITMAP, HDC, HGDIOBJ, HWND, INT, LONG, LPARAM, RECT,
     UINT, WORD)
 
-from .helpers import MSS, ScreenshotError
+from .base import MSSBase
+from .exception import ScreenshotError
 
-__all__ = ['MSSWindows']
+__all__ = ['MSS']
 
 
 class BITMAPINFOHEADER(Structure):
@@ -28,7 +27,7 @@ class BITMAPINFO(Structure):
     _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 
 
-class MSSWindows(MSS):
+class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for Microsoft Windows. '''
 
     def __init__(self):

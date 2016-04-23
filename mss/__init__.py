@@ -12,9 +12,8 @@
     If that URL should fail, try contacting the author.
 '''
 
-from __future__ import division, print_function, unicode_literals
-
-from .helpers import ScreenshotError, mss
+from .exception import ScreenshotError
+from .factory import mss
 
 __version__ = '2.0.0-dev'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"

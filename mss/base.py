@@ -1,22 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' Helpers and base class of the MSS module. See __init__.py. '''
+''' Base class of the MSS module. See __init__.py. '''
 
-from __future__ import division, print_function, unicode_literals
-
-import struct
-from sys import maxsize
+from struct import pack
 from zlib import compress, crc32
 
-__all__ = ['MSS', 'ScreenshotError', 'arch', 'mss']
-
-
-class ScreenshotError(Exception):
-    ''' Error handling class. '''
+from .exception import ScreenshotError
 
 
 # C'est parti mon kiki !
-class MSS(object):
+class MSSBase(object):
     ''' This class will be overloaded by a system specific one. '''
 
     image = None
@@ -97,31 +90,31 @@ class MSS(object):
 
         # pylint: disable=R0201, R0914
 
-        pack = struct.pack
+        p__ = pack
         line = (width * 3 + 3) & -4
         padding = 0 if line % 8 == 0 else (line % 8) // 2
-        png_filter = pack(b'>B', 0)
+        png_filter = p__(b'>B', 0)
         scanlines = b''.join(
             [png_filter + data[y * line:y * line + line - padding]
              for y in range(height)])
 
-        magic = pack(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
+        magic = p__(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
         # Header: size, marker, data, CRC32
         ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = pack(b'>2I5B', width, height, 8, 2, 0, 0, 0)
-        ihdr[3] = pack(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
-        ihdr[0] = pack(b'>I', len(ihdr[2]))
+        ihdr[2] = p__(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+        ihdr[3] = p__(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
+        ihdr[0] = p__(b'>I', len(ihdr[2]))
 
         # Data: size, marker, data, CRC32
         idat = [b'', b'IDAT', compress(scanlines), b'']
-        idat[3] = pack(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
-        idat[0] = pack(b'>I', len(idat[2]))
+        idat[3] = p__(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
+        idat[0] = p__(b'>I', len(idat[2]))
 
         # Footer: size, marker, None, CRC32
         iend = [b'', b'IEND', b'', b'']
-        iend[3] = pack(b'>I', crc32(iend[1]) & 0xffffffff)
-        iend[0] = pack(b'>I', len(iend[2]))
+        iend[3] = p__(b'>I', crc32(iend[1]) & 0xffffffff)
+        iend[0] = p__(b'>I', len(iend[2]))
 
         with open(output, 'wb') as fileh:
             fileh.write(magic)
@@ -132,38 +125,3 @@ class MSS(object):
 
         err = 'Error writing data to "{}".'.format(output)
         raise ScreenshotError(err)
-
-
-def mss(*args, **kwargs):
-    ''' Factory returning a proper MSS class instance.
-
-        It detects the plateform we are running on
-        and choose the most adapted mss_class to take
-        screenshots.
-
-        It then proxies its arguments to the class for
-        instantiation.
-    '''
-
-    from platform import system
-
-    operating_system = system().lower()
-    if operating_system == 'darwin':
-        from .darwin import MSSMac as mss_class
-    elif operating_system == 'linux':
-        from .linux import MSSLinux as mss_class
-    elif operating_system == 'windows':
-        from .windows import MSSWindows as mss_class
-    else:
-        err = 'System "{}" not implemented.'.format(operating_system)
-        raise ScreenshotError(err)
-
-    return mss_class(*args, **kwargs)
-
-
-def arch():
-    ''' Detect OS architecture.
-        Returns an int: 32 or 64
-    '''
-
-    return 64 if maxsize > 2 ** 32 else 32
