@@ -14,6 +14,14 @@ class MSSBase(object):
 
     image = None
 
+    def __enter__(self):
+        ''' For the cool call `with MSS() as mss:`. '''
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        ''' For the cool call `with MSS() as mss:`. '''
+
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
 

@@ -72,13 +72,14 @@ class MSS(MSSBase):
     # pylint: disable=R0902
 
     def __del__(self):
-        ''' Disconnect from X server. '''
+        ''' Quit. '''
 
-        try:
-            if self.display:
-                self.xlib.XCloseDisplay(self.display)
-        except AttributeError:
-            pass
+        self._cleanup()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        ''' Quit. '''
+
+        self._cleanup()
 
     def __init__(self):
         ''' GNU/Linux initialisations. '''
@@ -124,6 +125,15 @@ class MSS(MSSBase):
             raise ScreenshotError('Cannot open display: {}'.format(disp))
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
+
+    def _cleanup(self):
+        ''' Disconnect from X server. '''
+
+        try:
+            if self.display:
+                self.xlib.XCloseDisplay(self.display)
+        except AttributeError:
+            pass
 
     def _set_argtypes(self):
         ''' Functions arguments.
