@@ -28,10 +28,10 @@ class MSSBase(object):
             If the monitor has rotation, you have to deal with it
             inside this method.
 
-            Parameters:
-             - screen - int - grab one screenshot of all monitors (screen=-1)
-                              grab one screenshot by monitor (screen=0)
-                              grab the screenshot of the monitor N (screen=N)
+            screen (int)
+                -1: grab one screenshot of all monitors
+                 0: grab one screenshot by monitor
+                 N: grab the screenshot of the monitor N
 
             Returns a dict:
             {
@@ -62,17 +62,18 @@ class MSSBase(object):
              callback=lambda *x: True):
         ''' Grab a screenshot and save it to a file.
 
-            Parameters:
-             - output - string - the output filename. It can contain '%d' which
-                                 will be replaced by the monitor number.
-             - screen - int - grab one screenshot of all monitors (screen=-1)
-                              grab one screenshot by monitor (screen=0)
-                              grab the screenshot of the monitor N (screen=N)
-             - callback - function - in case where output already exists, call
-                                     the defined callback function with output
-                                     as parameter. If it returns True, then
-                                     continue; else ignores the monitor and
-                                     switches to ne next.
+            output (str)
+                The output filename.
+                %d, if present, will be replaced by the monitor number.
+            screen (int)
+                -1: grab one screenshot of all monitors
+                 0: grab one screenshot by monitor
+                 N: grab the screenshot of the monitor N
+            callback (def)
+                In case where output already exists, call the defined callback
+                function with output as parameter.
+                If it returns True, then continue.
+                Else ignores the monitor and switches to ne next.
 
             This is a generator which returns created files.
         '''

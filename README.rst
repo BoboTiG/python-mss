@@ -72,14 +72,14 @@ Instance the good class
 So MSS can be used as simply as::
 
     from mss import mss
-    screenshotter = mss()
+    with mss() as screenshotter:
+        # ...
 
 Or import the good one::
 
-    # from mss.darwin import MSS as mss
-    # from mss.windows import MSS as mss
-    from mss.linux import MSS as mss
-    screenshotter = mss()
+    from mss.linux import MSS
+    with MSS() as screenshotter:
+        # ...
 
 
 save(output, screen, callback)
@@ -89,16 +89,18 @@ For each monitor, grab a screenshot and save it to a file.
 
 Parameters::
 
-    output - string - the output filename. It can contain '%d' which
-                      will be replaced by the monitor number.
-    screen - integer - grab one screenshot of all monitors (screen=-1)
-                       grab one screenshot by monitor (screen=0)
-                       grab the screenshot of the monitor N (screen=N)
-    callback - function - in case where output already exists, call
-                          the defined callback function with output
-                          as parameter. If it returns True, then
-                          continue; else ignores the monitor and
-                          switches to ne next.
+    output (str)
+        The output filename.
+        %d, if present, will be replaced by the monitor number.
+    screen (int)
+        -1: grab one screenshot of all monitors
+         0: grab one screenshot by monitor
+         N: grab the screenshot of the monitor N
+    callback (def)
+        In case where output already exists, call the defined callback
+        function with output as parameter.
+        If it returns True, then continue.
+        Else ignores the monitor and switches to ne next.
 
 This is a generator which returns created files.
 
