@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' MacOS X version of the MSS module. See __init__.py. '''
+''' This is part of the MSS Python's module.
+    Source: https://github.com/BoboTiG/python-mss
+'''
 
 # pylint: disable=import-error
 

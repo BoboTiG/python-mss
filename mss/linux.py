@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' GNU/Linux version of the MSS module. See __init__.py. '''
+''' This is part of the MSS Python's module.
+    Source: https://github.com/BoboTiG/python-mss
+'''
 
 from ctypes import (
     POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_uint,

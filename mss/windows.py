@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
-''' Windows version of the MSS module. See __init__.py. '''
+''' This is part of the MSS Python's module.
+    Source: https://github.com/BoboTiG/python-mss
+'''
 
 from ctypes import (
     POINTER, WINFUNCTYPE, Structure, c_void_p, create_string_buffer, sizeof,
