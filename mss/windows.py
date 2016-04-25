@@ -139,9 +139,9 @@ class MSS(MSSBase):
             bmi.bmiHeader.biWidth = width
             bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
-            bmi.bmiHeader.biBitCount = 24
+            bmi.bmiHeader.biBitCount = 32
             bmi.bmiHeader.biCompression = bi_rgb
-            buffer_len = height * width * 3
+            buffer_len = height * width * 4
             image_data = create_string_buffer(buffer_len)
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
@@ -162,11 +162,9 @@ class MSS(MSSBase):
             if bmp:
                 windll.gdi32.DeleteObject(bmp)
 
-        # Replace pixels values: BGR to RGB
-        image = bytearray(image_data)
-        del image_data
-        image[2:buffer_len:3], image[0:buffer_len:3] = \
-            image[0:buffer_len:3], image[2:buffer_len:3]
+        # Replace pixels values: BGRX to RGB
+        image = bytearray(height * width * 3)
+        image[0::3], image[1::3], image[2::3] = image_data[2::4], \
+            image_data[1::4], image_data[0::4]
         self.image = bytes(image)
-        del image
         return self.image
