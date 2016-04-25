@@ -41,15 +41,15 @@ Support
 
 
 =========  =========  ========  =======
-Python     GNU/linux   MacOS X  Windows
+Python     GNU/Linux   MacOS X  Windows
 =========  =========  ========  =======
-**3.5.1**  **True**   **True**  **True**
+3.5.1      True       True      True
 3.4.3      True       True      True
 3.3.6      True       True      True
 3.2.6      True       True      True
 3.1.5      True       True      True
 3.0.1      True       True      True
-**2.7.11** **True**   **True**  **True**
+2.7.11     True       True      True
 2.6.9      True       True      True
 =========  =========  ========  =======
 
@@ -124,8 +124,10 @@ Screenshot of the monitor 1, with callback::
         ''' Callback example when we try to overwrite an existing
             screenshot.
         '''
+
         from os import rename
         from os.path import isfile
+
         if isfile(fname):
             newfile = fname + '.old'
             print('{0} -> {1}'.format(fname, newfile))

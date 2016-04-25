@@ -2,9 +2,10 @@ History:
 
 <see Git checkin messages for history>
 
-2.0.0   2016/mm/dd
+2.0.0-dev   2016/mm/dd
       - split the module into several files
       - fix README issues link
+      - add an issue template
       - prevent export of MSS* classes in case of "from mss import *"
       - MSS: rename save_img() to to_png()
       - MSS: optimization of to_png()
