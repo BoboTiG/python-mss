@@ -35,13 +35,15 @@ You can install it with pip::
 
     pip install --upgrade mss
 
+
 Support
 ---
 
 Legend::
-:star: fully functional (latest stable Python version)
-:star2: fully functionnal (old Python version)
-:question: no machine to test (reports needed :smiley:)
+
+* :star: fully functional (latest stable version Python)
+* :star2: fully functionnal (old version Python)
+* :question: no machine to test ([reports needed](https://github.com/BoboTiG/python-mss/issues) :smiley:)
 
 Python    | GNU/Linux | MacOS X  | Windows
 :---: | :---: | :---: | :---:
@@ -54,9 +56,7 @@ Python    | GNU/Linux | MacOS X  | Windows
 **2.7.11** | :star: | :star: | :star:
 2.6.9 | :star2: | :star2: | :star2:
 
-Feel free to try MSS on a system we had not tested, and let report us by creating an issue_.
-
-.. _issue: https://github.com/BoboTiG/python-mss/issues
+Feel free to try MSS on a system we had not tested, and let report us by creating an [issue](https://github.com/BoboTiG/python-mss/issues).
 
 
 Testing
