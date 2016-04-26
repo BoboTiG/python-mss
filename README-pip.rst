@@ -81,6 +81,12 @@ Or import the good one::
     with MSS() as screenshotter:
         # ...
 
+Of course, you can use it the old way::
+
+    from mss import mss  # or from mss.linux import MSS as mss
+    screenshotter = mss()
+    # ...
+
 
 save(output, screen, callback)
 ------------------------------
@@ -92,10 +98,12 @@ Parameters::
     output (str)
         The output filename.
         %d, if present, will be replaced by the monitor number.
+
     screen (int)
         -1: grab one screenshot of all monitors
          0: grab one screenshot by monitor
          N: grab the screenshot of the monitor N
+
     callback (def)
         In case where output already exists, call the defined callback
         function with output as parameter.

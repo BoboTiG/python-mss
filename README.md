@@ -12,7 +12,7 @@ It's under zlib licence.
 API change
 ---
 
-**Warning**: from the version 2.0.0 for specific system import, now you do as::
+**Warning**: from the version 2.0.0 for specific system import, now you do as:
 
     # MacOS X
     from mss.darwin import MSS
@@ -31,7 +31,7 @@ This make life easier for contributors and reviewers.
 Installation
 ---
 
-You can install it with pip::
+You can install it with pip:
 
     pip install --upgrade mss
 
@@ -61,7 +61,7 @@ Feel free to try MSS on a system we had not tested, and let report us by creatin
 Testing
 ---
 
-You can try the MSS module directly from the console::
+You can try the MSS module directly from the console:
 
     python tests.py
 
@@ -69,17 +69,23 @@ You can try the MSS module directly from the console::
 Instance the good class
 ---
 
-So MSS can be used as simply as::
+So MSS can be used as simply as:
 
     from mss import mss
     with mss() as screenshotter:
         # ...
 
-Or import the good one::
+Or import the good one:
 
     from mss.linux import MSS
     with MSS() as screenshotter:
         # ...
+
+Of course, you can use it the old way:
+
+    from mss import mss  # or from mss.linux import MSS as mss
+    screenshotter = mss()
+    # ...
 
 
 Method save(output, screen, callback)
@@ -87,7 +93,7 @@ Method save(output, screen, callback)
 
 For each monitor, grab a screenshot and save it to a file.
 
-Parameters::
+Parameters:
 
     output (str)
         The output filename.
@@ -110,17 +116,17 @@ This is a generator which returns created files.
 Examples
 ---
 
-One screenshot per monitor::
+One screenshot per monitor:
 
     for filename in screenshotter.save():
         print(filename)
 
-Screenshot of the monitor 1::
+Screenshot of the monitor 1:
 
     for filename in screenshotter.save(screen=1):
         print(filename)
 
-Screenshot of the monitor 1, with callback::
+Screenshot of the monitor 1, with callback:
 
     def on_exists(fname):
         ''' Callback example when we try to overwrite an existing
@@ -139,7 +145,7 @@ Screenshot of the monitor 1, with callback::
     for filename in screenshotter.save(screen=1, callback=on_exists):
         print(filename)
 
-A screenshot to grab them all::
+A screenshot to grab them all:
 
     for filename in screenshotter.save(output='fullscreen-shot.png', screen=-1):
         print(filename)
