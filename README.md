@@ -39,8 +39,7 @@ You can install it with pip::
 Support
 ---
 
-Legend::
-
+Legend:
 * :star: fully functional (latest stable version Python)
 * :star2: fully functionnal (old version Python)
 * :question: no machine to test ([reports needed](https://github.com/BoboTiG/python-mss/issues) :smiley:)
