@@ -122,6 +122,10 @@ class MSS(MSSBase):
             setting the height to a negative number.
             https://msdn.microsoft.com/en-us/library/ms787796.aspx
             https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
+
+            [2] We grab the image in RGBX mode, so that each word is 32bit
+            and we have no striding, then we transform to RGB.
+            Inspired by https://github.com/zoofIO/flexx
         '''
 
         # pylint: disable=R0914
@@ -141,10 +145,9 @@ class MSS(MSSBase):
             bmi.bmiHeader.biWidth = width
             bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
-            bmi.bmiHeader.biBitCount = 32
+            bmi.bmiHeader.biBitCount = 32  # See [2]
             bmi.bmiHeader.biCompression = bi_rgb
-            buffer_len = height * width * 4
-            image_data = create_string_buffer(buffer_len)
+            image_data = create_string_buffer(height * width * 4)  # See [2]
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
@@ -164,9 +167,9 @@ class MSS(MSSBase):
             if bmp:
                 windll.gdi32.DeleteObject(bmp)
 
-        # Replace pixels values: BGRX to RGB
+        # Replace pixels values: BGRX to RGB. See [2].
         image = bytearray(height * width * 3)
-        image[0::3], image[1::3], image[2::3] = image_data[2::4], \
-            image_data[1::4], image_data[0::4]
+        image[0::3], image[1::3], image[2::3] = \
+            image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
         return self.image
