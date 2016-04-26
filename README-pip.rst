@@ -43,14 +43,14 @@ Support
 ============  ============  ============  ============
 Python        GNU/Linux     MacOS X       Windows
 ============  ============  ============  ============
-3.5.1         :star2:       :question:    :star2:
-3.4.4         :star:        :question:    :star:
-3.3.6         :star:        :question:    :star:
-3.2.6         :star:        :question:    :star:
-3.1.5         :star:        :question:    :star:
-3.0.1         :star:        :question:    :star:
-2.7.11        :star2:       :star2:       :star2:
-2.6.9         :star:        :star:        :star:
+**3.5.1**     **True**      **True**      **True**
+3.4.4         True          Unknown       True
+3.3.6         True          Unknown       True
+3.2.6         True          Unknown       True
+3.1.5         True          Unknown       True
+3.0.1         True          Unknown       True
+**2.7.11**    **True**      **True**      **True**
+2.6.9         True          True          True
 ============  ============  ============  ============
 
 Feel free to try MSS on a system we had not tested, and let report us by creating an issue_.
