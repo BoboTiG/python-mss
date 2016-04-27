@@ -235,10 +235,9 @@ class MSS(MSSBase):
             raise ScreenshotError('xlib.XGetImage() failed.')
 
         if not self.use_mss:
-            self.image = self.get_pixels_slow(ximage)
+            self.get_pixels_slow(ximage)
         else:
-            buffer_len = height * width * 3
-            self.image = create_string_buffer(buffer_len)
+            self.image = create_string_buffer(height * width * 3)
             ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
