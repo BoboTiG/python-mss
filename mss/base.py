@@ -102,11 +102,10 @@ class MSSBase(object):
         # pylint: disable=R0201, R0914
 
         p__ = pack
-        line = (width * 3 + 3) & -4
-        padding = 0 if line % 8 == 0 else (line % 8) // 2
+        line = width * 3
         png_filter = p__(b'>B', 0)
         scanlines = b''.join(
-            [png_filter + data[y * line:y * line + line - padding]
+            [png_filter + data[y * line:y * line + line]
              for y in range(height)])
 
         magic = p__(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)

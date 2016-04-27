@@ -65,8 +65,8 @@ History:
       - possibility to append '--debug' to the command line
       - better way to manage output filenames (callback)
       - several fixes here and there, code refactoring
-      - Linux: add XFCE4 support
       - MSS: moved into a MSS:save_img() method
+      - Linux: add XFCE4 support
 
 0.0.5   2013/11/01
       - MSS: code simplified
