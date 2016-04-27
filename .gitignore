@@ -5,7 +5,3 @@ MANIFEST
 *.png
 *.png.old
 *.pyc
-test/.*
-test/data-linux*.raw
-tests/
-test/test-linux
