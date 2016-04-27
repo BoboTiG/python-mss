@@ -127,11 +127,10 @@ class MSS(MSSBase):
             and we have no striding, then we transform to RGB.
             Inspired by https://github.com/zoofIO/flexx
 
-            [3] When .biClrUsed and biClrImportant are set to zero, there
+            [3] When biClrUsed and biClrImportant are set to zero, there
             is "no" color table, so we can read the pixels of the bitmap
             retrieved by GetDIBits() as a sequence of RGB values.
             Thanks to http://stackoverflow.com/a/3688682
-            This fixes #7: bad screenshots on certain Windows.
         '''
 
         # pylint: disable=R0914
