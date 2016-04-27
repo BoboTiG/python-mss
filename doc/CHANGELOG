@@ -6,85 +6,85 @@ History:
       - split the module into several files
       - add issue and pull request templates
       - prevent export of MSS* classes in case of "from mss import *"
-      - Fix #6, screenshot not correct on Windows 8
-      - Fix #7, libpng warning (ignoring bad filter type)
+      - fix #6, screenshot not correct on Windows 8
       - MSS: rename save_img() to to_png()
       - MSS: optimization of to_png()
-      - MSSLinux: prevent segfault when DISPLAY is set but no X server started
-      - MSSLinux: get_pixels() insanely fast, use of MSS library (C code)
-      - MSSWindows: get_pixels() insanely fast
+      - Linux: prevent segfault when DISPLAY is set but no X server started
+      - Linux: prevent segfault when Xrandr is not loaded
+      - Linux: get_pixels() insanely fast, use of MSS library (C code)
+      - Windows: get_pixels() insanely fast
 
 1.0.2   2016/04/22
-      - Fix inexistant alias
+      - fix inexistant alias
 
 1.0.1   2016/04/22
-      - Fix libpng warning: ignoring bad filter type
+      - fix #7, libpng warning (ignoring bad filter type)
 
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
       - code purgation and review, no more debug informations
       - delete --debug argument
-      - fix #5: add a shortcut to take automatically use the proper MSS class
+      - MSS: fix #5, add a shortcut to take automatically use the proper MSS class
       - MSS: few optimizations into save_img()
-      - MSSMac: remove rotation from informations returned by enum_display_monitors()
-      - MSSLinux: fix object has no attribute 'display' into __del__
-      - MSSLinux: use of XDestroyImage() instead of XFree()
-      - MSSLinux: optimizations of get_pixels()
-      - MSSWindows: huge optimization of get_pixels()
+      - Darwin: remove rotation from informations returned by enum_display_monitors()
+      - Linux: fix object has no attribute 'display' into __del__
+      - Linux: use of XDestroyImage() instead of XFree()
+      - Linux: optimizations of get_pixels()
+      - Windows: huge optimization of get_pixels()
 
 0.1.1   2015/04/10
       - little code review
       - add doc/TESTING
       - remove Bonus section from README.rst
       - tests: remove test-linux binary
-      - MSSLinux: fix monitor count
+      - Linux: fix monitor count
 
 0.1.0   2015/04/10
       - fix code with YAPF tool
       - better tests and examples
-      - MSSLinux: fully functional using Xrandr library
-      - MSSLinux: code purgation (no more XML files to parse)
+      - Linux: fully functional using Xrandr library
+      - Linux: code purgation (no more XML files to parse)
 
 0.0.8   2015/02/04
-      - fix #3: filename's dir is not used when saving
-      - fix #4: robustness to MSSWindows.get_pixels
-      - fix "E713 test for membership should be 'not in'"
-      - raise an exception for unimplemented methods
       - new contributors: sergey-vin, Alexander 'thehesiod' Mohr
+      - MSS: fix #3, filename's dir is not used when saving
+      - MSS: fix "E713 test for membership should be 'not in'"
+      - MSS: raise an exception for unimplemented methods
+      - Windows: fix #4, robustness to MSSWindows.get_pixels
 
 0.0.7   2014/03/20
-      - fix path where screenshots are saved
+      - MSS: fix path where screenshots are saved
 
 0.0.6   2014/03/19
-      - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
-      - refactoring of all enum_display_monitors() methods
-      - MSSLinux: add XFCE4 support
-      - MSSImage: moved into a MSS:save_img() method
+      - new contributor: Sam from sametmax.com
       - PEP8 compliant
       - Python 3.4 ready
+      - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
+      - refactoring of all enum_display_monitors() methods
       - fix misspellings using 'codespell' tool
       - possibility to append '--debug' to the command line
       - better way to manage output filenames (callback)
       - several fixes here and there, code refactoring
-      - new contributor: Sam from sametmax.com
+      - Linux: add XFCE4 support
+      - MSS: moved into a MSS:save_img() method
 
 0.0.5   2013/11/01
-      - MSSWindows: few optimizations into _arrange()
-      - MSSImage: code simplified
+      - MSS: code simplified
+      - Windows: few optimizations into _arrange()
 
 0.0.4   2013/10/31
-      - MSSLinux: use of memoization => huge time/operations gains
+      - Linux: use of memoization => huge time/operations gains
 
 0.0.3   2013/10/30
-      - MSSImage: remove PNG filters
-      - MSSImage: remove 'ext' argument, using only PNG
-      - MSSImage: do not overwrite existing image files
-      - MSSImage: few optimizations into png()
-      - MSSLinux: few optimizations into get_pixels()
+      - MSS: remove PNG filters
+      - MSS: remove 'ext' argument, using only PNG
+      - MSS: do not overwrite existing image files
+      - MSS: few optimizations into png()
+      - Linux: few optimizations into get_pixels()
 
 0.0.2   2013/10/21
-      - add support for python 3 on Windows and GNU/Linux
       - new contributors: Oros, Eownis
+      - add support for python 3 on Windows and GNU/Linux
 
 0.0.1   2013/07/01
       - first release
