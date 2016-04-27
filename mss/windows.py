@@ -126,6 +126,12 @@ class MSS(MSSBase):
             [2] We grab the image in RGBX mode, so that each word is 32bit
             and we have no striding, then we transform to RGB.
             Inspired by https://github.com/zoofIO/flexx
+
+            [3] When .biClrUsed and biClrImportant are set to zero, there
+            is "no" color table, so we can read the pixels of the bitmap
+            retrieved by GetDIBits() as a sequence of RGB values.
+            Thanks to http://stackoverflow.com/a/3688682
+            This fixes #7: bad screenshots on certain Windows.
         '''
 
         # pylint: disable=R0914
@@ -147,6 +153,9 @@ class MSS(MSSBase):
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 32  # See [2]
             bmi.bmiHeader.biCompression = bi_rgb
+            bmi.bmiHeader.biClrUsed = 0  # See [3]
+            bmi.bmiHeader.biClrImportant = 0  # See [3]
+
             image_data = create_string_buffer(height * width * 4)  # See [2]
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
@@ -157,7 +166,7 @@ class MSS(MSSBase):
             bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, image_data,
                                           bmi, dib_rgb_colors)
             if bits != height:
-                raise ScreenshotError('GetDIBits() failed.')
+                raise ScreenshotError('gdi32.GetDIBits() failed.')
         finally:
             # Clean up
             if srcdc:
