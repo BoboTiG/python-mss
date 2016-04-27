@@ -129,7 +129,7 @@ class MSS(MSSBase):
 
             [3] When biClrUsed and biClrImportant are set to zero, there
             is "no" color table, so we can read the pixels of the bitmap
-            retrieved by GetDIBits() as a sequence of RGB values.
+            retrieved by gdi32.GetDIBits() as a sequence of RGB values.
             Thanks to http://stackoverflow.com/a/3688682
         '''
 

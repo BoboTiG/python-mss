@@ -170,7 +170,7 @@ class MSS(MSSBase):
         ''' Functions return type. '''
 
         def validate(value):
-            ''' Validate the returned value of XRRGetScreenResources.restype()
+            ''' Validate the returned value of xrandr.XRRGetScreenResources().
                 We can end on a segfault if not:
                     Xlib:  extension "RANDR" missing on display "...".
             '''
@@ -256,7 +256,7 @@ class MSS(MSSBase):
             ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
-                err = 'libmss.GetXImagePixels() failed (errcode={}).'
+                err = 'libmss.GetXImagePixels() failed (retcode={}).'
                 raise ScreenshotError(err.format(ret))
         self.xlib.XDestroyImage(ximage)
         return self.image
