@@ -68,7 +68,7 @@ class XRRCrtcInfo(Structure):
 
 class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for GNU/Linux.
-        It uses intensively the Xlib and Xrandr.
+        It uses intensively the Xlib and Xrandr extension.
     '''
 
     # pylint: disable=R0902
@@ -119,7 +119,7 @@ class MSS(MSSBase):
         try:
             assert self.display.contents
         except ValueError:
-            raise ScreenshotError('Cannot open display: {}'.format(disp))
+            raise ScreenshotError('Cannot open display "{}".'.format(disp))
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
@@ -201,8 +201,9 @@ class MSS(MSSBase):
             }
         else:
             # Fix for XRRGetScreenResources:
-            # expected LP_Display instance instead of LP_XWindowAttributes
+            #     expected LP_Display instance instead of LP_XWindowAttributes
             root = cast(self.root, POINTER(Display))
+
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
             for num in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
@@ -225,13 +226,13 @@ class MSS(MSSBase):
         allplanes = self.xlib.XAllPlanes()
 
         # Fix for XGetImage:
-        # expected LP_Display instance instead of LP_XWindowAttributes
+        #     expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
 
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
                                      height, allplanes, zpixmap)
         if not ximage:
-            raise ScreenshotError('XGetImage() failed.')
+            raise ScreenshotError('xlib.XGetImage() failed.')
 
         if not self.use_mss:
             self.image = self.get_pixels_slow(ximage)
@@ -241,8 +242,8 @@ class MSS(MSSBase):
             ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
-                err = 'libmss.GetXImagePixels() failed ({}).'.format(ret)
-                raise ScreenshotError(err)
+                err = 'libmss.GetXImagePixels() failed (errcode={}).'
+                raise ScreenshotError(err.format(ret))
         self.xlib.XDestroyImage(ximage)
         return self.image
 
