@@ -78,11 +78,6 @@ class MSS(MSSBase):
 
         self._cleanup()
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        ''' Quit. '''
-
-        self._cleanup()
-
     def __init__(self):
         ''' GNU/Linux initialisations. '''
 
@@ -134,6 +129,7 @@ class MSS(MSSBase):
         try:
             if self.display:
                 self.xlib.XCloseDisplay(self.display)
+                self.display = None
         except AttributeError:
             pass
 
