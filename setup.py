@@ -7,7 +7,12 @@ setup(
     version=__version__,
     author='Tiger-222',
     packages=['mss'],
-    package_data={'mss': ['dep/linux/*', 'dep/linux/*/*']},
+    package_data={'mss': [
+        'linux/build.sh',
+        'linux/mss.c',
+        'linux/32/limss.so',
+        'linux/64/libmss.so'
+    ]},
     author_email='mickael@jmsinfo.co',
     description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
     long_description=open('README-pip.rst').read(),

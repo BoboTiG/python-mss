@@ -104,7 +104,7 @@ class MSS(MSSBase):
         self.xrandr = cdll.LoadLibrary(xrandr)
 
         # libmss = find_library('mss')
-        libmss = '{}/dep/linux/{}/libmss.so'.format(
+        libmss = '{}/linux/{}/libmss.so'.format(
             dirname(realpath(abspath(__file__))), arch())
         if isfile(libmss):
             self.mss = cdll.LoadLibrary(libmss)
