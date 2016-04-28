@@ -104,7 +104,7 @@ class MSS(MSSBase):
         self.xrandr = cdll.LoadLibrary(xrandr)
 
         # libmss = find_library('mss')
-        libmss = '{}/linux/{}/libmss.so'.format(
+        libmss = '{0}/linux/{1}/libmss.so'.format(
             dirname(realpath(abspath(__file__))), arch())
         if isfile(libmss):
             self.mss = cdll.LoadLibrary(libmss)
@@ -119,7 +119,7 @@ class MSS(MSSBase):
         try:
             assert self.display.contents
         except ValueError:
-            raise ScreenshotError('Cannot open display "{}".'.format(disp))
+            raise ScreenshotError('Cannot open display "{0}".'.format(disp))
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
@@ -256,7 +256,7 @@ class MSS(MSSBase):
             ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
-                err = 'libmss.GetXImagePixels() failed (retcode={}).'
+                err = 'libmss.GetXImagePixels() failed (retcode={0}).'
                 raise ScreenshotError(err.format(ret))
         self.xlib.XDestroyImage(ximage)
         return self.image

@@ -133,5 +133,5 @@ class MSSBase(object):
             fileh.write(b''.join(iend))
             return
 
-        err = 'Error writing data to "{}".'.format(output)
+        err = 'Error writing data to "{0}".'.format(output)
         raise ScreenshotError(err)
