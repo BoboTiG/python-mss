@@ -43,6 +43,7 @@ class MSSBase(object):
                 'height': the height
             }
         '''
+
         raise NotImplementedError('Subclasses need to implement this!')
 
     def get_pixels(self, monitor):
@@ -56,6 +57,7 @@ class MSSBase(object):
                 'heigth': the height
             }
         '''
+
         raise NotImplementedError('Subclasses need to implement this!')
 
     def save(self,

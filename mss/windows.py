@@ -74,7 +74,7 @@ class MSS(MSSBase):
 
     def enum_display_monitors(self, screen=-1):
         ''' Get positions of one or more monitors.
-            Returns a dict with minimal requirements (see MSS class).
+            Returns a dict with minimal requirements (see parent class).
         '''
 
         if screen == -1:
@@ -96,6 +96,7 @@ class MSS(MSSBase):
                 ''' Callback for monitorenumproc() function, it will return
                     a RECT with appropriate values.
                 '''
+
                 del monitor
                 del data
                 del dc_
@@ -117,17 +118,30 @@ class MSS(MSSBase):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
 
-            [1] A bottom-up DIB is specified by setting the height to a
+            In the code, there are few interesting things:
+
+            [1] bmi.bmiHeader.biHeight = -height
+
+            A bottom-up DIB is specified by setting the height to a
             positive number, while a top-down DIB is specified by
             setting the height to a negative number.
             https://msdn.microsoft.com/en-us/library/ms787796.aspx
             https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
 
-            [2] We grab the image in RGBX mode, so that each word is 32bit
+
+            [2] bmi.bmiHeader.biBitCount = 32
+                image_data = create_string_buffer(height * width * 4)
+                # and later, the BGRX to RGB conversion
+
+            We grab the image in RGBX mode, so that each word is 32bit
             and we have no striding, then we transform to RGB.
             Inspired by https://github.com/zoofIO/flexx
 
-            [3] When biClrUsed and biClrImportant are set to zero, there
+
+            [3] bmi.bmiHeader.biClrUsed = 0
+                bmi.bmiHeader.biClrImportant = 0
+
+            When biClrUsed and biClrImportant are set to zero, there
             is "no" color table, so we can read the pixels of the bitmap
             retrieved by gdi32.GetDIBits() as a sequence of RGB values.
             Thanks to http://stackoverflow.com/a/3688682
@@ -148,7 +162,7 @@ class MSS(MSSBase):
             bmi = BITMAPINFO()
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
             bmi.bmiHeader.biWidth = width
-            bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
+            bmi.bmiHeader.biHeight = -height  # Why minux? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 32  # See [2]
             bmi.bmiHeader.biCompression = bi_rgb

@@ -21,7 +21,7 @@ __all__ = ['MSS']
 
 
 class MSS(MSSBase):
-    ''' Mutliple ScreenShots implementation for Mac OS X.
+    ''' Mutliple ScreenShots implementation for MacOS X.
         It uses intensively the Quartz.
     '''
 

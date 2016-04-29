@@ -136,7 +136,7 @@ class MSS(MSSBase):
     def _set_argtypes(self):
         ''' Functions arguments.
 
-            Curiously, if we set up self.xlib.XGetPixel.argtypes,
+            Curiously, if we set up XGetPixel arguments type,
             the entire process takes twice more time.
             So, no need to waste this precious time :)
             Note: this issue does not occur when using libmss.
@@ -191,8 +191,6 @@ class MSS(MSSBase):
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
-        # self.xrandr.XRRGetScreenResources.restype = \
-        #     POINTER(XRRScreenResources)
         self.xrandr.XRRGetScreenResources.restype = validate
         self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
@@ -202,7 +200,7 @@ class MSS(MSSBase):
 
     def enum_display_monitors(self, screen=0):
         ''' Get positions of one or more monitors.
-            Returns a dict with minimal requirements (see MSS class).
+            Returns a dict with minimal requirements (see parent class).
         '''
 
         if screen == -1:
