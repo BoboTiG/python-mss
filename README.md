@@ -12,7 +12,9 @@ It's under zlib licence.
 Installation
 ------------
 
-```shell You can install it with pip
+You can install it with pip:
+
+```shell
 pip install --upgrade mss
 ```
 
