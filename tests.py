@@ -31,14 +31,14 @@ def main():
                 print(filename)
 
             print("\nScreenshot of the monitor 1")
-            print(next(screenshotter.save(output='monitor-%d.png', mon=1)))
+            print(next(screenshotter.save(mon=1, output='monitor-%d.png')))
 
             print("\nA screenshot to grab them all")
-            print(next(screenshotter.save(output='fullscreen.png', mon=-1)))
+            print(next(screenshotter.save(mon=-1, output='fullscreen.png')))
 
             print("\nScreenshot of the monitor 1, with callback")
-            print(next(screenshotter.save(output='mon-%d.png',
-                                          mon=1, callback=on_exists)))
+            print(next(screenshotter.save(mon=1, output='mon-%d.png',
+                                          callback=on_exists)))
 
             return 0
     except ScreenshotError as ex:

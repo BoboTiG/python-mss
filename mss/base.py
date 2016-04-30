@@ -60,19 +60,19 @@ class MSSBase(object):
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self, output='monitor-%d.png', mon=0, callback=lambda *x: True):
+    def save(self, mon=0, output='monitor-%d.png', callback=lambda *x: True):
         ''' Grab a screenshot and save it to a file.
 
-            output (str)
-                The output filename.
-                %d, if present, will be replaced by the monitor number.
-
-            mon (int)
+            mon (integer)
                 -1: grab one screenshot of all monitors
                  0: grab one screenshot by monitor
                  N: grab the screenshot of the monitor N
 
-            callback (def)
+            output (string)
+                The output filename.
+                %d, if present, will be replaced by the monitor number.
+
+            callback (method)
                 In case where output already exists, call the defined callback
                 function with output as parameter.
 

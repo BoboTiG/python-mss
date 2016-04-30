@@ -88,23 +88,23 @@ Of course, you can use it the old way:
     # ...
 
 
-Method save(output, mon, callback)
+Method save(mon, output, callback)
 ---
 
 For each monitor, grab a screenshot and save it to a file.
 
 Parameters:
 
-    output (str)
-        The output filename.
-        %d, if present, will be replaced by the monitor number.
-
-    mon (int)
+    mon (integer)
         -1: grab one screenshot of all monitors
          0: grab one screenshot by monitor
          N: grab the screenshot of the monitor N
 
-    callback (def)
+    output (string)
+        The output filename.
+        %d, if present, will be replaced by the monitor number.
+
+    callback (method)
         In case where output already exists, call the defined callback
         function with output as parameter.
 
@@ -143,5 +143,5 @@ Screenshot of the monitor 1, with callback:
 
 A screenshot to grab them all:
 
-    print(next(screenshotter.save(output='fullscreen.png', mon=-1)))
+    print(next(screenshotter.save(mon=-1, output='fullscreen.png')))
 
