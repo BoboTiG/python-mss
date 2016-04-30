@@ -62,22 +62,22 @@ class MSSBase(object):
 
     def save(self,
              output='screenshot-%d.png',
-             screen=0,
+             mon=0,
              callback=lambda *x: True):
         ''' Grab a screenshot and save it to a file.
 
             output (str)
                 The output filename.
                 %d, if present, will be replaced by the monitor number.
-            screen (int)
+
+            mon (int)
                 -1: grab one screenshot of all monitors
                  0: grab one screenshot by monitor
                  N: grab the screenshot of the monitor N
+
             callback (def)
                 In case where output already exists, call the defined callback
                 function with output as parameter.
-                If it returns True, then continue.
-                Else ignores the monitor and switches to ne next.
 
             This is a generator which returns created files.
         '''
@@ -85,7 +85,7 @@ class MSSBase(object):
         # Monitors screen shots!
         self.enum_display_monitors()
         for i, monitor in enumerate(self.monitors):
-            if screen <= 0 or (screen > 0 and i + 1 == screen):
+            if mon <= 0 or (mon > 0 and i + 1 == mon):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))

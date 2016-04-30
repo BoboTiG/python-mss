@@ -5,7 +5,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
 Very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file, Python 2.6/3.5 compatible & PEP8 compliant.
 It could be easily embedded into games and other softwares which require fast and plateforme optimized methods to grab screenshots.
 
-MSS stands for Multiple ScreenShots.
+**MSS** stands for **M**ultiple **S**creen**S**hots.
 
 It's under zlib licence.
 
@@ -88,8 +88,8 @@ Of course, you can use it the old way::
     # ...
 
 
-save(output, screen, callback)
-------------------------------
+Method save(output, mon, callback)
+----------------------------------
 
 For each monitor, grab a screenshot and save it to a file.
 
@@ -99,7 +99,7 @@ Parameters::
         The output filename.
         %d, if present, will be replaced by the monitor number.
 
-    screen (int)
+    mon (int)
         -1: grab one screenshot of all monitors
          0: grab one screenshot by monitor
          N: grab the screenshot of the monitor N
@@ -107,8 +107,6 @@ Parameters::
     callback (def)
         In case where output already exists, call the defined callback
         function with output as parameter.
-        If it returns True, then continue.
-        Else ignores the monitor and switches to ne next.
 
 This is a generator which returns created files.
 
@@ -123,7 +121,7 @@ One screenshot per monitor::
 
 Screenshot of the monitor 1::
 
-    for filename in screenshotter.save(screen=1):
+    for filename in screenshotter.save(mon=1):
         print(filename)
 
 Screenshot of the monitor 1, with callback::
@@ -142,10 +140,10 @@ Screenshot of the monitor 1, with callback::
             rename(fname, newfile)
         return True
 
-    for filename in screenshotter.save(screen=1, callback=on_exists):
+    for filename in screenshotter.save(mon=1, callback=on_exists):
         print(filename)
 
 A screenshot to grab them all::
 
-    for filename in screenshotter.save(output='fullscreen-shot.png', screen=-1):
+    for filename in screenshotter.save(output='fullscreen-shot.png', mon=-1):
         print(filename)
