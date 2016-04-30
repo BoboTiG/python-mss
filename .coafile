@@ -1,6 +1,6 @@
-pylint_disable = locally-disabled[Default]
+[Default]
 bears = LineLengthBear, SpaceConsistencyBear, PEP8Bear, PyImportSortBear, PyLintBear, PyUnusedCodeBear
 files = mss/*.py
 use_spaces = yeah
 
-pylint_disable = locally-disabled, too-few-public-methods, E0401, R0903, C0111
+pylint_disable = locally-disabled, too-few-public-methods

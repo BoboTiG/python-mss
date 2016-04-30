@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable = locally-disabled, too-few-public-methods, missing-docstring
+disable = locally-disabled, too-few-public-methods
 
 [REPORTS]
 output-format = colorized

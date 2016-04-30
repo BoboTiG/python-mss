@@ -120,7 +120,7 @@ class MSSBase(object):
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
 
-        # pylint: disable=R0201, R0914
+        # pylint: disable=no-self-use
 
         p__ = pack
         line = width * 3

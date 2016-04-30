@@ -20,10 +20,14 @@ __all__ = ['MSS']
 
 
 class Display(Structure):
-    pass
+    ''' Structure that serves as the connection to the X server
+        and that contains all the information about that X server.
+    '''
 
 
 class XWindowAttributes(Structure):
+    ''' Attributes for the specified window. '''
+
     _fields_ = [('x', c_int32), ('y', c_int32), ('width', c_int32),
                 ('height', c_int32), ('border_width', c_int32),
                 ('depth', c_int32), ('visual', c_ulong), ('root', c_ulong),
@@ -38,6 +42,10 @@ class XWindowAttributes(Structure):
 
 
 class XImage(Structure):
+    ''' Description of an image as it exists in the client's memory.
+        https://tronche.com/gui/x/xlib/graphics/images.html
+    '''
+
     _fields_ = [('width', c_int), ('height', c_int), ('xoffset', c_int),
                 ('format', c_int), ('data', c_void_p),
                 ('byte_order', c_int), ('bitmap_unit', c_int),
@@ -48,10 +56,14 @@ class XImage(Structure):
 
 
 class XRRModeInfo(Structure):
-    pass
+    ''' Voilà, voilà. '''
 
 
 class XRRScreenResources(Structure):
+    ''' Structure that contains arrays of XIDs that point to the
+        available outputs and associated CRTCs.
+    '''
+
     _fields_ = [('timestamp', c_ulong), ('configTimestamp', c_ulong),
                 ('ncrtc', c_int), ('crtcs', POINTER(c_long)),
                 ('noutput', c_int), ('outputs', POINTER(c_long)),
@@ -59,6 +71,8 @@ class XRRScreenResources(Structure):
 
 
 class XRRCrtcInfo(Structure):
+    ''' Structure that contains CRTC informations. '''
+
     _fields_ = [('timestamp', c_ulong), ('x', c_int), ('y', c_int),
                 ('width', c_int), ('height', c_int), ('mode', c_long),
                 ('rotation', c_int), ('noutput', c_int),
@@ -71,15 +85,12 @@ class MSS(MSSBase):
         It uses intensively the Xlib and Xrandr extension.
     '''
 
-    # pylint: disable=R0902
-
     display = None
     use_mss = False
     mss = None
     xlib = None
     xrandr = None
     display = None
-    screen = None
     root = None
 
     def __del__(self):
@@ -129,8 +140,8 @@ class MSS(MSSBase):
             assert self.display.contents
         except ValueError:
             raise ScreenshotError('Cannot open display "{0}".'.format(display))
-        self.screen = self.xlib.XDefaultScreen(self.display)
-        self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
+        screen = self.xlib.XDefaultScreen(self.display)
+        self.root = self.xlib.XDefaultRootWindow(self.display, screen)
 
     def _set_argtypes(self):
         ''' Functions arguments.
@@ -269,7 +280,7 @@ class MSS(MSSBase):
                 This method uses of memoization.
             '''
 
-            # pylint: disable=W0102
+            # pylint: disable=dangerous-default-value
 
             if pixel not in _resultats:
                 _resultats[pixel] = p__(b'<B', (pixel & rmask) >> 16) + \

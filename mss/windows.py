@@ -18,6 +18,8 @@ __all__ = ['MSS']
 
 
 class BITMAPINFOHEADER(Structure):
+    ''' Information about the dimensions and color format of a DIB. '''
+
     _fields_ = [('biSize', DWORD), ('biWidth', LONG), ('biHeight', LONG),
                 ('biPlanes', WORD), ('biBitCount', WORD),
                 ('biCompression', DWORD), ('biSizeImage', DWORD),
@@ -26,6 +28,8 @@ class BITMAPINFOHEADER(Structure):
 
 
 class BITMAPINFO(Structure):
+    ''' Structure that the dimensions and color information for a DIB. '''
+
     _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 
 
@@ -111,13 +115,8 @@ class MSS(MSSBase):
             Thanks to http://stackoverflow.com/a/3688682
         '''
 
-        # pylint: disable=R0914
-
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
-        srccopy = 0xCC0020
-        dib_rgb_colors = 0
-        bi_rgb = 0
         srcdc = None
         memdc = None
         bmp = None
@@ -129,7 +128,7 @@ class MSS(MSSBase):
             bmi.bmiHeader.biHeight = -height  # Why minux? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 32  # See [2]
-            bmi.bmiHeader.biCompression = bi_rgb
+            bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
             bmi.bmiHeader.biClrUsed = 0  # See [3]
             bmi.bmiHeader.biClrImportant = 0  # See [3]
 
@@ -139,9 +138,9 @@ class MSS(MSSBase):
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             windll.gdi32.SelectObject(memdc, bmp)
             windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
-                                srccopy)
+                                0xCC0020)  # 0xCC0020 = SRCCOPY
             bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, image_data,
-                                          bmi, dib_rgb_colors)
+                                          bmi, 0)  # 0 = DIB_RGB_COLORS
             if bits != height:
                 raise ScreenshotError('gdi32.GetDIBits() failed.')
         finally:
