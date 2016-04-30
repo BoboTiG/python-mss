@@ -31,18 +31,14 @@ def main():
                 print(filename)
 
             print("\nScreenshot of the monitor 1")
-            for filename in screenshotter.save(output='monitor-%d.png', mon=1):
-                print(filename)
+            print(next(screenshotter.save(output='monitor-%d.png', mon=1)))
 
             print("\nA screenshot to grab them all")
-            for filename in screenshotter.save(output='fullscreen.png', mon=-1):
-                print(filename)
+            print(next(screenshotter.save(output='fullscreen.png', mon=-1)))
 
             print("\nScreenshot of the monitor 1, with callback")
-            for filename in screenshotter.save(output='mon-%d.png',
-                                               mon=1,
-                                               callback=on_exists):
-                print(filename)
+            print(next(screenshotter.save(output='mon-%d.png',
+                                          mon=1, callback=on_exists)))
 
             return 0
     except ScreenshotError as ex:

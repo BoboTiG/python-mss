@@ -121,8 +121,7 @@ One screenshot per monitor:
 
 Screenshot of the monitor 1:
 
-    for filename in screenshotter.save(mon=1):
-        print(filename)
+    print(next(screenshotter.save(mon=1)))
 
 Screenshot of the monitor 1, with callback:
 
@@ -140,11 +139,9 @@ Screenshot of the monitor 1, with callback:
             rename(fname, newfile)
         return True
 
-    for filename in screenshotter.save(mon=1, callback=on_exists):
-        print(filename)
+    print(next(screenshotter.save(mon=1, callback=on_exists)))
 
 A screenshot to grab them all:
 
-    for filename in screenshotter.save(output='fullscreen-shot.png', mon=-1):
-        print(filename)
+    print(next(screenshotter.save(output='fullscreen.png', mon=-1)))
 
