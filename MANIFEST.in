@@ -1,8 +1,8 @@
 recursive-include mss *
-include README-pip.rst
+include README.md
 include doc/*
 include tests.py
+include test-linux.py
 
 exclude mss/*.pyc
 prune mss/__pycache__
-prune test*

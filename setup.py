@@ -1,4 +1,6 @@
 from distutils.core import setup
+import pypandoc
+
 from mss import __version__
 
 
@@ -13,9 +15,11 @@ setup(
         'linux/32/limss.so',
         'linux/64/libmss.so'
     ]},
+    platforms = ['Darwin', 'Linux', 'Windows'],
+    license='zlib/libpng',
     author_email='mickael@jmsinfo.co',
     description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
-    long_description=open('README-pip.rst').read(),
+    long_description=pypandoc.convert('README.md', 'rst'),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: MacOS X',
