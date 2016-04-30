@@ -35,7 +35,7 @@ class MSSBase(object):
                 self.monitors[0] is a dict of all monitors together
                 self.monitors[N] is a dict of the monitor N (with N > 0)
 
-            Each monitor is a dict:
+            Each monitor is a dict with:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -60,10 +60,7 @@ class MSSBase(object):
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self,
-             output='screenshot-%d.png',
-             mon=0,
-             callback=lambda *x: True):
+    def save(self, output='monitor-%d.png', mon=0, callback=lambda *x: True):
         ''' Grab a screenshot and save it to a file.
 
             output (str)
@@ -82,10 +79,13 @@ class MSSBase(object):
             This is a generator which returns created files.
         '''
 
-        # Monitors screen shots!
         self.enum_display_monitors()
-        for i, monitor in enumerate(self.monitors):
-            if mon <= 0 or (mon > 0 and i + 1 == mon):
+        if not self.monitors:
+            raise ScreenshotError('No monitor found.')
+
+        if mon == 0:
+            # One screenshot by monitor
+            for i, monitor in enumerate(self.monitors[1:]):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))
@@ -95,6 +95,24 @@ class MSSBase(object):
                             height=monitor[b'height'],
                             output=fname)
                 yield fname
+        else:
+            # A screenshot of all monitors together or
+            # a screenshot of the monitor N.
+            mon_number = 0 if mon == -1 else mon
+            try:
+                monitor = self.monitors[mon_number]
+            except IndexError:
+                err = 'Monitor {0} does not exist.'.format(mon)
+                raise ScreenshotError(err)
+
+            if '%d' in output:
+                output = output.replace('%d', str(mon_number))
+            callback(output)
+            self.to_png(data=self.get_pixels(monitor),
+                        width=monitor[b'width'],
+                        height=monitor[b'height'],
+                        output=output)
+            yield output
 
     def to_png(self, data, width, height, output):
         ''' Dump data to the image file.
