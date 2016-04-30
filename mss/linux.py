@@ -74,6 +74,13 @@ class MSS(MSSBase):
     # pylint: disable=R0902
 
     display = None
+    use_mss = False
+    mss = None
+    xlib = None
+    xrandr = None
+    display = None
+    screen = None
+    root = None
 
     def __del__(self):
         ''' Disconnect from X server. '''
@@ -82,19 +89,18 @@ class MSS(MSSBase):
             self.xlib.XCloseDisplay(self.display)
             self.display = None
 
-    def __init__(self):
+    def __init__(self, display=None):
         ''' GNU/Linux initialisations. '''
 
-        self.use_mss = False
-        disp = None
-        try:
-            if version > '3':
-                disp = bytes(environ['DISPLAY'], 'utf-8')
-            else:
-                disp = environ['DISPLAY']
-        except KeyError:
-            err = '$DISPLAY not set. Stopping to prevent segfault.'
-            raise ScreenshotError(err)
+        if not display:
+            try:
+                if version > '3':
+                    display = bytes(environ['DISPLAY'], 'utf-8')
+                else:
+                    display = environ['DISPLAY']
+            except KeyError:
+                err = '$DISPLAY not set. Stopping to prevent segfault.'
+                raise ScreenshotError(err)
 
         x11 = find_library('X11')
         if not x11:
@@ -118,11 +124,11 @@ class MSS(MSSBase):
         self._set_argtypes()
         self._set_restypes()
 
-        self.display = self.xlib.XOpenDisplay(disp)
+        self.display = self.xlib.XOpenDisplay(display)
         try:
             assert self.display.contents
         except ValueError:
-            raise ScreenshotError('Cannot open display "{0}".'.format(disp))
+            raise ScreenshotError('Cannot open display "{0}".'.format(display))
         self.screen = self.xlib.XDefaultScreen(self.display)
         self.root = self.xlib.XDefaultRootWindow(self.display, self.screen)
 
