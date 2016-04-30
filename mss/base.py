@@ -33,7 +33,7 @@ class MSSBase(object):
             This method has to fill self.monitors with all informations
             and use it as a cache:
                 self.monitors[0] is a dict of all monitors together
-                self.monitors[N] is a dict the monitor N (with N > 0)
+                self.monitors[N] is a dict of the monitor N (with N > 0)
 
             Each monitor is a dict:
             {

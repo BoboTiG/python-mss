@@ -41,7 +41,7 @@ Support
 
 Legend:
 * :star: fully functional (latest stable version Python)
-* :star2: fully functionnal (old version Python)
+* :star2: fully functional (old version Python)
 * :question: no machine to test ([reports needed](https://github.com/BoboTiG/python-mss/issues) :smiley:)
 
 Python    | GNU/Linux | MacOS X  | Windows
