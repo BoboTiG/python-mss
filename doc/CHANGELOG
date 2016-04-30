@@ -5,20 +5,19 @@ History:
 2.0.0-dev   2016/mm/dd
       - split the module into several files
       - add issue and pull request templates
-      - prevent export of MSS* classes in case of "from mss import *"
-      - fix #6, screenshot not correct on Windows 8
+      - a lot of code refactor and optimizations
       - MSS: rename save_img() to to_png()
-      - MSS: optimization of to_png()
+      - MSS: save(): replace 'screen' argument by 'mon'
       - Linux: prevent segfault when DISPLAY is set but no X server started
       - Linux: prevent segfault when Xrandr is not loaded
       - Linux: get_pixels() insanely fast, use of MSS library (C code)
-      - Windows: get_pixels() insanely fast
+      - Windows: fix #6, screenshot not correct on Windows 8
 
 1.0.2   2016/04/22
-      - fix inexistant alias
+      - MSS: fix inexistant alias
 
 1.0.1   2016/04/22
-      - fix #7, libpng warning (ignoring bad filter type)
+      - MSS: fix #7, libpng warning (ignoring bad filter type)
 
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
