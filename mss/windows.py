@@ -65,9 +65,7 @@ class MSS(MSSBase):
                     a RECT with appropriate values.
                 '''
 
-                del monitor
-                del data
-                del dc_
+                del monitor, data, dc_
                 rct = rect.contents
                 monitors.append({
                     b'left': int(rct.left),
