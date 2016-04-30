@@ -35,42 +35,10 @@ class MSS(MSSBase):
     def __init__(self):
         ''' Windows initialisations. '''
 
-        self._set_argtypes()
-        self._set_restypes()
-
-    def _set_argtypes(self):
-        ''' Functions arguments. '''
-
         self.monitorenumproc = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
                                            DOUBLE)
-        windll.user32.GetSystemMetrics.argtypes = [INT]
-        windll.user32.EnumDisplayMonitors.argtypes = [HDC, c_void_p,
-                                                      self.monitorenumproc,
-                                                      LPARAM]
-        windll.user32.GetWindowDC.argtypes = [HWND]
-        windll.gdi32.CreateCompatibleDC.argtypes = [HDC]
-        windll.gdi32.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
-        windll.gdi32.SelectObject.argtypes = [HDC, HGDIOBJ]
-        windll.gdi32.BitBlt.argtypes = [HDC, INT, INT, INT, INT, HDC, INT, INT,
-                                        DWORD]
-        windll.gdi32.DeleteObject.argtypes = [HGDIOBJ]
-        windll.gdi32.GetDIBits.argtypes = [HDC, HBITMAP, UINT, UINT, c_void_p,
-                                           POINTER(BITMAPINFO), UINT]
-
-    def _set_restypes(self):
-        ''' Functions return type. '''
-
-        # pylint: disable=R0201
-
-        windll.user32.GetSystemMetrics.restypes = INT
-        windll.user32.EnumDisplayMonitors.restypes = BOOL
-        windll.user32.GetWindowDC.restypes = HDC
-        windll.gdi32.CreateCompatibleDC.restypes = HDC
-        windll.gdi32.CreateCompatibleBitmap.restypes = HBITMAP
-        windll.gdi32.SelectObject.restypes = HGDIOBJ
-        windll.gdi32.BitBlt.restypes = BOOL
-        windll.gdi32.GetDIBits.restypes = INT
-        windll.gdi32.DeleteObject.restypes = BOOL
+        set_argtypes(self.monitorenumproc)
+        set_restypes()
 
     def enum_display_monitors(self, screen=-1):
         ''' Get positions of one or more monitors.
@@ -195,3 +163,34 @@ class MSS(MSSBase):
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
         return self.image
+
+
+def set_argtypes(callback):
+    ''' Functions arguments. '''
+
+    windll.user32.GetSystemMetrics.argtypes = [INT]
+    windll.user32.EnumDisplayMonitors.argtypes = \
+        [HDC, c_void_p, callback, LPARAM]
+    windll.user32.GetWindowDC.argtypes = [HWND]
+    windll.gdi32.CreateCompatibleDC.argtypes = [HDC]
+    windll.gdi32.CreateCompatibleBitmap.argtypes = [HDC, INT, INT]
+    windll.gdi32.SelectObject.argtypes = [HDC, HGDIOBJ]
+    windll.gdi32.BitBlt.argtypes = \
+        [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD]
+    windll.gdi32.DeleteObject.argtypes = [HGDIOBJ]
+    windll.gdi32.GetDIBits.argtypes = \
+        [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT]
+
+
+def set_restypes():
+    ''' Functions return type. '''
+
+    windll.user32.GetSystemMetrics.restypes = INT
+    windll.user32.EnumDisplayMonitors.restypes = BOOL
+    windll.user32.GetWindowDC.restypes = HDC
+    windll.gdi32.CreateCompatibleDC.restypes = HDC
+    windll.gdi32.CreateCompatibleBitmap.restypes = HBITMAP
+    windll.gdi32.SelectObject.restypes = HGDIOBJ
+    windll.gdi32.BitBlt.restypes = BOOL
+    windll.gdi32.GetDIBits.restypes = INT
+    windll.gdi32.DeleteObject.restypes = BOOL

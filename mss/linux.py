@@ -109,7 +109,7 @@ class MSS(MSSBase):
 
         xrandr = find_library('Xrandr')
         if not xrandr:
-            raise ScreenshotError('No Xrandr library found.')
+            raise ScreenshotError('No Xrandr extension found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
 
         # libmss = find_library('mss')
