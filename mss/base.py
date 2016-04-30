@@ -14,6 +14,7 @@ from .exception import ScreenshotError
 class MSSBase(object):
     ''' This class will be overloaded by a system specific one. '''
 
+    monitors = []
     image = None
 
     def __enter__(self):
@@ -24,18 +25,17 @@ class MSSBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         ''' For the cool call `with MSS() as mss:`. '''
 
-    def enum_display_monitors(self, screen=0):
+    def enum_display_monitors(self, force=False):
         ''' Get positions of one or more monitors.
-
             If the monitor has rotation, you have to deal with it
             inside this method.
 
-            screen (int)
-                -1: grab one screenshot of all monitors
-                 0: grab one screenshot by monitor
-                 N: grab the screenshot of the monitor N
+            This method has to fill self.monitors with all informations
+            and use it as a cache:
+                self.monitors[0] is a dict of all monitors together
+                self.monitors[N] is a dict the monitor N (with N > 0)
 
-            Returns a dict:
+            Each monitor is a dict:
             {
                 'left':   the x-coordinate of the upper-left corner,
                 'top':    the y-coordinate of the upper-left corner,
@@ -83,7 +83,8 @@ class MSSBase(object):
         '''
 
         # Monitors screen shots!
-        for i, monitor in enumerate(self.enum_display_monitors(screen)):
+        self.enum_display_monitors()
+        for i, monitor in enumerate(self.monitors):
             if screen <= 0 or (screen > 0 and i + 1 == screen):
                 fname = output
                 if '%d' in output:

@@ -40,26 +40,25 @@ class MSS(MSSBase):
         set_argtypes(self.monitorenumproc)
         set_restypes()
 
-    def enum_display_monitors(self, screen=-1):
-        ''' Get positions of one or more monitors.
-            Returns a dict with minimal requirements (see parent class).
-        '''
+    def enum_display_monitors(self, force=False):
+        ''' Get positions of monitors (see parent class). '''
 
-        if screen == -1:
+        if not self.monitors or force:
+            # All monitors
             sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
             sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
             left = windll.user32.GetSystemMetrics(sm_xvirtualscreen)
             right = windll.user32.GetSystemMetrics(sm_cxvirtualscreen)
             top = windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
-            yield {
+            self.monitors.append({
                 b'left': int(left),
                 b'top': int(top),
                 b'width': int(right - left),
                 b'height': int(bottom - top)
-            }
-        else:
+            })
 
+            # Each monitors
             def _callback(monitor, data, rect, dc_):
                 ''' Callback for monitorenumproc() function, it will return
                     a RECT with appropriate values.
@@ -67,7 +66,7 @@ class MSS(MSSBase):
 
                 del monitor, data, dc_
                 rct = rect.contents
-                monitors.append({
+                self.monitors.append({
                     b'left': int(rct.left),
                     b'top': int(rct.top),
                     b'width': int(rct.right - rct.left),
@@ -75,11 +74,10 @@ class MSS(MSSBase):
                 })
                 return 1
 
-            monitors = []
             callback = self.monitorenumproc(_callback)
             windll.user32.EnumDisplayMonitors(0, 0, callback, 0)
-            for mon in monitors:
-                yield mon
+
+        return self.monitors
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.

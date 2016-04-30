@@ -25,20 +25,20 @@ class MSS(MSSBase):
         It uses intensively the Quartz.
     '''
 
-    def enum_display_monitors(self, screen=0):
-        ''' Get positions of one or more monitors.
-            Returns a dict with minimal requirements (see MSS class).
-        '''
+    def enum_display_monitors(self, force=False):
+        ''' Get positions of monitors (see parent class). '''
 
-        if screen == -1:
+        if not self.monitors or force:
+            # All monitors
             rect = CGRectInfinite
-            yield {
+            self.monitors.append({
                 b'left': int(rect.origin.x),
                 b'top': int(rect.origin.y),
                 b'width': int(rect.size.width),
                 b'height': int(rect.size.height)
-            }
-        else:
+            })
+
+            # Each monitors
             max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
@@ -49,12 +49,14 @@ class MSS(MSSBase):
                 rot = CGDisplayRotation(display)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
-                yield {
+                self.monitors.append({
                     b'left': int(left),
                     b'top': int(top),
                     b'width': int(width),
                     b'height': int(height)
-                }
+                })
+
+        return self.monitors
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.

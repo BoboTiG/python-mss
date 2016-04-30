@@ -197,37 +197,38 @@ class MSS(MSSBase):
         if self.use_mss:
             self.mss.GetXImagePixels.restype = c_int
 
-    def enum_display_monitors(self, screen=0):
-        ''' Get positions of one or more monitors.
-            Returns a dict with minimal requirements (see parent class).
-        '''
+    def enum_display_monitors(self, force=False):
+        ''' Get positions of monitors (see parent class). '''
 
-        if screen == -1:
+        if not self.monitors or force:
+            # All monitors
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            yield {
+            self.monitors.append({
                 b'left': int(gwa.x),
                 b'top': int(gwa.y),
                 b'width': int(gwa.width),
                 b'height': int(gwa.height)
-            }
-        else:
+            })
+
+            # Each monitors
             # Fix for XRRGetScreenResources:
             #     expected LP_Display instance instead of LP_XWindowAttributes
             root = cast(self.root, POINTER(Display))
-
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
             for num in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                   mon.contents.crtcs[num])
-                yield {
+                self.monitors.append({
                     b'left': int(crtc.contents.x),
                     b'top': int(crtc.contents.y),
                     b'width': int(crtc.contents.width),
                     b'height': int(crtc.contents.height)
-                }
+                })
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
+
+        return self.monitors
 
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
@@ -240,7 +241,6 @@ class MSS(MSSBase):
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
-
         ximage = self.xlib.XGetImage(self.display, root, left, top, width,
                                      height, allplanes, zpixmap)
         if not ximage:
