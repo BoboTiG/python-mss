@@ -28,7 +28,9 @@ class BITMAPINFOHEADER(Structure):
 
 
 class BITMAPINFO(Structure):
-    ''' Structure that the dimensions and color information for a DIB. '''
+    ''' Structure that defines the dimensions and color information
+        for a DIB.
+    '''
 
     _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 

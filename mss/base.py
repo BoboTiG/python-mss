@@ -63,18 +63,18 @@ class MSSBase(object):
     def save(self, mon=0, output='monitor-%d.png', callback=lambda *x: True):
         ''' Grab a screenshot and save it to a file.
 
-            mon (integer)
+            mon (integer, default: 0)
                 -1: grab one screenshot of all monitors
                  0: grab one screenshot by monitor
                  N: grab the screenshot of the monitor N
 
-            output (string)
+            output (string, default: monitor-%d.png)
                 The output filename.
                 %d, if present, will be replaced by the monitor number.
 
             callback (method)
-                In case where output already exists, call the defined callback
-                function with output as parameter.
+                Callback called before saving the screenshot to a file.
+                Take the 'output' argument as parameter.
 
             This is a generator which returns created files.
         '''

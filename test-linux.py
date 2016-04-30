@@ -4,9 +4,6 @@
     Source: https://github.com/BoboTiG/python-mss
 '''
 
-from os import rename
-from os.path import isfile
-
 from mss import ScreenshotError
 from mss.linux import MSS
 
@@ -17,12 +14,12 @@ def main():
     display = b':0.0'
     try:
         with MSS(display=display) as screenshotter:
-            print('Screenshot of display {}'.format(display))
+            print('Screenshot of display "{0}"'.format(display))
             output = 'monitor{0}-%d.png'.format(display)
             for filename in screenshotter.save(output=output):
                 print(filename)
 
-        return 0
+            return 0
     except ScreenshotError as ex:
         print(ex)
 
