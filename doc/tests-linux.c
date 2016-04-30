@@ -2,7 +2,7 @@
 /*
  * This is the MSS python's module implementation in C.
  *
- * Build: gcc -O3 -lX11 -lXrandr test-linux.c -o test-linux
+ * Build: gcc -O2 -lX11 -lXrandr test-linux.c -o test-linux
  * Test : python test-raw.py data.raw width height
  *
  * http://cgit.freedesktop.org/xorg/lib/libX11/tree/src/ImUtil.c#n444
