@@ -6,7 +6,6 @@
 
 # pylint: disable=import-error
 
-from LaunchServices import kUTTypePNG
 from Quartz import (
     NSURL, CGDisplayBounds, CGDisplayRotation, CGGetActiveDisplayList,
     CGImageDestinationAddImage, CGImageDestinationCreateWithURL,
@@ -77,7 +76,7 @@ class MSS(MSSBase):
         ''' Use of internal tools, faster and less code to write :) '''
 
         url = NSURL.fileURLWithPath_(output)
-        dest = CGImageDestinationCreateWithURL(url, kUTTypePNG, 1, None)
+        dest = CGImageDestinationCreateWithURL(url, 'public.png', 1, None)
         if not dest:
             err = 'CGImageDestinationCreateWithURL() failed.'
             raise ScreenshotError(err)
