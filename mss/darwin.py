@@ -25,6 +25,8 @@ class MSS(MSSBase):
         It uses intensively the Quartz.
     '''
 
+    max_displays = 32  # Could be augmented, if needed ...
+
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
 
@@ -38,9 +40,8 @@ class MSS(MSSBase):
             })
 
             # Each monitors
-            max_displays = 32  # Could be augmented, if needed ...
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
-            _, ids, _ = CGGetActiveDisplayList(max_displays, None, None)
+            _, ids, _ = CGGetActiveDisplayList(self.max_displays, None, None)
             for display in ids:
                 rect = CGRectStandardize(CGDisplayBounds(display))
                 left, top = rect.origin.x, rect.origin.y

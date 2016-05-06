@@ -26,6 +26,9 @@ def main():
 
     try:
         with mss() as screenshotter:
+            # For MacOS X only
+            # screenshotter.max_displays = 32
+
             print('One screenshot per monitor')
             for filename in screenshotter.save():
                 print(filename)
