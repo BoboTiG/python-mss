@@ -16,6 +16,8 @@ class MSSBase(object):
 
     monitors = []
     image = None
+    width = 0
+    height = 0
 
     def __enter__(self):
         ''' For the cool call `with MSS() as mss:`. '''
@@ -48,6 +50,8 @@ class MSSBase(object):
 
     def get_pixels(self, monitor):
         ''' Retrieve screen pixels for a given monitor.
+
+            This method has to define self.width and self.height.
 
             `monitor` is a dict with:
             {
@@ -90,10 +94,7 @@ class MSSBase(object):
                 if '%d' in output:
                     fname = output.replace('%d', str(i + 1))
                 callback(fname)
-                self.to_png(data=self.get_pixels(monitor),
-                            width=monitor[b'width'],
-                            height=monitor[b'height'],
-                            output=fname)
+                self.to_png(self.get_pixels(monitor), fname)
                 yield fname
         else:
             # A screenshot of all monitors together or
@@ -108,13 +109,10 @@ class MSSBase(object):
             if '%d' in output:
                 output = output.replace('%d', str(mon_number))
             callback(output)
-            self.to_png(data=self.get_pixels(monitor),
-                        width=monitor[b'width'],
-                        height=monitor[b'height'],
-                        output=output)
+            self.to_png(self.get_pixels(monitor), output)
             yield output
 
-    def to_png(self, data, width, height, output):
+    def to_png(self, data, output):
         ''' Dump data to the image file.
             Pure python PNG implementation.
             http://inaps.org/journal/comment-fonctionne-le-png
@@ -123,17 +121,17 @@ class MSSBase(object):
         # pylint: disable=no-self-use
 
         p__ = pack
-        line = width * 3
+        line = self.width * 3
         png_filter = p__(b'>B', 0)
         scanlines = b''.join(
             [png_filter + data[y * line:y * line + line]
-             for y in range(height)])
+             for y in range(self.height)])
 
         magic = p__(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
         # Header: size, marker, data, CRC32
         ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = p__(b'>2I5B', width, height, 8, 2, 0, 0, 0)
+        ihdr[2] = p__(b'>2I5B', self.width, self.height, 8, 2, 0, 0, 0)
         ihdr[3] = p__(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
         ihdr[0] = p__(b'>I', len(ihdr[2]))
 

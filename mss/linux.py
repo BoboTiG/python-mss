@@ -244,7 +244,8 @@ class MSS(MSSBase):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
-        width, height = monitor[b'width'], monitor[b'height']
+        self.width = monitor[b'width']
+        self.height = monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         zpixmap = 2
         allplanes = self.xlib.XAllPlanes()
@@ -252,15 +253,16 @@ class MSS(MSSBase):
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
-        ximage = self.xlib.XGetImage(self.display, root, left, top, width,
-                                     height, allplanes, zpixmap)
+        ximage = self.xlib.XGetImage(self.display, root, left, top,
+                                     self.width, self.height, allplanes,
+                                     zpixmap)
         if not ximage:
             raise ScreenshotError('xlib.XGetImage() failed.')
 
         if not self.use_mss:
             self.get_pixels_slow(ximage)
         else:
-            self.image = create_string_buffer(height * width * 3)
+            self.image = create_string_buffer(self.height * self.width * 3)
             ret = self.mss.GetXImagePixels(ximage, self.image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
@@ -288,14 +290,14 @@ class MSS(MSSBase):
                     p__(b'<B', pixel & bmask)
             return _resultats[pixel]
 
-        width = ximage.contents.width
-        height = ximage.contents.height
+        self.width = ximage.contents.width
+        self.height = ximage.contents.height
         rmask = ximage.contents.red_mask
         bmask = ximage.contents.blue_mask
         gmask = ximage.contents.green_mask
         get_pix = self.xlib.XGetPixel
         pixels = [pix(get_pix(ximage, x, y))
-                  for y in range(height) for x in range(width)]
+                  for y in range(self.height) for x in range(self.width)]
         self.image = b''.join(pixels)
         return self.image
 

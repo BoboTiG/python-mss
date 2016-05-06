@@ -117,7 +117,8 @@ class MSS(MSSBase):
             Thanks to http://stackoverflow.com/a/3688682
         '''
 
-        width, height = monitor[b'width'], monitor[b'height']
+        self.width = monitor[b'width']
+        self.height = monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         srcdc = None
         memdc = None
@@ -126,24 +127,24 @@ class MSS(MSSBase):
         try:
             bmi = BITMAPINFO()
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
-            bmi.bmiHeader.biWidth = width
-            bmi.bmiHeader.biHeight = -height  # Why minux? See [1]
+            bmi.bmiHeader.biWidth = self.width
+            bmi.bmiHeader.biHeight = -self.height  # Why minux? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 32  # See [2]
             bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
             bmi.bmiHeader.biClrUsed = 0  # See [3]
             bmi.bmiHeader.biClrImportant = 0  # See [3]
 
-            image_data = create_string_buffer(height * width * 4)  # See [2]
+            image_data = create_string_buffer(self.height * self.width * 4)  # See [2]
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             windll.gdi32.SelectObject(memdc, bmp)
-            windll.gdi32.BitBlt(memdc, 0, 0, width, height, srcdc, left, top,
-                                0xCC0020)  # 0xCC0020 = SRCCOPY
-            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, height, image_data,
-                                          bmi, 0)  # 0 = DIB_RGB_COLORS
-            if bits != height:
+            windll.gdi32.BitBlt(memdc, 0, 0, self.width, self.height, srcdc,
+                                left, top, 0xCC0020)  # 0xCC0020 = SRCCOPY
+            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, self.height,
+                                          image_data, bmi, 0)  # 0 = DIB_RGB_COLORS
+            if bits != self.height:
                 raise ScreenshotError('gdi32.GetDIBits() failed.')
         finally:
             # Clean up
@@ -155,7 +156,7 @@ class MSS(MSSBase):
                 windll.gdi32.DeleteObject(bmp)
 
         # Replace pixels values: BGRX to RGB. See [2].
-        image = bytearray(height * width * 3)
+        image = bytearray(self.height * self.width * 3)
         image[0::3], image[1::3], image[2::3] = \
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)

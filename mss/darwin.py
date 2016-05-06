@@ -11,7 +11,8 @@ from Quartz import (
     CGImageDestinationAddImage, CGImageDestinationCreateWithURL,
     CGImageDestinationFinalize, CGRect, CGRectInfinite, CGRectStandardize,
     CGWindowListCreateImage, kCGNullWindowID, kCGWindowImageDefault,
-    kCGWindowListOptionOnScreenOnly)
+    kCGWindowListOptionOnScreenOnly, CGDataProviderCopyData,
+    CGImageGetDataProvider, CGImageGetWidth, CGImageGetHeight)
 
 from .base import MSSBase
 from .exception import ScreenshotError
@@ -58,8 +59,7 @@ class MSS(MSSBase):
         return self.monitors
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
-        '''
+        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
@@ -67,21 +67,19 @@ class MSS(MSSBase):
         options = kCGWindowListOptionOnScreenOnly
         winid = kCGNullWindowID
         default = kCGWindowImageDefault
-        self.image = CGWindowListCreateImage(rect, options, winid, default)
-        if not self.image:
+
+        image_ref = CGWindowListCreateImage(rect, options, winid, default)
+        if not image_ref:
             raise ScreenshotError('CGWindowListCreateImage() failed.')
+
+        self.width = CGImageGetWidth(image_ref)
+        self.height = CGImageGetHeight(image_ref)
+        image_data = CGDataProviderCopyData(CGImageGetDataProvider(image_ref))
+
+        # Replace pixels values: BGRA to RGB.
+        image_data = bytearray(image_data)
+        image = bytearray(self.height * self.width * 3)
+        image[0::3], image[1::3], image[2::3] = \
+            image_data[2::4], image_data[1::4], image_data[0::4]
+        self.image = bytes(image)
         return self.image
-
-    def to_png(self, data, width, height, output):
-        ''' Use of internal tools, faster and less code to write :) '''
-
-        url = NSURL.fileURLWithPath_(output)
-        dest = CGImageDestinationCreateWithURL(url, 'public.png', 1, None)
-        if not dest:
-            err = 'CGImageDestinationCreateWithURL() failed.'
-            raise ScreenshotError(err)
-
-        CGImageDestinationAddImage(dest, data, None)
-        if CGImageDestinationFinalize(dest):
-            return True
-        raise ScreenshotError('CGImageDestinationFinalize() failed.')
