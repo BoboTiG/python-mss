@@ -7,17 +7,44 @@
 # pylint: disable=import-error
 
 from sys import maxsize
-from Quartz import (
-    CGDataProviderCopyData, CGDisplayBounds, CGDisplayRotation,
-    CGGetActiveDisplayList, CGImageGetDataProvider, CGImageGetHeight,
-    CGImageGetWidth, CGRect, CGRectStandardize,
-    CGWindowListCreateImage, kCGNullWindowID, kCGWindowImageDefault,
-    kCGWindowListOptionOnScreenOnly)
+from ctypes import (
+    POINTER, Structure, sizeof, c_double, byref, c_char_p, c_int, c_int32, c_long, c_uint,
+    c_uint32, c_float, c_ulong, c_ushort, c_void_p, cast, cdll, create_string_buffer)
+from ctypes.util import find_library
 
 from .base import MSSBase
 from .exception import ScreenshotError
 
+from Quartz import CGDisplayBounds as t
+
 __all__ = ['MSS']
+
+
+CGFloat = c_double if maxsize > 2 ** 32 else c_float
+
+
+class CGPoint(Structure):
+    ''' Structure that contains coordinates of an image. '''
+
+    _fields_ = [('x', CGFloat), ('y', CGFloat)]
+
+
+class CGSize(Structure):
+    ''' Structure that contains dimensions of an image. '''
+
+    _fields_ = [('width', CGFloat), ('height', CGFloat)]
+
+
+class CGRect(Structure):
+    ''' Structure that contains informations about an image. '''
+
+    _fields_ = [('origin', CGPoint), ('size', CGSize)]
+
+    def __rrepr__(self):
+        ''' Without this method, segfault. Segfault everywhere! '''
+
+        ret = (self.origin.x, self.origin.y, self.size.width, self.size.height)
+        return ret.__repr__()
 
 
 class MSS(MSSBase):
@@ -26,6 +53,36 @@ class MSS(MSSBase):
     '''
 
     max_displays = 32  # Could be augmented, if needed ...
+
+    def __init__(self, display=None):
+        ''' MacOS X initialisations. '''
+
+        coregraphics = find_library('CoreGraphics')
+        if not coregraphics:
+            raise ScreenshotError('No CoreGraphics library found.')
+        self.cgs = cdll.LoadLibrary(coregraphics)
+
+        self._set_argtypes()
+        self._set_restypes()
+
+    def _set_argtypes(self):
+        ''' Functions arguments. '''
+
+        self.cgs.CGGetActiveDisplayList.argtypes = \
+            [c_uint32, POINTER(c_uint32), POINTER(c_uint32)]
+        self.cgs.CGDisplayBounds.argtypes = [c_uint32]
+        #self.cgs.CGRectStandardize.argtypes = []
+        #self.cgs..argtypes = []
+        #self.cgs..argtypes = []
+
+    def _set_restypes(self):
+        ''' Functions return type. '''
+
+        self.cgs.CGGetActiveDisplayList.restypes = c_int32
+        self.cgs.CGDisplayBounds.restypes = CGRect
+        #self.cgs.CGRectStandardize.restypes =
+        #self.cgs..restypes =
+        #self.cgs..restypes =
 
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
@@ -40,10 +97,19 @@ class MSS(MSSBase):
             })
 
             # Each monitors
+            display_count = c_uint32(0)
+            active_displays = (c_uint32 * self.max_displays)()
+            self.cgs.CGGetActiveDisplayList(self.max_displays, active_displays,
+                                            byref(display_count))
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
-            _, ids, _ = CGGetActiveDisplayList(self.max_displays, None, None)
-            for display in ids:
-                rect = CGRectStandardize(CGDisplayBounds(display))
+            for idx in range(display_count.value):
+                display = c_uint32(active_displays[idx])
+
+                rect = self.cgs.CGDisplayBounds(display) # SEGFAULT HERE!!!!
+                print(rect)
+                print(t(display))
+
+                rect = self.cgs.CGRectStandardize(CGDisplayBounds(display))
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
                 rot = CGDisplayRotation(display)
