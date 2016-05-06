@@ -6,10 +6,11 @@
 
 # pylint: disable=import-error
 
+from sys import maxsize
 from Quartz import (
     CGDataProviderCopyData, CGDisplayBounds, CGDisplayRotation,
     CGGetActiveDisplayList, CGImageGetDataProvider, CGImageGetHeight,
-    CGImageGetWidth, CGRect, CGRectInfinite, CGRectStandardize,
+    CGImageGetWidth, CGRect, CGRectStandardize,
     CGWindowListCreateImage, kCGNullWindowID, kCGWindowImageDefault,
     kCGWindowListOptionOnScreenOnly)
 
@@ -29,12 +30,11 @@ class MSS(MSSBase):
 
         if not self.monitors or force:
             # All monitors
-            rect = CGRectInfinite
             self.monitors.append({
-                b'left': int(rect.origin.x),
-                b'top': int(rect.origin.y),
-                b'width': int(rect.size.width),
-                b'height': int(rect.size.height)
+                b'left': int(get_infinity('min')),
+                b'top': int(get_infinity('min')),
+                b'width': int(get_infinity('max')),
+                b'height': int(get_infinity('max'))
             })
 
             # Each monitors
@@ -82,3 +82,15 @@ class MSS(MSSBase):
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
         return self.image
+
+
+def get_infinity(what='all'):
+    ''' Get infinity "numbers". '''
+
+    min_ = -8.988465674311579e+307
+    max_ = 1.7976931348623157e+308
+    if what == 'min':
+        return min_
+    elif what == 'max':
+        return max_
+    return (min_, max_)
