@@ -85,6 +85,8 @@ class MSS(MSSBase):
         It uses intensively the Xlib and Xrandr extension.
     '''
 
+    # pylint: disable=too-many-instance-attributes
+
     display = None
     use_mss = False
     mss = None

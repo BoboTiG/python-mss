@@ -135,15 +135,17 @@ class MSS(MSSBase):
             bmi.bmiHeader.biClrUsed = 0  # See [3]
             bmi.bmiHeader.biClrImportant = 0  # See [3]
 
-            image_data = create_string_buffer(self.height * self.width * 4)  # See [2]
+            image_data = create_string_buffer(
+                self.height * self.width * 4)  # See [2]
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
-            bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, width, height)
+            bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, self.width,
+                                                      self.height)
             windll.gdi32.SelectObject(memdc, bmp)
             windll.gdi32.BitBlt(memdc, 0, 0, self.width, self.height, srcdc,
                                 left, top, 0xCC0020)  # 0xCC0020 = SRCCOPY
             bits = windll.gdi32.GetDIBits(memdc, bmp, 0, self.height,
-                                          image_data, bmi, 0)  # 0 = DIB_RGB_COLORS
+                                          image_data, bmi, 0)
             if bits != self.height:
                 raise ScreenshotError('gdi32.GetDIBits() failed.')
         finally:

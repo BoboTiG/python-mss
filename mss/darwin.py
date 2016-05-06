@@ -7,12 +7,11 @@
 # pylint: disable=import-error
 
 from Quartz import (
-    NSURL, CGDisplayBounds, CGDisplayRotation, CGGetActiveDisplayList,
-    CGImageDestinationAddImage, CGImageDestinationCreateWithURL,
-    CGImageDestinationFinalize, CGRect, CGRectInfinite, CGRectStandardize,
+    CGDataProviderCopyData, CGDisplayBounds, CGDisplayRotation,
+    CGGetActiveDisplayList, CGImageGetDataProvider, CGImageGetHeight,
+    CGImageGetWidth, CGRect, CGRectInfinite, CGRectStandardize,
     CGWindowListCreateImage, kCGNullWindowID, kCGWindowImageDefault,
-    kCGWindowListOptionOnScreenOnly, CGDataProviderCopyData,
-    CGImageGetDataProvider, CGImageGetWidth, CGImageGetHeight)
+    kCGWindowListOptionOnScreenOnly)
 
 from .base import MSSBase
 from .exception import ScreenshotError
