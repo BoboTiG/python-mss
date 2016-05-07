@@ -40,12 +40,6 @@ class CGRect(Structure):
 
     _fields_ = [('origin', CGPoint), ('size', CGSize)]
 
-    def __rrepr__(self):
-        ''' Without this method, segfault. Segfault everywhere! '''
-
-        ret = (self.origin.x, self.origin.y, self.size.width, self.size.height)
-        return ret.__repr__()
-
 
 class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for MacOS X.
@@ -71,18 +65,18 @@ class MSS(MSSBase):
         self.cgs.CGGetActiveDisplayList.argtypes = \
             [c_uint32, POINTER(c_uint32), POINTER(c_uint32)]
         self.cgs.CGDisplayBounds.argtypes = [c_uint32]
-        #self.cgs.CGRectStandardize.argtypes = []
-        #self.cgs..argtypes = []
+        self.cgs.CGRectStandardize.argtypes = [CGRect]
+        self.cgs.CGDisplayRotation.argtypes = [c_uint32]
         #self.cgs..argtypes = []
 
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        self.cgs.CGGetActiveDisplayList.restypes = c_int32
-        self.cgs.CGDisplayBounds.restypes = CGRect
-        #self.cgs.CGRectStandardize.restypes =
-        #self.cgs..restypes =
-        #self.cgs..restypes =
+        self.cgs.CGGetActiveDisplayList.restype = c_int32
+        self.cgs.CGDisplayBounds.restype = CGRect
+        self.cgs.CGRectStandardize.restype = CGRect
+        self.cgs.CGDisplayRotation.restype = c_float
+        #self.cgs..restype =
 
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
@@ -103,16 +97,13 @@ class MSS(MSSBase):
                                             byref(display_count))
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             for idx in range(display_count.value):
-                display = c_uint32(active_displays[idx])
+                display = active_displays[idx]
 
-                rect = self.cgs.CGDisplayBounds(display) # SEGFAULT HERE!!!!
-                print(rect)
-                print(t(display))
-
-                rect = self.cgs.CGRectStandardize(CGDisplayBounds(display))
+                rect = self.cgs.CGDisplayBounds(display)
+                rect = self.cgs.CGRectStandardize(rect)
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
-                rot = CGDisplayRotation(display)
+                rot = self.cgs.CGDisplayRotation(display)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 self.monitors.append({
