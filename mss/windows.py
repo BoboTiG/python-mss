@@ -185,12 +185,12 @@ def set_argtypes(callback):
 def set_restypes():
     ''' Functions return type. '''
 
-    windll.user32.GetSystemMetrics.restypes = INT
-    windll.user32.EnumDisplayMonitors.restypes = BOOL
-    windll.user32.GetWindowDC.restypes = HDC
-    windll.gdi32.CreateCompatibleDC.restypes = HDC
-    windll.gdi32.CreateCompatibleBitmap.restypes = HBITMAP
-    windll.gdi32.SelectObject.restypes = HGDIOBJ
-    windll.gdi32.BitBlt.restypes = BOOL
-    windll.gdi32.GetDIBits.restypes = INT
-    windll.gdi32.DeleteObject.restypes = BOOL
+    windll.user32.GetSystemMetrics.restype = INT
+    windll.user32.EnumDisplayMonitors.restype = BOOL
+    windll.user32.GetWindowDC.restype = HDC
+    windll.gdi32.CreateCompatibleDC.restype = HDC
+    windll.gdi32.CreateCompatibleBitmap.restype = HBITMAP
+    windll.gdi32.SelectObject.restype = HGDIOBJ
+    windll.gdi32.BitBlt.restype = BOOL
+    windll.gdi32.GetDIBits.restype = INT
+    windll.gdi32.DeleteObject.restype = BOOL
