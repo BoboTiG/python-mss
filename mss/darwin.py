@@ -8,14 +8,12 @@
 
 from sys import maxsize
 from ctypes import (
-    POINTER, Structure, sizeof, c_double, byref, c_char_p, c_int, c_int32, c_long, c_uint,
-    c_uint32, c_float, c_ulong, c_ushort, c_void_p, cast, cdll, create_string_buffer)
+    POINTER, Structure, c_double, byref, c_int32, c_long, c_uint32, c_float,
+    c_void_p, cast, cdll)
 from ctypes.util import find_library
 
 from .base import MSSBase
 from .exception import ScreenshotError
-
-from Quartz import CGDisplayBounds as t
 
 __all__ = ['MSS']
 
@@ -40,7 +38,7 @@ class CGRect(Structure):
 
     _fields_ = [('origin', CGPoint), ('size', CGSize)]
 
-
+from Quartz import kCGWindowListOptionOnScreenOnly as t
 class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for MacOS X.
         It uses intensively the Quartz.
@@ -67,7 +65,11 @@ class MSS(MSSBase):
         self.cgs.CGDisplayBounds.argtypes = [c_uint32]
         self.cgs.CGRectStandardize.argtypes = [CGRect]
         self.cgs.CGDisplayRotation.argtypes = [c_uint32]
-        #self.cgs..argtypes = []
+        self.cgs.CGWindowListCreateImage.argtypes = [CGRect, c_uint32, c_uint32, c_uint32]
+        self.cgs.CGImageGetWidth.argtypes = [c_void_p]
+        self.cgs.CGImageGetHeight.argtypes = [c_void_p]
+        self.cgs.CGImageGetDataProvider.argtypes = [c_void_p]
+        self.cgs.CGDataProviderCopyData.argtypes = [c_void_p]
 
     def _set_restypes(self):
         ''' Functions return type. '''
@@ -76,7 +78,11 @@ class MSS(MSSBase):
         self.cgs.CGDisplayBounds.restype = CGRect
         self.cgs.CGRectStandardize.restype = CGRect
         self.cgs.CGDisplayRotation.restype = c_float
-        #self.cgs..restype =
+        self.cgs.CGWindowListCreateImage.restype = c_void_p
+        self.cgs.CGImageGetWidth.restype = CGFloat
+        self.cgs.CGImageGetHeight.restype = CGFloat
+        self.cgs.CGImageGetDataProvider.restype = c_void_p
+        #self.cgs.CGDataProviderCopyData.restype = POINTER(c_ubyte)
 
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
@@ -121,20 +127,25 @@ class MSS(MSSBase):
         width, height = monitor[b'width'], monitor[b'height']
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
-        options = kCGWindowListOptionOnScreenOnly
-        winid = kCGNullWindowID
-        default = kCGWindowImageDefault
 
-        image_ref = CGWindowListCreateImage(rect, options, winid, default)
+        image_ref = self.cgs.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
-            raise ScreenshotError('CGWindowListCreateImage() failed.')
+            err = 'CoreGraphics.CGWindowListCreateImage() failed.'
+            raise ScreenshotError(err)
 
-        self.width = CGImageGetWidth(image_ref)
-        self.height = CGImageGetHeight(image_ref)
-        image_data = CGDataProviderCopyData(CGImageGetDataProvider(image_ref))
+        self.width = int(self.cgs.CGImageGetWidth(image_ref))
+        self.height = int(self.cgs.CGImageGetHeight(image_ref))
+        data_provider = self.cgs.CGImageGetDataProvider(image_ref)
+
+
+        from ctypes import string_at, c_char, create_string_buffer
+        buf_len = self.height * self.width * 4
+        self.cgs.CGDataProviderCopyData.restype = POINTER(c_void_p)
+        image_data = self.cgs.CGDataProviderCopyData(data_provider)
+        print(string_at(image_data), type(image_data.contents))
+        image_data = create_string_buffer(image_data)
 
         # Replace pixels values: BGRA to RGB.
-        image_data = bytearray(image_data)
         image = bytearray(self.height * self.width * 3)
         image[0::3], image[1::3], image[2::3] = \
             image_data[2::4], image_data[1::4], image_data[0::4]
