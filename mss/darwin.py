@@ -9,7 +9,7 @@
 from sys import maxsize
 from ctypes import (
     POINTER, Structure, c_double, byref, c_int32, c_long, c_uint32, c_float,
-    c_void_p, cast, cdll)
+    c_uint8, c_bool, c_byte, c_char, c_ubyte, c_void_p, cast, cdll)
 from ctypes.util import find_library
 
 from .base import MSSBase
@@ -22,23 +22,23 @@ CGFloat = c_double if maxsize > 2 ** 32 else c_float
 
 
 class CGPoint(Structure):
-    ''' Structure that contains coordinates of an image. '''
+    ''' Structure that contains coordinates of a rectangle. '''
 
     _fields_ = [('x', CGFloat), ('y', CGFloat)]
 
 
 class CGSize(Structure):
-    ''' Structure that contains dimensions of an image. '''
+    ''' Structure that contains dimensions of an rectangle. '''
 
     _fields_ = [('width', CGFloat), ('height', CGFloat)]
 
 
 class CGRect(Structure):
-    ''' Structure that contains informations about an image. '''
+    ''' Structure that contains informations about a rectangle. '''
 
     _fields_ = [('origin', CGPoint), ('size', CGSize)]
 
-from Quartz import kCGWindowListOptionOnScreenOnly as t
+
 class MSS(MSSBase):
     ''' Mutliple ScreenShots implementation for MacOS X.
         It uses intensively the Quartz.
@@ -52,7 +52,7 @@ class MSS(MSSBase):
         coregraphics = find_library('CoreGraphics')
         if not coregraphics:
             raise ScreenshotError('No CoreGraphics library found.')
-        self.cgs = cdll.LoadLibrary(coregraphics)
+        self.core = cdll.LoadLibrary(coregraphics)
 
         self._set_argtypes()
         self._set_restypes()
@@ -60,29 +60,32 @@ class MSS(MSSBase):
     def _set_argtypes(self):
         ''' Functions arguments. '''
 
-        self.cgs.CGGetActiveDisplayList.argtypes = \
+        self.core.CGGetActiveDisplayList.argtypes = \
             [c_uint32, POINTER(c_uint32), POINTER(c_uint32)]
-        self.cgs.CGDisplayBounds.argtypes = [c_uint32]
-        self.cgs.CGRectStandardize.argtypes = [CGRect]
-        self.cgs.CGDisplayRotation.argtypes = [c_uint32]
-        self.cgs.CGWindowListCreateImage.argtypes = [CGRect, c_uint32, c_uint32, c_uint32]
-        self.cgs.CGImageGetWidth.argtypes = [c_void_p]
-        self.cgs.CGImageGetHeight.argtypes = [c_void_p]
-        self.cgs.CGImageGetDataProvider.argtypes = [c_void_p]
-        self.cgs.CGDataProviderCopyData.argtypes = [c_void_p]
+        self.core.CGDisplayBounds.argtypes = [c_uint32]
+        self.core.CGRectStandardize.argtypes = [CGRect]
+        self.core.CGDisplayRotation.argtypes = [c_uint32]
+        self.core.CGWindowListCreateImage.argtypes = \
+            [CGRect, c_uint32, c_uint32, c_uint32]
+        self.core.CGImageGetWidth.argtypes = [c_void_p]
+        self.core.CGImageGetHeight.argtypes = [c_void_p]
+        self.core.CGImageGetDataProvider.argtypes = [c_void_p]
+        self.core.CGDataProviderCopyData.argtypes = [c_void_p]
+        self.core.CGDataProviderRelease.argtypes = [c_void_p]
 
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        self.cgs.CGGetActiveDisplayList.restype = c_int32
-        self.cgs.CGDisplayBounds.restype = CGRect
-        self.cgs.CGRectStandardize.restype = CGRect
-        self.cgs.CGDisplayRotation.restype = c_float
-        self.cgs.CGWindowListCreateImage.restype = c_void_p
-        self.cgs.CGImageGetWidth.restype = CGFloat
-        self.cgs.CGImageGetHeight.restype = CGFloat
-        self.cgs.CGImageGetDataProvider.restype = c_void_p
-        #self.cgs.CGDataProviderCopyData.restype = POINTER(c_ubyte)
+        self.core.CGGetActiveDisplayList.restype = c_int32
+        self.core.CGDisplayBounds.restype = CGRect
+        self.core.CGRectStandardize.restype = CGRect
+        self.core.CGDisplayRotation.restype = c_float
+        self.core.CGWindowListCreateImage.restype = c_void_p
+        self.core.CGImageGetWidth.restype = c_uint32
+        self.core.CGImageGetHeight.restype = c_uint32
+        self.core.CGImageGetDataProvider.restype = c_void_p
+        self.core.CGDataProviderCopyData.restype = c_void_p
+        self.core.CGDataProviderRelease.restype = c_void_p
 
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
@@ -99,17 +102,17 @@ class MSS(MSSBase):
             # Each monitors
             display_count = c_uint32(0)
             active_displays = (c_uint32 * self.max_displays)()
-            self.cgs.CGGetActiveDisplayList(self.max_displays, active_displays,
+            self.core.CGGetActiveDisplayList(self.max_displays, active_displays,
                                             byref(display_count))
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             for idx in range(display_count.value):
                 display = active_displays[idx]
 
-                rect = self.cgs.CGDisplayBounds(display)
-                rect = self.cgs.CGRectStandardize(rect)
+                rect = self.core.CGDisplayBounds(display)
+                rect = self.core.CGRectStandardize(rect)
                 left, top = rect.origin.x, rect.origin.y
                 width, height = rect.size.width, rect.size.height
-                rot = self.cgs.CGDisplayRotation(display)
+                rot = self.core.CGDisplayRotation(display)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 self.monitors.append({
@@ -128,28 +131,25 @@ class MSS(MSSBase):
         left, top = monitor[b'left'], monitor[b'top']
         rect = CGRect((left, top), (width, height))
 
-        image_ref = self.cgs.CGWindowListCreateImage(rect, 1, 0, 0)
+        image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
             err = 'CoreGraphics.CGWindowListCreateImage() failed.'
             raise ScreenshotError(err)
 
-        self.width = int(self.cgs.CGImageGetWidth(image_ref))
-        self.height = int(self.cgs.CGImageGetHeight(image_ref))
-        data_provider = self.cgs.CGImageGetDataProvider(image_ref)
-
-
-        from ctypes import string_at, c_char, create_string_buffer
-        buf_len = self.height * self.width * 4
-        self.cgs.CGDataProviderCopyData.restype = POINTER(c_void_p)
-        image_data = self.cgs.CGDataProviderCopyData(data_provider)
-        print(string_at(image_data), type(image_data.contents))
-        image_data = create_string_buffer(image_data)
+        self.width = int(self.core.CGImageGetWidth(image_ref))
+        self.height = int(self.core.CGImageGetHeight(image_ref))
+        prov = self.core.CGImageGetDataProvider(image_ref)
+        data = self.core.CGDataProviderCopyData(prov)
+        buf_len = self.height * self.width * 4  # or CFDataGetLength()
+        data = cast(data, POINTER(c_ubyte * buf_len))
 
         # Replace pixels values: BGRA to RGB.
+        image_data = bytearray(data.contents)
         image = bytearray(self.height * self.width * 3)
         image[0::3], image[1::3], image[2::3] = \
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
+        self.core.CGDataProviderRelease(prov)
         return self.image
 
 
