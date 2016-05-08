@@ -135,8 +135,8 @@ class MSS(MSSBase):
             bmi.bmiHeader.biClrUsed = 0  # See [3]
             bmi.bmiHeader.biClrImportant = 0  # See [3]
 
-            image_data = create_string_buffer(
-                self.height * self.width * 4)  # See [2]
+            buf_len = self.height * self.width * 4  # See [2]
+            image_data = create_string_buffer(buf_len)
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, self.width,
