@@ -113,12 +113,10 @@ class MSSBase(object):
             yield output
 
     def to_png(self, data, output):
-        ''' Dump data to the image file.
+        ''' Dump data to the image file. Data is bytes(RGBRGB...RGB).
             Pure python PNG implementation.
             http://inaps.org/journal/comment-fonctionne-le-png
         '''
-
-        # pylint: disable=no-self-use
 
         p__ = pack
         line = self.width * 3
