@@ -29,8 +29,8 @@ Legend:
 
 Python | GNU/Linux | MacOS X | Windows
 :---: | :---: | :---: | :---:
-**3.5.1** | :star: | :question: | :star:
-3.4.4 | :star2: | :question: | :star2:
+**3.5.1** | :star: | :star: | :star:
+3.4.4 | :star2: | :star2: | :star2:
 3.3.6 | :star2: | :question: | :star2:
 3.2.6 | :star2: | :question: | :star2:
 3.1.5 | :star2: | :question: | :star2:
