@@ -214,6 +214,8 @@ class MSS(MSSBase):
         ''' Get positions of monitors (see parent class). '''
 
         if not self.monitors or force:
+            self.monitors = []
+
             # All monitors
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))

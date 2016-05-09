@@ -93,6 +93,8 @@ class MSS(MSSBase):
         ''' Get positions of monitors (see parent class). '''
 
         if not self.monitors or force:
+            self.monitors = []
+
             # All monitors
             self.monitors.append({
                 b'left': int(get_infinity('min')),

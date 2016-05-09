@@ -50,6 +50,8 @@ class MSS(MSSBase):
         ''' Get positions of monitors (see parent class). '''
 
         if not self.monitors or force:
+            self.monitors = []
+
             # All monitors
             sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
             sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
