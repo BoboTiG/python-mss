@@ -6,11 +6,11 @@
 
 # pylint: disable=import-error
 
-from sys import maxsize
 from ctypes import (
-    POINTER, Structure, c_double, byref, c_int32, c_long, c_uint32, c_float,
-    c_uint8, c_bool, c_ubyte, c_void_p, cast, cdll)
+    POINTER, Structure, byref, c_double, c_float, c_int32, c_ubyte, c_uint32,
+    c_void_p, cast, cdll)
 from ctypes.util import find_library
+from sys import maxsize
 
 from .base import MSSBase
 from .exception import ScreenshotError
@@ -18,19 +18,28 @@ from .exception import ScreenshotError
 __all__ = ['MSS']
 
 
-CGFloat = c_double if maxsize > 2 ** 32 else c_float
+def cgfloat():
+    ''' Get the appropriate value for a float. '''
+
+    return c_double if maxsize > 2 ** 32 else c_float
+
+
+def get_infinity(maxi=False):
+    ''' Get infinity "numbers". '''
+
+    return 1.7976931348623157e+308 if maxi else -8.988465674311579e+307
 
 
 class CGPoint(Structure):
     ''' Structure that contains coordinates of a rectangle. '''
 
-    _fields_ = [('x', CGFloat), ('y', CGFloat)]
+    _fields_ = [('x', cgfloat()), ('y', cgfloat())]
 
 
 class CGSize(Structure):
     ''' Structure that contains dimensions of an rectangle. '''
 
-    _fields_ = [('width', CGFloat), ('height', CGFloat)]
+    _fields_ = [('width', cgfloat()), ('height', cgfloat())]
 
 
 class CGRect(Structure):
@@ -46,7 +55,7 @@ class MSS(MSSBase):
 
     max_displays = 32  # Could be augmented, if needed ...
 
-    def __init__(self, display=None):
+    def __init__(self):
         ''' MacOS X initialisations. '''
 
         coregraphics = find_library('CoreGraphics')
@@ -97,17 +106,18 @@ class MSS(MSSBase):
 
             # All monitors
             self.monitors.append({
-                b'left': int(get_infinity('min')),
-                b'top': int(get_infinity('min')),
-                b'width': int(get_infinity('max')),
-                b'height': int(get_infinity('max'))
+                b'left': int(get_infinity()),
+                b'top': int(get_infinity()),
+                b'width': int(get_infinity(True)),
+                b'height': int(get_infinity(True))
             })
 
             # Each monitors
             display_count = c_uint32(0)
             active_displays = (c_uint32 * self.max_displays)()
-            self.core.CGGetActiveDisplayList(self.max_displays, active_displays,
-                                            byref(display_count))
+            self.core.CGGetActiveDisplayList(self.max_displays,
+                                             active_displays,
+                                             byref(display_count))
             rotations = {0.0: 'normal', 90.0: 'right', -90.0: 'left'}
             for idx in range(display_count.value):
                 display = active_displays[idx]
@@ -156,15 +166,3 @@ class MSS(MSSBase):
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
         return self.image
-
-
-def get_infinity(what='all'):
-    ''' Get infinity "numbers". '''
-
-    min_ = -8.988465674311579e+307
-    max_ = 1.7976931348623157e+308
-    if what == 'min':
-        return min_
-    elif what == 'max':
-        return max_
-    return (min_, max_)
