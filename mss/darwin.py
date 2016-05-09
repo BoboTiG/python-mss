@@ -9,7 +9,7 @@
 from sys import maxsize
 from ctypes import (
     POINTER, Structure, c_double, byref, c_int32, c_long, c_uint32, c_float,
-    c_uint8, c_bool, c_byte, c_char, c_ubyte, c_void_p, cast, cdll)
+    c_uint8, c_bool, c_ubyte, c_void_p, cast, cdll)
 from ctypes.util import find_library
 
 from .base import MSSBase
@@ -71,6 +71,7 @@ class MSS(MSSBase):
         self.core.CGImageGetHeight.argtypes = [c_void_p]
         self.core.CGImageGetDataProvider.argtypes = [c_void_p]
         self.core.CGDataProviderCopyData.argtypes = [c_void_p]
+        self.core.CFDataGetBytePtr.argtypes = [c_void_p]
         self.core.CGDataProviderRelease.argtypes = [c_void_p]
 
     def _set_restypes(self):
@@ -85,6 +86,7 @@ class MSS(MSSBase):
         self.core.CGImageGetHeight.restype = c_uint32
         self.core.CGImageGetDataProvider.restype = c_void_p
         self.core.CGDataProviderCopyData.restype = c_void_p
+        self.core.CFDataGetBytePtr.restype = c_void_p
         self.core.CGDataProviderRelease.restype = c_void_p
 
     def enum_display_monitors(self, force=False):
@@ -140,8 +142,10 @@ class MSS(MSSBase):
         self.height = int(self.core.CGImageGetHeight(image_ref))
         prov = self.core.CGImageGetDataProvider(image_ref)
         data = self.core.CGDataProviderCopyData(prov)
+        data_ref = self.core.CFDataGetBytePtr(data)
         buf_len = self.height * self.width * 4  # or CFDataGetLength()
-        data = cast(data, POINTER(c_ubyte * buf_len))
+        data = cast(data_ref, POINTER(c_ubyte * buf_len))
+        self.core.CGDataProviderRelease(prov)
 
         # Replace pixels values: BGRA to RGB.
         image_data = bytearray(data.contents)
@@ -149,7 +153,6 @@ class MSS(MSSBase):
         image[0::3], image[1::3], image[2::3] = \
             image_data[2::4], image_data[1::4], image_data[0::4]
         self.image = bytes(image)
-        self.core.CGDataProviderRelease(prov)
         return self.image
 
 
