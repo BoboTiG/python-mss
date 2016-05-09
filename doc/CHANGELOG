@@ -8,6 +8,7 @@ History:
       - a lot of code refactor and optimizations
       - MSS: rename save_img() to to_png()
       - MSS: save(): replace 'screen' argument by 'mon'
+      - Mac: get rid of the PyObjc module, 100% ctypes
       - Linux: prevent segfault when DISPLAY is set but no X server started
       - Linux: prevent segfault when Xrandr is not loaded
       - Linux: get_pixels() insanely fast, use of MSS library (C code)
