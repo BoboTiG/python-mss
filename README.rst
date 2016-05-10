@@ -10,7 +10,7 @@ It's under zlib/libpng licence.
 
 
 Installation
-------------
+============
 
 You can install it with pip:
 
@@ -20,7 +20,7 @@ You can install it with pip:
 
 
 Support
--------
+=======
 
 Legend:
 
@@ -66,7 +66,7 @@ You can try the MSS module directly from the console:
 
 
 Instance the good class
------------------------
+=======================
 
 So MSS can be used as simply as:
 
@@ -113,13 +113,13 @@ Of course, you can use it the old way:
 
 
 Errors
-------
+======
 
 If an error occures, the `ScreenshotError` exception is raised.
 
 
 Examples
---------
+========
 
 One screenshot per monitor:
 
