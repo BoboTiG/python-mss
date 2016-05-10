@@ -25,15 +25,15 @@ Support
 Legend:
 
 * \:star: fully functional (latest stable version of Python)
-* :star2: fully functional (old version of Python)
-* :question: no machine to test (reports_ needed :smiley:)
+* \:star2: fully functional (old version of Python)
+* \:question: no machine to test (reports_ needed :smiley:)
 
 .. _reports: https://github.com/BoboTiG/python-mss/issues
 
 +--------------+-------------+--------------+-----------+
 | Python       | GNU/Linux   | MacOS X      | Windows   |
 +==============+=============+==============+===========+
-| **3.5**      | \:star:      | :star:       | :star:    |
+| **3.5**      | \:star:     | :star:       | :star:    |
 +--------------+-------------+--------------+-----------+
 | 3.4          | :star2:     | :star2:      | :star2:   |
 +--------------+-------------+--------------+-----------+
