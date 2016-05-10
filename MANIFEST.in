@@ -1,5 +1,5 @@
 recursive-include mss *
-include README.md
+include README.rst
 include doc/*
 include tests.py
 include test-linux.py
