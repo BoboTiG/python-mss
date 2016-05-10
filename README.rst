@@ -24,7 +24,7 @@ Support
 
 Legend:
 
-* :star: fully functional (latest stable version of Python)
+* \:star: fully functional (latest stable version of Python)
 * :star2: fully functional (old version of Python)
 * :question: no machine to test (reports_ needed :smiley:)
 
@@ -33,7 +33,7 @@ Legend:
 +--------------+-------------+--------------+-----------+
 | Python       | GNU/Linux   | MacOS X      | Windows   |
 +==============+=============+==============+===========+
-| **3.5**      | :star:      | :star:       | :star:    |
+| **3.5**      | \:star:      | :star:       | :star:    |
 +--------------+-------------+--------------+-----------+
 | 3.4          | :star2:     | :star2:      | :star2:   |
 +--------------+-------------+--------------+-----------+
