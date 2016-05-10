@@ -23,6 +23,7 @@ Support
 -------
 
 Legend:
+
 * :star: fully functional (latest stable version of Python)
 * :star2: fully functional (old version of Python)
 * :question: no machine to test (reports_ needed :smiley:)
