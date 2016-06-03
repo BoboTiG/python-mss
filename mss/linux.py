@@ -223,7 +223,8 @@ class MSS(MSSBase):
                 'left': int(gwa.x),
                 'top': int(gwa.y),
                 'width': int(gwa.width),
-                'height': int(gwa.height)
+                'height': int(gwa.height),
+                'monitor': 0
             })
 
             # Each monitors
@@ -238,7 +239,8 @@ class MSS(MSSBase):
                     'left': int(crtc.contents.x),
                     'top': int(crtc.contents.y),
                     'width': int(crtc.contents.width),
-                    'height': int(crtc.contents.height)
+                    'height': int(crtc.contents.height),
+                    'monitor': num
                 })
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
@@ -261,7 +263,11 @@ class MSS(MSSBase):
                                      self.width, self.height, allplanes,
                                      zpixmap)
         if not ximage:
-            raise ScreenshotError('xlib.XGetImage() failed.')
+            err = 'xlib.XGetImage() failed. Monitor informations: '
+            for key, val in sorted(monitor.items()):
+                err = '{0}{1}: {2}, '.format(err, key, val)
+            err = err.strip(', ')
+            raise ScreenshotError(err)
 
         if not self.use_mss:
             self.get_pixels_slow(ximage)
