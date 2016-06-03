@@ -20,8 +20,8 @@ build() {
 
         echo "mkdir -p $arch"
 	mkdir -p $arch
-	echo "$CC $CFLAGS mss.c -o $arch/libmss.so"
-	$CC $CFLAGS mss.c -o $arch/libmss.so
+	echo "$CC $CFLAGS -m$arch  mss.c -o $arch/libmss.so"
+	$CC $CFLAGS -m$arch mss.c -o $arch/libmss.so
 }
 
 if [ $ARCH -eq 64 ]; then
