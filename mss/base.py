@@ -120,28 +120,28 @@ class MSSBase(object):
 
         p__ = pack
         line = self.width * 3
-        png_filter = p__(b'>B', 0)
+        png_filter = p__('>B', 0)
         scanlines = b''.join(
             [png_filter + data[y * line:y * line + line]
              for y in range(self.height)])
 
-        magic = p__(b'>8B', 137, 80, 78, 71, 13, 10, 26, 10)
+        magic = p__('>8B', 137, 80, 78, 71, 13, 10, 26, 10)
 
         # Header: size, marker, data, CRC32
         ihdr = [b'', b'IHDR', b'', b'']
-        ihdr[2] = p__(b'>2I5B', self.width, self.height, 8, 2, 0, 0, 0)
-        ihdr[3] = p__(b'>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
-        ihdr[0] = p__(b'>I', len(ihdr[2]))
+        ihdr[2] = p__('>2I5B', self.width, self.height, 8, 2, 0, 0, 0)
+        ihdr[3] = p__('>I', crc32(b''.join(ihdr[1:3])) & 0xffffffff)
+        ihdr[0] = p__('>I', len(ihdr[2]))
 
         # Data: size, marker, data, CRC32
         idat = [b'', b'IDAT', compress(scanlines), b'']
-        idat[3] = p__(b'>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
-        idat[0] = p__(b'>I', len(idat[2]))
+        idat[3] = p__('>I', crc32(b''.join(idat[1:3])) & 0xffffffff)
+        idat[0] = p__('>I', len(idat[2]))
 
         # Footer: size, marker, None, CRC32
         iend = [b'', b'IEND', b'', b'']
-        iend[3] = p__(b'>I', crc32(iend[1]) & 0xffffffff)
-        iend[0] = p__(b'>I', len(iend[2]))
+        iend[3] = p__('>I', crc32(iend[1]) & 0xffffffff)
+        iend[0] = p__('>I', len(iend[2]))
 
         with open(output, 'wb') as fileh:
             fileh.write(magic)

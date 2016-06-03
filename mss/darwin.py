@@ -106,10 +106,10 @@ class MSS(MSSBase):
 
             # All monitors
             self.monitors.append({
-                b'left': int(get_infinity()),
-                b'top': int(get_infinity()),
-                b'width': int(get_infinity(True)),
-                b'height': int(get_infinity(True))
+                'left': int(get_infinity()),
+                'top': int(get_infinity()),
+                'width': int(get_infinity(True)),
+                'height': int(get_infinity(True))
             })
 
             # Each monitors
@@ -130,10 +130,10 @@ class MSS(MSSBase):
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
                 self.monitors.append({
-                    b'left': int(left),
-                    b'top': int(top),
-                    b'width': int(width),
-                    b'height': int(height)
+                    'left': int(left),
+                    'top': int(top),
+                    'width': int(width),
+                    'height': int(height)
                 })
 
         return self.monitors
@@ -141,8 +141,8 @@ class MSS(MSSBase):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
-        width, height = monitor[b'width'], monitor[b'height']
-        left, top = monitor[b'left'], monitor[b'top']
+        width, height = monitor['width'], monitor['height']
+        left, top = monitor['left'], monitor['top']
         rect = CGRect((left, top), (width, height))
 
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)

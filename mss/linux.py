@@ -220,10 +220,10 @@ class MSS(MSSBase):
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
             self.monitors.append({
-                b'left': int(gwa.x),
-                b'top': int(gwa.y),
-                b'width': int(gwa.width),
-                b'height': int(gwa.height)
+                'left': int(gwa.x),
+                'top': int(gwa.y),
+                'width': int(gwa.width),
+                'height': int(gwa.height)
             })
 
             # Each monitors
@@ -235,10 +235,10 @@ class MSS(MSSBase):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                   mon.contents.crtcs[num])
                 self.monitors.append({
-                    b'left': int(crtc.contents.x),
-                    b'top': int(crtc.contents.y),
-                    b'width': int(crtc.contents.width),
-                    b'height': int(crtc.contents.height)
+                    'left': int(crtc.contents.x),
+                    'top': int(crtc.contents.y),
+                    'width': int(crtc.contents.width),
+                    'height': int(crtc.contents.height)
                 })
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
@@ -248,9 +248,9 @@ class MSS(MSSBase):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
-        self.width = monitor[b'width']
-        self.height = monitor[b'height']
-        left, top = monitor[b'left'], monitor[b'top']
+        self.width = monitor['width']
+        self.height = monitor['height']
+        left, top = monitor['left'], monitor['top']
         zpixmap = 2
         allplanes = self.xlib.XAllPlanes()
 
@@ -289,9 +289,9 @@ class MSS(MSSBase):
             # pylint: disable=dangerous-default-value
 
             if pixel not in _resultats:
-                _resultats[pixel] = p__(b'<B', (pixel & rmask) >> 16) + \
-                    p__(b'<B', (pixel & gmask) >> 8) + \
-                    p__(b'<B', pixel & bmask)
+                _resultats[pixel] = p__('<B', (pixel & rmask) >> 16) + \
+                    p__('<B', (pixel & gmask) >> 8) + \
+                    p__('<B', pixel & bmask)
             return _resultats[pixel]
 
         self.width = ximage.contents.width

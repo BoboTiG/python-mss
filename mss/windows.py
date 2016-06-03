@@ -60,10 +60,10 @@ class MSS(MSSBase):
             top = windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
             self.monitors.append({
-                b'left': int(left),
-                b'top': int(top),
-                b'width': int(right - left),
-                b'height': int(bottom - top)
+                'left': int(left),
+                'top': int(top),
+                'width': int(right - left),
+                'height': int(bottom - top)
             })
 
             # Each monitors
@@ -75,10 +75,10 @@ class MSS(MSSBase):
                 del monitor, data, dc_
                 rct = rect.contents
                 self.monitors.append({
-                    b'left': int(rct.left),
-                    b'top': int(rct.top),
-                    b'width': int(rct.right - rct.left),
-                    b'height': int(rct.bottom - rct.top)
+                    'left': int(rct.left),
+                    'top': int(rct.top),
+                    'width': int(rct.right - rct.left),
+                    'height': int(rct.bottom - rct.top)
                 })
                 return 1
 
@@ -119,9 +119,9 @@ class MSS(MSSBase):
             Thanks to http://stackoverflow.com/a/3688682
         '''
 
-        self.width = monitor[b'width']
-        self.height = monitor[b'height']
-        left, top = monitor[b'left'], monitor[b'top']
+        self.width = monitor['width']
+        self.height = monitor['height']
+        left, top = monitor['left'], monitor['top']
         srcdc = None
         memdc = None
         bmp = None
