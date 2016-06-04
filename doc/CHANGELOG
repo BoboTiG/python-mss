@@ -2,7 +2,7 @@ History:
 
 <see Git checkin messages for history>
 
-2.0.0-dev   2016/mm/dd
+2.0.0   2016/06/04
       - split the module into several files
       - add issue and pull request templates
       - a lot of code refactor and optimizations
