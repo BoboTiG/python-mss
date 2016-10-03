@@ -22,7 +22,7 @@ setup(
         'linux/64/libmss.so'
     ]},
     platforms = ['Darwin', 'Linux', 'Windows'],
-    license='zlib/libpng',
+    license='MIT',
     author_email='mickael@jmsinfo.co',
     description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
     long_description=desc,

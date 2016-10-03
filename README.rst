@@ -6,7 +6,7 @@ It could be easily embedded into games and other softwares which require fast an
 
 **MSS** stands for Multiple ScreenShots.
 
-It's under zlib/libpng licence.
+It's under MIT license.
 
 
 Installation
