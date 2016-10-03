@@ -3,13 +3,6 @@ from distutils.core import setup
 from mss import __version__
 
 
-# Remove "Legend" and replace icons with text
-lines = open('README.rst').readlines()
-desc = ''.join(lines[:24] + lines[32:])\
-    .replace('\:star:', 'Yes    ')\
-    .replace('\:star2:', 'yes     ')\
-    .replace('\:question:', '???        ')
-
 setup(
     name='mss',
     version=__version__,
@@ -23,9 +16,9 @@ setup(
     ]},
     platforms = ['Darwin', 'Linux', 'Windows'],
     license='MIT',
-    author_email='mickael@jmsinfo.co',
+    author_email='contact@tiger-222.fr',
     description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
-    long_description=desc,
+    long_description=open('README.rst').readlines(),
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: MacOS X',
@@ -42,7 +35,6 @@ setup(
         'Intended Audience :: Science/Research',
         'Intended Audience :: System Administrators',
         'Intended Audience :: Telecommunications Industry',
-        'License :: OSI Approved :: zlib/libpng License',
         'Natural Language :: English',
         'Natural Language :: French',
         'Operating System :: MacOS',
