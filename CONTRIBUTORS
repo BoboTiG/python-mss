@@ -7,10 +7,10 @@
 #     - major contribution N
 
 Alexander 'thehesiod' Mohr [https://github.com/thehesiod]
-    - robustness to MSSWindows.get_pixels()
+    - Winows: robustness to MSS.get_pixels()
 
 bubulle [http://indexerror.net/user/bubulle]
-    - efficiency of MSSWindows.get_pixels()
+    - Windows: efficiency of MSS.get_pixels()
 
 Condé 'Eownis' Titouan <me@titouan.co> <eownis@eownis.me> [https://titouan.co]
     - MacOS X tester
@@ -26,7 +26,7 @@ sergey-vin [https://github.com/sergey-vin]
     - bug report
 
 yoch [http://indexerror.net/user/yoch]
-    - efficiency of MSSWindows.get_pixels()
+    - Windows: efficiency of MSS.get_pixels()
 
 Wagoun
     - equipment loan (Macbook Pro)

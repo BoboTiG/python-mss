@@ -2,6 +2,9 @@ History:
 
 <see Git checkin messages for history>
 
+dev
+      - add documentation (fix #10)
+
 2.0.0   2016/06/04
       - split the module into several files
       - add issue and pull request templates
