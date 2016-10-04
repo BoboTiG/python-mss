@@ -17,6 +17,7 @@ Contents:
 
    installation
    usage
+   examples
    support
    api
    where
