@@ -74,6 +74,8 @@ A screenshot to grab them all::
 Into the Python's console
 -------------------------
 
+.. code:: python
+
     >>> from mss import mss
     >>> sct = mss(display=b':0')
 
