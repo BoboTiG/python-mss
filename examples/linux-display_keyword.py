@@ -9,12 +9,13 @@ from mss.linux import MSS
 
 
 def main():
-    ''' Usage example with specified display. '''
+    ''' Usage example with a specific display. '''
 
     display = ':0.0'
+    print('Screenshot of display "{0}"'.format(display))
+
     try:
         with MSS(display=display) as screenshotter:
-            print('Screenshot of display "{0}"'.format(display))
             output = 'monitor{0}-%d.png'.format(display)
             for filename in screenshotter.save(output=output):
                 print(filename)

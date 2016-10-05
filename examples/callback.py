@@ -7,7 +7,7 @@
 from os import rename
 from os.path import isfile
 
-from mss import ScreenshotError, mss
+from mss import mss, ScreenshotError
 
 
 def main():

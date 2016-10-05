@@ -2,6 +2,23 @@
 Examples
 ========
 
+GNU/Linux
+---------
+
+Usage example with a specific display::
+
+    from mss.linux import MSS
+
+
+    display = ':0.0'
+    print('Screenshot of display "{0}"'.format(display))
+    output = 'monitor{0}-%d.png'.format(display)
+
+    with MSS(display=display) as screenshotter:
+        for filename in screenshotter.save(output=output):
+            print(filename)
+
+
 Using PIL
 ---------
 

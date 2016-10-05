@@ -1,7 +1,8 @@
 build/
 .cache/
 dist/
-MANIFEST
+*.egg-info/
+MANIFEST*
 .DS_Store
 *.orig
 *.png

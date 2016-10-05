@@ -1,8 +1,0 @@
-recursive-include mss *
-include README.rst
-include doc/*
-include tests.py
-include test-linux.py
-
-exclude mss/*.pyc
-prune mss/__pycache__
