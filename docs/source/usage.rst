@@ -106,4 +106,4 @@ Into the Python's console
 
     # Save pixels to a PNG file: option 2
     >>> mon = displays[1]
-    >>> sct.to_png(data=pixels, width=mon[b'width'], height=mon[b'height'], output='monitor-1.png')
+    >>> sct.to_png(data=pixels, width=mon['width'], height=mon['height'], output='monitor-1.png')

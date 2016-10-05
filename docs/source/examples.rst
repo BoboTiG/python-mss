@@ -5,11 +5,8 @@ Examples
 Using PIL
 ---------
 
-Use you use the Python Image Library (aka Pillow) to do whatever you want with raw pixels.
+You can use the Python Image Library (aka Pillow) to do whatever you want with raw pixels.
 This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.frombytes>`_::
-
-    #!/usr/bin/env python
-    # coding: utf-8
 
     from mss import mss
     from PIL import Image
@@ -32,5 +29,4 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
                                   screenshotter.image)
 
             # And save it!
-            img.save('monitor-{0}.png'.format(num))
-
+            img.save('monitor-{0}.jpg'.format(num))

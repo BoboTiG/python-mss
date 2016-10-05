@@ -14,7 +14,7 @@ setup(
         'linux/32/limss.so',
         'linux/64/libmss.so'
     ]},
-    platforms = ['Darwin', 'Linux', 'Windows'],
+    platforms=['Darwin', 'Linux', 'Windows'],
     license='MIT',
     author_email='contact@tiger-222.fr',
     description='An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
