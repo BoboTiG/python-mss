@@ -77,7 +77,7 @@ Into the Python's console
 .. code:: python
 
     >>> from mss import mss
-    >>> sct = mss(display=b':0')
+    >>> sct = mss(display=':0')
 
     # Retrieve monitors informations
     >>> displays = sct.enum_display_monitors()

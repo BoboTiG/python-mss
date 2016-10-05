@@ -114,6 +114,8 @@ class MSS(MSSBase):
             except KeyError:
                 err = '$DISPLAY not set. Stopping to prevent segfault.'
                 raise ScreenshotError(err)
+        elif not isinstance(display, bytes):
+            display = bytes(display, 'utf-8')
 
         x11 = find_library('X11')
         if not x11:

@@ -11,7 +11,7 @@ from mss.linux import MSS
 def main():
     ''' Usage example with specified display. '''
 
-    display = b':0.0'
+    display = ':0.0'
     try:
         with MSS(display=display) as screenshotter:
             print('Screenshot of display "{0}"'.format(display))
