@@ -17,8 +17,7 @@ clean() {
 
 build() {
 	local arch="$1"
-
-        echo "mkdir -p $arch"
+	echo "mkdir -p $arch"
 	mkdir -p $arch
 	echo "$CC $CFLAGS -m$arch  mss.c -o $arch/libmss.so"
 	$CC $CFLAGS -m$arch mss.c -o $arch/libmss.so
