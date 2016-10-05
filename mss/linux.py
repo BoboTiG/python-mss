@@ -133,8 +133,8 @@ class MSS(MSSBase):
         if isfile(libmss):
             self.mss = cdll.LoadLibrary(libmss)
             self.use_mss = True
-        else:
-            print('No MSS library found. Using slow native function.')
+        # else:
+        #    print('No MSS library found. Using slow native function.')
 
         self._set_argtypes()
         self._set_restypes()
@@ -285,7 +285,10 @@ class MSS(MSSBase):
 
     def get_pixels_slow(self, ximage):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
-            (!) Insanely slow version, see doc/linux-slow-version. (!)
+
+            (!) This version is damn slow, but if you consider that ~1 second
+            for a screenshot of decent monitor is not too long, you can
+            continue. There should be few things to tweak here to gain speed.
         '''
 
         # @TODO: this part takes most of the time. Need a better solution.
@@ -296,11 +299,13 @@ class MSS(MSSBase):
 
             # pylint: disable=dangerous-default-value
 
-            if pixel not in _resultats:
+            try:
+                return _resultats[pixel]
+            except KeyError:
                 _resultats[pixel] = p__('<B', (pixel & rmask) >> 16) + \
                     p__('<B', (pixel & gmask) >> 8) + \
                     p__('<B', pixel & bmask)
-            return _resultats[pixel]
+                return _resultats[pixel]
 
         self.width = ximage.contents.width
         self.height = ximage.contents.height
