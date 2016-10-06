@@ -3,7 +3,7 @@
 ''' An ultra fast cross-platform multiple screenshots module in pure python
     using ctypes.
 
-    This module is maintained by Mickaël Schoentgen <mickael@jmsinfo.co>.
+    This module is maintained by Mickaël Schoentgen <contact@tiger-222.fr>.
 
     Note: please keep this module compatible to Python 2.6.
 
