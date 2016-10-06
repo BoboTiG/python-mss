@@ -280,12 +280,13 @@ class MSS(MSSBase):
         if not self.use_mss:
             self.get_pixels_slow(ximage)
         else:
-            self.image = create_string_buffer(self.height * self.width * 3)
-            ret = self.mss.GetXImagePixels(ximage, self.image)
+            image = create_string_buffer(self.height * self.width * 3)
+            ret = self.mss.GetXImagePixels(ximage, image)
             if not ret:
                 self.xlib.XDestroyImage(ximage)
                 err = 'libmss.GetXImagePixels() failed (retcode={0}).'
                 raise ScreenshotError(err.format(ret))
+            self.image = bytes(bytearray(image))
         self.xlib.XDestroyImage(ximage)
         return self.image
 
