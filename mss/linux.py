@@ -181,7 +181,13 @@ class MSS(MSSBase):
             self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_void_p]
 
     def _set_restypes(self):
-        ''' Functions return type. '''
+        ''' Functions return type.
+
+            Curiously, if we set up XGetPixel return type,
+            the entire process takes a little more time.
+            So, no need to waste this precious time :)
+            Note: this issue does not occur when using libmss.
+        '''
 
         def validate(value):
             ''' Validate the returned value of xrandr.XRRGetScreenResources().
@@ -201,7 +207,7 @@ class MSS(MSSBase):
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
-        self.xlib.XGetPixel.restype = c_ulong
+        # self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -312,8 +318,8 @@ class MSS(MSSBase):
         rmask = ximage.contents.red_mask
         bmask = ximage.contents.blue_mask
         gmask = ximage.contents.green_mask
-        get_pix = self.xlib.XGetPixel
-        pixels = [pix(get_pix(ximage, x, y))
+        xgetpixel = self.xlib.XGetPixel
+        pixels = [pix(xgetpixel(ximage, x, y))
                   for y in range(self.height) for x in range(self.width)]
         self.image = b''.join(pixels)
         return self.image
