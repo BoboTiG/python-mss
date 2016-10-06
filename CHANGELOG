@@ -3,7 +3,10 @@ History:
 <see Git checkin messages for history>
 
 dev
+      - change license to MIT
       - add documentation (fix #10)
+      - Linux: MSS library optional at installation
+      - Linux: optimization of get_pixels_slow()
 
 2.0.0   2016/06/04
       - split the module into several files
