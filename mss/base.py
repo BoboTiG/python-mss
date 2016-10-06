@@ -89,10 +89,10 @@ class MSSBase(object):
 
         if mon == 0:
             # One screenshot by monitor
-            for i, monitor in enumerate(self.monitors[1:]):
+            for i, monitor in enumerate(self.monitors[1:], 1):
                 fname = output
                 if '%d' in output:
-                    fname = output.replace('%d', str(i + 1))
+                    fname = output.replace('%d', str(i))
                 callback(fname)
                 self.to_png(self.get_pixels(monitor), fname)
                 yield fname
