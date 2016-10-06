@@ -27,6 +27,13 @@ class MSSBase(object):
     def __exit__(self, exc_type, exc_value, traceback):
         ''' For the cool call `with MSS() as mss:`. '''
 
+    def bgra_to_rgb(self, raw):
+        ''' Converts pixels values from BGRA to RGB. '''
+
+        image = bytearray(self.height * self.width * 3)
+        image[0::3], image[1::3], image[2::3] = raw[2::4], raw[1::4], raw[0::4]
+        return bytes(image)
+
     def enum_display_monitors(self, force=False):
         ''' Get positions of one or more monitors.
             If the monitor has rotation, you have to deal with it

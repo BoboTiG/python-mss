@@ -5,12 +5,10 @@
 '''
 
 from ctypes import (
-    POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_uint,
-    c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll, create_string_buffer)
+    POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_ubyte,
+    c_uint, c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll)
 from ctypes.util import find_library
 from os import environ
-from os.path import abspath, dirname, isfile, realpath
-from struct import pack
 from sys import maxsize, version
 
 from .base import MSSBase
@@ -85,11 +83,7 @@ class MSS(MSSBase):
         It uses intensively the Xlib and Xrandr extension.
     '''
 
-    # pylint: disable=too-many-instance-attributes
-
     display = None
-    use_mss = False
-    mss = None
     xlib = None
     xrandr = None
     display = None
@@ -127,15 +121,6 @@ class MSS(MSSBase):
             raise ScreenshotError('No Xrandr extension found.')
         self.xrandr = cdll.LoadLibrary(xrandr)
 
-        # libmss = find_library('mss')
-        libmss = '{0}/linux/{1}/libmss.so'.format(
-            dirname(realpath(abspath(__file__))), arch())
-        if isfile(libmss):
-            self.mss = cdll.LoadLibrary(libmss)
-            self.use_mss = True
-        # else:
-        #    print('No MSS library found. Using slow native function.')
-
         self._set_argtypes()
         self._set_restypes()
 
@@ -148,13 +133,7 @@ class MSS(MSSBase):
         self.root = self.xlib.XDefaultRootWindow(self.display, screen)
 
     def _set_argtypes(self):
-        ''' Functions arguments.
-
-            Curiously, if we set up XGetPixel arguments type,
-            the entire process takes twice more time.
-            So, no need to waste this precious time :)
-            Note: this issue does not occur when using libmss.
-        '''
+        ''' Functions arguments. '''
 
         self.xlib.XOpenDisplay.argtypes = [c_char_p]
         self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
@@ -166,7 +145,6 @@ class MSS(MSSBase):
         self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
                                         c_int, c_int, c_uint, c_uint, c_ulong,
                                         c_int]
-        # self.xlib.XGetPixel.argtypes = [POINTER(XImage), c_int, c_int]
         self.xlib.XDestroyImage.argtypes = [POINTER(XImage)]
         self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
         self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
@@ -177,17 +155,9 @@ class MSS(MSSBase):
         self.xrandr.XRRFreeScreenResources.argtypes = \
             [POINTER(XRRScreenResources)]
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
-        if self.use_mss:
-            self.mss.GetXImagePixels.argtypes = [POINTER(XImage), c_void_p]
 
     def _set_restypes(self):
-        ''' Functions return type.
-
-            Curiously, if we set up XGetPixel return type,
-            the entire process takes a little more time.
-            So, no need to waste this precious time :)
-            Note: this issue does not occur when using libmss.
-        '''
+        ''' Functions return type. '''
 
         def validate(value):
             ''' Validate the returned value of xrandr.XRRGetScreenResources().
@@ -207,7 +177,6 @@ class MSS(MSSBase):
         self.xlib.XGetWindowAttributes.restype = c_int
         self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
-        # self.xlib.XGetPixel.restype = c_ulong
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
@@ -215,8 +184,6 @@ class MSS(MSSBase):
         self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
-        if self.use_mss:
-            self.mss.GetXImagePixels.restype = c_int
 
     def enum_display_monitors(self, force=False):
         ''' Get positions of monitors (see parent class). '''
@@ -277,52 +244,10 @@ class MSS(MSSBase):
             err = err.strip(', ')
             raise ScreenshotError(err)
 
-        if not self.use_mss:
-            self.get_pixels_slow(ximage)
-        else:
-            image = create_string_buffer(self.height * self.width * 3)
-            ret = self.mss.GetXImagePixels(ximage, image)
-            if not ret:
-                self.xlib.XDestroyImage(ximage)
-                err = 'libmss.GetXImagePixels() failed (retcode={0}).'
-                raise ScreenshotError(err.format(ret))
-            self.image = bytes(bytearray(image))
-        self.xlib.XDestroyImage(ximage)
-        return self.image
-
-    def get_pixels_slow(self, ximage):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
-
-            (!) This version is damn slow, but if you consider that ~1 second
-            for a screenshot of decent monitor is not too long, you can
-            continue. There should be few things to tweak here to gain speed.
-        '''
-
-        # @TODO: this part takes most of the time. Need a better solution.
-        def pix(pixel, _resultats={}, p__=pack):
-            ''' Apply shifts to a pixel to get the RGB values.
-                This method uses of memoization.
-            '''
-
-            # pylint: disable=dangerous-default-value
-
-            try:
-                return _resultats[pixel]
-            except KeyError:
-                _resultats[pixel] = p__('<B', (pixel & rmask) >> 16) + \
-                    p__('<B', (pixel & gmask) >> 8) + \
-                    p__('<B', pixel & bmask)
-                return _resultats[pixel]
-
-        self.width = ximage.contents.width
-        self.height = ximage.contents.height
-        rmask = ximage.contents.red_mask
-        bmask = ximage.contents.blue_mask
-        gmask = ximage.contents.green_mask
-        xgetpixel = self.xlib.XGetPixel
-        pixels = [pix(xgetpixel(ximage, x, y))
-                  for y in range(self.height) for x in range(self.width)]
-        self.image = b''.join(pixels)
+        # Replace pixels values: BGRA to RGB.
+        buf_len = self.height * self.width * 4
+        data = cast(ximage.contents.data, POINTER(c_ubyte * buf_len))
+        self.image = self.bgra_to_rgb(bytearray(data.contents))
         return self.image
 
 

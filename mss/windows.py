@@ -103,7 +103,7 @@ class MSS(MSSBase):
 
             [2] bmi.bmiHeader.biBitCount = 32
                 image_data = create_string_buffer(height * width * 4)
-                # and later, the BGRX to RGB conversion
+                # and later, the BGRA to RGB conversion
 
             We grab the image in RGBX mode, so that each word is 32bit
             and we have no striding, then we transform to RGB.
@@ -159,11 +159,8 @@ class MSS(MSSBase):
             if bmp:
                 windll.gdi32.DeleteObject(bmp)
 
-        # Replace pixels values: BGRX to RGB. See [2].
-        image = bytearray(self.height * self.width * 3)
-        image[0::3], image[1::3], image[2::3] = \
-            image_data[2::4], image_data[1::4], image_data[0::4]
-        self.image = bytes(image)
+        # Replace pixels values: BGRA to RGB. See [2].
+        self.image = self.bgra_to_rgb(image_data)
         return self.image
 
 

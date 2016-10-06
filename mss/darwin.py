@@ -158,11 +158,5 @@ class MSS(MSSBase):
         buf_len = self.height * self.width * 4  # or CFDataGetLength()
         data = cast(data_ref, POINTER(c_ubyte * buf_len))
         self.core.CGDataProviderRelease(prov)
-
-        # Replace pixels values: BGRA to RGB.
-        image_data = bytearray(data.contents)
-        image = bytearray(self.height * self.width * 3)
-        image[0::3], image[1::3], image[2::3] = \
-            image_data[2::4], image_data[1::4], image_data[0::4]
-        self.image = bytes(image)
+        self.image = self.bgra_to_rgb(bytearray(data.contents))
         return self.image

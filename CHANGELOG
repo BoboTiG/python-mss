@@ -5,8 +5,8 @@ History:
 dev
       - change license to MIT
       - add documentation (fix #10)
-      - Linux: MSS library optional at installation
-      - Linux: optimization of get_pixels_slow()
+      - Linux: remove MSS library
+      - Linux: insanely fast using only ctypes
 
 2.0.0   2016/06/04
       - split the module into several files

@@ -1,24 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from platform import system
 from setuptools import setup
-from sys import argv, maxsize
 
 from mss import __version__
 
-
-# Optional libMSS to boost screen shots on GNU/Linux
-package_data = {}
-if '--no-dependency' in argv:
-    # Fix for "error: option --no-dependency not recognized"
-    argv.remove('--no-dependency')
-elif 'sdist' in argv:
-    package_data['mss'] = ['linux/build.sh', 'linux/mss.c',
-                           'linux/32/libmss.so', 'linux/64/libmss.so']
-elif system().lower() == 'linux':
-    arch = 64 if maxsize > 2 ** 32 else 32
-    package_data['mss'] = ['linux/{0}/libmss.so'.format(arch)]
 
 classifiers = [
     'Development Status :: 5 - Production/Stable',
@@ -81,13 +67,13 @@ config = {
     'maintainer': 'Tiger-222',
     'maintainer_email': 'contact@tiger-222.fr',
     'url': 'https://github.com/BoboTiG/python-mss',
-    'description': 'An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
+    'description': ('An ultra fast cross-platform multiple screenshots module '
+                    'in pure python using ctypes.'),
     'long_description': open('README.rst').read(),
     'classifiers': classifiers,
     'platforms': ['Darwin', 'Linux', 'Windows'],
-    'license': 'MIT',
     'packages': ['mss'],
-    'package_data': package_data
+    'license': 'MIT'
 }
 
 setup(**config)
