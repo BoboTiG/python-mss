@@ -9,7 +9,7 @@ from ctypes import (
     c_uint, c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll)
 from ctypes.util import find_library
 from os import environ
-from sys import maxsize, version
+from sys import maxsize
 
 from .base import MSSBase
 from .exception import ScreenshotError
@@ -101,14 +101,11 @@ class MSS(MSSBase):
 
         if not display:
             try:
-                if version > '3':
-                    display = bytes(environ['DISPLAY'], 'utf-8')
-                else:
-                    display = environ['DISPLAY']
+                display = environ['DISPLAY']
             except KeyError:
                 err = '$DISPLAY not set. Stopping to prevent segfault.'
                 raise ScreenshotError(err)
-        elif not isinstance(display, bytes):
+        if not isinstance(display, bytes):
             display = bytes(display, 'utf-8')
 
         x11 = find_library('X11')
