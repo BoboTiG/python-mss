@@ -2,26 +2,24 @@
 Support
 =======
 
+Feel free to try MSS on a system we had not tested, and let report us by creating an `issue <htps://github.com/BoboTiG/python-mss/issues>`_.
+
 +----------+-----------+-------------+-----------+
 |  Python  | GNU/Linux |   MacOS X   |  Windows  |
 +==========+===========+=============+===========+
-| 3.6      | yes       | yes         | yes       |
+| 3.6-dev  | True      | True        | True      |
 +----------+-----------+-------------+-----------+
-| **3.5**  | Yes       | Yes         | Yes       |
+| **3.5**  | **True**  | **True**    | **True**  |
 +----------+-----------+-------------+-----------+
-| 3.4      | yes       | yes         | yes       |
+| 3.4      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
-| 3.3      | yes       | ???         | yes       |
+| 3.3      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
-| 3.2      | yes       | ???         | yes       |
+| 3.2      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
-| 3.1      | yes       | ???         | yes       |
+| **2.7**  | **True**  | **True**    |**True**   |
 +----------+-----------+-------------+-----------+
-| 3.0      | yes       | ???         | yes       |
-+----------+-----------+-------------+-----------+
-| **2.7**  | Yes       | Yes         | Yes       |
-+----------+-----------+-------------+-----------+
-| 2.6      | yes       | yes         | yes       |
+| 2.6      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
 
-Feel free to try MSS on a system we had not tested, and let report us by creating an `issue <htps://github.com/BoboTiG/python-mss/issues>`_.
+*Future*: support should be added for `ReactOS <https://www.reactos.org>`_ and other systems on OS stability or available hardware.
