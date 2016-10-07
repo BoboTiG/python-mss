@@ -1,7 +1,7 @@
 Python MSS
 ==========
 
-.. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=master
+.. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=dev
     :target: https://travis-ci.org/BoboTiG/python-mss
 
 An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
