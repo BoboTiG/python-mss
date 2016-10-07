@@ -5,6 +5,7 @@ dist/
 MANIFEST*
 .DS_Store
 *.orig
+*.jpg
 *.png
 *.png.old
 *.pyc

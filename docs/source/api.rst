@@ -27,7 +27,7 @@ Methods
 
     .. method:: bgra_to_rgb(raw) -> bytes
 
-        :param mixed raw: raw data containing BGRA values.
+        :param bytearray raw: raw data containing BGRA values.
 
         It converts pixels values from BGRA to RGB.
         This is the method called to populate :attr:`image` into :attr:`get_pixels`.
