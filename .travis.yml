@@ -16,7 +16,7 @@ before_install:
 install:
   - python setup.py install
 
-script: py.test --display=":99.0"
+script: py.test
 
 matrix:
     fast_finish: true
