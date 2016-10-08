@@ -8,6 +8,12 @@ def test_get_monitors(mss):
     assert monitors
 
 
+def test_get_monitors_force(mss):
+    monitors = mss.enum_display_monitors(force=True)
+    assert monitors is mss.monitors
+    assert monitors
+
+
 def test_keys_aio(mss):
     all_monitors = mss.monitors[0]
     assert 'top' in all_monitors
@@ -25,14 +31,14 @@ def test_keys_monitor_1(mss):
 
 
 def test_dimensions(mss, is_travis):
-    width = 1280 if is_travis else 0
-    height = 1024 if is_travis else 0
-    for mon in mss.monitors:
-        assert mon['width'] >= width
-        assert mon['height'] >= height
+    mon = mss.monitors[1]
+    if not is_travis:
+        assert mon['width'] > 0
+        assert mon['height'] > 0
 
 
-def test_get_monitors_force(mss):
-    monitors = mss.enum_display_monitors(force=True)
-    assert monitors is mss.monitors
-    assert monitors
+def test_dimensions_travis(mss, is_travis):
+    mon = mss.monitors[1]
+    if is_travis:
+        assert mon['width'] == 1920
+        assert mon['height'] == 1440
