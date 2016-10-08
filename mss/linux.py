@@ -195,8 +195,7 @@ class MSS(MSSBase):
                 'left': int(gwa.x),
                 'top': int(gwa.y),
                 'width': int(gwa.width),
-                'height': int(gwa.height),
-                'monitor': 0
+                'height': int(gwa.height)
             })
 
             # Each monitors
@@ -204,15 +203,18 @@ class MSS(MSSBase):
             #     expected LP_Display instance instead of LP_XWindowAttributes
             root = cast(self.root, POINTER(Display))
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
-            for num in range(mon.contents.ncrtc):
+            for idx in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
-                                                  mon.contents.crtcs[num])
+                                                  mon.contents.crtcs[idx])
+                if crtc.contents.noutput == 0:
+                    self.xrandr.XRRFreeCrtcInfo(crtc)
+                    continue
+
                 self.monitors.append({
                     'left': int(crtc.contents.x),
                     'top': int(crtc.contents.y),
                     'width': int(crtc.contents.width),
-                    'height': int(crtc.contents.height),
-                    'monitor': num
+                    'height': int(crtc.contents.height)
                 })
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)

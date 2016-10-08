@@ -8,6 +8,7 @@ dev
       - add tests and use Travis CI (fix #9)
       - Linux: remove MSS library
       - Linux: insanely fast using only ctypes
+      - Linux: skip unused monitors
 
 2.0.0   2016/06/04
       - split the module into several files
