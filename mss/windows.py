@@ -159,8 +159,7 @@ class MSS(MSSBase):
             if bmp:
                 windll.gdi32.DeleteObject(bmp)
 
-        # Replace pixels values: BGRA to RGB. See [2].
-        self.image = self.bgra_to_rgb(image_data)
+        self.image = self.bgra_to_rgb(image_data)  # See [2]
         return self.image
 
 

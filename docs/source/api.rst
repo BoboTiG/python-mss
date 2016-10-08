@@ -7,6 +7,10 @@ Classes
 
 ``MSSBase`` is the parent's class for every OS implementation.
 
+
+GNU/Linux
+---------
+
 .. module:: mss.linux
 
 .. class:: MSS
@@ -16,6 +20,13 @@ Classes
         :param: str display: display to use.
 
         GNU/Linux initializations.
+
+
+    .. method:: get_pixels(monitor) -> bytes
+
+        :exception ScreenshotError: When color depth is not 32 (rare).
+
+        See :attr:`mss.base.MSSBase.get_pixels` for details.
 
 
 Methods
