@@ -11,7 +11,7 @@ python:
 addons:
   apt:
     packages:
-      - x11-xserver-utils
+      - libxrandr2
 
 before_install:
 #  - export DISPLAY=:99.0
