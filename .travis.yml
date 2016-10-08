@@ -8,11 +8,14 @@ python:
   - 3.5
 #  - nightly
 
+addons:
+  apt:
+    packages:
+      - x11-xserver-utils
+
 before_install:
-  - export DISPLAY=:99.0
-  - sudo /etc/init.d/xvfb stop
+#  - export DISPLAY=:99.0
   - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- +extension RANDR :99 -ac -screen 0 1280x1024x16
-  - sudo /etc/init.d/xvfb start
 
 install:
   - python setup.py install
