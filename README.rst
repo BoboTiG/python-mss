@@ -6,7 +6,7 @@ Python MSS
 
 An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
 
-- **Python 2.6/3.6** and PEP8 compliant, no dependency;
+- **Python 2.7/3.6** and PEP8 compliant, no dependency;
 - very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file;
 - but you can use PIL and benefit from all its formats (or add yours directly);
 - it could be easily embedded into games and other softwares which require fast and plateforme optimized methods to grab screenshots;

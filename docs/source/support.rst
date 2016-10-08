@@ -19,7 +19,5 @@ Feel free to try MSS on a system we had not tested, and let report us by creatin
 +----------+-----------+-------------+-----------+
 | **2.7**  | **True**  | **True**    |**True**   |
 +----------+-----------+-------------+-----------+
-| 2.6      | True      | True        | True      |
-+----------+-----------+-------------+-----------+
 
 *Future*: support should be added for `ReactOS <https://www.reactos.org>`_ and other systems on OS stability or available hardware.
