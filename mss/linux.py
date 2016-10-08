@@ -125,8 +125,8 @@ class MSS(MSSBase):
         try:
             assert self.display.contents
         except ValueError:
-            raise ScreenshotError(
-                'Cannot open display "{0!s}".'.format(display))
+            raise ScreenshotError('Cannot open display "{0}".'.format(
+                str(display.decode('utf-8'))))
         self.root = self.xlib.XDefaultRootWindow(
             self.display, self.xlib.XDefaultScreen(self.display))
 
