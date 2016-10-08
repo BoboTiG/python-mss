@@ -241,10 +241,17 @@ class MSS(MSSBase):
             err = err.strip(', ')
             raise ScreenshotError(err)
 
-        # Replace pixels values: BGRA to RGB
-        data = cast(ximage.contents.data, POINTER(
-            c_ubyte * self.height * self.width * 4))
-        self.image = self.bgra_to_rgb(bytearray(data.contents))
+        # Raw pixels values conversion
+        bpp = ximage.contents.bits_per_pixel
+        if bpp == 32:
+            # BGRA to RGB
+            data = cast(ximage.contents.data, POINTER(
+                c_ubyte * self.height * self.width * 4))
+            self.image = self.bgra_to_rgb(bytearray(data.contents))
+        else:
+            err = ('Not implemented for this configuration '
+                   '([XImage] bits per pixel = {0}).')
+            raise ScreenshotError(err.format(bpp))
 
         # Free
         self.xlib.XDestroyImage(ximage)
