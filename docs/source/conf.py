@@ -59,7 +59,7 @@ author = 'Tiger-222'
 # built documents.
 #
 # The short X.Y version.
-version = u'2.0.0'
+version = '2.0.7'
 # The full version, including alpha/beta/rc tags.
 release = 'latest'
 

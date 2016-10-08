@@ -245,6 +245,7 @@ class MSS(MSSBase):
         buf_len = self.height * self.width * 4
         data = cast(ximage.contents.data, POINTER(c_ubyte * buf_len))
         self.image = self.bgra_to_rgb(bytearray(data.contents))
+        self.xlib.XDestroyImage(ximage)
         return self.image
 
 
