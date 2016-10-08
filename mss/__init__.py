@@ -15,7 +15,7 @@
 from .exception import ScreenshotError
 from .factory import mss
 
-__version__ = '2.0.8'
+__version__ = '2.0.9'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = '''
     Copyright (c) 2013-2016, Mickaël 'Tiger-222' Schoentgen

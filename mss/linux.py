@@ -103,8 +103,8 @@ class MSS(MSSBase):
             try:
                 display = environ['DISPLAY']
             except KeyError:
-                err = '$DISPLAY not set. Stopping to prevent segfault.'
-                raise ScreenshotError(err)
+                raise ScreenshotError(
+                    '$DISPLAY not set. Stopping to prevent segfault.')
         if not isinstance(display, bytes):
             display = bytes(display, 'utf-8')
 
@@ -126,8 +126,8 @@ class MSS(MSSBase):
             assert self.display.contents
         except ValueError:
             raise ScreenshotError('Cannot open display "{0}".'.format(display))
-        screen = self.xlib.XDefaultScreen(self.display)
-        self.root = self.xlib.XDefaultRootWindow(self.display, screen)
+        self.root = self.xlib.XDefaultRootWindow(
+            self.display, self.xlib.XDefaultScreen(self.display))
 
     def _set_argtypes(self):
         ''' Functions arguments. '''
@@ -224,16 +224,16 @@ class MSS(MSSBase):
 
         self.width = monitor['width']
         self.height = monitor['height']
-        left, top = monitor['left'], monitor['top']
-        zpixmap = 2
-        allplanes = self.xlib.XAllPlanes()
 
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         root = cast(self.root, POINTER(Display))
-        ximage = self.xlib.XGetImage(self.display, root, left, top,
-                                     self.width, self.height, allplanes,
-                                     zpixmap)
+
+        ximage = self.xlib.XGetImage(self.display, root,
+                                     monitor['left'], monitor['top'],
+                                     self.width, self.height,
+                                     self.xlib.XAllPlanes(),
+                                     2)  # ZPIXMAP
         if not ximage:
             err = 'xlib.XGetImage() failed. Monitor informations: '
             for key, val in sorted(monitor.items()):
@@ -241,11 +241,15 @@ class MSS(MSSBase):
             err = err.strip(', ')
             raise ScreenshotError(err)
 
-        # Replace pixels values: BGRA to RGB.
-        buf_len = self.height * self.width * 4
-        data = cast(ximage.contents.data, POINTER(c_ubyte * buf_len))
+        # Replace pixels values: BGRA to RGB
+        data = cast(ximage.contents.data, POINTER(
+            c_ubyte * self.height * self.width * 4))
         self.image = self.bgra_to_rgb(bytearray(data.contents))
+
+        # Free
         self.xlib.XDestroyImage(ximage)
+        ximage = None
+
         return self.image
 
 
