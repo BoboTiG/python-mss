@@ -23,6 +23,10 @@ install:
 
 script: py.test --display=":99.0"
 
+after_script:
+  - xpra stop :99
+  - cat ~/.xpra/*
+
 matrix:
     fast_finish: true
 
