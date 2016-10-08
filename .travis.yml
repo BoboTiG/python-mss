@@ -14,7 +14,7 @@ addons:
       - xpra
 
 before_install:
-  - xpra --xvfb="Xorg +extension RANDR -config tests/dummy.xorg.conf -logfile ~/.xpra/xorg.log" start :42
+  - xpra --xvfb="Xorg +extension RANDR -config tests/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
 
 install:
   - python setup.py install
