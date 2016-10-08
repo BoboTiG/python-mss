@@ -12,6 +12,7 @@ addons:
   apt:
     packages:
       - xpra
+      - xserver-xorg-video-dummy
 
 before_install:
   - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
