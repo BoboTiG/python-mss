@@ -66,7 +66,7 @@ Methods
         It stocks pixels data into :attr:`image` (RGB) and returns it.
 
 
-    .. method:: save(mon=0, output='monitor-%d.png', callback=lambda *x: True) -> generator
+    .. method:: save(mon=0, output='monitor-%d.png', callback=None) -> generator
 
         :param int mon: the monitor's number.
         :param str output: the output's file name. ``%d``, if present, will be replaced by the monitor number.

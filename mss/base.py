@@ -71,7 +71,7 @@ class MSSBase(object):
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self, mon=0, output='monitor-%d.png', callback=lambda *x: True):
+    def save(self, mon=0, output='monitor-%d.png', callback=None):
         ''' Grab a screenshot and save it to a file.
 
             mon (integer, default: 0)
@@ -100,7 +100,8 @@ class MSSBase(object):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i))
-                callback(fname)
+                if callable(callback):
+                    callback(fname)
                 self.to_png(self.get_pixels(monitor), fname)
                 yield fname
         else:
@@ -115,7 +116,8 @@ class MSSBase(object):
 
             if '%d' in output:
                 output = output.replace('%d', str(mon_number))
-            callback(output)
+            if callable(callback):
+                callback(output)
             self.to_png(self.get_pixels(monitor), output)
             yield output
 
