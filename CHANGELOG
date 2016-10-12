@@ -4,6 +4,7 @@ History:
 
 dev
       - change license to MIT
+      - add type hints
       - add documentation (fix #10)
       - add tests and use Travis CI (fix #9)
       - Linux: remove MSS library

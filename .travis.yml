@@ -16,9 +16,12 @@ before_install:
   - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
 
 install:
+  - pip install mypy
   - python setup.py install
 
-script: py.test --display=":42.0"
+script:
+  - py.test --display=":42.0"
+  - mypy --check-untyped-defs --warn-incomplete-stub -m mss
 
 after_script:
   - xpra stop :42
