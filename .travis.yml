@@ -16,12 +16,13 @@ before_install:
   - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
 
 install:
-  - pip install mypy
+  - pip install flake8
   - python setup.py install
 
 script:
   - py.test --display=":42.0"
-  - mypy --check-untyped-defs --warn-incomplete-stub -m mss
+  - flake8 mss
+#  - mypy --check-untyped-defs --warn-incomplete-stub -m mss
 
 after_script:
   - xpra stop :42
