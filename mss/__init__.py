@@ -5,8 +5,6 @@
 
     This module is maintained by Mickaël Schoentgen <contact@tiger-222.fr>.
 
-    Note: please keep this module compatible to Python 2.6.
-
     You can always get the latest version of this module at:
         https://github.com/BoboTiG/python-mss
     If that URL should fail, try contacting the author.

@@ -83,12 +83,6 @@ class MSS(MSSBase):
         It uses intensively the Xlib and Xrandr extension.
     '''
 
-    display = None
-    xlib = None
-    xrandr = None
-    display = None
-    root = None
-
     def __del__(self):
         ''' Disconnect from X server. '''
 
