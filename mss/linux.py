@@ -151,7 +151,7 @@ class MSS(MSSBase):
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        def validate(value):
+        def validate(value, func, args):
             ''' Validate the returned value of xrandr.XRRGetScreenResources().
                 We can end on a segfault if not:
                     Xlib:  extension "RANDR" missing on display "...".
@@ -162,7 +162,7 @@ class MSS(MSSBase):
                 err += ' NULL pointer received.'
                 raise ScreenshotError(err)
 
-            return cast(value, POINTER(XRRScreenResources))
+            return args
 
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
@@ -172,7 +172,8 @@ class MSS(MSSBase):
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
         self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
-        self.xrandr.XRRGetScreenResources.restype = validate
+        self.xrandr.XRRGetScreenResources.restype = POINTER(XRRScreenResources)
+        self.xrandr.XRRGetScreenResources.errcheck = validate
         self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
