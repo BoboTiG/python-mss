@@ -7,13 +7,16 @@
 #     - major contribution N
 
 Alexander 'thehesiod' Mohr [https://github.com/thehesiod]
-    - Winows: robustness to MSS.get_pixels()
+    - Windows: robustness to MSS.get_pixels()
 
 bubulle [http://indexerror.net/user/bubulle]
     - Windows: efficiency of MSS.get_pixels()
 
 Condé 'Eownis' Titouan <me@titouan.co> <eownis@eownis.me> [https://titouan.co]
     - MacOS X tester
+
+Jochen 'cycomanic' Schroeder [https://github.com/cycomanic]
+    - GNU/Linux: use errcheck instead of deprecated restype with callable, for enum_display_monitors()
 
 Oros <oros@ecirtam.net> [https://ecirtam.net]
     - GNU/Linux tester

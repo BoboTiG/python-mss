@@ -4,12 +4,14 @@ History:
 
 dev
       - change license to MIT
+      - new contributor: Jochen 'cycomanic' Schroeder
       - add type hints
       - add documentation (fix #10)
       - add tests and use Travis CI (fix #9)
       - Linux: remove MSS library
       - Linux: insanely fast using only ctypes
       - Linux: skip unused monitors
+      - Linux: use errcheck instead of deprecated restype with callable (fix #11)
 
 2.0.0   2016/06/04
       - split the module into several files
