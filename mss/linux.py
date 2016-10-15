@@ -151,7 +151,7 @@ class MSS(MSSBase):
     def _set_restypes(self):
         ''' Functions return type. '''
 
-        def validate(value, func, args):
+        def validate(value, _, args):
             ''' Validate the returned value of xrandr.XRRGetScreenResources().
                 We can end on a segfault if not:
                     Xlib:  extension "RANDR" missing on display "...".
