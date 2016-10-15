@@ -23,6 +23,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
 |   examples              |
 |   support               |
 |   api                   |
+|   developers            |
 |   where                 |
 +-------------------------+
 
