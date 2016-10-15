@@ -10,7 +10,7 @@ So MSS can be used as simply as::
     from mss import mss
 
 
-Or import the good one::
+Or import the good one base on your operating system::
 
     # MacOS X
     from mss.darwin import MSS as mss
@@ -27,9 +27,9 @@ Instance
 
 So the module can be used as simply as::
 
-    with mss() as screenshotter:
+    with mss() as sct:
         # ...
 
 Or::
 
-    screenshotter = mss()
+    sct = mss()

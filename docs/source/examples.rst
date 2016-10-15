@@ -7,18 +7,20 @@ Basics
 
 One screenshot per monitor::
 
-    for filename in screenshotter.save():
+    for filename in sct.save():
         print(filename)
 
 
 Screenshot of the monitor 1::
 
-    next(screenshotter.save(mon=1))
+    for filename in sct.save(mon=1):
+        print(filename)
 
 
 A screenshot to grab them all::
 
-    next(screenshotter.save(mon=-1, output='fullscreen.png'))
+    for filename in sct.save(mon=-1, output='fullscreen.png')):
+        print(filename)
 
 
 Callback
@@ -39,7 +41,9 @@ Screenshot of the monitor 1 with callback::
             rename(fname, newfile)
         return True
 
-    next(screenshotter.save(mon=1, callback=on_exists))
+
+    for filename in sct.save(mon=1, callback=on_exists):
+        print(filename)
 
 
 Into the Python's console
@@ -48,7 +52,7 @@ Into the Python's console
 ::
 
     >>> from mss import mss
-    >>> sct = mss(display=':0')
+    >>> sct = mss()
 
     # Retrieve monitors informations
     >>> displays = sct.enum_display_monitors()
@@ -76,8 +80,7 @@ Into the Python's console
     StopIteration
 
     # Save pixels to a PNG file: option 2
-    >>> mon = displays[1]
-    >>> sct.to_png(data=pixels, width=mon['width'], height=mon['height'], output='monitor-1.png')
+    >>> sct.to_png(data=pixels, output='monitor-1.png')
 
 
 GNU/Linux
@@ -92,8 +95,8 @@ On GNU/Linux, you can specify which display to use (useful for distant screensho
     print('Screenshot of display "{0}"'.format(display))
     output = 'monitor{0}-%d.png'.format(display)
 
-    with MSS(display=display) as screenshotter:
-        for filename in screenshotter.save(output=output):
+    with MSS(display=display) as sct:
+        for filename in sct.save(output=output):
             print(filename)
 
 
@@ -107,21 +110,19 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
     from PIL import Image
 
 
-    with mss() as screenshotter:
+    with mss() as sct:
         # We retrieve monitors informations:
-        monitors = screenshotter.enum_display_monitors()
+        monitors = sct.enum_display_monitors()
 
         # Get rid of the first, as it represents the "All in One" monitor:
         for num, monitor in enumerate(monitors[1:], 1):
             # Get raw pixels from the screen.
             # This method will store screen size into `width` and `height`
             # and raw pixels into `image`.
-            screenshotter.get_pixels(monitor)
+            sct.get_pixels(monitor)
 
             # Create an Image:
-            img = Image.frombytes('RGB',
-                                  (screenshotter.width, screenshotter.height),
-                                  screenshotter.image)
+            img = Image.frombytes('RGB', (sct.width, sct.height), sct.image)
 
             # And save it!
             img.save('monitor-{0}.jpg'.format(num))
