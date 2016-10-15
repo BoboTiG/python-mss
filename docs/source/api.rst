@@ -141,7 +141,7 @@ Exception
 Factory
 =======
 
-.. module:: mss
+.. module:: mss.factory
 
 .. function:: mss() -> MSSBase
 
