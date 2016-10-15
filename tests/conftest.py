@@ -5,7 +5,7 @@ from os import environ
 
 import pytest
 
-from mss import mss as MSS
+from mss import mss
 
 
 def pytest_addoption(parser):
@@ -19,12 +19,12 @@ def display(request):
 
 
 @pytest.fixture(scope='module')
-def mss(display):
+def sct(display):
     try:
         # display keyword is only for GNU/Linux
-        return MSS(display=display)
+        return mss(display=display)
     except TypeError:
-        return MSS()
+        return mss()
 
 
 @pytest.fixture(scope='session')

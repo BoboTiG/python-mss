@@ -2,17 +2,17 @@
 # coding: utf-8
 
 
-def test_attribute_image(mss):
-    assert mss.image is None
+def test_attribute_image(sct):
+    assert sct.image is None
 
 
-def test_attribute_monitors(mss):
-    assert mss.monitors == []
+def test_attribute_monitors(sct):
+    assert sct.monitors == []
 
 
-def test_attribute_width(mss):
-    assert mss.width == 0
+def test_attribute_width(sct):
+    assert sct.width == 0
 
 
-def test_attribute_height(mss):
-    assert mss.height == 0
+def test_attribute_height(sct):
+    assert sct.height == 0
