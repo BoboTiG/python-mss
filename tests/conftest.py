@@ -30,3 +30,8 @@ def sct(display):
 @pytest.fixture(scope='session')
 def is_travis():
     return 'TRAVIS' in environ
+
+
+@pytest.fixture(scope='session')
+def raw():
+    return open('tests/monitor-1024x768.raw', 'rb').read()
