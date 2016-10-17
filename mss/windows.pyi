@@ -1,6 +1,0 @@
-from typing import Callable
-from .base import MSSBase
-
-
-def set_argtypes(callback: Callable) -> None: ...
-def set_restypes() -> None: ...

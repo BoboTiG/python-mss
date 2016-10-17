@@ -2,7 +2,7 @@ from typing import Any
 from .base import MSSBase
 
 
-def cgfloat() -> Any: ...
+def cgfloat() -> Any: ...  # reveal_type(ctypes.c_double or ctypes.c_float) == Any
 def get_infinity(maxi: bool=False) -> float: ...
 
 

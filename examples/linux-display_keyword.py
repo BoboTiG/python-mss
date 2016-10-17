@@ -4,20 +4,21 @@
     Source: https://github.com/BoboTiG/python-mss
 '''
 
-from mss import ScreenshotError
+from mss.exception import ScreenshotError
 from mss.linux import MSS
 
 
 def main():
+    # type: () -> int
     ''' Usage example with a specific display. '''
 
     display = ':0.0'
     print('Screenshot of display "{0}"'.format(display))
 
     try:
-        with MSS(display=display) as screenshotter:
+        with MSS(display=display) as sct:
             output = 'monitor{0}-%d.png'.format(display)
-            for filename in screenshotter.save(output=output):
+            for filename in sct.save(output=output):
                 print(filename)
 
             return 0

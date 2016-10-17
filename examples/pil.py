@@ -4,28 +4,30 @@
     Source: https://github.com/BoboTiG/python-mss
 '''
 
-from mss import mss, ScreenshotError
+from mss.exception import ScreenshotError
+from mss.factory import mss
 from PIL import Image
 
 
 def main():
+    # type: () -> int
     ''' PIL example using frombytes(). '''
 
     try:
-        with mss() as screenshotter:
+        with mss() as sct:
             # We retrieve monitors informations:
-            monitors = screenshotter.enum_display_monitors()
+            monitors = sct.enum_display_monitors()
 
             # Get rid of the first, as it represents the "All in One" monitor:
             for num, monitor in enumerate(monitors[1:], 1):
                 # Get raw pixels from the screen.
                 # This method will store screen size into `width` and `height`
                 # and raw pixels into `image`.
-                screenshotter.get_pixels(monitor)
+                sct.get_pixels(monitor)
 
                 # Create an Image:
-                size = (screenshotter.width, screenshotter.height)
-                img = Image.frombytes('RGB', size, screenshotter.image)
+                size = (sct.width, sct.height)
+                img = Image.frombytes('RGB', size, sct.image)
 
                 # And save it!
                 output = 'monitor-{0}.png'.format(num)

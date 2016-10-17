@@ -33,13 +33,13 @@ Screenshot of the monitor 1 with callback::
 
 
     def on_exists(fname):
+        # type: (str) -> None
         ''' Callback example when we try to overwrite an existing screenshot. '''
 
         if isfile(fname):
             newfile = fname + '.old'
             print('{0} -> {1}'.format(fname, newfile))
             rename(fname, newfile)
-        return True
 
 
     for filename in sct.save(mon=1, callback=on_exists):

@@ -9,7 +9,7 @@ from platform import system
 from .exception import ScreenshotError
 
 
-def mss(*args, **kwargs):
+def mss(**kwargs):
     ''' Factory returning a proper MSS class instance.
 
         It detects the plateform we are running on
@@ -31,4 +31,4 @@ def mss(*args, **kwargs):
         err = 'System "{0}" not implemented.'.format(operating_system)
         raise ScreenshotError(err)
 
-    return MSS(*args, **kwargs)
+    return MSS(**kwargs)

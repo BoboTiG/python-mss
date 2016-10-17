@@ -23,7 +23,6 @@ install:
 script:
   - py.test --display=":42.0"
   - flake8 mss
-#  - mypy --check-untyped-defs --warn-incomplete-stub -m mss
 
 after_script:
   - xpra stop :42
