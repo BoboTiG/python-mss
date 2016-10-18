@@ -1,3 +1,5 @@
+.. highlight:: console
+
 ==========
 Developers
 ==========
@@ -7,7 +9,9 @@ Setup
 
 1. You need to fork the `GitHub repository <https://github.com/BoboTiG/python-mss>`_.
 
-    **Note :** always work on a **specific branch**, based on the *dev* one, dedicated to your patch.
+    .. Note::
+
+        Always work on a **specific branch**, based on the *dev* one, dedicated to your patch.
 
 2. Be sure to add/update tests and documentation within your patch.
 
@@ -15,7 +19,9 @@ Setup
 Testing
 =======
 
-As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
+.. Note::
+
+    As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
 
 
 Dependency
@@ -23,7 +29,7 @@ Dependency
 
 You will need `pytest <https://pypi.python.org/pypi/pytest>`_::
 
-    pip install pytest
+    $ pip install pytest
 
 
 How to test?
@@ -31,11 +37,11 @@ How to test?
 
 Enable the developer mode::
 
-    sudo python setup.py develop
+    $ sudo python setup.py develop
 
 Lauch the test suit::
 
-    py.test
+    $ py.test
 
 
 Validating the code
@@ -49,7 +55,7 @@ Dependencies
 
 Install required packages::
 
-    pip install flake8 pylint
+    $ pip install flake8 pylint
 
 
 How to validate?
@@ -57,8 +63,8 @@ How to validate?
 
 ::
 
-    flake8
-    pylint mss
+    $ flake8
+    $ pylint mss
 
 If there is no output, you are good ;)
 
@@ -75,7 +81,7 @@ Dependencies
 
 Install required packages::
 
-    pip install mypy-lang
+    $ pip install mypy-lang
 
 
 Running mypy
@@ -83,8 +89,7 @@ Running mypy
 
 ::
 
-    mypy --check-untyped-defs --warn-incomplete-stub -m mss
-    mypy --check-untyped-defs --warn-incomplete-stub mss
+    $ sh check-types.sh -p mss
 
 
 Documentation
@@ -95,7 +100,7 @@ Dependencies
 
 You will need `Sphinx <http://sphinx-doc.org/>`_::
 
-    pip install sphinx
+    $ pip install sphinx
 
 
 How to build?
@@ -103,5 +108,5 @@ How to build?
 
 ::
 
-    cd docs
-    make clean html
+    $ cd docs
+    $ make clean html

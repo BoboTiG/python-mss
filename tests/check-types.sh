@@ -2,7 +2,7 @@
 
 export MYPYPATH="$(pwd)/stubs"
 
-~/.local/bin/mypy \
+mypy \
     --silent-imports \
     --disallow-untyped-calls \
     --disallow-untyped-defs \
