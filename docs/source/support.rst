@@ -7,6 +7,8 @@ Feel free to try MSS on a system we had not tested, and let report us by creatin
 +----------+-----------+-------------+-----------+
 |  Python  | GNU/Linux |   MacOS X   |  Windows  |
 +==========+===========+=============+===========+
+| 3.7-dev  | True      | True        | True      |
++----------+-----------+-------------+-----------+
 | 3.6-dev  | True      | True        | True      |
 +----------+-----------+-------------+-----------+
 | **3.5**  | **True**  | **True**    | **True**  |

@@ -18,12 +18,6 @@ Setup
 
 Testing
 =======
-
-.. Note::
-
-    As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
-
-
 Dependency
 ----------
 
@@ -42,6 +36,10 @@ Enable the developer mode::
 Lauch the test suit::
 
     $ py.test
+
+.. Note::
+
+    As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
 
 
 Validating the code
