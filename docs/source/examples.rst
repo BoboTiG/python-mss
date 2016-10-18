@@ -49,37 +49,41 @@ Screenshot of the monitor 1 with callback::
 Into the Python's console
 -------------------------
 
-::
+Initialisation::
 
     >>> from mss import mss
     >>> sct = mss()
 
-    # Retrieve monitors informations
+Retrieve monitors informations::
+
     >>> displays = sct.enum_display_monitors()
     >>> displays
     [{'width': 1920, 'top': 0, 'height': 1080, 'left': 0}, {'width': 1920, 'top': 0, 'height': 1080, 'left': 0}]
-    # You can access monitors list via `monitors`:
+
+You can access monitors list via ``monitors`` too::
+
     >>> displays is sct.monitors
     True
 
-    # Retrieve pixels from the first monitor
+Retrieve pixels from the first monitor::
+
     >>> pixels = sct.get_pixels(displays[1])
     >>> type(pixels)
     <class 'bytes'>
-    # You can access pixels data via `image`:
+
+You can access pixels data via ``image`` too::
+
     >>> pixels is sct.image
     True
 
-    # Save pixels to a PNG file: option 1
+Save pixels to a PNG file, option 1::
+
     >>> files = sct.save(mon=1)
     >>> next(files)
     'monitor-1.png'
-    >>> next(files)
-    Traceback (most recent call last):
-    File "<stdin>", line 1, in <module>
-    StopIteration
 
-    # Save pixels to a PNG file: option 2
+Save pixels to a PNG file, option 2::
+
     >>> sct.to_png(data=pixels, output='monitor-1.png')
 
 
