@@ -133,7 +133,6 @@ class MSS(MSSBase):
         self.xlib.XGetWindowAttributes.argtypes = [POINTER(Display),
                                                    POINTER(XWindowAttributes),
                                                    POINTER(XWindowAttributes)]
-        self.xlib.XAllPlanes.argtypes = []
         self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
                                         c_int, c_int, c_uint, c_uint, c_ulong,
                                         c_int]
@@ -167,7 +166,6 @@ class MSS(MSSBase):
         self.xlib.XOpenDisplay.restype = POINTER(Display)
         self.xlib.XDefaultScreen.restype = c_int
         self.xlib.XGetWindowAttributes.restype = c_int
-        self.xlib.XAllPlanes.restype = c_ulong
         self.xlib.XGetImage.restype = POINTER(XImage)
         self.xlib.XDestroyImage.restype = c_void_p
         self.xlib.XCloseDisplay.restype = c_void_p
@@ -230,7 +228,7 @@ class MSS(MSSBase):
         ximage = self.xlib.XGetImage(self.display, root,
                                      monitor['left'], monitor['top'],
                                      self.width, self.height,
-                                     self.xlib.XAllPlanes(),
+                                     0x00ffffff,
                                      2)  # ZPIXMAP
         if not ximage:
             err = 'xlib.XGetImage() failed. Monitor informations: '
