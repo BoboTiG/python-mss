@@ -227,9 +227,8 @@ class MSS(MSSBase):
 
         ximage = self.xlib.XGetImage(self.display, root,
                                      monitor['left'], monitor['top'],
-                                     self.width, self.height,
-                                     0x00ffffff,
-                                     2)  # ZPIXMAP
+                                     monitor['width'], monitor['height'],
+                                     0x00ffffff, 2)  # ZPIXMAP
         if not ximage:
             err = 'xlib.XGetImage() failed. Monitor informations: '
             for key, val in sorted(monitor.items()):

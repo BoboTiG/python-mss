@@ -141,9 +141,8 @@ class MSS(MSSBase):
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
-        width, height = monitor['width'], monitor['height']
-        left, top = monitor['left'], monitor['top']
-        rect = CGRect((left, top), (width, height))
+        rect = CGRect((monitor['left'], monitor['top']),
+                      (monitor['width'], monitor['height']))
 
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
@@ -155,7 +154,7 @@ class MSS(MSSBase):
         prov = self.core.CGImageGetDataProvider(image_ref)
         data = self.core.CGDataProviderCopyData(prov)
         data_ref = self.core.CFDataGetBytePtr(data)
-        buf_len = self.height * self.width * 4  # or CFDataGetLength()
+        buf_len = self.width * self.height * 4
         data = cast(data_ref, POINTER(c_ubyte * buf_len))
         self.core.CGDataProviderRelease(prov)
         self.image = self.bgra_to_rgb(bytearray(data.contents))

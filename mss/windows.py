@@ -128,28 +128,30 @@ class MSS(MSSBase):
         try:
             bmi = BITMAPINFO()
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
-            bmi.bmiHeader.biWidth = self.width
-            bmi.bmiHeader.biHeight = -self.height  # Why minux? See [1]
+            bmi.bmiHeader.biWidth = monitor['width']
+            bmi.bmiHeader.biHeight = -monitor['height']  # Why minus? See [1]
             bmi.bmiHeader.biPlanes = 1  # Always 1
             bmi.bmiHeader.biBitCount = 32  # See [2]
             bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
             bmi.bmiHeader.biClrUsed = 0  # See [3]
             bmi.bmiHeader.biClrImportant = 0  # See [3]
 
-            buf_len = self.height * self.width * 4  # See [2]
+            buf_len = monitor['width'] * monitor['height'] * 4  # See [2]
             image_data = create_string_buffer(buf_len)
             srcdc = windll.user32.GetWindowDC(0)
             memdc = windll.gdi32.CreateCompatibleDC(srcdc)
-            bmp = windll.gdi32.CreateCompatibleBitmap(srcdc, self.width,
-                                                      self.height)
+            bmp = windll.gdi32.CreateCompatibleBitmap(
+                srcdc, monitor['width'], monitor['height'])
+
             windll.gdi32.SelectObject(memdc, bmp)
             windll.gdi32.BitBlt(memdc, 0, 0,
-                                self.width, self.height,
+                                monitor['width'], monitor['height'],
                                 srcdc,
                                 monitor['left'], monitor['top'],
                                 0xcc0020)  # SRCCOPY
-            bits = windll.gdi32.GetDIBits(memdc, bmp, 0, self.height,
-                                          image_data, bmi, 0)
+
+            bits = windll.gdi32.GetDIBits(
+                memdc, bmp, 0, monitor['height'], image_data, bmi, 0)
             if bits != self.height:
                 raise ScreenshotError('gdi32.GetDIBits() failed.')
         finally:
