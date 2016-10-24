@@ -116,7 +116,7 @@ class MSS(MSSBase):
 
         self.display = self.xlib.XOpenDisplay(display)
         try:
-            assert self.display.contents
+            self.display.contents
         except ValueError:
             raise ScreenshotError('Cannot open display "{0}".'.format(
                 str(display.decode('utf-8'))))
