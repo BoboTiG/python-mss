@@ -9,7 +9,6 @@ from ctypes import (
     c_uint, c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll)
 from ctypes.util import find_library
 from os import environ
-from sys import maxsize
 
 from .base import MSSBase
 from .exception import ScreenshotError
@@ -253,11 +252,3 @@ class MSS(MSSBase):
         ximage = None
 
         return self.image
-
-
-def arch():
-    ''' Detect OS architecture.
-        Returns an int: 32 or 64
-    '''
-
-    return 64 if maxsize > 2 ** 32 else 32

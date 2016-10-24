@@ -8,6 +8,7 @@ dev
       - add type hints
       - add documentation (fix #10)
       - add tests and use Travis CI (fix #9)
+      - remove unused code (reported by Vulture)
       - Linux: remove MSS library
       - Linux: insanely fast using only ctypes
       - Linux: skip unused monitors

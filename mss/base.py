@@ -24,7 +24,7 @@ class MSSBase(object):
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, *_):
         ''' For the cool call `with MSS() as mss:`. '''
 
     def bgra_to_rgb(self, raw):
