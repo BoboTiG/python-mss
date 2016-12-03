@@ -2,7 +2,7 @@ History:
 
 <see Git checkin messages for history>
 
-dev
+2.0.18  2016/12/03
       - change license to MIT
       - new contributor: Jochen 'cycomanic' Schroeder
       - add type hints
