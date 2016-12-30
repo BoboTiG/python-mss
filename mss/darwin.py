@@ -60,7 +60,7 @@ class MSS(MSSBase):
 
         coregraphics = find_library('CoreGraphics')
         if not coregraphics:
-            raise ScreenshotError('No CoreGraphics library found.')
+            raise ScreenshotError('No CoreGraphics library found.', locals())
         self.core = cdll.LoadLibrary(coregraphics)
 
         self._set_argtypes()
@@ -146,8 +146,8 @@ class MSS(MSSBase):
 
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
-            err = 'CoreGraphics.CGWindowListCreateImage() failed.'
-            raise ScreenshotError(err)
+            raise ScreenshotError(
+                'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
         self.width = int(self.core.CGImageGetWidth(image_ref))
         self.height = int(self.core.CGImageGetHeight(image_ref))

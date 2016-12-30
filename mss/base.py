@@ -111,8 +111,7 @@ class MSSBase(object):
             try:
                 monitor = self.monitors[mon_number]
             except IndexError:
-                err = 'Monitor {0} does not exist.'.format(mon)
-                raise ScreenshotError(err)
+                raise ScreenshotError('Monitor does not exist.', locals())
 
             if '%d' in output:
                 output = output.replace('%d', str(mon_number))
@@ -159,5 +158,4 @@ class MSSBase(object):
             fileh.write(b''.join(iend))
             return
 
-        err = 'Error writing data to "{0}".'.format(output)
-        raise ScreenshotError(err)
+        raise ScreenshotError('Error writing data to file.', output)

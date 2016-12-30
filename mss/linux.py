@@ -96,19 +96,19 @@ class MSS(MSSBase):
             try:
                 display = environ['DISPLAY']
             except KeyError:
-                raise ScreenshotError(
-                    '$DISPLAY not set. Stopping to prevent segfault.')
+                raise ScreenshotError('$DISPLAY not set.', locals())
+
         if not isinstance(display, bytes):
             display = bytes(display, 'utf-8')
 
         x11 = find_library('X11')
         if not x11:
-            raise ScreenshotError('No X11 library found.')
+            raise ScreenshotError('No X11 library found.', locals())
         self.xlib = cdll.LoadLibrary(x11)
 
         xrandr = find_library('Xrandr')
         if not xrandr:
-            raise ScreenshotError('No Xrandr extension found.')
+            raise ScreenshotError('No Xrandr extension found.', locals())
         self.xrandr = cdll.LoadLibrary(xrandr)
 
         self._set_argtypes()
@@ -118,8 +118,8 @@ class MSS(MSSBase):
         try:
             self.display.contents
         except ValueError:
-            raise ScreenshotError('Cannot open display "{0}".'.format(
-                str(display.decode('utf-8'))))
+            raise ScreenshotError('Cannot open display.', locals())
+
         self.root = self.xlib.XDefaultRootWindow(
             self.display, self.xlib.XDefaultScreen(self.display))
 
@@ -156,9 +156,8 @@ class MSS(MSSBase):
             '''
 
             if value == 0:
-                err = 'xrandr.XRRGetScreenResources() failed.'
-                err += ' NULL pointer received.'
-                raise ScreenshotError(err)
+                raise ScreenshotError(('xrandr.XRRGetScreenResources() failed.'
+                                       ' NULL pointer received.'), locals())
 
             return args
 
@@ -229,11 +228,7 @@ class MSS(MSSBase):
                                      monitor['width'], monitor['height'],
                                      0x00ffffff, 2)  # ZPIXMAP
         if not ximage:
-            err = 'xlib.XGetImage() failed. Monitor informations: '
-            for key, val in sorted(monitor.items()):
-                err = '{0}{1}: {2}, '.format(err, key, val)
-            err = err.strip(', ')
-            raise ScreenshotError(err)
+            raise ScreenshotError('xlib.XGetImage() failed.', locals())
 
         # Raw pixels values conversion
         bpp = ximage.contents.bits_per_pixel
@@ -243,9 +238,8 @@ class MSS(MSSBase):
                 c_ubyte * self.height * self.width * 4))
             self.image = self.bgra_to_rgb(bytearray(data.contents))
         else:
-            err = ('Not implemented for this configuration '
-                   '([XImage] bits per pixel = {0}).')
-            raise ScreenshotError(err.format(bpp))
+            raise ScreenshotError(('[XImage] bits per pixel value '
+                                   'not (yet?) implemented.'), locals())
 
         # Free
         self.xlib.XDestroyImage(ximage)

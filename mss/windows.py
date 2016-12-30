@@ -153,7 +153,7 @@ class MSS(MSSBase):
             bits = windll.gdi32.GetDIBits(
                 memdc, bmp, 0, monitor['height'], image_data, bmi, 0)
             if bits != self.height:
-                raise ScreenshotError('gdi32.GetDIBits() failed.')
+                raise ScreenshotError('gdi32.GetDIBits() failed.', locals())
         finally:
             # Clean up
             if srcdc:

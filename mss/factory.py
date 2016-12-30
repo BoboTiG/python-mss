@@ -28,7 +28,6 @@ def mss(**kwargs):
     elif operating_system == 'windows':
         from .windows import MSS
     else:
-        err = 'System "{0}" not implemented.'.format(operating_system)
-        raise ScreenshotError(err)
+        raise ScreenshotError('System not (yet?) implemented.', locals())
 
     return MSS(**kwargs)
