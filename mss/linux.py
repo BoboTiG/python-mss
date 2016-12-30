@@ -85,7 +85,7 @@ class MSS(MSSBase):
     def __del__(self):
         ''' Disconnect from X server. '''
 
-        if self.display:
+        if hasattr(self, 'display'):
             self.xlib.XCloseDisplay(self.display)
             self.display = None
 
