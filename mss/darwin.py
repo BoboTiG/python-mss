@@ -49,14 +49,14 @@ class CGRect(Structure):
 
 
 class MSS(MSSBase):
-    ''' Mutliple ScreenShots implementation for MacOS X.
+    ''' Mutliple ScreenShots implementation for macOS.
         It uses intensively the Quartz.
     '''
 
     max_displays = 32  # Could be augmented, if needed ...
 
     def __init__(self):
-        ''' MacOS X initialisations. '''
+        ''' macOS initialisations. '''
 
         coregraphics = find_library('CoreGraphics')
         if not coregraphics:
