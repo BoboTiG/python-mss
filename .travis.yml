@@ -22,7 +22,7 @@ install:
 
 script:
   - py.test --display=":42.0"
-  - flake8
+  - flake8 mss
   - pylint mss
 
 after_script:
