@@ -144,6 +144,6 @@ You can capture only a part of the screen::
         # The screen part to capture
         mon = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
 
-        # Create the screen part
+        # Save the picture
         output = 'sct-{top}x{left}_{width}x{height}.png'.format(**mon)
         sct.to_png(sct.get_pixels(mon), output)

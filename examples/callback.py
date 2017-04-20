@@ -28,8 +28,7 @@ def main():
 
     try:
         with mss() as sct:
-            # For MacOS X only
-            # sct.max_displays = 32
+            # sct.max_displays = 32  # macOS only
 
             print('One screenshot per monitor')
             for filename in sct.save():

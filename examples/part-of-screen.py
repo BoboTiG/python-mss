@@ -17,7 +17,7 @@ def main():
             # The screen part to capture
             mon = {'top': 160, 'left': 160, 'width': 160, 'height': 135}
 
-            # Create the picture
+            # Save the picture
             output = 'sct-{top}x{left}_{width}x{height}.png'.format(**mon)
             sct.to_png(sct.get_pixels(mon), output)
             print(output)

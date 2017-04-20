@@ -2,6 +2,11 @@ History:
 
 <see Git checkin messages for history>
 
+dev
+      - add an example to capture only a part of the screen
+      - better use of exception mechanism
+      - Linux: use of hasattr to prevent Exception on early exit
+
 2.0.18  2016/12/03
       - change license to MIT
       - new contributor: Jochen 'cycomanic' Schroeder

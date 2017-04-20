@@ -25,7 +25,7 @@ def main():
                 # and raw pixels into `image`.
                 sct.get_pixels(monitor)
 
-                # Create an Image:
+                # Create an Image
                 size = (sct.width, sct.height)
                 img = Image.frombytes('RGB', size, sct.image)
 
