@@ -139,11 +139,11 @@ class MSS(MSSBase):
 
         return self.monitors
 
-    def crop_width(self, image, width_from, width_to, height):
+    def crop_width(self, image, width_to):
         ''' Cut off the pixels from an image buffer at a particular width. '''
         cropped = bytearray()
-        for y in range(height):
-            start = y * width_from * 3
+        for row in range(self.height):
+            start = row * self.width * 3
             end = start + width_to * 3
             cropped.extend(image[start:end])
         return cropped
@@ -177,6 +177,6 @@ class MSS(MSSBase):
         self.core.CGDataProviderRelease(prov)
         self.image = self.bgra_to_rgb(bytearray(data.contents))
         if rounded_width != monitor['width']:
-            self.image = self.crop_width(self.image, rounded_width, self.width, self.height)
-        self.width = rounded_width
+            self.image = self.crop_width(self.image, monitor['width'])
+            self.width = monitor['width']
         return self.image
