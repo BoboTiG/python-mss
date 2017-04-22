@@ -11,6 +11,7 @@ from ctypes import (
     c_void_p, cast, cdll)
 from ctypes.util import find_library
 from sys import maxsize
+from math import ceil
 
 from .base import MSSBase
 from .exception import ScreenshotError
@@ -138,11 +139,28 @@ class MSS(MSSBase):
 
         return self.monitors
 
+    def crop_width(self, image, width_to):
+        ''' Cut off the pixels from an image buffer at a particular width. '''
+        cropped = bytearray()
+        for row in range(self.height):
+            start = row * self.width * 3
+            end = start + width_to * 3
+            cropped.extend(image[start:end])
+        return cropped
+
     def get_pixels(self, monitor):
         ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
 
+        # When the monitor width is not divisible by 16, extra padding is
+        # added by MacOS in the form of black pixels, which results
+        # in a screenshot with shifted pixels.
+        # To counter this, we round the width to the nearest integer
+        # divisible by 16, and we remove the extra width from the
+        # image after taking the screenshot.
+        rounded_width = ceil(monitor['width'] / 16) * 16
+
         rect = CGRect((monitor['left'], monitor['top']),
-                      (monitor['width'], monitor['height']))
+                      (rounded_width, monitor['height']))
 
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
@@ -158,4 +176,7 @@ class MSS(MSSBase):
         data = cast(data_ref, POINTER(c_ubyte * buf_len))
         self.core.CGDataProviderRelease(prov)
         self.image = self.bgra_to_rgb(bytearray(data.contents))
+        if rounded_width != monitor['width']:
+            self.image = self.crop_width(self.image, monitor['width'])
+            self.width = monitor['width']
         return self.image
