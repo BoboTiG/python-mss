@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
-''' This is part of the MSS Python's module.
+""" This is part of the MSS Python's module.
     Source: https://github.com/BoboTiG/python-mss
-'''
+"""
 
 from struct import pack
 from zlib import compress, crc32
@@ -12,7 +11,7 @@ from .exception import ScreenshotError
 
 # C'est parti mon kiki !
 class MSSBase(object):
-    ''' This class will be overloaded by a system specific one. '''
+    """ This class will be overloaded by a system specific one. """
 
     monitors = []
     image = None
@@ -20,22 +19,22 @@ class MSSBase(object):
     height = 0
 
     def __enter__(self):
-        ''' For the cool call `with MSS() as mss:`. '''
+        """ For the cool call `with MSS() as mss:`. """
 
         return self
 
     def __exit__(self, *_):
-        ''' For the cool call `with MSS() as mss:`. '''
+        """ For the cool call `with MSS() as mss:`. """
 
     def bgra_to_rgb(self, raw):
-        ''' Converts pixels values from BGRA to RGB. '''
+        """ Converts pixels values from BGRA to RGB. """
 
         image = bytearray(self.height * self.width * 3)
         image[0::3], image[1::3], image[2::3] = raw[2::4], raw[1::4], raw[0::4]
         return bytes(image)
 
     def enum_display_monitors(self, force=False):
-        ''' Get positions of one or more monitors.
+        """ Get positions of one or more monitors.
             If the monitor has rotation, you have to deal with it
             inside this method.
 
@@ -51,12 +50,12 @@ class MSSBase(object):
                 'width':  the width,
                 'height': the height
             }
-        '''
+        """
 
         raise NotImplementedError('Subclasses need to implement this!')
 
     def get_pixels(self, monitor):
-        ''' Retrieve screen pixels for a given monitor.
+        """ Retrieve screen pixels for a given monitor.
 
             This method has to define self.width and self.height.
 
@@ -67,12 +66,12 @@ class MSSBase(object):
                 'width':  the width,
                 'heigth': the height
             }
-        '''
+        """
 
         raise NotImplementedError('Subclasses need to implement this!')
 
     def save(self, mon=0, output='monitor-%d.png', callback=None):
-        ''' Grab a screenshot and save it to a file.
+        """ Grab a screenshot and save it to a file.
 
             mon (integer, default: 0)
                 -1: grab one screenshot of all monitors
@@ -88,7 +87,7 @@ class MSSBase(object):
                 Take the 'output' argument as parameter.
 
             This is a generator which returns created files.
-        '''
+        """
 
         self.enum_display_monitors()
         if not self.monitors:
@@ -121,10 +120,10 @@ class MSSBase(object):
             yield output
 
     def to_png(self, data, output):
-        ''' Dump data to the image file. Data is bytes(RGBRGB...RGB).
+        """ Dump data to the image file. Data is bytes(RGBRGB...RGB).
             Pure python PNG implementation.
             http://inaps.org/journal/comment-fonctionne-le-png
-        '''
+        """
 
         p__ = pack
         line = self.width * 3

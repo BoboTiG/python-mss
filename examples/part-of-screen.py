@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
-''' This is part of the MSS Python's module.
+""" This is part of the MSS Python's module.
     Source: https://github.com/BoboTiG/python-mss
-'''
+"""
 
 from mss.exception import ScreenshotError
 from mss import mss
@@ -10,7 +9,7 @@ from mss import mss
 
 def main():
     # type: () -> int
-    ''' Example to capture part of the screen. '''
+    """ Example to capture part of the screen. """
 
     try:
         with mss() as sct:

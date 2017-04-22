@@ -15,6 +15,9 @@ bubulle [http://indexerror.net/user/bubulle]
 Condé 'Eownis' Titouan <me@titouan.co> <eownis@eownis.me> [https://titouan.co]
     - MacOS X tester
 
+David Becker [https://davide.me] and redodo [https://github.com/redodo]
+    - Mac: Take into account extra black pixels added when screen with is not divisible by 16
+
 Jochen 'cycomanic' Schroeder [https://github.com/cycomanic]
     - GNU/Linux: use errcheck instead of deprecated restype with callable, for enum_display_monitors()
 

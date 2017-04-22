@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
-''' This is part of the MSS Python's module.
+""" This is part of the MSS Python's module.
     Source: https://github.com/BoboTiG/python-mss
-'''
+"""
 
 from ctypes import (
     POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_ubyte,
@@ -17,13 +16,13 @@ __all__ = ['MSS']
 
 
 class Display(Structure):
-    ''' Structure that serves as the connection to the X server
+    """ Structure that serves as the connection to the X server
         and that contains all the information about that X server.
-    '''
+    """
 
 
 class XWindowAttributes(Structure):
-    ''' Attributes for the specified window. '''
+    """ Attributes for the specified window. """
 
     _fields_ = [('x', c_int32), ('y', c_int32), ('width', c_int32),
                 ('height', c_int32), ('border_width', c_int32),
@@ -39,9 +38,9 @@ class XWindowAttributes(Structure):
 
 
 class XImage(Structure):
-    ''' Description of an image as it exists in the client's memory.
+    """ Description of an image as it exists in the client's memory.
         https://tronche.com/gui/x/xlib/graphics/images.html
-    '''
+    """
 
     _fields_ = [('width', c_int), ('height', c_int), ('xoffset', c_int),
                 ('format', c_int), ('data', c_void_p),
@@ -53,13 +52,13 @@ class XImage(Structure):
 
 
 class XRRModeInfo(Structure):
-    ''' Voilà, voilà. '''
+    """ Voilà, voilà. """
 
 
 class XRRScreenResources(Structure):
-    ''' Structure that contains arrays of XIDs that point to the
+    """ Structure that contains arrays of XIDs that point to the
         available outputs and associated CRTCs.
-    '''
+    """
 
     _fields_ = [('timestamp', c_ulong), ('configTimestamp', c_ulong),
                 ('ncrtc', c_int), ('crtcs', POINTER(c_long)),
@@ -68,7 +67,7 @@ class XRRScreenResources(Structure):
 
 
 class XRRCrtcInfo(Structure):
-    ''' Structure that contains CRTC informations. '''
+    """ Structure that contains CRTC informations. """
 
     _fields_ = [('timestamp', c_ulong), ('x', c_int), ('y', c_int),
                 ('width', c_int), ('height', c_int), ('mode', c_long),
@@ -78,19 +77,19 @@ class XRRCrtcInfo(Structure):
 
 
 class MSS(MSSBase):
-    ''' Mutliple ScreenShots implementation for GNU/Linux.
+    """ Multiple ScreenShots implementation for GNU/Linux.
         It uses intensively the Xlib and Xrandr extension.
-    '''
+    """
 
     def __del__(self):
-        ''' Disconnect from X server. '''
+        """ Disconnect from X server. """
 
         if hasattr(self, 'display'):
             self.xlib.XCloseDisplay(self.display)
             self.display = None
 
     def __init__(self, display=None):
-        ''' GNU/Linux initialisations. '''
+        """ GNU/Linux initialisations. """
 
         if not display:
             try:
@@ -99,7 +98,7 @@ class MSS(MSSBase):
                 raise ScreenshotError('$DISPLAY not set.', locals())
 
         if not isinstance(display, bytes):
-            display = bytes(display, 'utf-8')
+            display = display.encode('utf-8')
 
         x11 = find_library('X11')
         if not x11:
@@ -124,7 +123,7 @@ class MSS(MSSBase):
             self.display, self.xlib.XDefaultScreen(self.display))
 
     def _set_argtypes(self):
-        ''' Functions arguments. '''
+        """ Functions arguments. """
 
         self.xlib.XOpenDisplay.argtypes = [c_char_p]
         self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
@@ -147,13 +146,13 @@ class MSS(MSSBase):
         self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
 
     def _set_restypes(self):
-        ''' Functions return type. '''
+        """ Functions return type. """
 
         def validate(value, _, args):
-            ''' Validate the returned value of xrandr.XRRGetScreenResources().
+            """ Validate the returned value of xrandr.XRRGetScreenResources().
                 We can end on a segfault if not:
                     Xlib:  extension "RANDR" missing on display "...".
-            '''
+            """
 
             if value == 0:
                 raise ScreenshotError(('xrandr.XRRGetScreenResources() failed.'
@@ -175,7 +174,7 @@ class MSS(MSSBase):
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
 
     def enum_display_monitors(self, force=False):
-        ''' Get positions of monitors (see parent class). '''
+        """ Get positions of monitors (see parent class). """
 
         if not self.monitors or force:
             self.monitors = []
@@ -214,10 +213,9 @@ class MSS(MSSBase):
         return self.monitors
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB. '''
+        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
 
-        self.width = monitor['width']
-        self.height = monitor['height']
+        self.width, self.height = monitor['width'], monitor['height']
 
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
@@ -230,16 +228,15 @@ class MSS(MSSBase):
         if not ximage:
             raise ScreenshotError('xlib.XGetImage() failed.', locals())
 
-        # Raw pixels values conversion
-        bpp = ximage.contents.bits_per_pixel
-        if bpp == 32:
-            # BGRA to RGB
-            data = cast(ximage.contents.data, POINTER(
-                c_ubyte * self.height * self.width * 4))
-            self.image = self.bgra_to_rgb(bytearray(data.contents))
-        else:
+        bits_per_pixel = ximage.contents.bits_per_pixel
+        if bits_per_pixel != 32:
             raise ScreenshotError(('[XImage] bits per pixel value '
                                    'not (yet?) implemented.'), locals())
+
+        # BGRA to RGB
+        data = cast(ximage.contents.data, POINTER(
+            c_ubyte * self.height * self.width * 4))
+        self.image = self.bgra_to_rgb(bytearray(data.contents))
 
         # Free
         self.xlib.XDestroyImage(ximage)

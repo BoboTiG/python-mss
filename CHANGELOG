@@ -2,10 +2,12 @@ History:
 
 <see Git checkin messages for history>
 
-dev
+2.0.22  2017/04/29
+      - new contributors: David Becker, redodo
       - add an example to capture only a part of the screen
       - better use of exception mechanism
       - Linux: use of hasattr to prevent Exception on early exit
+      - Mac: take into account extra black pixels added when screen with is not divisible by 16 (fix #14)
 
 2.0.18  2016/12/03
       - change license to MIT

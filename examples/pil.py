@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
-''' This is part of the MSS Python's module.
+""" This is part of the MSS Python's module.
     Source: https://github.com/BoboTiG/python-mss
-'''
+"""
 
 from mss.exception import ScreenshotError
 from mss.factory import mss
@@ -11,7 +10,7 @@ from PIL import Image
 
 def main():
     # type: () -> int
-    ''' PIL example using frombytes(). '''
+    """ PIL example using frombytes(). """
 
     try:
         with mss() as sct:
