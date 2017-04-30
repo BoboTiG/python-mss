@@ -130,3 +130,20 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
 
             # And save it!
             img.save('monitor-{0}.jpg'.format(num))
+
+
+Part of the screen
+==================
+
+You can capture only a part of the screen::
+
+    from mss import mss
+
+
+    with mss() as sct:
+        # The screen part to capture
+        mon = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
+
+        # Save the picture
+        output = 'sct-{top}x{left}_{width}x{height}.png'.format(**mon)
+        sct.to_png(sct.get_pixels(mon), output)

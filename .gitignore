@@ -2,6 +2,7 @@ build/
 .cache/
 dist/
 *.egg-info/
+.idea/
 MANIFEST*
 .DS_Store
 *.orig

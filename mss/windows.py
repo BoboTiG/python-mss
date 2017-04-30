@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # coding: utf-8
-''' This is part of the MSS Python's module.
+""" This is part of the MSS Python's module.
     Source: https://github.com/BoboTiG/python-mss
-'''
+"""
 
 from ctypes import (
     POINTER, WINFUNCTYPE, Structure, c_void_p, create_string_buffer, sizeof,
@@ -18,7 +17,7 @@ __all__ = ['MSS']
 
 
 class BITMAPINFOHEADER(Structure):
-    ''' Information about the dimensions and color format of a DIB. '''
+    """ Information about the dimensions and color format of a DIB. """
 
     _fields_ = [('biSize', DWORD), ('biWidth', LONG), ('biHeight', LONG),
                 ('biPlanes', WORD), ('biBitCount', WORD),
@@ -28,18 +27,18 @@ class BITMAPINFOHEADER(Structure):
 
 
 class BITMAPINFO(Structure):
-    ''' Structure that defines the dimensions and color information
+    """ Structure that defines the dimensions and color information
         for a DIB.
-    '''
+    """
 
     _fields_ = [('bmiHeader', BITMAPINFOHEADER), ('bmiColors', DWORD * 3)]
 
 
 class MSS(MSSBase):
-    ''' Mutliple ScreenShots implementation for Microsoft Windows. '''
+    """ Multiple ScreenShots implementation for Microsoft Windows. """
 
     def __init__(self):
-        ''' Windows initialisations. '''
+        """ Windows initialisations. """
 
         self.monitorenumproc = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT),
                                            DOUBLE)
@@ -47,7 +46,7 @@ class MSS(MSSBase):
         set_restypes()
 
     def enum_display_monitors(self, force=False):
-        ''' Get positions of monitors (see parent class). '''
+        """ Get positions of monitors (see parent class). """
 
         if not self.monitors or force:
             self.monitors = []
@@ -68,9 +67,9 @@ class MSS(MSSBase):
 
             # Each monitors
             def _callback(monitor, data, rect, dc_):
-                ''' Callback for monitorenumproc() function, it will return
+                """ Callback for monitorenumproc() function, it will return
                     a RECT with appropriate values.
-                '''
+                """
 
                 del monitor, data, dc_
                 rct = rect.contents
@@ -88,7 +87,7 @@ class MSS(MSSBase):
         return self.monitors
 
     def get_pixels(self, monitor):
-        ''' Retrieve all pixels from a monitor. Pixels have to be RGB.
+        """ Retrieve all pixels from a monitor. Pixels have to be RGB.
 
             In the code, there are few interesting things:
 
@@ -117,14 +116,10 @@ class MSS(MSSBase):
             is "no" color table, so we can read the pixels of the bitmap
             retrieved by gdi32.GetDIBits() as a sequence of RGB values.
             Thanks to http://stackoverflow.com/a/3688682
-        '''
+        """
 
-        self.width = monitor['width']
-        self.height = monitor['height']
-        srcdc = None
-        memdc = None
-        bmp = None
-
+        self.width, self.height = monitor['width'], monitor['height']
+        srcdc = memdc = bmp = None
         try:
             bmi = BITMAPINFO()
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
@@ -153,7 +148,7 @@ class MSS(MSSBase):
             bits = windll.gdi32.GetDIBits(
                 memdc, bmp, 0, monitor['height'], image_data, bmi, 0)
             if bits != self.height:
-                raise ScreenshotError('gdi32.GetDIBits() failed.')
+                raise ScreenshotError('gdi32.GetDIBits() failed.', locals())
         finally:
             # Clean up
             if srcdc:
@@ -168,7 +163,7 @@ class MSS(MSSBase):
 
 
 def set_argtypes(callback):
-    ''' Functions arguments. '''
+    """ Functions arguments. """
 
     windll.user32.GetSystemMetrics.argtypes = [INT]
     windll.user32.EnumDisplayMonitors.argtypes = \
@@ -185,7 +180,7 @@ def set_argtypes(callback):
 
 
 def set_restypes():
-    ''' Functions return type. '''
+    """ Functions return type. """
 
     windll.user32.GetSystemMetrics.restype = INT
     windll.user32.EnumDisplayMonitors.restype = BOOL

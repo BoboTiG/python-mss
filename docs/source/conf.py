@@ -51,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Python MSS'
-copyright = '2016, Tiger-222'
+copyright = '2013-2017, Tiger-222'
 author = 'Tiger-222'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -59,7 +59,7 @@ author = 'Tiger-222'
 # built documents.
 #
 # The short X.Y version.
-version = '2.0.18'
+version = '2.0.21'
 # The full version, including alpha/beta/rc tags.
 release = 'latest'
 
@@ -319,7 +319,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'PythonMSS', 'Python MSS Documentation',
-     author, 'PythonMSS', 'One line description of project.',
+     author, 'PythonMSS', 'An ultra fast cross-platform multiple screenshots module in pure python using ctypes.',
      'Miscellaneous'),
 ]
 
