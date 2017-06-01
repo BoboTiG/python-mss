@@ -12,7 +12,7 @@
 from .exception import ScreenshotError
 from .factory import mss
 
-__version__ = '2.0.22'
+__version__ = '2.1.0'
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = """
     Copyright (c) 2013-2017, Mickaël 'Tiger-222' Schoentgen

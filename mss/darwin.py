@@ -53,6 +53,7 @@ class MSS(MSSBase):
         It uses intensively the Quartz.
     """
 
+    __monitors = []
     max_displays = 32  # Could be augmented, if needed ...
 
     def __init__(self):
@@ -110,14 +111,13 @@ class MSS(MSSBase):
             cropped.extend(self.image[start:end])
         return bytes(cropped)
 
-    def enum_display_monitors(self, force=False):
+    @property
+    def monitors(self):
         """ Get positions of monitors (see parent class). """
 
-        if not self.monitors or force:
-            self.monitors = []
-
+        if not self.__monitors:
             # All monitors
-            self.monitors.append({
+            self.__monitors.append({
                 'left': int(get_infinity()),
                 'top': int(get_infinity()),
                 'width': int(get_infinity(True)),
@@ -140,14 +140,14 @@ class MSS(MSSBase):
                 rot = self.core.CGDisplayRotation(display)
                 if rotations[rot] in ['left', 'right']:
                     width, height = height, width
-                self.monitors.append({
+                self.__monitors.append({
                     'left': int(left),
                     'top': int(top),
                     'width': int(width),
                     'height': int(height)
                 })
 
-        return self.monitors
+        return self.__monitors
 
     def get_pixels(self, monitor):
         """ Retrieve all pixels from a monitor. Pixels have to be RGB.

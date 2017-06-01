@@ -37,6 +37,8 @@ class BITMAPINFO(Structure):
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
+    __monitors = []
+
     def __init__(self):
         """ Windows initialisations. """
 
@@ -45,12 +47,11 @@ class MSS(MSSBase):
         set_argtypes(self.monitorenumproc)
         set_restypes()
 
-    def enum_display_monitors(self, force=False):
+    @property
+    def monitors(self):
         """ Get positions of monitors (see parent class). """
 
-        if not self.monitors or force:
-            self.monitors = []
-
+        if not self.__monitors:
             # All monitors
             sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
             sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
@@ -58,7 +59,7 @@ class MSS(MSSBase):
             right = windll.user32.GetSystemMetrics(sm_cxvirtualscreen)
             top = windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
-            self.monitors.append({
+            self.__monitors.append({
                 'left': int(left),
                 'top': int(top),
                 'width': int(right - left),
@@ -73,7 +74,7 @@ class MSS(MSSBase):
 
                 del monitor, data, dc_
                 rct = rect.contents
-                self.monitors.append({
+                self.__monitors.append({
                     'left': int(rct.left),
                     'top': int(rct.top),
                     'width': int(rct.right - rct.left),
@@ -84,7 +85,7 @@ class MSS(MSSBase):
             callback = self.monitorenumproc(_callback)
             windll.user32.EnumDisplayMonitors(0, 0, callback, 0)
 
-        return self.monitors
+        return self.__monitors
 
     def get_pixels(self, monitor):
         """ Retrieve all pixels from a monitor. Pixels have to be RGB.

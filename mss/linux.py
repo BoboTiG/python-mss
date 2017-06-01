@@ -81,6 +81,8 @@ class MSS(MSSBase):
         It uses intensively the Xlib and Xrandr extension.
     """
 
+    __monitors = []
+
     def __del__(self):
         """ Disconnect from X server. """
 
@@ -173,16 +175,15 @@ class MSS(MSSBase):
         self.xrandr.XRRFreeScreenResources.restype = c_void_p
         self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
 
-    def enum_display_monitors(self, force=False):
-        """ Get positions of monitors (see parent class). """
+    @property
+    def monitors(self):
+        """ Get positions of monitors (see parent class property). """
 
-        if not self.monitors or force:
-            self.monitors = []
-
+        if not self.__monitors:
             # All monitors
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            self.monitors.append({
+            self.__monitors.append({
                 'left': int(gwa.x),
                 'top': int(gwa.y),
                 'width': int(gwa.width),
@@ -201,7 +202,7 @@ class MSS(MSSBase):
                     self.xrandr.XRRFreeCrtcInfo(crtc)
                     continue
 
-                self.monitors.append({
+                self.__monitors.append({
                     'left': int(crtc.contents.x),
                     'top': int(crtc.contents.y),
                     'width': int(crtc.contents.width),
@@ -210,7 +211,7 @@ class MSS(MSSBase):
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
 
-        return self.monitors
+        return self.__monitors
 
     def get_pixels(self, monitor):
         """ Retrieve all pixels from a monitor. Pixels have to be RGB. """

@@ -2,6 +2,9 @@ History:
 
 <see Git checkin messages for history>
 
+2.1.0  2017/06/01
+      - MSS: deprecate enum_display_monitors(), use monitors property instead
+
 2.0.22  2017/04/29
       - new contributors: David Becker, redodo
       - add an example to capture only a part of the screen

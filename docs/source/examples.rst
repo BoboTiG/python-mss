@@ -56,18 +56,13 @@ Initialisation::
 
 Retrieve monitors informations::
 
-    >>> displays = sct.enum_display_monitors()
-    >>> displays
+    >>> sct.monitors
     [{'width': 1920, 'top': 0, 'height': 1080, 'left': 0}, {'width': 1920, 'top': 0, 'height': 1080, 'left': 0}]
 
-You can access monitors list via ``monitors`` too::
-
-    >>> displays is sct.monitors
-    True
 
 Retrieve pixels from the first monitor::
 
-    >>> pixels = sct.get_pixels(displays[1])
+    >>> pixels = sct.get_pixels(sct.monitors[1])
     >>> type(pixels)
     <class 'bytes'>
 
@@ -115,11 +110,8 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
 
 
     with mss() as sct:
-        # We retrieve monitors informations:
-        monitors = sct.enum_display_monitors()
-
         # Get rid of the first, as it represents the "All in One" monitor:
-        for num, monitor in enumerate(monitors[1:], 1):
+        for num, monitor in enumerate(sct.monitors[1:], 1):
             # Get raw pixels from the screen.
             # This method will store screen size into `width` and `height`
             # and raw pixels into `image`.

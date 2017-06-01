@@ -14,11 +14,8 @@ def main():
 
     try:
         with mss() as sct:
-            # We retrieve monitors informations:
-            monitors = sct.enum_display_monitors()
-
             # Get rid of the first, as it represents the "All in One" monitor:
-            for num, monitor in enumerate(monitors[1:], 1):
+            for num, monitor in enumerate(sct.monitors[1:], 1):
                 # Get raw pixels from the screen.
                 # This method will store screen size into `width` and `height`
                 # and raw pixels into `image`.

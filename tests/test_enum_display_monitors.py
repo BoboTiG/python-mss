@@ -1,16 +1,15 @@
 # coding: utf-8
 
+import pytest
+
+
+def test_deprecated(sct):
+    with pytest.raises(DeprecationWarning):
+        sct.enum_display_monitors()
+
 
 def test_get_monitors(sct):
-    monitors = sct.enum_display_monitors()
-    assert monitors is sct.monitors
-    assert monitors
-
-
-def test_get_monitors_force(sct):
-    monitors = sct.enum_display_monitors(force=True)
-    assert monitors is sct.monitors
-    assert monitors
+    assert sct.monitors
 
 
 def test_keys_aio(sct):

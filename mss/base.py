@@ -13,7 +13,6 @@ from .exception import ScreenshotError
 class MSSBase(object):
     """ This class will be overloaded by a system specific one. """
 
-    monitors = []
     image = None
     width = 0
     height = 0
@@ -33,27 +32,6 @@ class MSSBase(object):
         image[0::3], image[1::3], image[2::3] = raw[2::4], raw[1::4], raw[0::4]
         return bytes(image)
 
-    def enum_display_monitors(self, force=False):
-        """ Get positions of one or more monitors.
-            If the monitor has rotation, you have to deal with it
-            inside this method.
-
-            This method has to fill self.monitors with all informations
-            and use it as a cache:
-                self.monitors[0] is a dict of all monitors together
-                self.monitors[N] is a dict of the monitor N (with N > 0)
-
-            Each monitor is a dict with:
-            {
-                'left':   the x-coordinate of the upper-left corner,
-                'top':    the y-coordinate of the upper-left corner,
-                'width':  the width,
-                'height': the height
-            }
-        """
-
-        raise NotImplementedError('Subclasses need to implement this!')
-
     def get_pixels(self, monitor):
         """ Retrieve screen pixels for a given monitor.
 
@@ -65,6 +43,28 @@ class MSSBase(object):
                 'top':    the y-coordinate of the upper-left corner,
                 'width':  the width,
                 'heigth': the height
+            }
+        """
+
+        raise NotImplementedError('Subclasses need to implement this!')
+
+    @property
+    def monitors(self):
+        """ Get positions of all monitors.
+            If the monitor has rotation, you have to deal with it
+            inside this method.
+
+            This method has to fill self.__monitors with all informations
+            and use it as a cache:
+                self.__monitors[0] is a dict of all monitors together
+                self.__monitors[N] is a dict of the monitor N (with N > 0)
+
+            Each monitor is a dict with:
+            {
+                'left':   the x-coordinate of the upper-left corner,
+                'top':    the y-coordinate of the upper-left corner,
+                'width':  the width,
+                'height': the height
             }
         """
 
@@ -89,13 +89,13 @@ class MSSBase(object):
             This is a generator which returns created files.
         """
 
-        self.enum_display_monitors()
-        if not self.monitors:
+        monitors = self.monitors  # Implemented by subclasses
+        if not monitors:
             raise ScreenshotError('No monitor found.')
 
         if mon == 0:
             # One screenshot by monitor
-            for i, monitor in enumerate(self.monitors[1:], 1):
+            for i, monitor in enumerate(monitors[1:], 1):
                 fname = output
                 if '%d' in output:
                     fname = output.replace('%d', str(i))
@@ -108,7 +108,7 @@ class MSSBase(object):
             # a screenshot of the monitor N.
             mon_number = 0 if mon == -1 else mon
             try:
-                monitor = self.monitors[mon_number]
+                monitor = monitors[mon_number]
             except IndexError:
                 raise ScreenshotError('Monitor does not exist.', locals())
 
@@ -157,4 +157,10 @@ class MSSBase(object):
             fileh.write(b''.join(iend))
             return
 
-        raise ScreenshotError('Error writing data to file.', output)
+    # ---------------------------------------------------------
+    # DEPRECATED -- Will be removed in the next version (2.1.x)
+
+    def enum_display_monitors(self, force=False):
+        # pylint: disable=no-self-use,unused-argument,missing-docstring
+        raise DeprecationWarning(
+            'Deprecated since 2.1.0. Implement the `monitors` property.')
