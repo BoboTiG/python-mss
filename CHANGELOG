@@ -2,8 +2,11 @@ History:
 
 <see Git checkin messages for history>
 
-2.1.0  2017/06/01
-      - MSS: deprecate enum_display_monitors(), use monitors property instead
+3.0.0  2017/07/04
+      - big refactor, introduce ScreenShot class
+      - add Numpy array interface support
+      - tests: add FPS benchmark to compare to PIL.ImageGrab
+      - examples: add OpenCV/Numpy
 
 2.0.22  2017/04/29
       - new contributors: David Becker, redodo

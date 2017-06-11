@@ -9,11 +9,15 @@ from .factory import mss
 
 
 def main():
+    # type: () -> int
     """ Main logic. """
 
     with mss() as sct:
         for file_name in sct.save():
             print(file_name)
+        return 0
+
+    return 1
 
 
 if __name__ == '__main__':

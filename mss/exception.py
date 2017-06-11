@@ -4,5 +4,5 @@
 """
 
 
-class ScreenshotError(Exception):
+class ScreenShotError(Exception):
     """ Error handling class. """

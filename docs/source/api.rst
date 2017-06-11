@@ -5,9 +5,6 @@ MSS API
 Classes
 =======
 
-``MSSBase`` is the parent's class for every OS implementation.
-
-
 GNU/Linux
 ---------
 
@@ -21,12 +18,11 @@ GNU/Linux
 
         GNU/Linux initializations.
 
+    .. method:: grab(monitor) -> ScreenShot
 
-    .. method:: get_pixels(monitor) -> bytes
+        :exception ScreenShotError: When color depth is not 32 (rare).
 
-        :exception ScreenshotError: When color depth is not 32 (rare).
-
-        See :attr:`mss.base.MSSBase.get_pixels` for details.
+        See :attr:`mss.base.MSSBase.grab` for details.
 
 
 Methods
@@ -36,23 +32,14 @@ Methods
 
 .. class:: MSSBase
 
-    .. method:: bgra_to_rgb(raw) -> bytes
+    The parent's class for every OS implementation.
 
-        :param bytearray raw: raw data containing BGRA values.
-
-        It converts pixels values from BGRA to RGB.
-        This is the method called to populate :attr:`image` into :attr:`get_pixels`.
-
-
-    .. method:: get_pixels(monitor) -> bytes
+    .. method:: grab(monitor) -> ScreenShot
 
         :param dict monitor: monitor's informations.
         :exception NotImplementedError: Subclasses need to implement this.
 
         Retrieve screen pixels for a given monitor.
-        This method has to define :attr:`width` and :attr:`height`.
-        It stocks pixels data into :attr:`image` (RGB) and returns it.
-
 
     .. method:: save(mon=0, output='monitor-%d.png', callback=None) -> generator
 
@@ -62,70 +49,114 @@ Methods
 
         Grab a screenshot and save it to a file. This is a generator which returns created files.
 
+.. class:: ScreenShot
 
-    .. method:: to_png(data, output) -> None
+    Screen shot object.
 
-        :param bytes data: raw pixels (RGBRGB...RGB) fom :attr:`get_pixels()`.
-        :param str output: output's file name.
-        :exception ScreenshotError: On error when writing ``data`` to ``output``.
+    .. note::
 
-        Dump data to the image file. Pure Python PNG implementation.
+        A better name would be *Image*, but to prevent collisions
+        with ``PIL.Image``, it has been decided to use another name.
+
+    .. classmethod:: from_size(cls, data, width, height) -> ScreenShot
+
+        :param bytearray data: raw BGRA pixels retrieved by ctype
+                               OS independent implementations.
+        :param int width: the monitor's width.
+        :param int height: the monitor's height.
+
+        Instanciate a new class given only screenshot's data and size.
+
+    .. method:: pixels(coord_x, coord_y) -> Tuple[int, int, int]
+
+        : param coord_x int: The x coordinate.
+        : param coord_y int: The y coordinate.
+
+        Get the pixel value at the given position.
+
+.. module:: mss.tools
+
+    .. method:: to_png(data, size, output) -> None
+
+    :param bytes data: RGBRGB...RGB data.
+    :param tuple size: The (width, height) pair.
+    :param str output: output's file name.
+    :exception ScreenShotError: On error when writing ``data`` to ``output``.
+
+    Dump data to the image file. Pure Python PNG implementation.
 
 
-    .. method:: enum_display_monitors(force=False) -> list(dict)
-
-        .. deprecated:: 2.1.0
-
-        Use :attr:`monitors` instead.
-
-
-Attributes
+Properties
 ==========
 
 .. class:: MSSBase
 
-    .. attribute:: image
+    .. property:: monitors
 
-        :getter: Raw pixels of a monitor.
-        :setter: See :attr:`get_pixels`.
+        :type:  List[Dict[str, int]]
+        Positions of all monitors.
+        If the monitor has rotation, you have to deal with it
+        inside this method.
+
+        This method has to fill ``self._monitors`` with all informations
+        and use it as a cache:
+            ``self._monitors[0]`` is a dict of all monitors together
+            ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
+
+        Each monitor is a dict with:
+        {
+            'left':   the x-coordinate of the upper-left corner,
+            'top':    the y-coordinate of the upper-left corner,
+            'width':  the width,
+            'height': the height
+        }
+
+.. class:: ScreenShot
+
+    .. property:: __array_interface__()
+
+        :type: dict[str, Any]
+        Numpy array interface support. It uses raw data in BGRA form.
+
+    .. property:: pos
+
+        :type: NamedTuple
+        The screen shot's coodinates.
+
+    .. property:: top
+
+        :type: int
+        The screen shot's top coodinate.
+
+    .. property:: left
+
+        :type: int
+        The screen shot's left coodinate.
+
+    .. property:: size
+
+        :type: NamedTuple
+        The screen shot's size.
+
+    .. property:: width
+
+        :type: int
+        The screen shot's width.
+
+    .. property:: height
+
+        :type: int
+        The screen shot's height.
+
+    .. property:: pixels
+
+        :type: List[Tuple[int, int, int]]
+        List of RGB tuples.
+
+    .. property:: rgb
+
         :type: bytes
-
-
-    .. attribute:: monitors
-
-        :getter: The list of all monitors.
-        :type: list(dict)
-
-        Get positions of one or more monitors.
-        If the monitor has rotation, you have to deal with it inside this method.
-
-        This method has to fill ``__monitors`` with all informations and use it as a cache:
-
-        - ``__monitors[0]`` is a dict of all monitors together;
-        - ``__monitors[N]`` is a dict of the monitor N (with N > 0).
-
-        Each monitor is a dict with::
-
-            {
-                'left':   the x-coordinate of the upper-left corner,
-                'top':    the y-coordinate of the upper-left corner,
-                'width':  the width,
-                'height': the height
-            }
-
-
-    .. attribute:: width
-
-        :getter: Width of a monitor.
-        :setter: See :attr:`get_pixels()`.
-        :type: int
-
-
-    .. attribute:: height
-
-        :getter: Height of a monitor.
-        :setter: See :attr:`get_pixels()`.
-        :type: int
+        Compute RGB values from the BGRA raw pixels.
 
 
 Exception
@@ -133,7 +164,7 @@ Exception
 
 .. module:: mss.exception
 
-.. exception:: ScreenshotError
+.. exception:: ScreenShotError
 
     Base class for MSS exceptions.
 

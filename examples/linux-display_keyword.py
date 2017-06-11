@@ -3,8 +3,8 @@
     Source: https://github.com/BoboTiG/python-mss
 """
 
-from mss.exception import ScreenshotError
-from mss.linux import MSS
+import mss.exception
+import mss.linux
 
 
 def main():
@@ -15,13 +15,13 @@ def main():
     print('Screenshot of display "{0}"'.format(display))
 
     try:
-        with MSS(display=display) as sct:
+        with mss.linux.MSS(display=display) as sct:
             output = 'monitor{0}-%d.png'.format(display)
             for filename in sct.save(output=output):
                 print(filename)
 
             return 0
-    except ScreenshotError as ex:
+    except mss.exception.ScreenShotError as ex:
         print(ex)
 
     return 1

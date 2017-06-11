@@ -3,11 +3,11 @@
     Source: https://github.com/BoboTiG/python-mss
 """
 
-from os import rename
-from os.path import isfile
+import os
+import os.path
 
-from mss.exception import ScreenshotError
-from mss.factory import mss
+import mss
+import mss.exception
 
 
 def main():
@@ -20,13 +20,13 @@ def main():
             screenshot.
         """
 
-        if isfile(fname):
+        if os.path.isfile(fname):
             newfile = fname + '.old'
             print('{0} -> {1}'.format(fname, newfile))
-            rename(fname, newfile)
+            os.rename(fname, newfile)
 
     try:
-        with mss() as sct:
+        with mss.mss() as sct:
             # sct.max_displays = 32  # macOS only
 
             print('One screenshot per monitor')
@@ -44,7 +44,7 @@ def main():
                                 callback=on_exists)))
 
             return 0
-    except ScreenshotError as ex:
+    except mss.exception.ScreenShotError as ex:
         print(ex)
 
     return 1

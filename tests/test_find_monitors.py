@@ -1,12 +1,5 @@
 # coding: utf-8
 
-import pytest
-
-
-def test_deprecated(sct):
-    with pytest.raises(DeprecationWarning):
-        sct.enum_display_monitors()
-
 
 def test_get_monitors(sct):
     assert sct.monitors

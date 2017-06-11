@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-export MYPYPATH="$(pwd)/stubs"
+# export MYPYPATH="$(pwd)/stubs"
 
 mypy \
     --silent-imports \

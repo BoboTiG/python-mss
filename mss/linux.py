@@ -3,114 +3,147 @@
     Source: https://github.com/BoboTiG/python-mss
 """
 
-from ctypes import (
-    POINTER, Structure, byref, c_char_p, c_int, c_int32, c_long, c_ubyte,
-    c_uint, c_uint32, c_ulong, c_ushort, c_void_p, cast, cdll)
-from ctypes.util import find_library
-from os import environ
+import ctypes
+import ctypes.util
+import os
 
-from .base import MSSBase
-from .exception import ScreenshotError
+from .base import MSSBase, ScreenShot
+from .exception import ScreenShotError
 
 __all__ = ['MSS']
 
 
-class Display(Structure):
-    """ Structure that serves as the connection to the X server
-        and that contains all the information about that X server.
+class Display(ctypes.Structure):
+    """
+    Structure that serves as the connection to the X server
+    and that contains all the information about that X server.
     """
 
 
-class XWindowAttributes(Structure):
+class XWindowAttributes(ctypes.Structure):
     """ Attributes for the specified window. """
 
-    _fields_ = [('x', c_int32), ('y', c_int32), ('width', c_int32),
-                ('height', c_int32), ('border_width', c_int32),
-                ('depth', c_int32), ('visual', c_ulong), ('root', c_ulong),
-                ('class', c_int32), ('bit_gravity', c_int32),
-                ('win_gravity', c_int32), ('backing_store', c_int32),
-                ('backing_planes', c_ulong), ('backing_pixel', c_ulong),
-                ('save_under', c_int32), ('colourmap', c_ulong),
-                ('mapinstalled', c_uint32), ('map_state', c_uint32),
-                ('all_event_masks', c_ulong), ('your_event_mask', c_ulong),
-                ('do_not_propagate_mask', c_ulong),
-                ('override_redirect', c_int32), ('screen', c_ulong)]
+    _fields_ = [('x', ctypes.c_int32),
+                ('y', ctypes.c_int32),
+                ('width', ctypes.c_int32),
+                ('height', ctypes.c_int32),
+                ('border_width', ctypes.c_int32),
+                ('depth', ctypes.c_int32),
+                ('visual', ctypes.c_ulong),
+                ('root', ctypes.c_ulong),
+                ('class', ctypes.c_int32),
+                ('bit_gravity', ctypes.c_int32),
+                ('win_gravity', ctypes.c_int32),
+                ('backing_store', ctypes.c_int32),
+                ('backing_planes', ctypes.c_ulong),
+                ('backing_pixel', ctypes.c_ulong),
+                ('save_under', ctypes.c_int32),
+                ('colourmap', ctypes.c_ulong),
+                ('mapinstalled', ctypes.c_uint32),
+                ('map_state', ctypes.c_uint32),
+                ('all_event_masks', ctypes.c_ulong),
+                ('your_event_mask', ctypes.c_ulong),
+                ('do_not_propagate_mask', ctypes.c_ulong),
+                ('override_redirect', ctypes.c_int32),
+                ('screen', ctypes.c_ulong)]
 
 
-class XImage(Structure):
-    """ Description of an image as it exists in the client's memory.
-        https://tronche.com/gui/x/xlib/graphics/images.html
+class XImage(ctypes.Structure):
+    """
+    Description of an image as it exists in the client's memory.
+    https://tronche.com/gui/x/xlib/graphics/images.html
     """
 
-    _fields_ = [('width', c_int), ('height', c_int), ('xoffset', c_int),
-                ('format', c_int), ('data', c_void_p),
-                ('byte_order', c_int), ('bitmap_unit', c_int),
-                ('bitmap_bit_order', c_int), ('bitmap_pad', c_int),
-                ('depth', c_int), ('bytes_per_line', c_int),
-                ('bits_per_pixel', c_int), ('red_mask', c_ulong),
-                ('green_mask', c_ulong), ('blue_mask', c_ulong)]
+    _fields_ = [('width', ctypes.c_int),
+                ('height', ctypes.c_int),
+                ('xoffset', ctypes.c_int),
+                ('format', ctypes.c_int),
+                ('data', ctypes.c_void_p),
+                ('byte_order', ctypes.c_int),
+                ('bitmap_unit', ctypes.c_int),
+                ('bitmap_bit_order', ctypes.c_int),
+                ('bitmap_pad', ctypes.c_int),
+                ('depth', ctypes.c_int),
+                ('bytes_per_line', ctypes.c_int),
+                ('bits_per_pixel', ctypes.c_int),
+                ('red_mask', ctypes.c_ulong),
+                ('green_mask', ctypes.c_ulong),
+                ('blue_mask', ctypes.c_ulong)]
 
 
-class XRRModeInfo(Structure):
+class XRRModeInfo(ctypes.Structure):
     """ Voilà, voilà. """
 
 
-class XRRScreenResources(Structure):
-    """ Structure that contains arrays of XIDs that point to the
-        available outputs and associated CRTCs.
+class XRRScreenResources(ctypes.Structure):
+    """
+    Structure that contains arrays of XIDs that point to the
+    available outputs and associated CRTCs.
     """
 
-    _fields_ = [('timestamp', c_ulong), ('configTimestamp', c_ulong),
-                ('ncrtc', c_int), ('crtcs', POINTER(c_long)),
-                ('noutput', c_int), ('outputs', POINTER(c_long)),
-                ('nmode', c_int), ('modes', POINTER(XRRModeInfo))]
+    _fields_ = [('timestamp', ctypes.c_ulong),
+                ('configTimestamp', ctypes.c_ulong),
+                ('ncrtc', ctypes.c_int),
+                ('crtcs', ctypes.POINTER(ctypes.c_long)),
+                ('noutput', ctypes.c_int),
+                ('outputs', ctypes.POINTER(ctypes.c_long)),
+                ('nmode', ctypes.c_int),
+                ('modes', ctypes.POINTER(XRRModeInfo))]
 
 
-class XRRCrtcInfo(Structure):
+class XRRCrtcInfo(ctypes.Structure):
     """ Structure that contains CRTC informations. """
 
-    _fields_ = [('timestamp', c_ulong), ('x', c_int), ('y', c_int),
-                ('width', c_int), ('height', c_int), ('mode', c_long),
-                ('rotation', c_int), ('noutput', c_int),
-                ('outputs', POINTER(c_long)), ('rotations', c_ushort),
-                ('npossible', c_int), ('possible', POINTER(c_long))]
+    _fields_ = [('timestamp', ctypes.c_ulong),
+                ('x', ctypes.c_int),
+                ('y', ctypes.c_int),
+                ('width', ctypes.c_int),
+                ('height', ctypes.c_int),
+                ('mode', ctypes.c_long),
+                ('rotation', ctypes.c_int),
+                ('noutput', ctypes.c_int),
+                ('outputs', ctypes.POINTER(ctypes.c_long)),
+                ('rotations', ctypes.c_ushort),
+                ('npossible', ctypes.c_int),
+                ('possible', ctypes.POINTER(ctypes.c_long))]
 
 
 class MSS(MSSBase):
-    """ Multiple ScreenShots implementation for GNU/Linux.
-        It uses intensively the Xlib and Xrandr extension.
+    """
+    Multiple ScreenShots implementation for GNU/Linux.
+    It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __monitors = []
-
     def __del__(self):
+        # type: () -> None
         """ Disconnect from X server. """
 
         if hasattr(self, 'display'):
             self.xlib.XCloseDisplay(self.display)
-            self.display = None
+            self.display = None  # type: bytes
 
     def __init__(self, display=None):
+        # type: (bytes) -> None
         """ GNU/Linux initialisations. """
 
         if not display:
             try:
-                display = environ['DISPLAY']
+                display = os.environ['DISPLAY'].encode('utf-8')
             except KeyError:
-                raise ScreenshotError('$DISPLAY not set.', locals())
+                raise ScreenShotError('$DISPLAY not set.', locals())
 
         if not isinstance(display, bytes):
             display = display.encode('utf-8')
 
-        x11 = find_library('X11')
+        x11 = ctypes.util.find_library('X11')
         if not x11:
-            raise ScreenshotError('No X11 library found.', locals())
-        self.xlib = cdll.LoadLibrary(x11)
+            raise ScreenShotError('No X11 library found.', locals())
+        self.xlib = ctypes.cdll.LoadLibrary(x11)
 
-        xrandr = find_library('Xrandr')
+        xrandr = ctypes.util.find_library('Xrandr')
         if not xrandr:
-            raise ScreenshotError('No Xrandr extension found.', locals())
-        self.xrandr = cdll.LoadLibrary(xrandr)
+            raise ScreenShotError('No Xrandr extension found.', locals())
+        self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
 
         self._set_argtypes()
         self._set_restypes()
@@ -119,81 +152,100 @@ class MSS(MSSBase):
         try:
             self.display.contents
         except ValueError:
-            raise ScreenshotError('Cannot open display.', locals())
+            raise ScreenShotError('Cannot open display.', locals())
 
         self.root = self.xlib.XDefaultRootWindow(
             self.display, self.xlib.XDefaultScreen(self.display))
 
     def _set_argtypes(self):
+        # type: () -> None
         """ Functions arguments. """
 
-        self.xlib.XOpenDisplay.argtypes = [c_char_p]
-        self.xlib.XDefaultScreen.argtypes = [POINTER(Display)]
-        self.xlib.XDefaultRootWindow.argtypes = [POINTER(Display), c_int]
-        self.xlib.XGetWindowAttributes.argtypes = [POINTER(Display),
-                                                   POINTER(XWindowAttributes),
-                                                   POINTER(XWindowAttributes)]
-        self.xlib.XGetImage.argtypes = [POINTER(Display), POINTER(Display),
-                                        c_int, c_int, c_uint, c_uint, c_ulong,
-                                        c_int]
-        self.xlib.XDestroyImage.argtypes = [POINTER(XImage)]
-        self.xlib.XCloseDisplay.argtypes = [POINTER(Display)]
-        self.xrandr.XRRGetScreenResources.argtypes = [POINTER(Display),
-                                                      POINTER(Display)]
-        self.xrandr.XRRGetCrtcInfo.argtypes = [POINTER(Display),
-                                               POINTER(XRRScreenResources),
-                                               c_long]
-        self.xrandr.XRRFreeScreenResources.argtypes = \
-            [POINTER(XRRScreenResources)]
-        self.xrandr.XRRFreeCrtcInfo.argtypes = [POINTER(XRRCrtcInfo)]
+        self.xlib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+        self.xlib.XDefaultScreen.argtypes = [ctypes.POINTER(Display)]
+        self.xlib.XDefaultRootWindow.argtypes = [
+            ctypes.POINTER(Display),
+            ctypes.c_int]
+        self.xlib.XGetWindowAttributes.argtypes = [
+            ctypes.POINTER(Display),
+            ctypes.POINTER(XWindowAttributes),
+            ctypes.POINTER(XWindowAttributes)]
+        self.xlib.XGetImage.argtypes = [
+            ctypes.POINTER(Display),
+            ctypes.POINTER(Display),
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_ulong,
+            ctypes.c_int]
+        self.xlib.XDestroyImage.argtypes = [ctypes.POINTER(XImage)]
+        self.xlib.XCloseDisplay.argtypes = [ctypes.POINTER(Display)]
+        self.xrandr.XRRGetScreenResources.argtypes = [
+            ctypes.POINTER(Display),
+            ctypes.POINTER(Display)]
+        self.xrandr.XRRGetCrtcInfo.argtypes = [
+            ctypes.POINTER(Display),
+            ctypes.POINTER(XRRScreenResources),
+            ctypes.c_long]
+        self.xrandr.XRRFreeScreenResources.argtypes = [
+            ctypes.POINTER(XRRScreenResources)]
+        self.xrandr.XRRFreeCrtcInfo.argtypes = [ctypes.POINTER(XRRCrtcInfo)]
 
     def _set_restypes(self):
+        # type: () -> None
         """ Functions return type. """
 
         def validate(value, _, args):
+            # type: (int, Any, Tuple[Any, Any]) -> None
             """ Validate the returned value of xrandr.XRRGetScreenResources().
                 We can end on a segfault if not:
                     Xlib:  extension "RANDR" missing on display "...".
             """
 
             if value == 0:
-                raise ScreenshotError(('xrandr.XRRGetScreenResources() failed.'
+                raise ScreenShotError(('xrandr.XRRGetScreenResources() failed.'
                                        ' NULL pointer received.'), locals())
 
             return args
 
-        self.xlib.XOpenDisplay.restype = POINTER(Display)
-        self.xlib.XDefaultScreen.restype = c_int
-        self.xlib.XGetWindowAttributes.restype = c_int
-        self.xlib.XGetImage.restype = POINTER(XImage)
-        self.xlib.XDestroyImage.restype = c_void_p
-        self.xlib.XCloseDisplay.restype = c_void_p
-        self.xlib.XDefaultRootWindow.restype = POINTER(XWindowAttributes)
-        self.xrandr.XRRGetScreenResources.restype = POINTER(XRRScreenResources)
+        self.xlib.XOpenDisplay.restype = ctypes.POINTER(Display)
+        self.xlib.XDefaultScreen.restype = ctypes.c_int
+        self.xlib.XGetWindowAttributes.restype = ctypes.c_int
+        self.xlib.XGetImage.restype = ctypes.POINTER(XImage)
+        self.xlib.XDestroyImage.restype = ctypes.c_void_p
+        self.xlib.XCloseDisplay.restype = ctypes.c_void_p
+        self.xlib.XDefaultRootWindow.restype = \
+            ctypes.POINTER(XWindowAttributes)
+        self.xrandr.XRRGetScreenResources.restype = \
+            ctypes.POINTER(XRRScreenResources)
         self.xrandr.XRRGetScreenResources.errcheck = validate
-        self.xrandr.XRRGetCrtcInfo.restype = POINTER(XRRCrtcInfo)
-        self.xrandr.XRRFreeScreenResources.restype = c_void_p
-        self.xrandr.XRRFreeCrtcInfo.restype = c_void_p
+        self.xrandr.XRRGetCrtcInfo.restype = ctypes.POINTER(XRRCrtcInfo)
+        self.xrandr.XRRFreeScreenResources.restype = ctypes.c_void_p
+        self.xrandr.XRRFreeCrtcInfo.restype = ctypes.c_void_p
 
     @property
     def monitors(self):
+        # type: () -> List[Dict[str, int]]
         """ Get positions of monitors (see parent class property). """
 
-        if not self.__monitors:
+        if not self._monitors:
             # All monitors
             gwa = XWindowAttributes()
-            self.xlib.XGetWindowAttributes(self.display, self.root, byref(gwa))
-            self.__monitors.append({
+            self.xlib.XGetWindowAttributes(self.display,
+                                           self.root,
+                                           ctypes.byref(gwa))
+            self._monitors.append({
                 'left': int(gwa.x),
                 'top': int(gwa.y),
                 'width': int(gwa.width),
-                'height': int(gwa.height)
+                'height': int(gwa.height),
             })
 
             # Each monitors
             # Fix for XRRGetScreenResources:
             #     expected LP_Display instance instead of LP_XWindowAttributes
-            root = cast(self.root, POINTER(Display))
+            root = ctypes.cast(self.root, ctypes.POINTER(Display))
             mon = self.xrandr.XRRGetScreenResources(self.display, root)
             for idx in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
@@ -202,45 +254,43 @@ class MSS(MSSBase):
                     self.xrandr.XRRFreeCrtcInfo(crtc)
                     continue
 
-                self.__monitors.append({
+                self._monitors.append({
                     'left': int(crtc.contents.x),
                     'top': int(crtc.contents.y),
                     'width': int(crtc.contents.width),
-                    'height': int(crtc.contents.height)
+                    'height': int(crtc.contents.height),
                 })
                 self.xrandr.XRRFreeCrtcInfo(crtc)
             self.xrandr.XRRFreeScreenResources(mon)
 
-        return self.__monitors
+        return self._monitors
 
-    def get_pixels(self, monitor):
+    def grab(self, monitor):
+        # type: (Dict[str, int]) -> ScreenShot
         """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
-
-        self.width, self.height = monitor['width'], monitor['height']
 
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
-        root = cast(self.root, POINTER(Display))
+        root = ctypes.cast(self.root, ctypes.POINTER(Display))
 
         ximage = self.xlib.XGetImage(self.display, root,
                                      monitor['left'], monitor['top'],
                                      monitor['width'], monitor['height'],
                                      0x00ffffff, 2)  # ZPIXMAP
         if not ximage:
-            raise ScreenshotError('xlib.XGetImage() failed.', locals())
+            raise ScreenShotError('xlib.XGetImage() failed.', locals())
 
         bits_per_pixel = ximage.contents.bits_per_pixel
         if bits_per_pixel != 32:
-            raise ScreenshotError(('[XImage] bits per pixel value '
+            raise ScreenShotError(('[XImage] bits per pixel value '
                                    'not (yet?) implemented.'), locals())
 
-        # BGRA to RGB
-        data = cast(ximage.contents.data, POINTER(
-            c_ubyte * self.height * self.width * 4))
-        self.image = self.bgra_to_rgb(bytearray(data.contents))
+        data = ctypes.cast(ximage.contents.data, ctypes.POINTER(
+            ctypes.c_ubyte * monitor['height'] * monitor['width'] * 4))
+        data = bytearray(data.contents)
 
         # Free
         self.xlib.XDestroyImage(ximage)
         ximage = None
 
-        return self.image
+        return ScreenShot(data, monitor)

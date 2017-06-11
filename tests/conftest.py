@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from os import environ
+import os
 
 import pytest
 
@@ -28,9 +28,9 @@ def sct(display):
 
 @pytest.fixture(scope='session')
 def is_travis():
-    return 'TRAVIS' in environ
+    return 'TRAVIS' in os.environ
 
 
 @pytest.fixture(scope='session')
 def raw():
-    return open('tests/monitor-1024x768.raw', 'rb').read()
+    return open('tests/res/monitor-1024x768.raw', 'rb').read()

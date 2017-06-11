@@ -3,12 +3,13 @@
     Source: https://github.com/BoboTiG/python-mss
 """
 
-from platform import system
+import platform
 
-from .exception import ScreenshotError
+from .exception import ScreenShotError
 
 
 def mss(**kwargs):
+    # type: (**str) -> MSS
     """ Factory returning a proper MSS class instance.
 
         It detects the plateform we are running on
@@ -19,7 +20,7 @@ def mss(**kwargs):
         instantiation.
     """
 
-    operating_system = system().lower()
+    operating_system = platform.system().lower()
     if operating_system == 'darwin':
         from .darwin import MSS
     elif operating_system == 'linux':
@@ -27,6 +28,6 @@ def mss(**kwargs):
     elif operating_system == 'windows':
         from .windows import MSS
     else:
-        raise ScreenshotError('System not (yet?) implemented.', locals())
+        raise ScreenShotError('System not (yet?) implemented.', locals())
 
     return MSS(**kwargs)

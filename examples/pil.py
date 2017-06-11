@@ -3,8 +3,8 @@
     Source: https://github.com/BoboTiG/python-mss
 """
 
-from mss.exception import ScreenshotError
-from mss.factory import mss
+import mss
+import mss.exception
 from PIL import Image
 
 
@@ -13,17 +13,19 @@ def main():
     """ PIL example using frombytes(). """
 
     try:
-        with mss() as sct:
+        with mss.mss() as sct:
             # Get rid of the first, as it represents the "All in One" monitor:
             for num, monitor in enumerate(sct.monitors[1:], 1):
-                # Get raw pixels from the screen.
-                # This method will store screen size into `width` and `height`
-                # and raw pixels into `image`.
-                sct.get_pixels(monitor)
+                # Get raw pixels from the screen
+                sct_img = sct.grab(monitor)
 
-                # Create an Image
-                size = (sct.width, sct.height)
-                img = Image.frombytes('RGB', size, sct.image)
+                # Create the Image, solution 1 (slower)
+                # img = Image.frombytes('RGB', sct_img.size, sct_img.content)
+
+                # Create the Image, solution 2
+                img = Image.frombytes('RGBA', sct_img.size, bytes(sct_img.raw), 'raw', 'BGRA')
+                img = img.convert('RGB')  # Convert to RGB
+                # img = img.convert('L')  # Or to grayscale
 
                 # And save it!
                 output = 'monitor-{0}.png'.format(num)
@@ -31,7 +33,7 @@ def main():
                 print(output)
 
             return 0
-    except ScreenshotError as ex:
+    except mss.exception.ScreenShotError as ex:
         print(ex)
 
     return 1
