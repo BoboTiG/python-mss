@@ -55,8 +55,8 @@ Methods
 
     .. note::
 
-        A better name would be *Image*, but to prevent collisions
-        with ``PIL.Image``, it has been decided to use another name.
+        A better name would have been *Image*, but to prevent collisions
+        with ``PIL.Image``, it has been decided to use *ScreenShot*.
 
     .. classmethod:: from_size(cls, data, width, height) -> ScreenShot
 
@@ -93,70 +93,78 @@ Properties
 
     .. attribute:: monitors
 
-        :type:  List[Dict[str, int]]
         Positions of all monitors.
         If the monitor has rotation, you have to deal with it
         inside this method.
 
         This method has to fill ``self._monitors`` with all informations
         and use it as a cache:
-            ``self._monitors[0]`` is a dict of all monitors together
-            ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
+
+        - ``self._monitors[0]`` is a dict of all monitors together
+        - ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
 
         Each monitor is a dict with:
-        {
-            'left':   the x-coordinate of the upper-left corner,
-            'top':    the y-coordinate of the upper-left corner,
-            'width':  the width,
-            'height': the height
-        }
+
+        - ``left``: the x-coordinate of the upper-left corner
+        - ``top``: the y-coordinate of the upper-left corner
+        - ``width``: the width
+        - ``height``: the height
+
+        :type:  List[Dict[str, int]]
 
 .. class:: ScreenShot
 
     .. attribute:: __array_interface__()
 
-        :type: dict[str, Any]
         Numpy array interface support. It uses raw data in BGRA form.
+
+        :type: Dict[str, Any]
 
     .. attribute:: pos
 
-        :type: NamedTuple
         The screen shot's coodinates.
+
+        :type: NamedTuple
 
     .. attribute:: top
 
-        :type: int
         The screen shot's top coodinate.
+
+        :type: int
 
     .. attribute:: left
 
-        :type: int
         The screen shot's left coodinate.
+        :type: int
 
     .. attribute:: size
 
-        :type: NamedTuple
         The screen shot's size.
+
+        :type: NamedTuple
 
     .. attribute:: width
 
-        :type: int
         The screen shot's width.
+
+        :type: int
 
     .. attribute:: height
 
-        :type: int
         The screen shot's height.
+
+        :type: int
 
     .. attribute:: pixels
 
-        :type: List[Tuple[int, int, int]]
         List of RGB tuples.
+
+        :type: List[Tuple[int, int, int]]
 
     .. attribute:: rgb
 
+        Computed RGB values from the BGRA raw pixels.
         :type: bytes
-        Compute RGB values from the BGRA raw pixels.
 
 
 Exception

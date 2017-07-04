@@ -128,8 +128,8 @@ class ScreenShot(object):
 
     .. note::
 
-        A better name would be "Image", but to prevent collisions
-        with PIL.Image, it has been decided to use another name.
+        A better name would have  been *Image*, but to prevent collisions
+        with PIL.Image, it has been decided to use *ScreenShot*.
     """
 
     __pixels = None  # type: List[Tuple[int, int, int]]
@@ -158,7 +158,7 @@ class ScreenShot(object):
 
     @property
     def __array_interface__(self):
-        # type: () -> dict[str, Any]
+        # type: () -> Dict[str, Any]
         """
         Numpy array interface support.
         It uses raw data in BGRA form.
