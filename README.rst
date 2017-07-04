@@ -12,7 +12,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
 - integrate well with Numpy and OpenCV;
 - it could be easily embedded into games and other softwares which require fast and plateforme optimized methods to grab screenshots;
 - get the `source code on GitHub <https://github.com/BoboTiG/python-mss>`_;
-- learn with a `buch of examples <https://github.com/BoboTiG/python-mss/tree/master/examples>`_;
+- learn with a `bunch of examples <https://github.com/BoboTiG/python-mss/tree/master/examples>`_;
 - you can `report a bug <https://github.com/BoboTiG/python-mss/issues>`_;
 - and there is a `complete, and beautiful, documentation <https://python-mss.readthedocs.io>`_ :)
 - **MSS** stands for Multiple ScreenShots;
