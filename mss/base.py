@@ -221,8 +221,8 @@ class ScreenShot(object):
         """
         Returns the pixel value at a given position.
 
-        : param int coord_x: The x coordinate.
-        : param int coord_y: The y coordinate.
+        :param int coord_x: The x coordinate.
+        :param int coord_y: The y coordinate.
         :return tuple: The pixel value as (R, G, B).
         """
 

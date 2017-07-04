@@ -73,8 +73,8 @@ Methods
 
     .. method:: pixels(coord_x, coord_y) -> Tuple[int, int, int]
 
-        : param int coord_x: The x coordinate.
-        : param int coord_y: The y coordinate.
+        :param int coord_x: The x coordinate.
+        :param int coord_y: The y coordinate.
         :rtype: Tuple[int, int, int]
 
         Get the pixel value at the given position.
