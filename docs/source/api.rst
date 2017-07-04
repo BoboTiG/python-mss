@@ -21,6 +21,7 @@ GNU/Linux
     .. method:: grab(monitor) -> ScreenShot
 
         :exception ScreenShotError: When color depth is not 32 (rare).
+        :rtype: ScreenShot
 
         See :attr:`mss.base.MSSBase.grab` for details.
 
@@ -38,6 +39,7 @@ Methods
 
         :param dict monitor: monitor's informations.
         :exception NotImplementedError: Subclasses need to implement this.
+        :rtype: ScreenShot
 
         Retrieve screen pixels for a given monitor.
 
@@ -46,6 +48,7 @@ Methods
         :param int mon: the monitor's number.
         :param str output: the output's file name. ``%d``, if present, will be replaced by the monitor number.
         :param callable callback: callback called before saving the screenshot to a file. Takes the ``output`` argument as parameter.
+        :rtype: generator
 
         Grab a screenshot and save it to a file. This is a generator which returns created files.
 
@@ -64,13 +67,15 @@ Methods
                                OS independent implementations.
         :param int width: the monitor's width.
         :param int height: the monitor's height.
+        :rtype: ScreenShot
 
         Instanciate a new class given only screenshot's data and size.
 
     .. method:: pixels(coord_x, coord_y) -> Tuple[int, int, int]
 
-        : param coord_x int: The x coordinate.
-        : param coord_y int: The y coordinate.
+        : param int coord_x: The x coordinate.
+        : param int coord_y: The y coordinate.
+        :rtype: Tuple[int, int, int]
 
         Get the pixel value at the given position.
 
@@ -164,6 +169,7 @@ Properties
     .. attribute:: rgb
 
         Computed RGB values from the BGRA raw pixels.
+
         :type: bytes
 
 
