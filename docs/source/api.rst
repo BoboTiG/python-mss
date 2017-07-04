@@ -91,7 +91,7 @@ Properties
 
 .. class:: MSSBase
 
-    .. property:: monitors
+    .. attribute:: monitors
 
         :type:  List[Dict[str, int]]
         Positions of all monitors.
@@ -113,47 +113,47 @@ Properties
 
 .. class:: ScreenShot
 
-    .. property:: __array_interface__()
+    .. attribute:: __array_interface__()
 
         :type: dict[str, Any]
         Numpy array interface support. It uses raw data in BGRA form.
 
-    .. property:: pos
+    .. attribute:: pos
 
         :type: NamedTuple
         The screen shot's coodinates.
 
-    .. property:: top
+    .. attribute:: top
 
         :type: int
         The screen shot's top coodinate.
 
-    .. property:: left
+    .. attribute:: left
 
         :type: int
         The screen shot's left coodinate.
 
-    .. property:: size
+    .. attribute:: size
 
         :type: NamedTuple
         The screen shot's size.
 
-    .. property:: width
+    .. attribute:: width
 
         :type: int
         The screen shot's width.
 
-    .. property:: height
+    .. attribute:: height
 
         :type: int
         The screen shot's height.
 
-    .. property:: pixels
+    .. attribute:: pixels
 
         :type: List[Tuple[int, int, int]]
         List of RGB tuples.
 
-    .. property:: rgb
+    .. attribute:: rgb
 
         :type: bytes
         Compute RGB values from the BGRA raw pixels.
