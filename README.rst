@@ -5,6 +5,8 @@ Python MSS
     :target: https://travis-ci.org/BoboTiG/python-mss
 
 
+.. code-block:: python
+
     from mss import mss
 
 

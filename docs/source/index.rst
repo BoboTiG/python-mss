@@ -1,6 +1,7 @@
 Welcome to Python MSS's documentation!
 ======================================
 
+.. code-block:: python
 
     from mss import mss
 
