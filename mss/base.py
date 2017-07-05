@@ -68,25 +68,25 @@ class MSSBase(object):
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self, mon=0, output='monitor-%d.png', callback=None):
+    def save(self, mon=1, output='screenshot.png', callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]
         """
         Grab a screenshot and save it to a file.
 
-        mon (integer, default: 0)
-            -1: grab one screenshot of all monitors
-             0: grab one screenshot by monitor
-             N: grab the screenshot of the monitor N
+        :param int mon: The monitor to screenshot (default=1).
+                        -1: grab one screenshot of all monitors
+                         0: grab one screenshot by monitor
+                        N: grab the screenshot of the monitor N
 
-        output (string, default: monitor-%d.png)
-            The output filename.
-            %d, if present, will be replaced by the monitor number.
+        :param str output: The output filename.
+                           %d, if present, will be replaced by
+                           the monitor number.
 
-        callback (method)
-            Callback called before saving the screenshot to a file.
-            Take the 'output' argument as parameter.
+        :param callable callback: Callback called before saving
+                                  the screenshot to a file.
+                                  Take the ``output`` argument as parameter.
 
-        This is a generator which returns created files.
+        :return generator: Created file(s).
         """
 
         monitors = self.monitors
@@ -120,6 +120,14 @@ class MSSBase(object):
             sct = self.grab(monitor)
             to_png(sct.rgb, sct.size, output)
             yield output
+
+    def shot(self, *args, **kwargs):
+        """
+        Helper to save the screenshot of the first monitor, by default.
+        You can pass the same arguments as for ``save``.
+        """
+
+        return next(self.save(*args, **kwargs))
 
 
 class ScreenShot(object):

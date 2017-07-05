@@ -2,7 +2,10 @@ History:
 
 <see Git checkin messages for history>
 
-3.0.0  2017/07/04
+dev    2017/xx/xx
+
+
+3.0.0  2017/07/05
       - big refactor, introduce ScreenShot class
       - add Numpy array interface support
       - tests: add FPS benchmark to compare to PIL.ImageGrab

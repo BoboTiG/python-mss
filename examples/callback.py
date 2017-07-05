@@ -30,18 +30,17 @@ def main():
             # sct.max_displays = 32  # macOS only
 
             print('One screenshot per monitor')
-            for filename in sct.save():
+            for filename in sct.save(mon=0, output='monitor-%d.png'):
                 print(filename)
 
             print("\nScreenshot of the monitor 1")
-            print(next(sct.save(mon=1, output='monitor-%d.png')))
+            print(sct.save())
 
             print("\nA screenshot to grab them all")
-            print(next(sct.save(mon=-1, output='fullscreen.png')))
+            print(sct.save(mon=-1, output='fullscreen.png'))
 
             print("\nScreenshot of the monitor 1, with callback")
-            print(next(sct.save(mon=1, output='mon-%d.png',
-                                callback=on_exists)))
+            print(sct.save(output='mon-%d.png', callback=on_exists))
 
             return 0
     except mss.exception.ScreenShotError as ex:

@@ -4,6 +4,15 @@ Python MSS
 .. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=dev
     :target: https://travis-ci.org/BoboTiG/python-mss
 
+
+    from mss import mss
+
+
+    # The simplest use, save a screenshot of the 1st monitor
+    with mss() as sct:
+        sct.shot()
+
+
 An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
 
 - **Python 2 & 3** and PEP8 compliant, no dependency;

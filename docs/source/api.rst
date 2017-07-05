@@ -43,14 +43,21 @@ Methods
 
         Retrieve screen pixels for a given monitor.
 
-    .. method:: save(mon=0, output='monitor-%d.png', callback=None) -> generator
+    .. method:: save(mon=1, output='screenshot.png', callback=None) -> generator
 
         :param int mon: the monitor's number.
         :param str output: the output's file name. ``%d``, if present, will be replaced by the monitor number.
         :param callable callback: callback called before saving the screenshot to a file. Takes the ``output`` argument as parameter.
-        :rtype: generator
+        :return generator: Created file(s).
 
-        Grab a screenshot and save it to a file. This is a generator which returns created files.
+        Grab a screenshot and save it to a file.
+
+    .. method:: shot() -> str
+
+        :return str: The created file.
+
+        Helper to save the screenshot of the first monitor, by default.
+        You can pass the same arguments as for ``save``.
 
 .. class:: ScreenShot
 
