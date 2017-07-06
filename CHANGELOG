@@ -4,6 +4,8 @@ History:
 
 dev    2017/xx/xx
 
+3.0.1 2017/07/06
+      - fix examples links
 
 3.0.0  2017/07/06
       - big refactor, introducing the ScreenShot class
