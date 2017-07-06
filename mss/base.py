@@ -68,12 +68,12 @@ class MSSBase(object):
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self, mon=1, output='screenshot.png', callback=None):
+    def save(self, mon=0, output='monitor-%d.png', callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]
         """
         Grab a screenshot and save it to a file.
 
-        :param int mon: The monitor to screenshot (default=1).
+        :param int mon: The monitor to screenshot (default=0).
                         -1: grab one screenshot of all monitors
                          0: grab one screenshot by monitor
                         N: grab the screenshot of the monitor N
@@ -121,13 +121,14 @@ class MSSBase(object):
             to_png(sct.rgb, sct.size, output)
             yield output
 
-    def shot(self, *args, **kwargs):
+    def shot(self, **kwargs):
         """
-        Helper to save the screenshot of the first monitor, by default.
+        Helper to save the screenshot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
         """
 
-        return next(self.save(*args, **kwargs))
+        kwargs['mon'] = kwargs.get('mon', 1)
+        return next(self.save(**kwargs))
 
 
 class ScreenShot(object):

@@ -1,4 +1,4 @@
-3.0.0 (2017-07-05)
+3.0.0 (2017-07-06)
 ==================
 
 base.py
@@ -7,7 +7,6 @@ base.py
 - Add `shot()` method to `MSSBase`. It takes the same arguments as the `save()` method.
 - Renamed `get_pixels` to `grab`. It now returns a `ScreenShot` object.
 - Moved `to_png` method to `tools.py`. It is now a simple function.
-- Changed `mon` default value of the `save()` method from `0` to `1`.
 - Removed `enum_display_monitors()` method. Use `monitors` property instead.
 - Removed `monitors` attribute. Use `monitors` property instead.
 - Removed `width` attribute. Use `ScreenShot.size[0]` attribute or `ScreenShot.width` property instead.
@@ -25,5 +24,4 @@ exception.py
 
 tools.py
 --------
-
 - Changed signature of `to_png(data, monitor, output)` to `to_png(data, size, output)` where `size` is a `tuple(width, height)`

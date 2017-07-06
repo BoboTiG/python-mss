@@ -1,5 +1,8 @@
 # coding: utf-8
 """
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+
 Simple naive benchmark to compare with:
     https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/
 """
@@ -9,6 +12,7 @@ from __future__ import print_function
 import time
 
 import cv2
+import mss
 import numpy
 
 
@@ -38,14 +42,12 @@ def screen_record():
 
 
 def screen_record_efficient():
-    from mss import mss
-
     # 800x600 windowed mode
     mon = {'top': 40, 'left': 0, 'width': 800, 'height': 640}
 
     title = '[MSS] FPS benchmark'
     fps = 0
-    sct = mss()
+    sct = mss.mss()
     last_time = time.time()
 
     while time.time() - last_time < 1:
@@ -60,5 +62,5 @@ def screen_record_efficient():
     return fps
 
 
-print('ImageGrab:', screen_record())
-print('MSS      :', screen_record_efficient())
+print('PIL:', screen_record())
+print('MSS:', screen_record_efficient())
