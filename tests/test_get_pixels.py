@@ -1,26 +1,34 @@
 # coding: utf-8
 
+import pytest
 
-def test_get_pixels(sct):
-    mon1 = sct.enum_display_monitors()[1]
-    pixels = sct.get_pixels(mon1)
-    assert pixels is sct.image
-    assert isinstance(sct.image, bytes)
+from mss.base import ScreenShot
+from mss.exception import ScreenShotError
 
 
-def test_get_pixels_part_of_screen_no_strides(sct):
-    mon = {'top': 160, 'left': 160, 'width': 160, 'height': 160}
-    pixels = sct.get_pixels(mon)
-    assert pixels is sct.image
-    assert isinstance(sct.image, bytes)
-    assert sct.width == 160
-    assert sct.height == 160
+def test_grab_monitor(sct):
+    mon1 = sct.monitors[1]
+    image = sct.grab(mon1)
+    assert isinstance(image, ScreenShot)
+    assert isinstance(image.raw, bytearray)
+    assert isinstance(image.rgb, bytes)
 
 
-def test_get_pixels_part_of_screen_strides(sct):
-    mon = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
-    pixels = sct.get_pixels(mon)
-    assert pixels is sct.image
-    assert isinstance(sct.image, bytes)
-    assert sct.width == 222
-    assert sct.height == 42
+def test_grab_part_of_screen(sct):
+    monitor = {'top': 160, 'left': 160, 'width': 160, 'height': 160}
+    image = sct.grab(monitor)
+    assert isinstance(image, ScreenShot)
+    assert isinstance(image.raw, bytearray)
+    assert isinstance(image.rgb, bytes)
+    assert image.top == 160
+    assert image.left == 160
+    assert image.width == 160
+    assert image.height == 160
+
+
+def test_grab_individual_pixels(sct):
+    monitor = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
+    image = sct.grab(monitor)
+    assert isinstance(image.pixel(0, 0), tuple)
+    with pytest.raises(ScreenShotError):
+        image.pixel(image.width + 1, 12)

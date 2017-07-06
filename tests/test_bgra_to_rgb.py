@@ -2,23 +2,17 @@
 
 import pytest
 
+from mss.base import ScreenShot
 
-def test_bad_length(sct):
-    sct.width = 1024
-    sct.height = 768
+
+def test_bad_length():
+    data = bytearray(b'789c626001000000ffff030000060005')
+    image = ScreenShot.from_size(data, 1024, 768)
     with pytest.raises(ValueError):
-        sct.bgra_to_rgb(bytearray(b'789c626001000000ffff030000060005'))
+        image.rgb
 
 
-def test_good_bytes(sct, raw):
-    sct.width = 1024
-    sct.height = 768
-    image = sct.bgra_to_rgb(raw)
-    assert isinstance(image, bytes)
-
-
-def test_good_bytearray(sct, raw):
-    sct.width = 1024
-    sct.height = 768
-    image = sct.bgra_to_rgb(bytearray(raw))
-    assert isinstance(image, bytes)
+def test_good_types(raw):
+    image = ScreenShot.from_size(bytearray(raw), 1024, 768)
+    assert isinstance(image.raw, bytearray)
+    assert isinstance(image.rgb, bytes)

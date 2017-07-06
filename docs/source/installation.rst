@@ -9,7 +9,7 @@ Recommended way
 
 Quite simple::
 
-    $ pip install mss
+    $ pip install --upgrade mss
 
 
 From sources

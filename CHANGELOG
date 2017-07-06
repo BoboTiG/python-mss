@@ -2,6 +2,14 @@ History:
 
 <see Git checkin messages for history>
 
+dev    2017/xx/xx
+
+
+3.0.0  2017/07/06
+      - big refactor, introducing the ScreenShot class
+      - add Numpy array interface support
+      - examples: add OpenCV/Numpy, PIL pixels, FPS
+
 2.0.22  2017/04/29
       - new contributors: David Becker, redodo
       - add an example to capture only a part of the screen
