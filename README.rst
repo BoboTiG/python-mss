@@ -1,6 +1,8 @@
 Python MSS
 ==========
 
+.. image:: https://img.shields.io/badge/say-thanks-ff69b4.svg
+    :target: https://saythanks.io/to/BoboTiG
 .. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=dev
     :target: https://travis-ci.org/BoboTiG/python-mss
 
