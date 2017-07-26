@@ -10,5 +10,5 @@ from mss.linux import MSS
 
 
 with MSS(display=':0.0') as sct:
-    for filename in sct.save(output=output):
+    for filename in sct.save():
         print(filename)

@@ -16,11 +16,8 @@ with mss.mss() as sct:
         # Get raw pixels from the screen
         sct_img = sct.grab(monitor)
 
-        # Create the Image, solution 1 (slower)
-        # img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
-
-        # Create the Image, solution 2
-        img = Image.frombytes('RGB', sct_img.size, sct_img.rgb, 'raw')
+        # Create the Image
+        img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
 
         # And save it!
         output = 'monitor-{0}.png'.format(num)

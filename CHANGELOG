@@ -3,8 +3,8 @@ History:
 <see Git checkin messages for history>
 
 dev     2017/xx/xx
-      - doc: fix PIL example (fix #22)
       - add the 'Say Thanks' button
+      - doc: several fixes (fix #22)
 
 3.0.1   2017/07/06
       - fix examples links
