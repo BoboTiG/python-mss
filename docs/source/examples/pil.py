@@ -17,12 +17,10 @@ with mss.mss() as sct:
         sct_img = sct.grab(monitor)
 
         # Create the Image, solution 1 (slower)
-        # img = Image.frombytes('RGB', sct_img.size, sct_img.content)
+        # img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
 
         # Create the Image, solution 2
-        img = Image.frombytes('RGBA', sct_img.size, bytes(sct_img.raw), 'raw', 'BGRA')
-        img = img.convert('RGB')  # Convert to RGB
-        # img = img.convert('L')  # Or to grayscale
+        img = Image.frombytes('RGB', sct_img.size, sct_img.rgb, 'raw')
 
         # And save it!
         output = 'monitor-{0}.png'.format(num)

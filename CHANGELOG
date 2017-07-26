@@ -2,12 +2,14 @@ History:
 
 <see Git checkin messages for history>
 
-dev    2017/xx/xx
+dev     2017/xx/xx
+      - doc: fix PIL example (fix #22)
+      - add the 'Say Thanks' button
 
-3.0.1 2017/07/06
+3.0.1   2017/07/06
       - fix examples links
 
-3.0.0  2017/07/06
+3.0.0   2017/07/06
       - big refactor, introducing the ScreenShot class
       - add Numpy array interface support
       - examples: add OpenCV/Numpy, PIL pixels, FPS
