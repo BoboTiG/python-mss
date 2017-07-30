@@ -26,6 +26,18 @@ def test_grab_part_of_screen(sct):
     assert image.height == 160
 
 
+def test_grab_part_of_screen_rounded(sct):
+    monitor = {'top': 160, 'left': 160, 'width': 161, 'height': 159}
+    image = sct.grab(monitor)
+    assert isinstance(image, ScreenShot)
+    assert isinstance(image.raw, bytearray)
+    assert isinstance(image.rgb, bytes)
+    assert image.top == 160
+    assert image.left == 160
+    assert image.width == 161
+    assert image.height == 159
+
+
 def test_grab_individual_pixels(sct):
     monitor = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
     image = sct.grab(monitor)

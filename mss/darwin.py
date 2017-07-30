@@ -1,9 +1,12 @@
 # coding: utf-8
-""" This is part of the MSS Python's module.
-    Source: https://github.com/BoboTiG/python-mss
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
 """
 
 # pylint: disable=import-error
+
+from __future__ import division
 
 import ctypes
 import ctypes.util
@@ -153,12 +156,13 @@ class MSS(MSSBase):
         """
         See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
 
-        When the monitor width is not divisible by 16, extra padding is
-        added by macOS in the form of black pixels, which results
-        in a screenshot with shifted pixels.
+        When the monitor width is not divisible by 16, its width is reduced
+        to the previous number divisible by 16.  So we need to add extra
+        black pixels.
         """
 
-        rounded_width = math.ceil(monitor['width'] / 16) * 16
+        rounded_width = int(math.ceil(monitor['width'] // 16) * 16)
+
         rect = CGRect((monitor['left'], monitor['top']),
                       (rounded_width, monitor['height']))
 
@@ -177,8 +181,28 @@ class MSS(MSSBase):
         data = data.contents
         self.core.CGDataProviderRelease(prov)
 
-        # The width is rounded to 16, so we can have resulting images with a
-        # lesser width than requested.
-        monitor['width'], monitor['height'] = width, height
+        if rounded_width != monitor['width']:
+            data = self.resize(data, monitor)
+
+        if len(data) != monitor['width'] * monitor['height'] * 4:
+            del data
+            raise ScreenShotError('Data length mismatch.', locals())
 
         return ScreenShot(data, monitor)
+
+    @staticmethod
+    def resize(data, monitor):
+        # type: (bytearray, Dict[str, int]) -> bytearray
+        """ Extend a 16 width-rounded screenshot to its original width. """
+
+        rounded_width = int(math.ceil(monitor['width'] // 16) * 16)
+        cropped = bytearray()
+
+        for row in range(monitor['height']):
+            start = row * rounded_width * 4
+            end = start + monitor['width'] * 4
+            cropped.extend(data[start:end])
+
+        cropped.extend(b'\00' * (monitor['width'] - rounded_width) * 4)
+
+        return cropped

@@ -1,14 +1,7 @@
 # coding: utf-8
 """
-mss.base
-~~~~~~~~
-
-This module contains the basic classes that power MSS.
-
-.. note::
-
-    The :class:`MSSBase <MSSBase>` class must be the parent class
-    for every OS speicific implementation.
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
 """
 
 import collections

@@ -1,6 +1,7 @@
 # coding: utf-8
-""" This is part of the MSS Python's module.
-    Source: https://github.com/BoboTiG/python-mss
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
 """
 
 import ctypes
@@ -158,6 +159,7 @@ class MSS(MSSBase):
             bits = ctypes.windll.gdi32.GetDIBits(
                 memdc, bmp, 0, monitor['height'], data, bmi, 0)
             if bits != monitor['height']:
+                del data
                 raise ScreenShotError('gdi32.GetDIBits() failed.', locals())
         finally:
             # Clean up
