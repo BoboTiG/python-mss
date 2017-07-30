@@ -13,7 +13,7 @@ import ctypes.util
 import math
 import sys
 
-from .base import MSSBase, ScreenShot
+from .base import MSSBase
 from .exception import ScreenShotError
 
 __all__ = ['MSS']
@@ -87,8 +87,6 @@ class MSS(MSSBase):
             ctypes.c_uint32,
             ctypes.c_uint32,
             ctypes.c_uint32]
-        self.core.CGImageGetWidth.argtypes = [ctypes.c_void_p]
-        self.core.CGImageGetHeight.argtypes = [ctypes.c_void_p]
         self.core.CGImageGetDataProvider.argtypes = [ctypes.c_void_p]
         self.core.CGDataProviderCopyData.argtypes = [ctypes.c_void_p]
         self.core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
@@ -104,8 +102,6 @@ class MSS(MSSBase):
         self.core.CGRectStandardize.restype = CGRect
         self.core.CGDisplayRotation.restype = ctypes.c_float
         self.core.CGWindowListCreateImage.restype = ctypes.c_void_p
-        self.core.CGImageGetWidth.restype = ctypes.c_uint32
-        self.core.CGImageGetHeight.restype = ctypes.c_uint32
         self.core.CGImageGetDataProvider.restype = ctypes.c_void_p
         self.core.CGDataProviderCopyData.restype = ctypes.c_void_p
         self.core.CFDataGetBytePtr.restype = ctypes.c_void_p
@@ -171,8 +167,6 @@ class MSS(MSSBase):
             raise ScreenShotError(
                 'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
-        width = int(self.core.CGImageGetWidth(image_ref))
-        height = int(self.core.CGImageGetHeight(image_ref))
         prov = self.core.CGImageGetDataProvider(image_ref)
         data = self.core.CGDataProviderCopyData(prov)
         data_ref = self.core.CFDataGetBytePtr(data)
@@ -188,7 +182,7 @@ class MSS(MSSBase):
             del data
             raise ScreenShotError('Data length mismatch.', locals())
 
-        return ScreenShot(data, monitor)
+        return self.cls_image(data, monitor)
 
     @staticmethod
     def resize(data, monitor):

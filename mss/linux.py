@@ -8,7 +8,7 @@ import ctypes
 import ctypes.util
 import os
 
-from .base import MSSBase, ScreenShot
+from .base import MSSBase
 from .exception import ScreenShotError
 
 __all__ = ['MSS']
@@ -294,4 +294,4 @@ class MSS(MSSBase):
         self.xlib.XDestroyImage(ximage)
         ximage = None
 
-        return ScreenShot(data, monitor)
+        return self.cls_image(data, monitor)

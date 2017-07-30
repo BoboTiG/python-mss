@@ -7,7 +7,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.wintypes
 
-from .base import MSSBase, ScreenShot
+from .base import MSSBase
 from .exception import ScreenShotError
 
 __all__ = ['MSS']
@@ -170,7 +170,7 @@ class MSS(MSSBase):
             if bmp:
                 ctypes.windll.gdi32.DeleteObject(bmp)
 
-        return ScreenShot(data, monitor)
+        return self.cls_image(data, monitor)
 
 
 def set_argtypes(callback):

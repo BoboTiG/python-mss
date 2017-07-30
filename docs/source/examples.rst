@@ -44,6 +44,14 @@ You can capture only a part of the screen:
 .. literalinclude:: examples/part_of_screen.py
     :lines: 9-
 
+Advanced
+========
+
+You can handle data using a custom class:
+
+.. literalinclude:: examples/custom_cls_image.py
+    :lines: 9-
+
 PIL
 ===
 

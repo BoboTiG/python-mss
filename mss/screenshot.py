@@ -1,0 +1,136 @@
+# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
+
+import collections
+
+from .exception import ScreenShotError
+
+
+class ScreenShot(object):
+    """
+    Screen shot object.
+
+    .. note::
+
+        A better name would have  been *Image*, but to prevent collisions
+        with PIL.Image, it has been decided to use *ScreenShot*.
+    """
+
+    __pixels = None  # type: List[Tuple[int, int, int]]
+    __rgb = None  # type: bytes
+
+    def __init__(self, data, monitor):
+        # type: (bytearray, Dict[str, int]) -> None
+        #: Bytearray of the raw BGRA pixels retrieved by ctype
+        #: OS independent implementations.
+        self.raw = bytearray(data)  # type: bytearray
+
+        #: NamedTuple of the screen shot coordinates.
+        self.pos = collections.namedtuple('pos', 'left, top')(
+            monitor['left'], monitor['top'])  # type: Any
+
+        #: NamedTuple of the screen shot size.
+        self.size = collections.namedtuple('size', 'width, height')(
+            monitor['width'], monitor['height'])  # type: Any
+
+    def __repr__(self):
+        # type: () -> str
+        return ('<{!s}'
+                ' pos={cls.left},{cls.top}'
+                ' size={cls.width}x{cls.height}'
+                '>').format(type(self).__name__, cls=self)
+
+    @property
+    def __array_interface__(self):
+        # type: () -> Dict[str, Any]
+        """
+        Numpy array interface support.
+        It uses raw data in BGRA form.
+
+        See https://docs.scipy.org/doc/numpy/reference/arrays.interface.html
+        """
+
+        return dict(version=3,
+                    shape=(self.height, self.width, 4),
+                    typestr='|u1',
+                    data=self.raw)
+
+    @classmethod
+    def from_size(cls, data, width, height):
+        # type: (bytearray, int, int) -> ScreenShot
+        """ Instanciate a new class given only screenshot's data and size. """
+
+        monitor = {'left': 0, 'top': 0, 'width': width, 'height': height}
+        return cls(data, monitor)
+
+    @property
+    def top(self):
+        # type: () -> int
+        """ Conveniant accessor to the top position. """
+        return self.pos.top
+
+    @property
+    def left(self):
+        # type: () -> int
+        """ Conveniant accessor to the left position. """
+        return self.pos.left
+
+    @property
+    def width(self):
+        # type: () -> int
+        """ Conveniant accessor to the width size. """
+        return self.size.width
+
+    @property
+    def height(self):
+        # type: () -> int
+        """ Conveniant accessor to the height size. """
+        return self.size.height
+
+    @property
+    def pixels(self):
+        # type: () -> List[Tuple[int, int, int]]
+        """
+        :return list: RGB tuples.
+        """
+
+        if not self.__pixels:
+            rgb_tuples = zip(self.raw[2::4], self.raw[1::4], self.raw[0::4])
+            self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
+
+        return self.__pixels
+
+    def pixel(self, coord_x, coord_y):
+        # type: (int, int) -> Tuple[int, int, int]
+        """
+        Returns the pixel value at a given position.
+
+        :param int coord_x: The x coordinate.
+        :param int coord_y: The y coordinate.
+        :return tuple: The pixel value as (R, G, B).
+        """
+
+        try:
+            return self.pixels[coord_y][coord_x]
+        except IndexError:
+            raise ScreenShotError('Pixel location out of range.', locals())
+
+    @property
+    def rgb(self):
+        # type: () -> bytes
+        """
+        Compute RGB values from the BGRA raw pixels.
+
+        :return bytes: RGB pixels.
+        """
+
+        if not self.__rgb:
+            self.__rgb = bytearray(self.height * self.width * 3)
+            self.__rgb[0::3], self.__rgb[1::3], self.__rgb[2::3] = \
+                self.raw[2::4], self.raw[1::4], self.raw[0::4]
+            self.__rgb = bytes(self.__rgb)
+
+        return self.__rgb
