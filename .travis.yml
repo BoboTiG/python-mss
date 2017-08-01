@@ -17,7 +17,7 @@ before_install:
   - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/res/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
 
 install:
-  - pip install flake8 pylint
+  - pip install flake8 numpy pylint
   - python setup.py install
 
 script:

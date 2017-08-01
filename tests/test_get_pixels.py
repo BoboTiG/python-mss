@@ -7,11 +7,11 @@ from mss.exception import ScreenShotError
 
 
 def test_grab_monitor(sct):
-    mon1 = sct.monitors[1]
-    image = sct.grab(mon1)
-    assert isinstance(image, ScreenShot)
-    assert isinstance(image.raw, bytearray)
-    assert isinstance(image.rgb, bytes)
+    for mon in sct.monitors:
+        image = sct.grab(mon)
+        assert isinstance(image, ScreenShot)
+        assert isinstance(image.raw, bytearray)
+        assert isinstance(image.rgb, bytes)
 
 
 def test_grab_part_of_screen(sct):

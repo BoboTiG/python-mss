@@ -149,6 +149,7 @@ class MSS(MSSBase):
         self._set_argtypes()
         self._set_restypes()
 
+        # TODO: check if `display` is openable, else SEGFAULT
         self.display = self.xlib.XOpenDisplay(display)
         try:
             self.display.contents
