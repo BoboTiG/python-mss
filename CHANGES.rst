@@ -1,5 +1,9 @@
-3.1.0 (2017-xx-xx)
+3.1.0 (2017-08-xx)
 ==================
+
+base.py
+-------
+- Moved `ScreenShot` class to screenshot.py
 
 darwin.py
 ---------

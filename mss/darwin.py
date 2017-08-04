@@ -208,6 +208,7 @@ class MSS(MSSBase):
             end = start + monitor['width'] * 4
             cropped.extend(data[start:end])
 
-        cropped.extend(b'\00' * (monitor['width'] - rounded_width) * 4)
+        if len(cropped) < monitor['width'] * monitor['width'] * 4:
+            cropped.extend(b'\00' * (monitor['width'] - rounded_width) * 4)
 
         return cropped
