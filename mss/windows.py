@@ -4,6 +4,8 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+from __future__ import division
+
 import ctypes
 import ctypes.wintypes
 
@@ -41,6 +43,8 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
+    __scale_factor = None  # type: float
+
     def __init__(self):
         # type: () -> None
         """ Windows initialisations. """
@@ -56,6 +60,32 @@ class MSS(MSSBase):
         set_restypes()
 
     @property
+    def scale_factor(self):
+        """ Compute the scale factor. """
+
+        if not self.__scale_factor:
+            display = None
+            try:
+                display = ctypes.windll.user32.GetWindowDC(0)
+                width = ctypes.windll.gdi32.GetDeviceCaps(display, 8)
+                width_orig = ctypes.windll.gdi32.GetDeviceCaps(display, 118)
+                scale = (100 + 100 - width * 100 // width_orig) / 100
+                self.__scale_factor = round(scale * 4) / 4
+            finally:
+                if display:
+                    ctypes.windll.gdi32.DeleteObject(display)
+
+        return self.__scale_factor
+
+    def scale(self, value):
+        # type: (float) -> int
+        """ Compute a monitor value at scale, rounded to 2. """
+
+        if self.scale_factor == 1.0:
+            return int(value)
+        return int(value * self.scale_factor * 2 + 0.5) // 2
+
+    @property
     def monitors(self):
         # type: () -> List[Dict[str, int]]
         """ Get positions of monitors (see parent class). """
@@ -69,10 +99,11 @@ class MSS(MSSBase):
             top = ctypes.windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = ctypes.windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
             self._monitors.append({
-                'left': int(left),
-                'top': int(top),
-                'width': int(right - left),
-                'height': int(bottom - top),
+                'left': self.scale(left),
+                'top': self.scale(top),
+                'width': self.scale(right - left),
+                'height': self.scale(bottom - top),
+                'scale': self.scale_factor,
             })
 
             # Each monitors
@@ -86,10 +117,11 @@ class MSS(MSSBase):
                 del monitor, data, dc_
                 rct = rect.contents
                 self._monitors.append({
-                    'left': int(rct.left),
-                    'top': int(rct.top),
-                    'width': int(rct.right - rct.left),
-                    'height': int(rct.bottom - rct.top),
+                    'left': self.scale(rct.left),
+                    'top': self.scale(rct.top),
+                    'width': self.scale(rct.right - rct.left),
+                    'height': self.scale(rct.bottom - rct.top),
+                    'scale': self.scale_factor,
                 })
                 return 1
 
@@ -145,6 +177,7 @@ class MSS(MSSBase):
             buf_len = monitor['width'] * monitor['height'] * 4  # See [2]
             data = ctypes.create_string_buffer(buf_len)
             srcdc = ctypes.windll.user32.GetWindowDC(0)
+
             memdc = ctypes.windll.gdi32.CreateCompatibleDC(srcdc)
             bmp = ctypes.windll.gdi32.CreateCompatibleBitmap(
                 srcdc, monitor['width'], monitor['height'])
@@ -184,6 +217,8 @@ def set_argtypes(callback):
         callback,
         ctypes.wintypes.LPARAM]
     ctypes.windll.user32.GetWindowDC.argtypes = [ctypes.wintypes.HWND]
+    ctypes.windll.gdi32.GetDeviceCaps.argtypes = [ctypes.wintypes.HWND,
+                                                  ctypes.wintypes.INT]
     ctypes.windll.gdi32.CreateCompatibleDC.argtypes = [ctypes.wintypes.HDC]
     ctypes.windll.gdi32.CreateCompatibleBitmap.argtypes = [
         ctypes.wintypes.HDC,
@@ -219,6 +254,7 @@ def set_restypes():
     ctypes.windll.user32.GetSystemMetrics.restype = ctypes.wintypes.INT
     ctypes.windll.user32.EnumDisplayMonitors.restype = ctypes.wintypes.BOOL
     ctypes.windll.user32.GetWindowDC.restype = ctypes.wintypes.HDC
+    ctypes.windll.gdi32.GetDeviceCaps.restype = ctypes.wintypes.INT
     ctypes.windll.gdi32.CreateCompatibleDC.restype = ctypes.wintypes.HDC
     ctypes.windll.gdi32.CreateCompatibleBitmap.restype = \
         ctypes.wintypes.HBITMAP

@@ -152,7 +152,7 @@ class MSS(MSSBase):
                 # Update AiO monitor's values
                 all_monitors = self.core.CGRectUnion(all_monitors, rect)
 
-            # Update AiO monitor's values
+            # Set the AiO monitor's values
             self._monitors[0] = {
                 'left': int(all_monitors.origin.x),
                 'top': int(all_monitors.origin.y),

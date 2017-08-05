@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 
 from __future__ import print_function
 
+from .exception import ScreenShotError
 from .factory import mss
 
 
@@ -13,12 +14,13 @@ def main():
     # type: () -> int
     """ Main logic. """
 
-    with mss() as sct:
-        for file_name in sct.save():
-            print(file_name)
-        return 0
-
-    return 1
+    try:
+        with mss() as sct:
+            for file_name in sct.save():
+                print(file_name)
+            return 0
+    except ScreenShotError:
+        return 1
 
 
 if __name__ == '__main__':

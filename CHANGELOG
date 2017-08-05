@@ -9,6 +9,7 @@ dev     2017/xx/xx
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: handle screenshot's width not divisible by 16 (fix #14, #19, #21)
       - Linux: handle bad display value
+      - Windows: Take into account zoom factor for high-DPI displays (fix #20)
 
 3.0.1   2017/07/06
       - fix examples links

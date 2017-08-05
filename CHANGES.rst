@@ -9,6 +9,11 @@ darwin.py
 ---------
 - Removed `get_infinity()` function
 
+windows.py
+----------
+- Added `scale_factor` property to `MSS` class
+- Added `scale()` method to `MSS` class
+
 
 3.0.0 (2017-07-06)
 ==================
