@@ -27,6 +27,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
 - get the `source code on GitHub <https://github.com/BoboTiG/python-mss>`_;
 - learn with a `bunch of examples <https://python-mss.readthedocs.io/en/dev/examples.html>`_;
 - you can `report a bug <https://github.com/BoboTiG/python-mss/issues>`_;
+- need some help? Use the tag *python-mss* on `StackOverflow <https://stackoverflow.com/questions/tagged/python-mss>`_;
 - and there is a `complete, and beautiful, documentation <https://python-mss.readthedocs.io>`_ :)
 - **MSS** stands for Multiple ScreenShots;
 
