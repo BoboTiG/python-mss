@@ -26,10 +26,6 @@ def test_dimensions(sct, is_travis):
     if not is_travis:
         assert mon['width'] > 0
         assert mon['height'] > 0
-
-
-def test_dimensions_travis(sct, is_travis):
-    mon = sct.monitors[1]
-    if is_travis:
+    else:
         assert mon['width'] == 1920
         assert mon['height'] == 1440

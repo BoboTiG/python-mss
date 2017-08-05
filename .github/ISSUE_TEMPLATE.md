@@ -3,6 +3,7 @@ General informations:
 * OS name: _Debian GNU/Linux_
 * OS version: __sid__
 * OS architecture: _64 bits_
+* Monitor(s)'s resolution: 
 * Result of the command `python --version`: __Python 3.5.1+__
 
 

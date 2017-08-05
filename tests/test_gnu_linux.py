@@ -49,15 +49,17 @@ def test_factory_systems(monkeypatch):
         mss.mss()
 
 
-def test_implementation(monkeypatch):
+def test_implementation(monkeypatch, is_travis):
     import mss
 
     # Bad `display` type
-    mss.mss(display=TEXT(':0'))
+    if not is_travis:
+        mss.mss(display=TEXT(':0'))
+    else:
+        mss.mss(display=TEXT(':42'))
 
-    # TODO: SEGFAULT
-    #with pytest.raises(ScreenShotError):
-    #    mss.mss(display=text('0'))
+    with pytest.raises(ScreenShotError):
+        mss.mss(display=TEXT('0'))
 
     # No `DISPLAY` in envars
     monkeypatch.delenv('DISPLAY')

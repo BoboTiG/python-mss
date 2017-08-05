@@ -32,8 +32,8 @@ class CGPoint(ctypes.Structure):
     _fields_ = [('x', cgfloat()), ('y', cgfloat())]
 
     def __repr__(self):
-        return '{0}(left={cls.x} top={cls.y})'.format(
-            type(self).__name__, cls=self)
+        return '{0}(left={1} top={2})'.format(
+            type(self).__name__, self.x, self.y)
 
 
 class CGSize(ctypes.Structure):
@@ -42,8 +42,8 @@ class CGSize(ctypes.Structure):
     _fields_ = [('width', cgfloat()), ('height', cgfloat())]
 
     def __repr__(self):
-        return '{0}(width={cls.width} height={cls.height})'.format(
-            type(self).__name__, cls=self)
+        return '{0}(width={1} height={2})'.format(
+            type(self).__name__, self.width, self.height)
 
 
 class CGRect(ctypes.Structure):
@@ -52,8 +52,8 @@ class CGRect(ctypes.Structure):
     _fields_ = [('origin', CGPoint), ('size', CGSize)]
 
     def __repr__(self):
-        return '{0}<{cls.origin} {cls.size}>'.format(
-            type(self).__name__, cls=self)
+        return '{0}<{1} {2}>'.format(
+            type(self).__name__, self.origin, self.size)
 
 
 class MSS(MSSBase):

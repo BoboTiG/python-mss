@@ -16,12 +16,15 @@ addons:
 before_install:
   - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/res/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
 
+env:
+  - DISPLAY=":42"
+
 install:
   - pip install flake8 numpy pillow pylint
-  - python setup.py install
+  - pip install -e .
 
 script:
-  - py.test --display=":42.0"
+  - py.test --showlocals --display=":42.0"
   - flake8 mss
   - pylint mss
 

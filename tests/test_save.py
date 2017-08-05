@@ -19,16 +19,15 @@ def test_files_exist(sct):
     assert os.path.isfile('fullscreen.png')
 
 
-def test_callback():
+def test_callback(sct):
 
     def on_exists(fname):
         if os.path.isfile(fname):
             new_file = fname + '.old'
             os.rename(fname, new_file)
 
-    with mss.mss() as sct:
-        filename = sct.shot(mon=0, output='mon0.png', callback=on_exists)
-        assert os.path.isfile(filename)
+    filename = sct.shot(mon=0, output='mon0.png', callback=on_exists)
+    assert os.path.isfile(filename)
 
-        filename = sct.shot(output='mon1.png', callback=on_exists)
-        assert os.path.isfile(filename)
+    filename = sct.shot(output='mon1.png', callback=on_exists)
+    assert os.path.isfile(filename)

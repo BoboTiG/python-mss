@@ -65,8 +65,8 @@ def test_repr(sct):
 
 def test_factory_basics(monkeypatch):
     # Current system
-    sct = mss.mss()
-    assert isinstance(sct, MSSBase)
+    with mss.mss() as sct:
+        assert isinstance(sct, MSSBase)
 
     # Unknown
     monkeypatch.setattr(platform, 'system', lambda: 'Chuck Norris')

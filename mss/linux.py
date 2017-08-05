@@ -136,6 +136,9 @@ class MSS(MSSBase):
         if not isinstance(display, bytes):
             display = display.encode('utf-8')
 
+        if b':' not in display:
+            raise ScreenShotError('Bad display value.', locals())
+
         x11 = ctypes.util.find_library('X11')
         if not x11:
             raise ScreenShotError('No X11 library found.', locals())
@@ -149,7 +152,6 @@ class MSS(MSSBase):
         self._set_argtypes()
         self._set_restypes()
 
-        # TODO: check if `display` is openable, else SEGFAULT
         self.display = self.xlib.XOpenDisplay(display)
         try:
             self.display.contents

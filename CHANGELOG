@@ -8,6 +8,7 @@ dev     2017/xx/xx
       - tests: a lot of tests added for better coverage
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: handle screenshot's width not divisible by 16 (fix #14, #19, #21)
+      - Linux: handle bad display value
 
 3.0.1   2017/07/06
       - fix examples links

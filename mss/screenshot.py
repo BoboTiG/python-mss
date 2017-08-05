@@ -128,9 +128,9 @@ class ScreenShot(object):
         """
 
         if not self.__rgb:
-            self.__rgb = bytearray(self.height * self.width * 3)
-            self.__rgb[0::3], self.__rgb[1::3], self.__rgb[2::3] = \
+            rgb = bytearray(self.height * self.width * 3)
+            rgb[0::3], rgb[1::3], rgb[2::3] = \
                 self.raw[2::4], self.raw[1::4], self.raw[0::4]
-            self.__rgb = bytes(self.__rgb)
+            self.__rgb = bytes(rgb)
 
         return self.__rgb
