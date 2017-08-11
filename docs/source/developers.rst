@@ -31,7 +31,7 @@ How to test?
 
 Enable the developer mode::
 
-    $ sudo python setup.py develop
+    $ python -m pip install -e .
 
 Lauch the test suit::
 

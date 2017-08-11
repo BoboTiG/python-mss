@@ -31,11 +31,13 @@ def test_factory_systems(monkeypatch):
     monkeypatch.setattr(platform, 'system', lambda: 'LINUX')
     sct = mss.mss()
     assert isinstance(sct, MSSBase)
+    monkeypatch.undo()
 
     # macOS
     monkeypatch.setattr(platform, 'system', lambda: 'Darwin')
     with pytest.raises(ScreenShotError) as exc:
         mss.mss()
+    monkeypatch.undo()
     if not PY3:
         error = exc.value[1]['self']
     else:
@@ -47,6 +49,7 @@ def test_factory_systems(monkeypatch):
     with pytest.raises(ValueError):
         # wintypes.py:19: ValueError: _type_ 'v' not supported
         mss.mss()
+    monkeypatch.undo()
 
 
 def test_implementation(monkeypatch, is_travis):

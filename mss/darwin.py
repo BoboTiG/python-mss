@@ -98,6 +98,7 @@ class MSS(MSSBase):
         self.core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
         self.core.CFDataGetLength.argtypes = [ctypes.c_void_p]
         self.core.CGDataProviderRelease.argtypes = [ctypes.c_void_p]
+        self.core.CFRelease.argtypes = [ctypes.c_void_p]
 
     def _set_restypes(self):
         # type: () -> None
@@ -114,6 +115,7 @@ class MSS(MSSBase):
         self.core.CFDataGetBytePtr.restype = ctypes.c_void_p
         self.core.CFDataGetLength.restype = ctypes.c_uint64
         self.core.CGDataProviderRelease.restype = ctypes.c_void_p
+        self.core.CFRelease.restype = ctypes.c_void_p
 
     @property
     def monitors(self):
@@ -183,12 +185,13 @@ class MSS(MSSBase):
                 'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
         prov = self.core.CGImageGetDataProvider(image_ref)
-        data = self.core.CGDataProviderCopyData(prov)
-        data_ref = self.core.CFDataGetBytePtr(data)
-        buf_len = self.core.CFDataGetLength(data)
-        data = ctypes.cast(data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
-        data = data.contents
+        copy_data = self.core.CGDataProviderCopyData(prov)
+        data_ref = self.core.CFDataGetBytePtr(copy_data)
+        buf_len = self.core.CFDataGetLength(copy_data)
+        raw = ctypes.cast(data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
+        data = bytearray(raw.contents)
         self.core.CGDataProviderRelease(prov)
+        self.core.CFRelease(copy_data)
 
         if rounded_width != monitor['width']:
             data = self.resize(data, monitor)

@@ -63,7 +63,7 @@ def test_repr(sct):
     assert repr(img) == repr(ref)
 
 
-def test_factory_basics(monkeypatch):
+def test_factory(monkeypatch):
     # Current system
     with mss.mss() as sct:
         assert isinstance(sct, MSSBase)
@@ -72,6 +72,8 @@ def test_factory_basics(monkeypatch):
     monkeypatch.setattr(platform, 'system', lambda: 'Chuck Norris')
     with pytest.raises(ScreenShotError) as exc:
         mss.mss()
+    monkeypatch.undo()
+
     if not PY3:
         error = exc.value[0]
     else:
@@ -79,6 +81,15 @@ def test_factory_basics(monkeypatch):
     assert error == 'System not (yet?) implemented.'
 
 
-def test_python_call():
-    # __import__('mss.__main__')
-    pytest.skip('Dunno how to test mss/__main__.py.')
+def test_python_call(monkeypatch):
+    import mss.__main__
+    mss.__main__.main()
+
+    def raise_():
+        raise ScreenShotError()
+
+    pytest.skip('Not working for now.')
+    monkeypatch.setattr(mss.mss, '__init__', raise_)
+    with pytest.raises(ScreenShotError):
+        mss.mss()
+    monkeypatch.undo()
