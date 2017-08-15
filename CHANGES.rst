@@ -8,6 +8,7 @@ base.py
 darwin.py
 ---------
 - Removed `get_infinity()` function
+- Removed `resize()` method. Use `_crop_width()` method instead.
 
 windows.py
 ----------

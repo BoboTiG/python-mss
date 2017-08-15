@@ -33,3 +33,17 @@ So the module can be used as simply as::
 Or::
 
     sct = mss()
+
+
+GNU/Linux
+---------
+
+On GNU/Linux, you can specify which display to use (useful for distant screenshots via SSH)::
+
+    with mss(display=':0.0') as sct:
+        # ...
+
+A more specific example to only target GNU/Linux:
+
+.. literalinclude:: examples/linux_display_keyword.py
+    :lines: 9-

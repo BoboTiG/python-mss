@@ -5,17 +5,23 @@ Examples
 Basics
 ======
 
-One screenshot per monitor::
+One screenshot per monitor
+--------------------------
+::
 
     for filename in sct.save():
         print(filename)
 
-Screenshot of the monitor 1::
+Screenshot of the monitor 1
+---------------------------
+::
 
     filename = sct.shot()
     print(filename)
 
-A screenshot to grab them all::
+A screenshot to grab them all
+-----------------------------
+::
 
     filename = sct.shot(mon=-1, output='fullscreen.png')
     print(filename)
@@ -28,13 +34,6 @@ Screenshot of the monitor 1 with a callback:
 .. literalinclude:: examples/callback.py
     :lines: 9-
 
-GNU/Linux
----------
-
-On GNU/Linux, you can specify which display to use (useful for distant screenshots via SSH):
-
-.. literalinclude:: examples/linux_display_keyword.py
-    :lines: 9-
 
 Part of the screen
 ------------------

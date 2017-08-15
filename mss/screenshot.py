@@ -53,10 +53,12 @@ class ScreenShot(object):
         See https://docs.scipy.org/doc/numpy/reference/arrays.interface.html
         """
 
-        return dict(version=3,
-                    shape=(self.height, self.width, 4),
-                    typestr='|u1',
-                    data=self.raw)
+        return {
+            'version': 3,
+            'shape': (self.height, self.width, 4),
+            'typestr': '|u1',
+            'data': self.raw,
+        }
 
     @classmethod
     def from_size(cls, data, width, height):

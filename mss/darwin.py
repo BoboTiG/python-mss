@@ -93,6 +93,7 @@ class MSS(MSSBase):
             ctypes.c_uint32,
             ctypes.c_uint32,
             ctypes.c_uint32]
+        self.core.CGImageGetWidth.argtypes = [ctypes.c_void_p]
         self.core.CGImageGetDataProvider.argtypes = [ctypes.c_void_p]
         self.core.CGDataProviderCopyData.argtypes = [ctypes.c_void_p]
         self.core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
@@ -110,6 +111,7 @@ class MSS(MSSBase):
         self.core.CGRectUnion.restype = CGRect
         self.core.CGDisplayRotation.restype = ctypes.c_float
         self.core.CGWindowListCreateImage.restype = ctypes.c_void_p
+        self.core.CGImageGetWidth.restype = ctypes.c_uint32
         self.core.CGImageGetDataProvider.restype = ctypes.c_void_p
         self.core.CGDataProviderCopyData.restype = ctypes.c_void_p
         self.core.CFDataGetBytePtr.restype = ctypes.c_void_p
@@ -168,10 +170,6 @@ class MSS(MSSBase):
         # type: (Dict[str, int]) -> ScreenShot
         """
         See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
-
-        When the monitor width is not divisible by 16, its width is reduced
-        to the previous number divisible by 16.  So we need to add extra
-        black pixels.
         """
 
         # Convert PIL bbox style
@@ -183,7 +181,13 @@ class MSS(MSSBase):
                 'height': monitor[3] - monitor[1],
             }
 
-        rounded_width = int(math.ceil(monitor['width'] // 16) * 16)
+        # When the monitor width is not divisible by 16, extra padding
+        # is added by macOS in the form of black pixels, which results
+        # in a screenshot with shifted pixels.  To counter this, we
+        # round the width to the nearest integer divisible by 16, and
+        # we remove the extra width from the image after taking the
+        # screenshot.
+        rounded_width = math.ceil(monitor['width'] / 16) * 16
 
         rect = CGRect((monitor['left'], monitor['top']),
                       (rounded_width, monitor['height']))
@@ -193,6 +197,7 @@ class MSS(MSSBase):
             raise ScreenShotError(
                 'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
+        width = int(self.core.CGImageGetWidth(image_ref))
         prov = self.core.CGImageGetDataProvider(image_ref)
         copy_data = self.core.CGDataProviderCopyData(prov)
         data_ref = self.core.CFDataGetBytePtr(copy_data)
@@ -203,24 +208,18 @@ class MSS(MSSBase):
         self.core.CFRelease(copy_data)
 
         if rounded_width != monitor['width']:
-            data = self.resize(data, monitor)
+            data = self._crop_width(data, monitor, width)
 
         return self.cls_image(data, monitor)
 
     @staticmethod
-    def resize(data, monitor):
-        # type: (bytearray, Dict[str, int]) -> bytearray
-        """ Extend a 16 width-rounded screenshot to its original width. """
+    def _crop_width(image, monitor, width_to):
+        # type: (bytearray, Dict[str, int], int) -> bytearray
+        """ Cut off the pixels from an image buffer at a particular width. """
 
-        rounded_width = int(math.ceil(monitor['width'] // 16) * 16)
         cropped = bytearray()
-
         for row in range(monitor['height']):
-            start = row * rounded_width * 4
+            start = row * width_to * 4
             end = start + monitor['width'] * 4
-            cropped.extend(data[start:end])
-
-        if len(cropped) < monitor['width'] * monitor['width'] * 4:
-            cropped.extend(b'\00' * (monitor['width'] - rounded_width) * 4)
-
+            cropped.extend(image[start:end])
         return cropped
