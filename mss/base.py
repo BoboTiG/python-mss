@@ -57,6 +57,9 @@ class MSSBase(object):
             'width':  the width,
             'height': the height
         }
+
+        Note: monitor can be a tuple like PIL.Image.grab() accepts,
+        it must be converted to the approriate dict.
         """
 
         raise NotImplementedError('Subclasses need to implement this!')

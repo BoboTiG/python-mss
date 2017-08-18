@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable = locally-disabled, too-few-public-methods, too-many-instance-attributes
+disable = locally-disabled, too-few-public-methods, too-many-instance-attributes, duplicate-code
 
 [REPORTS]
 output-format = colorized

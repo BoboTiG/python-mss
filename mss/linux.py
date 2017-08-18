@@ -273,6 +273,15 @@ class MSS(MSSBase):
         # type: (Dict[str, int]) -> ScreenShot
         """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
 
+        # Convert PIL bbox style
+        if isinstance(monitor, tuple):
+            monitor = {
+                'left': monitor[0],
+                'top': monitor[1],
+                'width': monitor[2] - monitor[0],
+                'height': monitor[3] - monitor[1],
+            }
+
         # Fix for XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         root = ctypes.cast(self.root, ctypes.POINTER(Display))

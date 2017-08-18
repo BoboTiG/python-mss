@@ -53,7 +53,7 @@ config = {
     'classifiers': classifiers,
     'platforms': ['Darwin', 'Linux', 'Windows'],
     'packages': ['mss'],
-    'license': 'MIT'
+    'license': 'MIT',
 }
 
 setup(**config)

@@ -174,6 +174,15 @@ class MSS(MSSBase):
         black pixels.
         """
 
+        # Convert PIL bbox style
+        if isinstance(monitor, tuple):
+            monitor = {
+                'left': monitor[0],
+                'top': monitor[1],
+                'width': monitor[2] - monitor[0],
+                'height': monitor[3] - monitor[1],
+            }
+
         rounded_width = int(math.ceil(monitor['width'] // 16) * 16)
 
         rect = CGRect((monitor['left'], monitor['top']),

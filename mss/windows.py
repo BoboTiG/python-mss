@@ -162,6 +162,15 @@ class MSS(MSSBase):
             Thanks to http://stackoverflow.com/a/3688682
         """
 
+        # Convert PIL bbox style
+        if isinstance(monitor, tuple):
+            monitor = {
+                'left': monitor[0],
+                'top': monitor[1],
+                'width': monitor[2] - monitor[0],
+                'height': monitor[3] - monitor[1],
+            }
+
         srcdc = memdc = bmp = None
         try:
             bmi = BITMAPINFO()

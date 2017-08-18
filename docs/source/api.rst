@@ -43,6 +43,11 @@ Methods
 
         Retrieve screen pixels for a given monitor.
 
+        .. note::
+
+            ``monitor`` can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
+            it will be converted to the approriate ``dict``.
+
     .. method:: save(mon=1, output='screenshot.png', callback=None) -> generator
 
         :param int mon: the monitor's number.
@@ -58,6 +63,8 @@ Methods
 
         Helper to save the screenshot of the first monitor, by default.
         You can pass the same arguments as for ``save``.
+
+        .. versionadded:: 3.0.0
 
 .. class:: ScreenShot
 
@@ -86,6 +93,8 @@ Methods
 
         Get the pixel value at the given position.
 
+    .. versionadded:: 3.0.0
+
 .. module:: mss.tools
 
     .. method:: to_png(data, size, output) -> None
@@ -96,6 +105,8 @@ Methods
     :exception ScreenShotError: On error when writing ``data`` to ``output``.
 
     Dump data to the image file. Pure Python PNG implementation.
+
+    .. versionadded:: 3.0.0
 
 
 Properties
@@ -178,6 +189,8 @@ Properties
         Computed RGB values from the BGRA raw pixels.
 
         :type: bytes
+
+    .. versionadded:: 3.0.0
 
 
 Exception

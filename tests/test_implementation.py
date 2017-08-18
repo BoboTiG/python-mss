@@ -8,6 +8,7 @@ import sys
 import pytest
 
 import mss
+import mss.tools
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
@@ -93,3 +94,46 @@ def test_python_call(monkeypatch):
     with pytest.raises(ScreenShotError):
         mss.mss()
     monkeypatch.undo()
+
+
+def test_grab_with_tuple(sct):
+    left = 100
+    top = 100
+    right = 500
+    lower = 500
+    width = right - left  # 400px width
+    height = lower - top  # 400px height
+
+    # PIL like
+    box = (left, top, right, lower)
+    im = sct.grab(box)
+    assert im.size == (width, height)
+
+    # MSS like
+    box2 = {'left': left, 'top': top, 'width': width, 'height': height}
+    im2 = sct.grab(box2)
+    assert im.size == im2.size
+    assert im.pos == im2.pos
+    assert im.rgb == im2.rgb
+
+
+def test_grab_with_tuple_percents(sct):
+    monitor = sct.monitors[1]
+    left = monitor['left'] + monitor['width'] * 5 // 100  # 5% from the left
+    top = monitor['top'] + monitor['height'] * 5 // 100  # 5% from the top
+    right = left + 500  # 500px
+    lower = top + 500  # 500px
+    width = right - left
+    height = lower - top
+
+    # PIL like
+    box = (left, top, right, lower)
+    im = sct.grab(box)
+    assert im.size == (width, height)
+
+    # MSS like
+    box2 = {'left': left, 'top': top, 'width': width, 'height': height}
+    im2 = sct.grab(box2)
+    assert im.size == im2.size
+    assert im.pos == im2.pos
+    assert im.rgb == im2.rgb

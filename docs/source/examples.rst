@@ -44,6 +44,19 @@ You can capture only a part of the screen:
 .. literalinclude:: examples/part_of_screen.py
     :lines: 9-
 
+.. versionadded:: 3.0.0
+
+Use PIL bbox style and percent values
+-------------------------------------
+
+You can use the same value as you would do with ``PIL.ImageGrab(bbox=tuple(...))``.
+This is an example that uses it, but also using percentage values:
+
+.. literalinclude:: examples/from_pil_tuple.py
+    :lines: 9-
+
+.. versionadded:: 3.1.0
+
 Advanced
 ========
 
@@ -51,6 +64,8 @@ You can handle data using a custom class:
 
 .. literalinclude:: examples/custom_cls_image.py
     :lines: 9-
+
+.. versionadded:: 3.1.0
 
 PIL
 ===
@@ -61,6 +76,8 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
 .. literalinclude:: examples/pil.py
     :lines: 9-
 
+.. versionadded:: 3.0.0
+
 Playing with pixels
 -------------------
 
@@ -68,6 +85,8 @@ This is an example using `putdata() <https://github.com/python-pillow/Pillow/blo
 
 .. literalinclude:: examples/pil_pixels.py
     :lines: 9-
+
+.. versionadded:: 3.0.0
 
 OpenCV/Numpy
 ============
@@ -79,6 +98,8 @@ And with __no__ lag please.
 .. literalinclude:: examples/opencv_numpy.py
     :lines: 9-
 
+.. versionadded:: 3.0.0
+
 FPS
 ===
 
@@ -89,3 +110,5 @@ Simple naive benchmark to compare with `Reading game frames in Python with OpenC
 
 .. literalinclude:: examples/fps.py
     :lines: 12-
+
+.. versionadded:: 3.0.0
