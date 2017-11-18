@@ -9,6 +9,10 @@ import collections
 from .exception import ScreenShotError
 
 
+Pos = collections.namedtuple('Pos', 'left, top')
+Size = collections.namedtuple('Size', 'width, height')
+
+
 class ScreenShot(object):
     """
     Screen shot object.
@@ -29,12 +33,10 @@ class ScreenShot(object):
         self.raw = bytearray(data)  # type: bytearray
 
         #: NamedTuple of the screen shot coordinates.
-        self.pos = collections.namedtuple('pos', 'left, top')(
-            monitor['left'], monitor['top'])  # type: Any
+        self.pos = Pos(monitor['left'], monitor['top'])  # type: Any
 
         #: NamedTuple of the screen shot size.
-        self.size = collections.namedtuple('size', 'width, height')(
-            monitor['width'], monitor['height'])  # type: Any
+        self.size = Size(monitor['width'], monitor['height'])  # type: Any
 
     def __repr__(self):
         # type: () -> str
