@@ -26,7 +26,7 @@ class ScreenShot(object):
     __pixels = None  # type: List[Tuple[int, int, int]]
     __rgb = None  # type: bytes
 
-    def __init__(self, data, monitor):
+    def __init__(self, data, monitor, size=None):
         # type: (bytearray, Dict[str, int]) -> None
         #: Bytearray of the raw BGRA pixels retrieved by ctype
         #: OS independent implementations.
@@ -35,8 +35,11 @@ class ScreenShot(object):
         #: NamedTuple of the screen shot coordinates.
         self.pos = Pos(monitor['left'], monitor['top'])  # type: Any
 
-        #: NamedTuple of the screen shot size.
-        self.size = Size(monitor['width'], monitor['height'])  # type: Any
+        if size is not None:
+            #: NamedTuple of the screen shot size.
+            self.size = size  # type: Any
+        else:
+            self.size = Size(monitor['width'], monitor['height'])
 
     def __repr__(self):
         # type: () -> str
