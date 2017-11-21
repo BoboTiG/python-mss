@@ -4,19 +4,19 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
-# pylint: disable=import-error
+# pylint: disable=import-error, too-many-locals
 
 from __future__ import division
 
 import ctypes
 import ctypes.util
-import math
 import sys
 
 from .base import MSSBase
 from .exception import ScreenShotError
+from .screenshot import Size
 
-__all__ = ['MSS']
+__all__ = ('MSS',)
 
 
 def cgfloat():
@@ -94,10 +94,13 @@ class MSS(MSSBase):
             ctypes.c_uint32,
             ctypes.c_uint32]
         self.core.CGImageGetWidth.argtypes = [ctypes.c_void_p]
+        self.core.CGImageGetHeight.argtypes = [ctypes.c_void_p]
         self.core.CGImageGetDataProvider.argtypes = [ctypes.c_void_p]
         self.core.CGDataProviderCopyData.argtypes = [ctypes.c_void_p]
         self.core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
         self.core.CFDataGetLength.argtypes = [ctypes.c_void_p]
+        self.core.CGImageGetBytesPerRow.argtypes = [ctypes.c_void_p]
+        self.core.CGImageGetBitsPerPixel.argtypes = [ctypes.c_void_p]
         self.core.CGDataProviderRelease.argtypes = [ctypes.c_void_p]
         self.core.CFRelease.argtypes = [ctypes.c_void_p]
 
@@ -111,11 +114,14 @@ class MSS(MSSBase):
         self.core.CGRectUnion.restype = CGRect
         self.core.CGDisplayRotation.restype = ctypes.c_float
         self.core.CGWindowListCreateImage.restype = ctypes.c_void_p
-        self.core.CGImageGetWidth.restype = ctypes.c_uint32
+        self.core.CGImageGetWidth.restype = ctypes.c_size_t
+        self.core.CGImageGetHeight.restype = ctypes.c_size_t
         self.core.CGImageGetDataProvider.restype = ctypes.c_void_p
         self.core.CGDataProviderCopyData.restype = ctypes.c_void_p
         self.core.CFDataGetBytePtr.restype = ctypes.c_void_p
         self.core.CFDataGetLength.restype = ctypes.c_uint64
+        self.core.CGImageGetBytesPerRow.restype = ctypes.c_size_t
+        self.core.CGImageGetBitsPerPixel.restype = ctypes.c_size_t
         self.core.CGDataProviderRelease.restype = ctypes.c_void_p
         self.core.CFRelease.restype = ctypes.c_void_p
 
@@ -181,16 +187,8 @@ class MSS(MSSBase):
                 'height': monitor[3] - monitor[1],
             }
 
-        # When the monitor width is not divisible by 16, extra padding
-        # is added by macOS in the form of black pixels, which results
-        # in a screenshot with shifted pixels.  To counter this, we
-        # round the width to the nearest integer divisible by 16, and
-        # we remove the extra width from the image after taking the
-        # screenshot.
-        rounded_width = math.ceil(monitor['width'] / 16) * 16
-
         rect = CGRect((monitor['left'], monitor['top']),
-                      (rounded_width, monitor['height']))
+                      (monitor['width'], monitor['height']))
 
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
@@ -198,28 +196,33 @@ class MSS(MSSBase):
                 'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
         width = int(self.core.CGImageGetWidth(image_ref))
-        prov = self.core.CGImageGetDataProvider(image_ref)
-        copy_data = self.core.CGDataProviderCopyData(prov)
-        data_ref = self.core.CFDataGetBytePtr(copy_data)
-        buf_len = self.core.CFDataGetLength(copy_data)
-        raw = ctypes.cast(data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
-        data = bytearray(raw.contents)
-        self.core.CGDataProviderRelease(prov)
-        self.core.CFRelease(copy_data)
+        height = int(self.core.CGImageGetHeight(image_ref))
+        prov = copy_data = None
+        try:
+            prov = self.core.CGImageGetDataProvider(image_ref)
+            copy_data = self.core.CGDataProviderCopyData(prov)
+            data_ref = self.core.CFDataGetBytePtr(copy_data)
+            buf_len = self.core.CFDataGetLength(copy_data)
+            raw = ctypes.cast(
+                data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
+            data = bytearray(raw.contents)
 
-        if rounded_width != monitor['width']:
-            data = self._crop_width(data, monitor, width)
+            # Remove padding per row
+            bytes_per_row = int(self.core.CGImageGetBytesPerRow(image_ref))
+            bytes_per_pixel = int(self.core.CGImageGetBitsPerPixel(image_ref))
+            bytes_per_pixel = (bytes_per_pixel + 7) // 8
 
-        return self.cls_image(data, monitor)
+            if bytes_per_pixel * width != bytes_per_row:
+                cropped = bytearray()
+                for row in range(height):
+                    start = row * bytes_per_row
+                    end = start + width * bytes_per_pixel
+                    cropped.extend(data[start:end])
+                data = cropped
+        finally:
+            if prov:
+                self.core.CGDataProviderRelease(prov)
+            if copy_data:
+                self.core.CFRelease(copy_data)
 
-    @staticmethod
-    def _crop_width(image, monitor, width_to):
-        # type: (bytearray, Dict[str, int], int) -> bytearray
-        """ Cut off the pixels from an image buffer at a particular width. """
-
-        cropped = bytearray()
-        for row in range(monitor['height']):
-            start = row * width_to * 4
-            end = start + monitor['width'] * 4
-            cropped.extend(image[start:end])
-        return cropped
+        return self.cls_image(data, monitor, size=Size(width, height))

@@ -9,6 +9,10 @@ import collections
 from .exception import ScreenShotError
 
 
+Pos = collections.namedtuple('Pos', 'left, top')
+Size = collections.namedtuple('Size', 'width, height')
+
+
 class ScreenShot(object):
     """
     Screen shot object.
@@ -22,19 +26,20 @@ class ScreenShot(object):
     __pixels = None  # type: List[Tuple[int, int, int]]
     __rgb = None  # type: bytes
 
-    def __init__(self, data, monitor):
-        # type: (bytearray, Dict[str, int]) -> None
+    def __init__(self, data, monitor, size=None):
+        # type: (bytearray, Dict[str, int], Any) -> None
         #: Bytearray of the raw BGRA pixels retrieved by ctype
         #: OS independent implementations.
         self.raw = bytearray(data)  # type: bytearray
 
         #: NamedTuple of the screen shot coordinates.
-        self.pos = collections.namedtuple('pos', 'left, top')(
-            monitor['left'], monitor['top'])  # type: Any
+        self.pos = Pos(monitor['left'], monitor['top'])  # type: Pos
 
-        #: NamedTuple of the screen shot size.
-        self.size = collections.namedtuple('size', 'width, height')(
-            monitor['width'], monitor['height'])  # type: Any
+        if size is not None:
+            #: NamedTuple of the screen shot size.
+            self.size = size  # type: Size
+        else:
+            self.size = Size(monitor['width'], monitor['height'])  # type: Size
 
     def __repr__(self):
         # type: () -> str

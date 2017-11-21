@@ -12,7 +12,7 @@ import ctypes.wintypes
 from .base import MSSBase
 from .exception import ScreenShotError
 
-__all__ = ['MSS']
+__all__ = ('MSS',)
 
 
 class BITMAPINFOHEADER(ctypes.Structure):

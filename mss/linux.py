@@ -11,7 +11,7 @@ import os
 from .base import MSSBase
 from .exception import ScreenShotError
 
-__all__ = ['MSS']
+__all__ = ('MSS',)
 
 
 class Display(ctypes.Structure):

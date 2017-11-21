@@ -8,6 +8,7 @@ dev     2017/xx/xx
       - tests: a lot of tests added for better coverage
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: handle screenshot's width not divisible by 16 (fix #14, #19, #21)
+      - Mac: properly support all display scaling and resolutions (fix #23)
       - Mac: fix memory leak (fix #24)
       - Linux: handle bad display value
       - Windows: Take into account zoom factor for high-DPI displays (fix #20)
