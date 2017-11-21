@@ -21,6 +21,9 @@ David Becker [https://davide.me] and redodo [https://github.com/redodo]
 Jochen 'cycomanic' Schroeder [https://github.com/cycomanic]
     - GNU/Linux: use errcheck instead of deprecated restype with callable, for enum_display_monitors()
 
+Karan Lyons <karan@karanlyons.com> [https://karanlyons.com] [https://github.com/karanlyons]
+    - MacOS: Proper support for display scaling
+
 Oros <oros@ecirtam.net> [https://ecirtam.net]
     - GNU/Linux tester
 
