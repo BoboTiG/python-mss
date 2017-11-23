@@ -1,5 +1,3 @@
-__Note:__ do not work on the master branch, only into you own (based on _dev_) or _dev_.
-
 ### Changes proposed in this PR
 
 - Fixes #
