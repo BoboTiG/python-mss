@@ -83,13 +83,13 @@ def test_factory(monkeypatch):
 
 
 def test_python_call(monkeypatch):
+    pytest.skip('Not working for now.')
     import mss.__main__
     mss.__main__.main()
 
     def raise_():
         raise ScreenShotError()
 
-    pytest.skip('Not working for now.')
     monkeypatch.setattr(mss.mss, '__init__', raise_)
     with pytest.raises(ScreenShotError):
         mss.mss()
