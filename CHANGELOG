@@ -6,6 +6,7 @@ dev     2017/xx/xx
       - add the 'Say Thanks' button
       - doc: several fixes (fix #22)
       - tests: a lot of tests added for better coverage
+      - MSS: add the 'mss' entry point
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: handle screenshot's width not divisible by 16 (fix #14, #19, #21)
       - Mac: properly support all display scaling and resolutions (fix #23)
