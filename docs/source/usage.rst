@@ -55,3 +55,7 @@ Command line
 Since 3.1.0, an entry point was added and so you can use ``mss`` via the CLI:
 
     mss --help
+
+Or via direct call from Python:
+
+    python -m mss --help
