@@ -101,8 +101,8 @@ class MSSBase(object):
 
         if mon == 0:
             # One screen shot by monitor
-            for mon, monitor in enumerate(monitors[1:], 1):
-                fname = output.format(mon=mon, date=datetime.now(), **monitor)
+            for idx, monitor in enumerate(monitors[1:], 1):
+                fname = output.format(mon=idx, date=datetime.now(), **monitor)
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
