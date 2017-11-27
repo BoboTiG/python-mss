@@ -3,10 +3,15 @@ History:
 <see Git checking messages for history>
 
 dev     2017/xx/xx
+
+3.1.1   2017/11/27
+      - MSS: add the 'mss' entry point
+
+3.1.0   2017/11/16
+      - new contributor: Karan Lyons
       - add the 'Say Thanks' button
       - doc: several fixes (fix #22)
       - tests: a lot of tests added for better coverage
-      - MSS: add the 'mss' entry point
       - MSS: add more way of customization to the output argument of save()
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: properly support all display scaling and resolutions (fix #14, #19, #21, #23)
