@@ -15,20 +15,21 @@ from .exception import ScreenShotError
 from .factory import mss
 
 
-def main():
-    # type: () -> int
+def main(args=None):
+    # type: (Optional[List[str]]) -> int
     """ Main logic. """
 
     cli_args = ArgumentParser()
     cli_args.add_argument('-m', '--monitor', default=0, type=int,
                           help='the monitor to screen shot')
-    cli_args.add_argument('-o', '--output', default='monitor-%d.png',
+    cli_args.add_argument('-o', '--output', default='monitor-{mon}.png',
                           help='the output file name')
     cli_args.add_argument('-q', '--quiet', default=False, action='store_true',
                           help='Do not print created files')
     cli_args.add_argument('-v', '--version', action='version',
                           version=__version__)
-    options = cli_args.parse_args(sys.argv[1:])
+
+    options = cli_args.parse_args(args)
     kwargs = {
         'mon': options.monitor,
         'output': options.output,
@@ -45,4 +46,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    exit(main(sys.argv[1:]))
