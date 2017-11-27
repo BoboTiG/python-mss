@@ -86,8 +86,8 @@ def test_entry_point(capsys, sct):
     from mss.__main__ import main
     from datetime import datetime
 
-    for opt in ('-m 1', '--monitor=1'):
-        main([opt])
+    for opt in ('-m', '--monitor'):
+        main([opt, '1'])
         out, _ = capsys.readouterr()
         assert out.endswith('monitor-1.png\n')
         assert os.path.isfile('monitor-1.png')
@@ -101,8 +101,8 @@ def test_entry_point(capsys, sct):
         os.remove('monitor-1.png')
 
     fmt = 'sct-{width}x{height}.png'
-    for opt in (('-o', fmt), ('--out={0}'.format(fmt),)):
-        main(opt)
+    for opt in ('-o', '--out'):
+        main([opt, fmt])
         filename = fmt.format(**sct.monitors[1])
         out, _ = capsys.readouterr()
         assert out.endswith(filename + '\n')
@@ -110,9 +110,18 @@ def test_entry_point(capsys, sct):
         os.remove(filename)
 
     fmt = 'sct_{mon}-{date:%Y-%m-%d}.png'
-    for opt in (('-o', fmt), ('--out={0}'.format(fmt),)):
-        main(opt)
+    for opt in ('-o', '--out'):
+        main([opt, fmt])
         filename = fmt.format(mon=1, date=datetime.now())
+        out, _ = capsys.readouterr()
+        assert out.endswith(filename + '\n')
+        assert os.path.isfile(filename)
+        os.remove(filename)
+
+    coordinates = '2,12,40,67'
+    for opt in ('-c', '--coordinates'):
+        main([opt, coordinates])
+        filename = 'sct-2x12_40x67.png'
         out, _ = capsys.readouterr()
         assert out.endswith(filename + '\n')
         assert os.path.isfile(filename)
