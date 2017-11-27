@@ -11,7 +11,7 @@ Feel free to try MSS on a system we had not tested, and let report us by creatin
 +----------+-----------+-------------+-----------+
 | **3.6**  | **True**  | **True**    | **True**  |
 +----------+-----------+-------------+-----------+
-|   3.5    | True      | True        | True      |
+| 3.5      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
 | 3.4      | True      | True        | True      |
 +----------+-----------+-------------+-----------+
@@ -31,7 +31,7 @@ Future
 Others
 ======
 
-Tested succesfully on Pypy 5.1.0 on Windows, but speed is terrible.
+Tested successfully on Pypy 5.1.0 on Windows, but speed is terrible.
 
 
 Abandoned

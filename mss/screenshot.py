@@ -68,7 +68,7 @@ class ScreenShot(object):
     @classmethod
     def from_size(cls, data, width, height):
         # type: (bytearray, int, int) -> ScreenShot
-        """ Instanciate a new class given only screenshot's data and size. """
+        """ Instantiate a new class given only screen shot's data and size. """
 
         monitor = {'left': 0, 'top': 0, 'width': width, 'height': height}
         return cls(data, monitor)
@@ -76,25 +76,25 @@ class ScreenShot(object):
     @property
     def top(self):
         # type: () -> int
-        """ Conveniant accessor to the top position. """
+        """ Convenient accessor to the top position. """
         return self.pos.top
 
     @property
     def left(self):
         # type: () -> int
-        """ Conveniant accessor to the left position. """
+        """ Convenient accessor to the left position. """
         return self.pos.left
 
     @property
     def width(self):
         # type: () -> int
-        """ Conveniant accessor to the width size. """
+        """ Convenient accessor to the width size. """
         return self.size.width
 
     @property
     def height(self):
         # type: () -> int
-        """ Conveniant accessor to the height size. """
+        """ Convenient accessor to the height size. """
         return self.size.height
 
     @property

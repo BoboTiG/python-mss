@@ -25,5 +25,5 @@ def on_exists(fname):
 
 
 with mss.mss() as sct:
-    filename = sct.shot(output='mon-%d.png', callback=on_exists)
+    filename = sct.shot(output='mon-{mon}.png', callback=on_exists)
     print(filename)

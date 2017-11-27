@@ -37,7 +37,7 @@ Methods
 
     .. method:: grab(monitor) -> ScreenShot
 
-        :param dict monitor: monitor's informations.
+        :param dict monitor: monitor's information.
         :exception NotImplementedError: Subclasses need to implement this.
         :rtype: ScreenShot
 
@@ -46,22 +46,32 @@ Methods
         .. note::
 
             ``monitor`` can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
-            it will be converted to the approriate ``dict``.
+            it will be converted to the appropriate ``dict``.
 
-    .. method:: save(mon=1, output='screenshot.png', callback=None) -> generator
+    .. method:: save(mon=1, output='mon-{mon}.png', callback=None) -> generator
 
         :param int mon: the monitor's number.
-        :param str output: the output's file name. ``%d``, if present, will be replaced by the monitor number.
-        :param callable callback: callback called before saving the screenshot to a file. Takes the ``output`` argument as parameter.
+        :param str output: the output's file name.
+        :param callable callback: callback called before saving the screen shot to a file. Takes the ``output`` argument as parameter.
         :return generator: Created file(s).
 
-        Grab a screenshot and save it to a file.
+        Grab a screen shot and save it to a file.
+        The ``output`` parameter can take several keywords to customize the filename:
+
+            - ``{mon}``: the monitor number
+            - ``{top}``: the screen shot y-coordinate of the upper-left corner
+            - ``{left}``: the screen shot x-coordinate of the upper-left corner
+            - ``{width}``: the screen shot's width
+            - ``{height}``: the screen shot's height
+            - ``{date}``: the current date using the default formatter
+
+        As it is using the `py::format()` function, you can specify formatting options like ``{date:%Y-%m-%s}``.
 
     .. method:: shot() -> str
 
         :return str: The created file.
 
-        Helper to save the screenshot of the first monitor, by default.
+        Helper to save the screen shot of the first monitor, by default.
         You can pass the same arguments as for ``save``.
 
         .. versionadded:: 3.0.0
@@ -83,7 +93,7 @@ Methods
         :param int height: the monitor's height.
         :rtype: ScreenShot
 
-        Instanciate a new class given only screenshot's data and size.
+        Instanciate a new class given only screen shot's data and size.
 
     .. method:: pixels(coord_x, coord_y) -> Tuple[int, int, int]
 
@@ -120,7 +130,7 @@ Properties
         If the monitor has rotation, you have to deal with it
         inside this method.
 
-        This method has to fill ``self._monitors`` with all informations
+        This method has to fill ``self._monitors`` with all information
         and use it as a cache:
 
         - ``self._monitors[0]`` is a dict of all monitors together
@@ -145,19 +155,19 @@ Properties
 
     .. attribute:: pos
 
-        The screen shot's coodinates.
+        The screen shot's coordinates.
 
         :type: NamedTuple
 
     .. attribute:: top
 
-        The screen shot's top coodinate.
+        The screen shot's top coordinate.
 
         :type: int
 
     .. attribute:: left
 
-        The screen shot's left coodinate.
+        The screen shot's left coordinate.
         :type: int
 
     .. attribute:: size
