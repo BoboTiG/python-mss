@@ -39,14 +39,20 @@ def main(args=None):
         'output': options.output,
     }
     if options.coordinates:
-        top, left, width, height = map(int, options.coordinates.split(','))
+        try:
+            top, left, width, height = map(int, options.coordinates.split(','))
+        except ValueError:
+            print('Coordinates syntax: top,left,width,height')
+            return 2
+
         kwargs['mon'] = {
             'top': top,
             'left': left,
             'width': width,
             'height': height,
         }
-        kwargs['output'] = 'sct-{top}x{left}_{width}x{height}.png'
+        if options.output == 'monitor-{mon}.png':
+            kwargs['output'] = 'sct-{top}x{left}_{width}x{height}.png'
 
     try:
         with mss() as sct:

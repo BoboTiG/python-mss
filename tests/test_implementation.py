@@ -127,6 +127,12 @@ def test_entry_point(capsys, sct):
         assert os.path.isfile(filename)
         os.remove(filename)
 
+    coordinates = '2,12,40'
+    for opt in ('-c', '--coordinates'):
+        main([opt, coordinates])
+        out, _ = capsys.readouterr()
+        assert out == 'Coordinates syntax: top,left,width,height\n'
+
 
 def test_grab_with_tuple(sct):
     left = 100
