@@ -16,7 +16,7 @@ class SimpleScreenShot(object):
     or add new methods.
     """
 
-    def __init__(self, data, monitor):
+    def __init__(self, data, monitor, **kwargs):
         self.data = data
         self.monitor = monitor
 

@@ -4,6 +4,8 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+from datetime import datetime
+
 from .exception import ScreenShotError
 from .screenshot import ScreenShot
 from .tools import to_png
@@ -59,28 +61,36 @@ class MSSBase(object):
         }
 
         Note: monitor can be a tuple like PIL.Image.grab() accepts,
-        it must be converted to the approriate dict.
+        it must be converted to the appropriate dict.
         """
 
         raise NotImplementedError('Subclasses need to implement this!')
 
-    def save(self, mon=0, output='monitor-%d.png', callback=None):
+    def save(self, mon=0, output='monitor-{mon}.png', callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]
         """
-        Grab a screenshot and save it to a file.
+        Grab a screen shot and save it to a file.
 
-        :param int mon: The monitor to screenshot (default=0).
-                        -1: grab one screenshot of all monitors
-                         0: grab one screenshot by monitor
-                        N: grab the screenshot of the monitor N
+        :param int mon: The monitor to screen shot (default=0).
+                        -1: grab one screen shot of all monitors
+                         0: grab one screen shot by monitor
+                        N: grab the screen shot of the monitor N
 
         :param str output: The output filename.
-                           %d, if present, will be replaced by
-                           the monitor number.
 
-        :param callable callback: Callback called before saving
-                                  the screenshot to a file.
-                                  Take the ``output`` argument as parameter.
+            It can take several keywords to customize the filename:
+            - `{mon}`: the monitor number
+            - `{top}`: the screen shot y-coordinate of the upper-left corner
+            - `{left}`: the screen shot x-coordinate of the upper-left corner
+            - `{width}`: the screen shot's width
+            - `{height}`: the screen shot's height
+            - `{date}`: the current date using the default formatter
+
+            As it is using the `format()` function, you can specify
+            formatting options like `{date:%Y-%m-%s}`.
+
+        :param callable callback: Callback called before saving the
+            screen shot to a file.  Take the `output` argument as parameter.
 
         :return generator: Created file(s).
         """
@@ -90,27 +100,24 @@ class MSSBase(object):
             raise ScreenShotError('No monitor found.')
 
         if mon == 0:
-            # One screenshot by monitor
-            for i, monitor in enumerate(monitors[1:], 1):
-                fname = output
-                if '%d' in output:
-                    fname = output.replace('%d', str(i))
+            # One screen shot by monitor
+            for idx, monitor in enumerate(monitors[1:], 1):
+                fname = output.format(mon=idx, date=datetime.now(), **monitor)
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
                 to_png(sct.rgb, sct.size, fname)
                 yield fname
         else:
-            # A screenshot of all monitors together or
-            # a screenshot of the monitor N.
-            mon_number = 0 if mon == -1 else mon
+            # A screen shot of all monitors together or
+            # a screen shot of the monitor N.
+            mon = 0 if mon == -1 else mon
             try:
-                monitor = monitors[mon_number]
+                monitor = monitors[mon]
             except IndexError:
                 raise ScreenShotError('Monitor does not exist.', locals())
 
-            if '%d' in output:
-                output = output.replace('%d', str(mon_number))
+            output = output.format(mon=mon, date=datetime.now(), **monitor)
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)
@@ -119,7 +126,7 @@ class MSSBase(object):
 
     def shot(self, **kwargs):
         """
-        Helper to save the screenshot of the 1st monitor, by default.
+        Helper to save the screen shot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
         """
 

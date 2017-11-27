@@ -1,12 +1,13 @@
 History:
 
-<see Git checkin messages for history>
+<see Git checking messages for history>
 
 dev     2017/xx/xx
       - add the 'Say Thanks' button
       - doc: several fixes (fix #22)
       - tests: a lot of tests added for better coverage
       - MSS: add the 'mss' entry point
+      - MSS: add more way of customization to the output argument of save()
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: properly support all display scaling and resolutions (fix #14, #19, #21, #23)
       - Mac: fix memory leaks (fix #24)
@@ -51,10 +52,10 @@ dev     2017/xx/xx
       - Linux: prevent segfault when DISPLAY is set but no X server started
       - Linux: prevent segfault when Xrandr is not loaded
       - Linux: get_pixels() insanely fast, use of MSS library (C code)
-      - Windows: fix #6, screenshot not correct on Windows 8
+      - Windows: fix #6, screen shot not correct on Windows 8
 
 1.0.2   2016/04/22
-      - MSS: fix inexistant alias
+      - MSS: fix non existent alias
 
 1.0.1   2016/04/22
       - MSS: fix #7, libpng warning (ignoring bad filter type)
