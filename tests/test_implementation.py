@@ -131,7 +131,7 @@ def test_entry_point(capsys, sct):
     for opt in ('-c', '--coordinates'):
         main([opt, coordinates])
         out, _ = capsys.readouterr()
-        assert out == 'Coordinates syntax: top,left,width,height\n'
+        assert out == 'Coordinates syntax: top, left, width, height\n'
 
 
 def test_grab_with_tuple(sct):
