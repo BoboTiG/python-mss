@@ -23,7 +23,7 @@ def main(args=None):
     cli_args = ArgumentParser()
     cli_args.add_argument('-c', '--coordinates', default='', type=str,
                           help='the part of the screen to capture:'
-                               ' top,left,width,height')
+                               ' top, left, width, height')
     cli_args.add_argument('-m', '--monitor', default=0, type=int,
                           help='the monitor to screen shot')
     cli_args.add_argument('-o', '--output', default='monitor-{mon}.png',
@@ -42,7 +42,7 @@ def main(args=None):
         try:
             top, left, width, height = map(int, options.coordinates.split(','))
         except ValueError:
-            print('Coordinates syntax: top,left,width,height')
+            print('Coordinates syntax: top, left, width, height')
             return 2
 
         kwargs['mon'] = {
@@ -61,7 +61,7 @@ def main(args=None):
                 sct_img = sct.grab(kwargs['mon'])
                 to_png(sct_img.rgb, sct_img.size, output)
                 if not options.quiet:
-                        print(os.path.realpath(output))
+                    print(os.path.realpath(output))
             else:
                 for file_name in sct.save(**kwargs):
                     if not options.quiet:
