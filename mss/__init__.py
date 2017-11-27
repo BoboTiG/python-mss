@@ -25,4 +25,4 @@ __copyright__ = """
     in supporting documentation or portions thereof, including
     modifications, that you make.
 """
-__all__ = ['ScreenShotError', 'mss']
+__all__ = ('ScreenShotError', 'mss')

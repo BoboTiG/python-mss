@@ -82,18 +82,56 @@ def test_factory(monkeypatch):
     assert error == 'System not (yet?) implemented.'
 
 
-def test_python_call(monkeypatch):
-    import mss.__main__
-    mss.__main__.main()
+def test_entry_point(capsys, sct):
+    from mss.__main__ import main
+    from datetime import datetime
 
-    def raise_():
-        raise ScreenShotError()
+    for opt in ('-m', '--monitor'):
+        main([opt, '1'])
+        out, _ = capsys.readouterr()
+        assert out.endswith('monitor-1.png\n')
+        assert os.path.isfile('monitor-1.png')
+        os.remove('monitor-1.png')
 
-    pytest.skip('Not working for now.')
-    monkeypatch.setattr(mss.mss, '__init__', raise_)
-    with pytest.raises(ScreenShotError):
-        mss.mss()
-    monkeypatch.undo()
+    for opt in zip(('-m 1', '--monitor=1'), ('-q', '--quiet')):
+        main(opt)
+        out, _ = capsys.readouterr()
+        assert not out
+        assert os.path.isfile('monitor-1.png')
+        os.remove('monitor-1.png')
+
+    fmt = 'sct-{width}x{height}.png'
+    for opt in ('-o', '--out'):
+        main([opt, fmt])
+        filename = fmt.format(**sct.monitors[1])
+        out, _ = capsys.readouterr()
+        assert out.endswith(filename + '\n')
+        assert os.path.isfile(filename)
+        os.remove(filename)
+
+    fmt = 'sct_{mon}-{date:%Y-%m-%d}.png'
+    for opt in ('-o', '--out'):
+        main([opt, fmt])
+        filename = fmt.format(mon=1, date=datetime.now())
+        out, _ = capsys.readouterr()
+        assert out.endswith(filename + '\n')
+        assert os.path.isfile(filename)
+        os.remove(filename)
+
+    coordinates = '2,12,40,67'
+    for opt in ('-c', '--coordinates'):
+        main([opt, coordinates])
+        filename = 'sct-2x12_40x67.png'
+        out, _ = capsys.readouterr()
+        assert out.endswith(filename + '\n')
+        assert os.path.isfile(filename)
+        os.remove(filename)
+
+    coordinates = '2,12,40'
+    for opt in ('-c', '--coordinates'):
+        main([opt, coordinates])
+        out, _ = capsys.readouterr()
+        assert out == 'Coordinates syntax: top, left, width, height\n'
 
 
 def test_grab_with_tuple(sct):

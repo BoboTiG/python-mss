@@ -53,6 +53,7 @@ config = {
     'classifiers': classifiers,
     'platforms': ['Darwin', 'Linux', 'Windows'],
     'packages': ['mss'],
+    'entry_points': {'console_scripts': ['mss=mss.__main__:main']},
     'license': 'MIT',
 }
 
