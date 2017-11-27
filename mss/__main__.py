@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 
 from __future__ import print_function
 
+import os.path
 import sys
 from argparse import ArgumentParser
 
@@ -20,21 +21,24 @@ def main():
 
     cli_args = ArgumentParser()
     cli_args.add_argument('-m', '--monitor', default=0, type=int,
-                          help='the monitor to screenshot')
+                          help='the monitor to screen shot')
     cli_args.add_argument('-o', '--output', default='monitor-%d.png',
                           help='the output file name')
+    cli_args.add_argument('-q', '--quiet', default=False, action='store_true',
+                          help='Do not print created files')
     cli_args.add_argument('-v', '--version', action='version',
                           version=__version__)
-    parser = cli_args.parse_args(sys.argv[1:])
+    options = cli_args.parse_args(sys.argv[1:])
     kwargs = {
-        'mon': parser.monitor,
-        'output': parser.output,
+        'mon': options.monitor,
+        'output': options.output,
     }
 
     try:
         with mss() as sct:
             for file_name in sct.save(**kwargs):
-                print(file_name)
+                if not options.quiet:
+                    print(os.path.realpath(file_name))
             return 0
     except ScreenShotError:
         return 1
