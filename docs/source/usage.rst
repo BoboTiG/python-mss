@@ -47,3 +47,11 @@ A more specific example to only target GNU/Linux:
 
 .. literalinclude:: examples/linux_display_keyword.py
     :lines: 9-
+
+
+Command line
+============
+
+Since 3.1.0, an entry point was added and so you can use ``mss`` via the CLI:
+
+    mss --help
