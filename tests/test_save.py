@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os.path
-import mss
+from datetime import datetime
 
 
 def test_at_least_2_monitors(sct):
@@ -30,4 +30,24 @@ def test_callback(sct):
     assert os.path.isfile(filename)
 
     filename = sct.shot(output='mon1.png', callback=on_exists)
+    assert os.path.isfile(filename)
+
+
+def test_output_format(sct):
+    filename = sct.shot(mon=1, output='mon-{mon}.png')
+    assert filename == 'mon-1.png'
+    assert os.path.isfile(filename)
+
+    fmt = 'sct-{top}x{left}_{width}x{height}.png'
+    filename = sct.shot(mon=1, output=fmt)
+    assert filename == fmt.format(**sct.monitors[1])
+    assert os.path.isfile(filename)
+
+    fmt = 'sct_{mon}-{date}.png'
+    filename = sct.shot(mon=1, output=fmt)
+    assert os.path.isfile(filename)
+
+    fmt = 'sct_{date:%Y-%m-%d}.png'
+    filename = sct.shot(mon=1, output=fmt)
+    assert filename == fmt.format(date=datetime.now())
     assert os.path.isfile(filename)

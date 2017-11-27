@@ -33,7 +33,7 @@ Enable the developer mode::
 
     $ python -m pip install -e .
 
-Lauch the test suit::
+Launch the test suit::
 
     $ py.test
 
