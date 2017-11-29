@@ -3,6 +3,7 @@ History:
 <see Git checking messages for history>
 
 dev     2017/xx/xx
+      - doc: add an example about capturing part of the monitor 2
 
 3.1.1   2017/11/27
       - MSS: add the 'mss' entry point

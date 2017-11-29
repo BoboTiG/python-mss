@@ -45,6 +45,16 @@ You can capture only a part of the screen:
 
 .. versionadded:: 3.0.0
 
+
+Part of the screen of the 2nd monitor
+-------------------------------------
+
+This is an example of capturing some part of the screen of the monitor 2:
+
+.. literalinclude:: examples/part_of_screen_monitor_2.py
+    :lines: 9-
+
+
 Use PIL bbox style and percent values
 -------------------------------------
 
