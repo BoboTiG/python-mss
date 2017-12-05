@@ -12,18 +12,19 @@ GNU/Linux
 
 .. class:: MSS
 
-    .. method:: __init__(display=None)
+    .. method:: __init__([display=None])
 
-        :param: str display: display to use.
+        :type display: str or None
+        :param display: The display to use.
 
         GNU/Linux initializations.
 
-    .. method:: grab(monitor) -> ScreenShot
+    .. method:: grab(monitor)
 
-        :exception ScreenShotError: When color depth is not 32 (rare).
-        :rtype: ScreenShot
+        :rtype: :class:`mss.base.ScreenShot`
+        :raises ScreenShotError: When color depth is not 32 (rare).
 
-        See :attr:`mss.base.MSSBase.grab` for details.
+        See :meth:`mss.base.MSSBase.grab()` for details.
 
 
 Methods
@@ -35,11 +36,11 @@ Methods
 
     The parent's class for every OS implementation.
 
-    .. method:: grab(monitor) -> ScreenShot
+    .. method:: grab(monitor)
 
         :param dict monitor: monitor's information.
-        :exception NotImplementedError: Subclasses need to implement this.
-        :rtype: ScreenShot
+        :rtype: :class:`ScreenShot`
+        :raises NotImplementedError: Subclasses need to implement this.
 
         Retrieve screen pixels for a given monitor.
 
@@ -48,12 +49,14 @@ Methods
             ``monitor`` can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
             it will be converted to the appropriate ``dict``.
 
-    .. method:: save(mon=1, output='mon-{mon}.png', callback=None) -> generator
+    .. method:: save([mon=1], [output='mon-{mon}.png'], [callback=None])
 
         :param int mon: the monitor's number.
         :param str output: the output's file name.
-        :param callable callback: callback called before saving the screen shot to a file. Takes the ``output`` argument as parameter.
-        :return generator: Created file(s).
+        :type callback: callable or None
+        :param callback: callback called before saving the screen shot to a file. Takes the ``output`` argument as parameter.
+        :rtype: iterable
+        :return: Created file(s).
 
         Grab a screen shot and save it to a file.
         The ``output`` parameter can take several keywords to customize the filename:
@@ -65,14 +68,14 @@ Methods
             - ``{height}``: the screen shot's height
             - ``{date}``: the current date using the default formatter
 
-        As it is using the `py::format()` function, you can specify formatting options like ``{date:%Y-%m-%s}``.
+        As it is using the :py:func:`format()` function, you can specify formatting options like ``{date:%Y-%m-%s}``.
 
-    .. method:: shot() -> str
+    .. method:: shot()
 
         :return str: The created file.
 
         Helper to save the screen shot of the first monitor, by default.
-        You can pass the same arguments as for ``save``.
+        You can pass the same arguments as for :meth:`save()`.
 
         .. versionadded:: 3.0.0
 
@@ -85,34 +88,34 @@ Methods
         A better name would have been *Image*, but to prevent collisions
         with ``PIL.Image``, it has been decided to use *ScreenShot*.
 
-    .. classmethod:: from_size(cls, data, width, height) -> ScreenShot
+    .. classmethod:: from_size(cls, data, width, height)
 
         :param bytearray data: raw BGRA pixels retrieved by ctype
                                OS independent implementations.
         :param int width: the monitor's width.
         :param int height: the monitor's height.
-        :rtype: ScreenShot
+        :rtype: :class:`ScreenShot`
 
         Instanciate a new class given only screen shot's data and size.
 
-    .. method:: pixels(coord_x, coord_y) -> Tuple[int, int, int]
+    .. method:: pixels(coord_x, coord_y)
 
         :param int coord_x: The x coordinate.
         :param int coord_y: The y coordinate.
-        :rtype: Tuple[int, int, int]
+        :rtype: tuple(int, int, int)
 
         Get the pixel value at the given position.
 
-    .. versionadded:: 3.0.0
+        .. versionadded:: 3.0.0
 
 .. module:: mss.tools
 
-    .. method:: to_png(data, size, output) -> None
+.. method:: to_png(data, size, output)
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
     :param str output: output's file name.
-    :exception ScreenShotError: On error when writing ``data`` to ``output``.
+    :raises ScreenShotError: On error when writing ``data`` to ``output``.
 
     Dump data to the image file. Pure Python PNG implementation.
 
@@ -143,7 +146,7 @@ Properties
         - ``width``: the width
         - ``height``: the height
 
-        :type:  List[Dict[str, int]]
+        :rtype:  list[dict[str, int]]
 
 .. class:: ScreenShot
 
@@ -151,54 +154,55 @@ Properties
 
         Numpy array interface support. It uses raw data in BGRA form.
 
-        :type: Dict[str, Any]
+        :rtype: dict[str, Any]
 
     .. attribute:: pos
 
         The screen shot's coordinates.
 
-        :type: NamedTuple
+        :rtype: :py:func:`collections.namedtuple()`
 
     .. attribute:: top
 
         The screen shot's top coordinate.
 
-        :type: int
+        :rtype: int
 
     .. attribute:: left
 
         The screen shot's left coordinate.
-        :type: int
+
+        :rtype: int
 
     .. attribute:: size
 
         The screen shot's size.
 
-        :type: NamedTuple
+        :rtype: :py:func:`collections.namedtuple()`
 
     .. attribute:: width
 
         The screen shot's width.
 
-        :type: int
+        :rtype: int
 
     .. attribute:: height
 
         The screen shot's height.
 
-        :type: int
+        :rtype: int
 
     .. attribute:: pixels
 
         List of RGB tuples.
 
-        :type: List[Tuple[int, int, int]]
+        :rtype: list[tuple(int, int, int)]
 
     .. attribute:: rgb
 
         Computed RGB values from the BGRA raw pixels.
 
-        :type: bytes
+        :rtype: bytes
 
     .. versionadded:: 3.0.0
 
@@ -218,6 +222,8 @@ Factory
 
 .. module:: mss.factory
 
-.. function:: mss() -> MSSBase
+.. function:: mss()
 
     Factory function to instance the appropriate MSS class.
+
+    :rtype: :class:`mss.base.MSSBase`

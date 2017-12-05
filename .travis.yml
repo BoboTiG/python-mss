@@ -20,13 +20,15 @@ env:
   - DISPLAY=":42"
 
 install:
-  - pip install flake8 numpy pillow pylint
+  - pip install flake8 numpy pillow pylint sphinx
   - pip install -e .
 
 script:
   - py.test --showlocals --display=":42.0"
   - flake8 mss
   - pylint mss
+  - cd docs
+  - make clean html
 
 after_script:
   - xpra stop :42
