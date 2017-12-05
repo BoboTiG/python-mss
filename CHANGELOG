@@ -3,6 +3,7 @@ History:
 <see Git checking messages for history>
 
 dev     2017/xx/xx
+      - removed support for Python 3.3
       - ci: build the documentation
       - doc: improvements and fixes (fix #37)
 
