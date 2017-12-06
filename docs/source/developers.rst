@@ -8,16 +8,13 @@ Setup
 =====
 
 1. You need to fork the `GitHub repository <https://github.com/BoboTiG/python-mss>`_.
-
-    .. Note::
-
-        Always work on a **specific branch**, based on the *dev* one, dedicated to your patch.
-
-2. Be sure to add/update tests and documentation within your patch.
+2. Create you own branch.
+3. Be sure to add/update tests and documentation within your patch.
 
 
 Testing
 =======
+
 Dependency
 ----------
 
