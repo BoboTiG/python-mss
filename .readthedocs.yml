@@ -1,0 +1,10 @@
+# http://read-the-docs.readthedocs.io/en/latest/yaml-config.html
+
+# Build PDF & ePub
+formats:
+    - epub
+    - pdf
+
+# Use that Python version to buil the documentation
+python:
+   version: 3
