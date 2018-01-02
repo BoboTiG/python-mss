@@ -40,16 +40,16 @@ def main(args=None):
     }
     if options.coordinates:
         try:
-            top, left, width, height = map(int, options.coordinates.split(','))
+            top, left, width, height = options.coordinates.split(',')
         except ValueError:
             print('Coordinates syntax: top, left, width, height')
             return 2
 
         kwargs['mon'] = {
-            'top': top,
-            'left': left,
-            'width': width,
-            'height': height,
+            'top': int(top),
+            'left': int(left),
+            'width': int(width),
+            'height': int(height),
         }
         if options.output == 'monitor-{mon}.png':
             kwargs['output'] = 'sct-{top}x{left}_{width}x{height}.png'

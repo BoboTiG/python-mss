@@ -2,11 +2,12 @@ History:
 
 <see Git checking messages for history>
 
-dev     2017/xx/xx
+dev     2018/xx/xx
       - removed support for Python 3.3
       - CI: build the documentation
       - doc: improvements and fixes (fix #37)
       - MSS: possibility to get the whole PNG raw bytes
+      - Windows: capture all visible windows (fix #28, #29)
 
 3.1.1   2017/11/27
       - MSS: add the 'mss' entry point

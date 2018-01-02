@@ -6,8 +6,8 @@ This is a non exhaustive list where MSS is integrated or has inspired.
 Do not hesistate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_ if you are using MSS too.
 
 
-Computer Vison
-==============
+AI, Computer Vison
+==================
 
 - `DoomPy <https://github.com/WNoxchi/DoomPy>`_ (Autonomous Anti-Demonic Combat Algorithms);
 - `Europilot <https://github.com/jsistla/eu-pilot>`_, a self-driving algorithm using Euro Truck Simulator (ETS2);

@@ -53,3 +53,5 @@ def to_png(data, size, output=None):
         fileh.write(b''.join(ihdr))
         fileh.write(b''.join(idat))
         fileh.write(b''.join(iend))
+
+    return None

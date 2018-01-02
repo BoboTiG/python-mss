@@ -15,6 +15,11 @@ from .exception import ScreenShotError
 __all__ = ('MSS',)
 
 
+CAPTUREBLT = 0x40000000
+DIB_RGB_COLORS = 0
+SRCCOPY = 0x00CC0020
+
+
 class BITMAPINFOHEADER(ctypes.Structure):
     """ Information about the dimensions and color format of a DIB. """
 
@@ -196,10 +201,10 @@ class MSS(MSSBase):
                                        monitor['width'], monitor['height'],
                                        srcdc,
                                        monitor['left'], monitor['top'],
-                                       0xcc0020)  # SRCCOPY
+                                       SRCCOPY | CAPTUREBLT)
 
             bits = ctypes.windll.gdi32.GetDIBits(
-                memdc, bmp, 0, monitor['height'], data, bmi, 0)
+                memdc, bmp, 0, monitor['height'], data, bmi, DIB_RGB_COLORS)
             if bits != monitor['height']:
                 del data
                 raise ScreenShotError('gdi32.GetDIBits() failed.', locals())
