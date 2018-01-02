@@ -23,7 +23,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Python MSS'
-copyright = "2013-2017, Mickaël 'Tiger-222' Schoentgen & contributors"
+copyright = "2013-2018, Mickaël 'Tiger-222' Schoentgen & contributors"
 author = 'Tiger-222'
 
 # The version info for the project you're documenting, acts as replacement for

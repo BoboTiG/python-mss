@@ -1,5 +1,17 @@
-3.1.0 (2017-08-xx)
+3.1.2 (2018-01-xx)
 ==================
+
+tools.py
+--------
+- Changed signature of `to_png(data, size, output)` to `to_png(data, size, output=None)`. If `output` is `None`, the raw PNG bytes will be returned.
+
+
+3.1.1 (2017-11-27)
+==================
+
+\__main__.py
+-----------
+- Added `args` argument to `main()`
 
 base.py
 -------
@@ -7,13 +19,15 @@ base.py
 
 darwin.py
 ---------
+- Add `CGPoint.__repr__()`
+- Add `CGRect.__repr__()`
+- Add `CGSize.__repr__()`
 - Removed `get_infinity()` function
-- Removed `resize()` method. Use `_crop_width()` method instead.
 
 windows.py
 ----------
-- Added `scale_factor` property to `MSS` class
 - Added `scale()` method to `MSS` class
+- Added `scale_factor` property to `MSS` class
 
 
 3.0.0 (2017-07-06)
