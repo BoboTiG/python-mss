@@ -8,10 +8,11 @@ import struct
 import zlib
 
 
-def to_png(data, size, output):
-    # type: (bytes, Tuple[int, int], str) -> None
+def to_png(data, size, output=None):
+    # type: (bytes, Tuple[int, int], Optional[str]) -> Union[None, bytes]
     """
-    Dump data to a PNG file.
+    Dump data to a PNG file.  If `output` is `None`, create no file but return
+    the whole PNG data.
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
@@ -42,6 +43,10 @@ def to_png(data, size, output):
     iend = [b'', b'IEND', b'', b'']
     iend[3] = struct.pack('>I', zlib.crc32(iend[1]) & 0xffffffff)
     iend[0] = struct.pack('>I', len(iend[2]))
+
+    if not output:
+        # Returns raw bytes of the whole PNG data
+        return magic + b''.join(ihdr + idat + iend)
 
     with open(output, 'wb') as fileh:
         fileh.write(magic)
