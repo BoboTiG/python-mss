@@ -110,7 +110,7 @@ Methods
 
 .. module:: mss.tools
 
-.. method:: to_png(data, size, output)
+.. method:: to_png(data, size, output=None)
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
@@ -118,6 +118,7 @@ Methods
     :raises ScreenShotError: On error when writing ``data`` to ``output``.
 
     Dump data to the image file. Pure Python PNG implementation.
+    If ``output`` is ``None``, create no file but return the whole PNG data.
 
     .. versionadded:: 3.0.0
 
