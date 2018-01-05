@@ -5,22 +5,22 @@ Examples
 Basics
 ======
 
-One screenshot per monitor
---------------------------
+One screen shot per monitor
+---------------------------
 ::
 
     for filename in sct.save():
         print(filename)
 
-Screenshot of the monitor 1
----------------------------
+Screen shot of the monitor 1
+----------------------------
 ::
 
     filename = sct.shot()
     print(filename)
 
-A screenshot to grab them all
------------------------------
+A screen shot to grab them all
+------------------------------
 ::
 
     filename = sct.shot(mon=-1, output='fullscreen.png')
@@ -29,7 +29,7 @@ A screenshot to grab them all
 Callback
 --------
 
-Screenshot of the monitor 1 with a callback:
+Screen shot of the monitor 1 with a callback:
 
 .. literalinclude:: examples/callback.py
     :lines: 9-

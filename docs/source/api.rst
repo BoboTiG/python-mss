@@ -90,13 +90,13 @@ Methods
 
     .. classmethod:: from_size(cls, data, width, height)
 
-        :param bytearray data: raw BGRA pixels retrieved by ctype
+        :param bytearray data: raw BGRA pixels retrieved by ctypes
                                OS independent implementations.
         :param int width: the monitor's width.
         :param int height: the monitor's height.
         :rtype: :class:`ScreenShot`
 
-        Instanciate a new class given only screen shot's data and size.
+        Instantiate a new class given only screen shot's data and size.
 
     .. method:: pixels(coord_x, coord_y)
 
