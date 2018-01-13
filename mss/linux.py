@@ -14,6 +14,10 @@ from .exception import ScreenShotError
 __all__ = ('MSS',)
 
 
+PLAINMASK = 0x00ffffff
+ZPIXMAP = 2
+
+
 class Display(ctypes.Structure):
     """
     Structure that serves as the connection to the X server
@@ -289,7 +293,7 @@ class MSS(MSSBase):
         ximage = self.xlib.XGetImage(self.display, root,
                                      monitor['left'], monitor['top'],
                                      monitor['width'], monitor['height'],
-                                     0x00ffffff, 2)  # ZPIXMAP
+                                     PLAINMASK, ZPIXMAP)
         if not ximage:
             raise ScreenShotError('xlib.XGetImage() failed.', locals())
 

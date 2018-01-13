@@ -28,9 +28,10 @@ class ScreenShot(object):
 
     def __init__(self, data, monitor, size=None):
         # type: (bytearray, Dict[str, int], Any) -> None
-        #: Bytearray of the raw BGRA pixels retrieved by ctype
+
+        #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
-        self.raw = bytearray(data)  # type: bytearray
+        self.raw = data  # type: bytearray
 
         #: NamedTuple of the screen shot coordinates.
         self.pos = Pos(monitor['left'], monitor['top'])  # type: Pos

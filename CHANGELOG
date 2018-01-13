@@ -3,7 +3,7 @@ History:
 <see Git checking messages for history>
 
 dev     2018/xx/xx
-
+      - MSS: remove useless bytearray() in Screenshot
 
 3.1.2   2018/01/05
       - removed support for Python 3.3
