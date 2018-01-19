@@ -24,6 +24,9 @@ def main(args=None):
     cli_args.add_argument('-c', '--coordinates', default='', type=str,
                           help='the part of the screen to capture:'
                                ' top, left, width, height')
+    cli_args.add_argument('-l', '--level', default=6, type=int,
+                          choices=list(range(10)),
+                          help='the PNG compression level')
     cli_args.add_argument('-m', '--monitor', default=0, type=int,
                           help='the monitor to screen shot')
     cli_args.add_argument('-o', '--output', default='monitor-{mon}.png',
@@ -59,7 +62,10 @@ def main(args=None):
             if options.coordinates:
                 output = kwargs['output'].format(**kwargs['mon'])
                 sct_img = sct.grab(kwargs['mon'])
-                to_png(sct_img.rgb, sct_img.size, output)
+                to_png(sct_img.rgb,
+                       sct_img.size,
+                       level=options.level,
+                       output=output)
                 if not options.quiet:
                     print(os.path.realpath(output))
             else:

@@ -13,6 +13,7 @@ AI, Computer Vison
 - `Europilot <https://github.com/jsistla/eu-pilot>`_, a self-driving algorithm using Euro Truck Simulator (ETS2);
 - `gym-mupen64plus <https://github.com/bzier/gym-mupen64plus>`_, an OpenAI Gym environment wrapper for the Mupen64Plus N64 emulator;
 - `Open Source Self Driving Car Initiative <https://github.com/OSSDC/OSSDC-VisionBasedACC>`_;
+- `PUBGIS <https://github.com/andrewzwicky/PUBGIS>`_, a map generator of your position throughout PUBG gameplay;
 - `Self-Driving-Car-3D-Simulator-With-CNN <https://github.com/sagar448/Self-Driving-Car-3D-Simulator-With-CNN>`_;
 
 Games

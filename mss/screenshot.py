@@ -31,7 +31,7 @@ class ScreenShot(object):
 
         #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
-        self.raw = data  # type: bytearray
+        self.raw = bytearray(data)  # type: bytearray
 
         #: NamedTuple of the screen shot coordinates.
         self.pos = Pos(monitor['left'], monitor['top'])  # type: Pos

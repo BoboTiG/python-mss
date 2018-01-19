@@ -110,10 +110,11 @@ Methods
 
 .. module:: mss.tools
 
-.. method:: to_png(data, size, output=None)
+.. method:: to_png(data, size, level=6, output=None)
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
+    :param int level: Zlib compression level.
     :param str output: output's file name.
     :raises ScreenShotError: On error when writing ``data`` to ``output``.
 
@@ -121,6 +122,10 @@ Methods
     If ``output`` is ``None``, create no file but return the whole PNG data.
 
     .. versionadded:: 3.0.0
+
+    .. versionadded:: 3.1.3
+
+        Added the ``level`` keyword argument to control the PNG compression level.
 
 
 Properties
