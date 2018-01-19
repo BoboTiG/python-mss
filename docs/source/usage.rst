@@ -35,6 +35,16 @@ Or::
     sct = mss()
 
 
+PNG Compression
+---------------
+
+You can tweak the PNG compression level (see :py:func:`zlib.compress()` for details)::
+
+    sct.compression_level = 2
+
+.. versionadded:: 3.1.3
+
+
 GNU/Linux
 ---------
 
