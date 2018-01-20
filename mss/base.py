@@ -15,6 +15,7 @@ class MSSBase(object):
     """ This class will be overloaded by a system specific one. """
 
     cls_image = ScreenShot  # type: object
+    compression_level = 6  # type: int
     _monitors = []  # type: List[Dict[str, int]]
 
     def __enter__(self):
@@ -106,7 +107,10 @@ class MSSBase(object):
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
-                to_png(sct.rgb, sct.size, fname)
+                to_png(sct.rgb,
+                       sct.size,
+                       level=self.compression_level,
+                       output=fname)
                 yield fname
         else:
             # A screen shot of all monitors together or
@@ -121,7 +125,10 @@ class MSSBase(object):
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)
-            to_png(sct.rgb, sct.size, output)
+            to_png(sct.rgb,
+                   sct.size,
+                   level=self.compression_level,
+                   output=output)
             yield output
 
     def shot(self, **kwargs):

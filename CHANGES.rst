@@ -1,4 +1,16 @@
-3.1.2 (2018-01-xx)
+3.1.3 (2018-xx-xx)
+==================
+
+base.py
+-------
+- Added ``MSSBase.compression_level`` to control the PNG compression level
+
+tools.py
+--------
+- Changed signature of ``to_png(data, size, output=None)`` to ``to_png(data, size, level=6, output=None)``. ``level`` is the Zlib compression level.
+
+
+3.1.2 (2018-01-05)
 ==================
 
 tools.py
@@ -19,9 +31,9 @@ base.py
 
 darwin.py
 ---------
-- Add ``CGPoint.__repr__()``
-- Add ``CGRect.__repr__()``
-- Add ``CGSize.__repr__()``
+- Added ``CGPoint.__repr__()``
+- Added ``CGRect.__repr__()``
+- Added ``CGSize.__repr__()``
 - Removed ``get_infinity()`` function
 
 windows.py
@@ -36,7 +48,7 @@ windows.py
 base.py
 -------
 - Added the ``ScreenShot`` class containing data for a given screen shot (support the Numpy array interface [``ScreenShot.__array_interface__``])
-- Add ``shot()`` method to ``MSSBase``. It takes the same arguments as the ``save()`` method.
+- Added ``shot()`` method to ``MSSBase``. It takes the same arguments as the ``save()`` method.
 - Renamed ``get_pixels`` to ``grab``. It now returns a ``ScreenShot`` object.
 - Moved ``to_png`` method to ``tools.py``. It is now a simple function.
 - Removed ``enum_display_monitors()`` method. Use ``monitors`` property instead.

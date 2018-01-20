@@ -27,4 +27,4 @@ with mss.mss() as sct:
     im = sct.grab(bbox)
 
     # Save it!
-    mss.tools.to_png(im.rgb, im.size, 'screenshot.png')
+    mss.tools.to_png(im.rgb, im.size, output='screenshot.png')

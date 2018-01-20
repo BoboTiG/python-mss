@@ -56,6 +56,15 @@ This is an example that uses it, but also using percentage values:
 
 .. versionadded:: 3.1.0
 
+PNG Compression
+---------------
+
+You can tweak the PNG compression level (see :py:func:`zlib.compress()` for details)::
+
+    sct.compression_level = 2
+
+.. versionadded:: 3.1.3
+
 Advanced
 ========
 
