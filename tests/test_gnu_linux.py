@@ -15,7 +15,10 @@ if platform.system().lower() != 'linux':
     pytestmark = pytest.mark.skip
 
 
-TEXT = str if sys.version[0] > '2' else unicode
+try:
+    TEXT = unicode  # Python 2
+except NameError:
+    TEXT = str      # Python 3
 PY3 = sys.version[0] > '2'
 
 
