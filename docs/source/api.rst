@@ -117,6 +117,7 @@ Methods
     :param int level: PNG compression level.
     :param str output: output's file name.
     :raises ScreenShotError: On error when writing ``data`` to ``output``.
+    :raises zlib.error: On bad compression ``level``.
 
     Dump data to the image file. Pure Python PNG implementation.
     If ``output`` is ``None``, create no file but return the whole PNG data.

@@ -2,6 +2,7 @@
 
 import hashlib
 import os.path
+import zlib
 
 import pytest
 
@@ -11,6 +12,15 @@ from mss.tools import to_png
 WIDTH = 10
 HEIGHT = 10
 MD5SUM = '055e615b74167c9bdfea16a00539450c'
+
+
+def test_bad_compression_level(sct):
+    sct.compression_level = 42
+    try:
+        with pytest.raises(zlib.error):
+            sct.shot()
+    finally:
+        sct.compression_level = 6
 
 
 def test_compression_level(sct):
