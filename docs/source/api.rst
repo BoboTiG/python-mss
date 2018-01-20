@@ -114,7 +114,7 @@ Methods
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
-    :param int level: Zlib compression level.
+    :param int level: PNG compression level.
     :param str output: output's file name.
     :raises ScreenShotError: On error when writing ``data`` to ``output``.
 
