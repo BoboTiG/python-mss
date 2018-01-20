@@ -36,7 +36,7 @@ def to_png(data, size, level=6, output=None):
     ihdr[0] = struct.pack('>I', len(ihdr[2]))
 
     # Data: size, marker, data, CRC32
-    idat = [b'', b'IDAT', zlib.compress(scanlines, level=level), b'']
+    idat = [b'', b'IDAT', zlib.compress(scanlines, level), b'']
     idat[3] = struct.pack('>I', zlib.crc32(b''.join(idat[1:3])) & 0xffffffff)
     idat[0] = struct.pack('>I', len(idat[2]))
 
