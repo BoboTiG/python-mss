@@ -3,8 +3,11 @@ General informations:
 * OS name: _Debian GNU/Linux_
 * OS version: __sid__
 * OS architecture: _64 bits_
-* Monitor(s)'s resolution: 
-* Result of the command `python --version`: __Python 3.5.1+__
+* Resolutions:
+    * Monitor 1: _800x600_
+    * Monitor 2: _1920x1080_
+* Python version: _3.6.4_
+* MSS version: __3.1.3__
 
 
 For GNU/Linux users:
