@@ -127,6 +127,16 @@ class ScreenShot(object):
             raise ScreenShotError('Pixel location out of range.', locals())
 
     @property
+    def bgra(self):
+        # type: () -> bytes
+        """
+        Compute BGRA values from the BGRA raw pixels.
+
+        :return bytes: BGRA pixels.
+        """
+        return bytes(self.raw)
+
+    @property
     def rgb(self):
         # type: () -> bytes
         """
