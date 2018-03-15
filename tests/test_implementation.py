@@ -98,7 +98,7 @@ def test_entry_point(capsys, sct):
         out, _ = capsys.readouterr()
         assert not out
         assert os.path.isfile('monitor-1.png')
-        os.remove('monitor-1.png')
+        #os.remove('monitor-1.png')
 
     fmt = 'sct-{width}x{height}.png'
     for opt in ('-o', '--out'):

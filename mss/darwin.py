@@ -7,7 +7,7 @@ Source: https://github.com/BoboTiG/python-mss
 # pylint: disable=import-error, too-many-locals
 
 from __future__ import division
-
+import time
 import ctypes
 import ctypes.util
 import sys
@@ -54,6 +54,60 @@ class CGRect(ctypes.Structure):
     def __repr__(self):
         return '{0}<{1} {2}>'.format(
             type(self).__name__, self.origin, self.size)
+
+
+class Grabber:
+    def __init__(self, core, image_ref, cls_image, monitor, width, height):
+        self.core = core
+        self.monitor = monitor
+        self.cls_image = cls_image
+        self.width = width
+        self.image_ref = image_ref
+        self.height = height
+        t = time.time()
+        self.prov = self.core.CGImageGetDataProvider(image_ref)
+        print (time.time()-t)
+
+    def grab(self):
+        try:
+            image_ref = self.image_ref
+            width = self.width
+            height = self.height
+            copy_data = self.core.CGDataProviderCopyData(self.prov)
+            data_ref = self.core.CFDataGetBytePtr(copy_data)
+            buf_len = self.core.CFDataGetLength(copy_data)
+            raw = ctypes.cast(
+                data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
+            data = bytearray(raw.contents)
+
+            # Remove padding per row
+            bytes_per_row = int(self.core.CGImageGetBytesPerRow(image_ref))
+            bytes_per_pixel = int(self.core.CGImageGetBitsPerPixel(image_ref))
+            bytes_per_pixel = (bytes_per_pixel + 7) // 8
+
+            if bytes_per_pixel * width != bytes_per_row:
+                cropped = bytearray()
+                for row in range(height):
+                    start = row * bytes_per_row
+                    end = start + width * bytes_per_pixel
+                    cropped.extend(data[start:end])
+                data = cropped
+            return self.cls_image(data, self.monitor, size=Size(width, height))
+        finally:
+            if copy_data:
+                self.core.CFRelease(copy_data)
+        return None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self
+
+    def __dek__(self):
+        if self.prov:
+            self.core.CGDataProviderRelease(self.prov)
+            self.prov = None
 
 
 class MSS(MSSBase):
@@ -190,6 +244,7 @@ class MSS(MSSBase):
         rect = CGRect((monitor['left'], monitor['top']),
                       (monitor['width'], monitor['height']))
 
+        t = time.time()
         image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
             raise ScreenShotError(
@@ -197,32 +252,33 @@ class MSS(MSSBase):
 
         width = int(self.core.CGImageGetWidth(image_ref))
         height = int(self.core.CGImageGetHeight(image_ref))
-        prov = copy_data = None
-        try:
-            prov = self.core.CGImageGetDataProvider(image_ref)
-            copy_data = self.core.CGDataProviderCopyData(prov)
-            data_ref = self.core.CFDataGetBytePtr(copy_data)
-            buf_len = self.core.CFDataGetLength(copy_data)
-            raw = ctypes.cast(
-                data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
-            data = bytearray(raw.contents)
+        with Grabber(self.core, image_ref, self.cls_image, monitor, width, height) as grabber:
+            print (time.time()-t)
+            return grabber.grab()
 
-            # Remove padding per row
-            bytes_per_row = int(self.core.CGImageGetBytesPerRow(image_ref))
-            bytes_per_pixel = int(self.core.CGImageGetBitsPerPixel(image_ref))
-            bytes_per_pixel = (bytes_per_pixel + 7) // 8
+    def grabber(self, monitor):
+        # type: (Dict[str, int]) -> ScreenShot
+        """
+        See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
+        """
 
-            if bytes_per_pixel * width != bytes_per_row:
-                cropped = bytearray()
-                for row in range(height):
-                    start = row * bytes_per_row
-                    end = start + width * bytes_per_pixel
-                    cropped.extend(data[start:end])
-                data = cropped
-        finally:
-            if prov:
-                self.core.CGDataProviderRelease(prov)
-            if copy_data:
-                self.core.CFRelease(copy_data)
+        # Convert PIL bbox style
+        if isinstance(monitor, tuple):
+            monitor = {
+                'left': monitor[0],
+                'top': monitor[1],
+                'width': monitor[2] - monitor[0],
+                'height': monitor[3] - monitor[1],
+            }
 
-        return self.cls_image(data, monitor, size=Size(width, height))
+        rect = CGRect((monitor['left'], monitor['top']),
+                      (monitor['width'], monitor['height']))
+
+        image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
+        if not image_ref:
+            raise ScreenShotError(
+                'CoreGraphics.CGWindowListCreateImage() failed.', locals())
+
+        width = int(self.core.CGImageGetWidth(image_ref))
+        height = int(self.core.CGImageGetHeight(image_ref))
+        return Grabber(self.core, image_ref, self.cls_image, monitor, width, height)
