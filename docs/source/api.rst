@@ -163,15 +163,17 @@ Properties
 
         :rtype: dict[str, Any]
 
-    .. attribute:: pos
+    .. attribute:: bgra
 
-        The screen shot's coordinates.
+        BGRA values from the BGRA raw pixels.
 
-        :rtype: :py:func:`collections.namedtuple()`
+        :rtype: bytes
 
-    .. attribute:: top
+        .. versionadded:: 3.1.3
 
-        The screen shot's top coordinate.
+    .. attribute:: height
+
+        The screen shot's height.
 
         :rtype: int
 
@@ -181,29 +183,17 @@ Properties
 
         :rtype: int
 
-    .. attribute:: size
-
-        The screen shot's size.
-
-        :rtype: :py:func:`collections.namedtuple()`
-
-    .. attribute:: width
-
-        The screen shot's width.
-
-        :rtype: int
-
-    .. attribute:: height
-
-        The screen shot's height.
-
-        :rtype: int
-
     .. attribute:: pixels
 
         List of RGB tuples.
 
         :rtype: list[tuple(int, int, int)]
+
+    .. attribute:: pos
+
+        The screen shot's coordinates.
+
+        :rtype: :py:func:`collections.namedtuple()`
 
     .. attribute:: rgb
 
@@ -211,7 +201,25 @@ Properties
 
         :rtype: bytes
 
-    .. versionadded:: 3.0.0
+        .. versionadded:: 3.0.0
+
+    .. attribute:: size
+
+        The screen shot's size.
+
+        :rtype: :py:func:`collections.namedtuple()`
+
+    .. attribute:: top
+
+        The screen shot's top coordinate.
+
+        :rtype: int
+
+    .. attribute:: width
+
+        The screen shot's width.
+
+        :rtype: int
 
 
 Exception

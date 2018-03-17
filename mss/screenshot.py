@@ -77,7 +77,7 @@ class ScreenShot(object):
     @property
     def bgra(self):
         # type: () -> bytes
-        """ Compute BGRA values from the BGRA raw pixels. """
+        """ BGRA values from the BGRA raw pixels. """
         return bytes(self.raw)
 
     @property
