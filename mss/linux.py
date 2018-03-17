@@ -165,6 +165,10 @@ class MSS(MSSBase):
         self.root = self.xlib.XDefaultRootWindow(
             self.display, self.xlib.XDefaultScreen(self.display))
 
+        # Fix for XRRGetScreenResources and XGetImage:
+        #     expected LP_Display instance instead of LP_XWindowAttributes
+        self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
+
     def _set_argtypes(self):
         # type: () -> None
         """ Functions arguments. """
@@ -251,10 +255,8 @@ class MSS(MSSBase):
             })
 
             # Each monitors
-            # Fix for XRRGetScreenResources:
-            #     expected LP_Display instance instead of LP_XWindowAttributes
-            root = ctypes.cast(self.root, ctypes.POINTER(Display))
-            mon = self.xrandr.XRRGetScreenResources(self.display, root)
+            mon = self.xrandr.XRRGetScreenResources(self.display,
+                                                    self.drawable)
             for idx in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(self.display, mon,
                                                   mon.contents.crtcs[idx])
@@ -286,11 +288,7 @@ class MSS(MSSBase):
                 'height': monitor[3] - monitor[1],
             }
 
-        # Fix for XGetImage:
-        #     expected LP_Display instance instead of LP_XWindowAttributes
-        root = ctypes.cast(self.root, ctypes.POINTER(Display))
-
-        ximage = self.xlib.XGetImage(self.display, root,
+        ximage = self.xlib.XGetImage(self.display, self.drawable,
                                      monitor['left'], monitor['top'],
                                      monitor['width'], monitor['height'],
                                      PLAINMASK, ZPIXMAP)
@@ -308,6 +306,5 @@ class MSS(MSSBase):
 
         # Free
         self.xlib.XDestroyImage(ximage)
-        ximage = None
 
         return self.cls_image(data, monitor)

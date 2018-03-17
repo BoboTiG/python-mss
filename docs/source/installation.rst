@@ -4,7 +4,7 @@
 Installation
 ============
 
-Recommended way
+Recommended Way
 ===============
 
 Quite simple::
@@ -12,7 +12,7 @@ Quite simple::
     $ pip install --upgrade mss
 
 
-From sources
+From Sources
 ============
 
 Alternatively, you can get a copy of the module from GitHub::

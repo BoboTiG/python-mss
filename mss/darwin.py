@@ -187,29 +187,30 @@ class MSS(MSSBase):
                 'height': monitor[3] - monitor[1],
             }
 
+        core = self.core
         rect = CGRect((monitor['left'], monitor['top']),
                       (monitor['width'], monitor['height']))
 
-        image_ref = self.core.CGWindowListCreateImage(rect, 1, 0, 0)
+        image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:
             raise ScreenShotError(
                 'CoreGraphics.CGWindowListCreateImage() failed.', locals())
 
-        width = int(self.core.CGImageGetWidth(image_ref))
-        height = int(self.core.CGImageGetHeight(image_ref))
+        width = int(core.CGImageGetWidth(image_ref))
+        height = int(core.CGImageGetHeight(image_ref))
         prov = copy_data = None
         try:
-            prov = self.core.CGImageGetDataProvider(image_ref)
-            copy_data = self.core.CGDataProviderCopyData(prov)
-            data_ref = self.core.CFDataGetBytePtr(copy_data)
-            buf_len = self.core.CFDataGetLength(copy_data)
+            prov = core.CGImageGetDataProvider(image_ref)
+            copy_data = core.CGDataProviderCopyData(prov)
+            data_ref = core.CFDataGetBytePtr(copy_data)
+            buf_len = core.CFDataGetLength(copy_data)
             raw = ctypes.cast(
                 data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
             data = bytearray(raw.contents)
 
             # Remove padding per row
-            bytes_per_row = int(self.core.CGImageGetBytesPerRow(image_ref))
-            bytes_per_pixel = int(self.core.CGImageGetBitsPerPixel(image_ref))
+            bytes_per_row = int(core.CGImageGetBytesPerRow(image_ref))
+            bytes_per_pixel = int(core.CGImageGetBitsPerPixel(image_ref))
             bytes_per_pixel = (bytes_per_pixel + 7) // 8
 
             if bytes_per_pixel * width != bytes_per_row:
@@ -221,8 +222,8 @@ class MSS(MSSBase):
                 data = cropped
         finally:
             if prov:
-                self.core.CGDataProviderRelease(prov)
+                core.CGDataProviderRelease(prov)
             if copy_data:
-                self.core.CFRelease(copy_data)
+                core.CFRelease(copy_data)
 
         return self.cls_image(data, monitor, size=Size(width, height))

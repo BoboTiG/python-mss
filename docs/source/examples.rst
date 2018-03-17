@@ -63,7 +63,7 @@ You can tweak the PNG compression level (see :py:func:`zlib.compress()` for deta
 
     sct.compression_level = 2
 
-.. versionadded:: 3.1.3
+.. versionadded:: 3.2.0
 
 Advanced
 ========

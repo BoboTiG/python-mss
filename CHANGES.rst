@@ -1,9 +1,13 @@
-3.1.3 (2018-xx-xx)
+3.2.0 (2018-xx-xx)
 ==================
 
 base.py
 -------
 - Added ``MSSBase.compression_level`` to control the PNG compression level
+
+linux.py
+--------
+- Added ``MSS.drawable`` to speed-up grabbing.
 
 screenshot.py
 -------------

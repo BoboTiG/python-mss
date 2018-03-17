@@ -1,10 +1,9 @@
 language: python
 python:
   - 2.7
-  - 3.4
   - 3.5
   - 3.6
-#  - nightly # currently points to 3.7-dev
+  - nightly # currently points to 3.7-dev
 
 addons:
   apt:
@@ -25,12 +24,9 @@ install:
 script:
   - py.test --showlocals --display=":42.0"
   - flake8 .
-  - pylint mss
+  - if [[ $TRAVIS_PYTHON_VERSION < '3.7' ]]; then pylint mss; fi
   - if [[ $TRAVIS_PYTHON_VERSION > '2.8' ]]; then cd docs && make clean html; fi
 
 after_script:
   - xpra stop :42
   - cat ~/.xpra/*.log
-
-matrix:
-    fast_finish: true

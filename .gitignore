@@ -10,3 +10,4 @@ MANIFEST*
 *.png
 *.png.old
 *.pyc
+.pytest_cache

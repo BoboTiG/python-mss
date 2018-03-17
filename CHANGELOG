@@ -4,7 +4,9 @@ History:
 
 dev     2018/xx/xx
       - add PNG compression level control
-      - MSS: add Screenshot.bgra attribute
+      - MSS: add the Screenshot.bgra attribute
+      - MSS: speed-up grabbing on the 3 platforms
+      - tests: add leaks.py and benchmarks.py for manual testing
 
 3.1.2   2018/01/05
       - removed support for Python 3.3
@@ -26,7 +28,7 @@ dev     2018/xx/xx
       - Mac: properly support all display scaling and resolutions (fix #14, #19, #21, #23)
       - Mac: fix memory leaks (fix #24)
       - Linux: handle bad display value
-      - Windows: Take into account zoom factor for high-DPI displays (fix #20)
+      - Windows: take into account zoom factor for high-DPI displays (fix #20)
 
 3.0.1   2017/07/06
       - fix examples links

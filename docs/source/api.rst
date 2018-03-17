@@ -124,7 +124,7 @@ Methods
 
     .. versionadded:: 3.0.0
 
-    .. versionadded:: 3.1.3
+    .. versionadded:: 3.2.0
 
         Added the ``level`` keyword argument to control the PNG compression level.
 
@@ -169,7 +169,7 @@ Properties
 
         :rtype: bytes
 
-        .. versionadded:: 3.1.3
+        .. versionadded:: 3.2.0
 
     .. attribute:: height
 

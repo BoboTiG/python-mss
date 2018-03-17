@@ -7,7 +7,7 @@ General informations:
     * Monitor 1: _800x600_
     * Monitor 2: _1920x1080_
 * Python version: _3.6.4_
-* MSS version: __3.1.3__
+* MSS version: __3.2.0__
 
 
 For GNU/Linux users:
