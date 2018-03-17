@@ -75,28 +75,22 @@ class ScreenShot(object):
         return cls(data, monitor)
 
     @property
-    def top(self):
-        # type: () -> int
-        """ Convenient accessor to the top position. """
-        return self.pos.top
-
-    @property
-    def left(self):
-        # type: () -> int
-        """ Convenient accessor to the left position. """
-        return self.pos.left
-
-    @property
-    def width(self):
-        # type: () -> int
-        """ Convenient accessor to the width size. """
-        return self.size.width
+    def bgra(self):
+        # type: () -> bytes
+        """ Compute BGRA values from the BGRA raw pixels. """
+        return bytes(self.raw)
 
     @property
     def height(self):
         # type: () -> int
         """ Convenient accessor to the height size. """
         return self.size.height
+
+    @property
+    def left(self):
+        # type: () -> int
+        """ Convenient accessor to the left position. """
+        return self.pos.left
 
     @property
     def pixels(self):
@@ -110,31 +104,6 @@ class ScreenShot(object):
             self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
 
         return self.__pixels
-
-    def pixel(self, coord_x, coord_y):
-        # type: (int, int) -> Tuple[int, int, int]
-        """
-        Returns the pixel value at a given position.
-
-        :param int coord_x: The x coordinate.
-        :param int coord_y: The y coordinate.
-        :return tuple: The pixel value as (R, G, B).
-        """
-
-        try:
-            return self.pixels[coord_y][coord_x]
-        except IndexError:
-            raise ScreenShotError('Pixel location out of range.', locals())
-
-    @property
-    def bgra(self):
-        # type: () -> bytes
-        """
-        Compute BGRA values from the BGRA raw pixels.
-
-        :return bytes: BGRA pixels.
-        """
-        return bytes(self.raw)
 
     @property
     def rgb(self):
@@ -152,3 +121,30 @@ class ScreenShot(object):
             self.__rgb = bytes(rgb)
 
         return self.__rgb
+
+    @property
+    def top(self):
+        # type: () -> int
+        """ Convenient accessor to the top position. """
+        return self.pos.top
+
+    @property
+    def width(self):
+        # type: () -> int
+        """ Convenient accessor to the width size. """
+        return self.size.width
+
+    def pixel(self, coord_x, coord_y):
+        # type: (int, int) -> Tuple[int, int, int]
+        """
+        Returns the pixel value at a given position.
+
+        :param int coord_x: The x coordinate.
+        :param int coord_y: The y coordinate.
+        :return tuple: The pixel value as (R, G, B).
+        """
+
+        try:
+            return self.pixels[coord_y][coord_x]
+        except IndexError:
+            raise ScreenShotError('Pixel location out of range.', locals())
