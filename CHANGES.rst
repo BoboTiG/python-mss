@@ -5,6 +5,10 @@ base.py
 -------
 - Added ``MSSBase.compression_level`` to control the PNG compression level
 
+screenshot.py
+-------------
+- Added ``Screenshot.bgra`` to get BGRA bytes.
+
 tools.py
 --------
 - Changed signature of ``to_png(data, size, output=None)`` to ``to_png(data, size, level=6, output=None)``. ``level`` is the Zlib compression level.

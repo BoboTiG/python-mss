@@ -4,6 +4,7 @@ History:
 
 dev     2018/xx/xx
       - add PNG compression level control
+      - MSS: add Screenshot.bgra attribute
 
 3.1.2   2018/01/05
       - removed support for Python 3.3
