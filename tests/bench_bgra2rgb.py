@@ -6,23 +6,28 @@ Maximum screenshots in 1 second by computing BGRA raw values to RGB.
 
 
 GNU/Linux
-  pil_frombytes 595
-  mss_rgb       437
-  numpy_flip    183
-  numpy_slice   156
+  pil_frombytes_rgb 51
+  pil_frombytes     139
+  mss_rgb           119
+  numpy_flip        31
+  numpy_slice       29
 
 macOS
-  pil_frombytes 115
-  mss_rgb       108
-  numpy_flip     67
-  numpy_slice    65
+  pil_frombytes_rgb 113
+  pil_frombytes     209
+  mss_rgb           174
+  numpy_flip        39
+  numpy_slice       36
 
 Windows
-  pil_frombytes 294
-  mss_rgb       261
-  numpy_flip    124
-  numpy_slice   115
+  pil_frombytes_rgb 42
+  pil_frombytes     81
+  mss_rgb           66
+  numpy_flip        25
+  numpy_slice       22
 """
+
+from __future__ import print_function
 
 import time
 
@@ -45,24 +50,29 @@ def numpy_slice(im):
     return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
 
 
+def pil_frombytes_rgb(im):
+    return Image.frombytes('RGB', im.size, im.rgb).tobytes()
+
+
 def pil_frombytes(im):
     return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
 
 
-def benchmark(func):
+def benchmark():
     with mss.mss() as sct:
-        m = {'top': 0, 'left': 0, 'width': 640, 'height': 480}
-        count = 0
-        start = time.time()
+        im = sct.grab(sct.monitors[0])
+        for func in (pil_frombytes_rgb,
+                     pil_frombytes,
+                     mss_rgb,
+                     numpy_flip,
+                     numpy_slice):
+            count = 0
+            start = time.time()
+            while (time.time() - start) <= 1:
+                func(im)
+                im._ScreenShot__rgb = None
+                count += 1
+            print(func.__name__.ljust(17), count)
 
-        while (time.time() - start) <= 1:
-            frame = func(sct.grab(m))  # noqa
-            count += 1
 
-        print(func.__name__, count)
-
-
-benchmark(pil_frombytes)
-benchmark(mss_rgb)
-benchmark(numpy_flip)
-benchmark(numpy_slice)
+benchmark()
