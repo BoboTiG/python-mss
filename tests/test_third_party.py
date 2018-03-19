@@ -54,9 +54,16 @@ def test_pil_bgra(sct):
     box = {'top': 0, 'left': 0, 'width': width, 'height': height}
     sct_img = sct.grab(box)
 
-    img = Image.frombytes('RGBX', sct_img.size, sct_img.bgra)
-    assert img.mode == 'RGBX'
+    img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
+    assert img.mode == 'RGB'
     assert img.size == sct_img.size
+
+    for x in range(width):
+        for y in range(height):
+            assert img.getpixel((x, y)) == sct_img.pixel(x, y)
+
+    img.save('box-bgra.png')
+    assert os.path.isfile('box-bgra.png')
 
 
 @pytest.mark.skipif(
