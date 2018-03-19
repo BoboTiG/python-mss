@@ -48,7 +48,7 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    _bbox = None
+    _bbox = {'height': 0, 'width': 0}
     _bmp = None
     _data = None
     _memdc = None
@@ -207,7 +207,7 @@ class MSS(MSSBase):
         gdi = ctypes.windll.gdi32
         width, height = monitor['width'], monitor['height']
 
-        if self._bbox != monitor:
+        if (self._bbox['height'], self._bbox['width']) != (height, width):
             self._bbox = monitor
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
