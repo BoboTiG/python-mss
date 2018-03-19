@@ -2,8 +2,21 @@ History:
 
 <see Git checking messages for history>
 
-dev     2017/xx/xx
+dev     2018/xx/xx
+      - add PNG compression level control
+      - MSS: add the Screenshot.bgra attribute
+      - MSS: speed-up grabbing on the 3 platforms
+      - tests: add leaks.py and benchmarks.py for manual testing
       - doc: add an example about capturing part of the monitor 2
+      - doc: add an example about computing BGRA values to RGB
+
+3.1.2   2018/01/05
+      - removed support for Python 3.3
+      - CI: build the documentation
+      - doc: improvements and fixes (fix #37)
+      - MSS: possibility to get the whole PNG raw bytes
+      - Windows: capture all visible windows
+>>>>>>> 0e3b4846584d55fb75d51b70ce3578c0531a80d1
 
 3.1.1   2017/11/27
       - MSS: add the 'mss' entry point
@@ -18,7 +31,7 @@ dev     2017/xx/xx
       - Mac: properly support all display scaling and resolutions (fix #14, #19, #21, #23)
       - Mac: fix memory leaks (fix #24)
       - Linux: handle bad display value
-      - Windows: Take into account zoom factor for high-DPI displays (fix #20)
+      - Windows: take into account zoom factor for high-DPI displays (fix #20)
 
 3.0.1   2017/07/06
       - fix examples links

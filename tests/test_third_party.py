@@ -49,6 +49,19 @@ def test_pil(sct):
 @pytest.mark.skipif(
     Image is None,
     reason='PIL module not available.')
+def test_pil_bgra(sct):
+    width, height = 16, 16
+    box = {'top': 0, 'left': 0, 'width': width, 'height': height}
+    sct_img = sct.grab(box)
+
+    img = Image.frombytes('RGBX', sct_img.size, sct_img.bgra)
+    assert img.mode == 'RGBX'
+    assert img.size == sct_img.size
+
+
+@pytest.mark.skipif(
+    Image is None,
+    reason='PIL module not available.')
 def test_pil_not_16_rounded(sct):
     width, height = 10, 10
     box = {'top': 0, 'left': 0, 'width': width, 'height': height}

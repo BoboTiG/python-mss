@@ -15,6 +15,11 @@ from .exception import ScreenShotError
 __all__ = ('MSS',)
 
 
+CAPTUREBLT = 0x40000000
+DIB_RGB_COLORS = 0
+SRCCOPY = 0x00CC0020
+
+
 class BITMAPINFOHEADER(ctypes.Structure):
     """ Information about the dimensions and color format of a DIB. """
 
@@ -43,6 +48,12 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
+    _bbox = {'height': 0, 'width': 0}
+    _bmp = None
+    _data = None
+    _memdc = None
+    _srcdc = None
+
     __scale_factor = None  # type: float
 
     def __init__(self):
@@ -58,6 +69,28 @@ class MSS(MSSBase):
         )
         set_argtypes(self.monitorenumproc)
         set_restypes()
+
+        self._srcdc = ctypes.windll.user32.GetWindowDC(0)
+        self._memdc = ctypes.windll.gdi32.CreateCompatibleDC(self._srcdc)
+
+        bmi = BITMAPINFO()
+        bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        bmi.bmiHeader.biPlanes = 1  # Always 1
+        bmi.bmiHeader.biBitCount = 32  # See grab.__doc__ [2]
+        bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
+        bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
+        bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
+        self._bmi = bmi
+
+    def __exit__(self, *args):
+        # type: (*str) -> None
+        """ Cleanup. """
+
+        for attr in (self._bmp, self._memdc, self._srcdc):
+            if attr:
+                ctypes.windll.gdi32.DeleteObject(attr)
+
+        super(MSS, self).__exit__(*args)
 
     @property
     def scale_factor(self):
@@ -171,48 +204,26 @@ class MSS(MSSBase):
                 'height': monitor[3] - monitor[1],
             }
 
-        srcdc = memdc = bmp = None
-        try:
-            bmi = BITMAPINFO()
-            bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-            bmi.bmiHeader.biWidth = monitor['width']
-            bmi.bmiHeader.biHeight = -monitor['height']  # Why minus? See [1]
-            bmi.bmiHeader.biPlanes = 1  # Always 1
-            bmi.bmiHeader.biBitCount = 32  # See [2]
-            bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
-            bmi.bmiHeader.biClrUsed = 0  # See [3]
-            bmi.bmiHeader.biClrImportant = 0  # See [3]
+        gdi = ctypes.windll.gdi32
+        width, height = monitor['width'], monitor['height']
 
-            buf_len = monitor['width'] * monitor['height'] * 4  # See [2]
-            data = ctypes.create_string_buffer(buf_len)
-            srcdc = ctypes.windll.user32.GetWindowDC(0)
+        if (self._bbox['height'], self._bbox['width']) != (height, width):
+            self._bbox = monitor
+            self._bmi.bmiHeader.biWidth = width
+            self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
+            self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
+            self._bmp = gdi.CreateCompatibleBitmap(self._srcdc, width, height)
+            gdi.SelectObject(self._memdc, self._bmp)
 
-            memdc = ctypes.windll.gdi32.CreateCompatibleDC(srcdc)
-            bmp = ctypes.windll.gdi32.CreateCompatibleBitmap(
-                srcdc, monitor['width'], monitor['height'])
+        gdi.BitBlt(self._memdc, 0, 0, width, height, self._srcdc,
+                   monitor['left'], monitor['top'], SRCCOPY | CAPTUREBLT)
+        bits = gdi.GetDIBits(self._memdc, self._bmp, 0, height, self._data,
+                             self._bmi, DIB_RGB_COLORS)
+        if bits != height:
+            del self._data
+            raise ScreenShotError('gdi32.GetDIBits() failed.', locals())
 
-            ctypes.windll.gdi32.SelectObject(memdc, bmp)
-            ctypes.windll.gdi32.BitBlt(memdc, 0, 0,
-                                       monitor['width'], monitor['height'],
-                                       srcdc,
-                                       monitor['left'], monitor['top'],
-                                       0xcc0020)  # SRCCOPY
-
-            bits = ctypes.windll.gdi32.GetDIBits(
-                memdc, bmp, 0, monitor['height'], data, bmi, 0)
-            if bits != monitor['height']:
-                del data
-                raise ScreenShotError('gdi32.GetDIBits() failed.', locals())
-        finally:
-            # Clean up
-            if srcdc:
-                ctypes.windll.gdi32.DeleteObject(srcdc)
-            if memdc:
-                ctypes.windll.gdi32.DeleteObject(memdc)
-            if bmp:
-                ctypes.windll.gdi32.DeleteObject(bmp)
-
-        return self.cls_image(data, monitor)
+        return self.cls_image(self._data, monitor)
 
 
 def set_argtypes(callback):

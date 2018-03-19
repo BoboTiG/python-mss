@@ -8,16 +8,13 @@ Setup
 =====
 
 1. You need to fork the `GitHub repository <https://github.com/BoboTiG/python-mss>`_.
-
-    .. Note::
-
-        Always work on a **specific branch**, based on the *dev* one, dedicated to your patch.
-
-2. Be sure to add/update tests and documentation within your patch.
+2. Create you own branch.
+3. Be sure to add/update tests and documentation within your patch.
 
 
 Testing
 =======
+
 Dependency
 ----------
 
@@ -26,7 +23,7 @@ You will need `pytest <https://pypi.python.org/pypi/pytest>`_::
     $ pip install pytest
 
 
-How to test?
+How to Test?
 ------------
 
 Enable the developer mode::
@@ -42,7 +39,7 @@ Launch the test suit::
     As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
 
 
-Validating the code
+Validating the Code
 ===================
 
 It is important to keep a clean base code. Use tools like `flake8 <https://pypi.python.org/pypi/flake8>`_ and `Pylint <https://pypi.python.org/pypi/pylint>`_.
@@ -56,7 +53,7 @@ Install required packages::
     $ pip install flake8 pylint
 
 
-How to validate?
+How to Validate?
 ----------------
 
 ::
@@ -67,7 +64,7 @@ How to validate?
 If there is no output, you are good ;)
 
 
-Static type checking
+Static Type Checking
 ====================
 
 `mypy <http://mypy-lang.org/>`_ is a compile-time static type checker for Python, allowing optional, gradual typing of Python code.
@@ -82,7 +79,7 @@ Install required packages::
     $ pip install mypy-lang
 
 
-Running mypy
+Running Mypy
 ------------
 
 ::
@@ -101,7 +98,7 @@ You will need `Sphinx <http://sphinx-doc.org/>`_::
     $ pip install sphinx
 
 
-How to build?
+How to Build?
 -------------
 
 ::

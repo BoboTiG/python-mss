@@ -49,7 +49,25 @@ A more specific example to only target GNU/Linux:
     :lines: 9-
 
 
-Command line
+Intensive Use
+=============
+
+If you plan to integrate MSS inside your own module or software, pay attention to using it wisely. This is a bad usage::
+
+    for _ in range(100):
+        with mss() as sct:
+            sct.shot()
+
+This is a better usage, memory efficient::
+
+    with mss() as sct:
+        for _ in range(100):
+            sct.shot()
+
+Also, it is a good thing to save the MSS instance inside an attribute of you class and calling it when needed.
+
+
+Command Line
 ============
 
 You can use ``mss`` via the CLI:

@@ -28,7 +28,8 @@ class ScreenShot(object):
 
     def __init__(self, data, monitor, size=None):
         # type: (bytearray, Dict[str, int], Any) -> None
-        #: Bytearray of the raw BGRA pixels retrieved by ctype
+
+        #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
         self.raw = bytearray(data)  # type: bytearray
 
@@ -74,28 +75,22 @@ class ScreenShot(object):
         return cls(data, monitor)
 
     @property
-    def top(self):
-        # type: () -> int
-        """ Convenient accessor to the top position. """
-        return self.pos.top
-
-    @property
-    def left(self):
-        # type: () -> int
-        """ Convenient accessor to the left position. """
-        return self.pos.left
-
-    @property
-    def width(self):
-        # type: () -> int
-        """ Convenient accessor to the width size. """
-        return self.size.width
+    def bgra(self):
+        # type: () -> bytes
+        """ BGRA values from the BGRA raw pixels. """
+        return bytes(self.raw)
 
     @property
     def height(self):
         # type: () -> int
         """ Convenient accessor to the height size. """
         return self.size.height
+
+    @property
+    def left(self):
+        # type: () -> int
+        """ Convenient accessor to the left position. """
+        return self.pos.left
 
     @property
     def pixels(self):
@@ -109,6 +104,37 @@ class ScreenShot(object):
             self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
 
         return self.__pixels
+
+    @property
+    def rgb(self):
+        # type: () -> bytes
+        """
+        Compute RGB values from the BGRA raw pixels.
+
+        :return bytes: RGB pixels.
+        """
+
+        if not self.__rgb:
+            rgb = bytearray(self.height * self.width * 3)
+            raw = self.raw
+            rgb[0::3] = raw[2::4]
+            rgb[1::3] = raw[1::4]
+            rgb[2::3] = raw[0::4]
+            self.__rgb = bytes(rgb)
+
+        return self.__rgb
+
+    @property
+    def top(self):
+        # type: () -> int
+        """ Convenient accessor to the top position. """
+        return self.pos.top
+
+    @property
+    def width(self):
+        # type: () -> int
+        """ Convenient accessor to the width size. """
+        return self.size.width
 
     def pixel(self, coord_x, coord_y):
         # type: (int, int) -> Tuple[int, int, int]
@@ -124,20 +150,3 @@ class ScreenShot(object):
             return self.pixels[coord_y][coord_x]
         except IndexError:
             raise ScreenShotError('Pixel location out of range.', locals())
-
-    @property
-    def rgb(self):
-        # type: () -> bytes
-        """
-        Compute RGB values from the BGRA raw pixels.
-
-        :return bytes: RGB pixels.
-        """
-
-        if not self.__rgb:
-            rgb = bytearray(self.height * self.width * 3)
-            rgb[0::3], rgb[1::3], rgb[2::3] = \
-                self.raw[2::4], self.raw[1::4], self.raw[0::4]
-            self.__rgb = bytes(rgb)
-
-        return self.__rgb

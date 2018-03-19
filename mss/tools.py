@@ -8,13 +8,15 @@ import struct
 import zlib
 
 
-def to_png(data, size, output):
-    # type: (bytes, Tuple[int, int], str) -> None
+def to_png(data, size, level=6, output=None):
+    # type: (bytes, Tuple[int, int], int, Optional[str]) -> Union[None, bytes]
     """
-    Dump data to a PNG file.
+    Dump data to a PNG file.  If `output` is `None`, create no file but return
+    the whole PNG data.
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
+    :param int level: PNG compression level.
     :param str output: Output file name.
     """
 
@@ -34,7 +36,7 @@ def to_png(data, size, output):
     ihdr[0] = struct.pack('>I', len(ihdr[2]))
 
     # Data: size, marker, data, CRC32
-    idat = [b'', b'IDAT', zlib.compress(scanlines), b'']
+    idat = [b'', b'IDAT', zlib.compress(scanlines, level), b'']
     idat[3] = struct.pack('>I', zlib.crc32(b''.join(idat[1:3])) & 0xffffffff)
     idat[0] = struct.pack('>I', len(idat[2]))
 
@@ -43,8 +45,14 @@ def to_png(data, size, output):
     iend[3] = struct.pack('>I', zlib.crc32(iend[1]) & 0xffffffff)
     iend[0] = struct.pack('>I', len(iend[2]))
 
+    if not output:
+        # Returns raw bytes of the whole PNG data
+        return magic + b''.join(ihdr + idat + iend)
+
     with open(output, 'wb') as fileh:
         fileh.write(magic)
         fileh.write(b''.join(ihdr))
         fileh.write(b''.join(idat))
         fileh.write(b''.join(iend))
+
+    return None
