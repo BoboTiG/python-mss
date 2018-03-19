@@ -54,6 +54,8 @@ This is an example of capturing some part of the screen of the monitor 2:
 .. literalinclude:: examples/part_of_screen_monitor_2.py
     :lines: 9-
 
+.. versionadded:: 3.0.0
+
 
 Use PIL bbox style and percent values
 -------------------------------------
@@ -130,3 +132,37 @@ Simple naive benchmark to compare with `Reading game frames in Python with OpenC
     :lines: 12-
 
 .. versionadded:: 3.0.0
+
+
+BGRA to RGB
+===========
+
+Differents possiblities to convert raw BGRA values to RGB::
+
+    def mss_rgb(im):
+        """ Better than Numpy versions, but slower than Pillow. """
+        return im.rgb
+
+
+    def numpy_flip(im):
+        """ Most efficient Numpy version as of now. """
+        frame = numpy.array(im, dtype=numpy.uint8)
+        return numpy.flip(frame[:, :, :3], 2).tobytes()
+
+
+    def numpy_slice(im):
+        """ Slow Numpy version. """
+        return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
+
+
+    def pil_frombytes(im):
+        """ Efficient Pillow version. """
+        return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
+
+
+    with mss.mss() as sct:
+        im = sct.grab(sct.monitors[1])
+        rgb = pil_frombytes(im)
+        ...
+
+.. versionadded:: 3.2.0

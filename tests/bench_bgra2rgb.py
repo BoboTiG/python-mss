@@ -1,20 +1,38 @@
 # coding: utf-8
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+2018-03-19.
 
-Numpy example.
+Maximum screenshots in 1 second by computing BGRA raw values to RGB.
+
+
+GNU/Linux
+  pil_frombytes 595
+  mss_rgb       437
+  numpy_flip    183
+  numpy_slice   156
+
+macOS
+  pil_frombytes 115
+  mss_rgb       108
+  numpy_flip     67
+  numpy_slice    65
+
+Windows
+  pil_frombytes 294
+  mss_rgb       261
+  numpy_flip    124
+  numpy_slice   115
 """
+
 import time
 
 import numpy
 from PIL import Image
 
 import mss
-import mss.tools
 
 
-def rgb(im):
+def mss_rgb(im):
     return im.rgb
 
 
@@ -27,7 +45,7 @@ def numpy_slice(im):
     return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
 
 
-def pillow(im):
+def pil_frombytes(im):
     return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
 
 
@@ -38,17 +56,13 @@ def benchmark(func):
         start = time.time()
 
         while (time.time() - start) <= 1:
-            frame = func(sct.grab(m))
-            """
-            filename = 'frames/{}-{}.png'.format(func.__name__, count)
-            mss.tools.to_png(frame, (640, 480), output=filename)
-            """
+            frame = func(sct.grab(m))  # noqa
             count += 1
 
-        return count
+        print(func.__name__, count)
 
 
-print('Image.frombytes:', benchmark(pillow))
-print('MSS.rgb        :', benchmark(rgb))
-print('Numpy flip     :', benchmark(numpy_flip))
-print('Numpy slice    :', benchmark(numpy_slice))
+benchmark(pil_frombytes)
+benchmark(mss_rgb)
+benchmark(numpy_flip)
+benchmark(numpy_slice)

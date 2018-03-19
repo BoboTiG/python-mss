@@ -3,68 +3,67 @@ History:
 <see Git checking messages for history>
 
 dev     2018/xx/xx
-      - add PNG compression level control
+      - removed support for Python 3.4
       - MSS: add the Screenshot.bgra attribute
       - MSS: speed-up grabbing on the 3 platforms
+      - tools: add PNG compression level control to to_png()
       - tests: add leaks.py and benchmarks.py for manual testing
       - doc: add an example about capturing part of the monitor 2
       - doc: add an example about computing BGRA values to RGB
 
 3.1.2   2018/01/05
       - removed support for Python 3.3
-      - CI: build the documentation
-      - doc: improvements and fixes (fix #37)
       - MSS: possibility to get the whole PNG raw bytes
       - Windows: capture all visible windows
->>>>>>> 0e3b4846584d55fb75d51b70ce3578c0531a80d1
+      - doc: improvements and fixes (fix #37)
+      - CI: build the documentation
 
 3.1.1   2017/11/27
       - MSS: add the 'mss' entry point
 
 3.1.0   2017/11/16
       - new contributor: Karan Lyons
-      - add the 'Say Thanks' button
-      - doc: several fixes (fix #22)
-      - tests: a lot of tests added for better coverage
       - MSS: add more way of customization to the output argument of save()
       - MSS: possibility to use custom class to handle screen shot data
       - Mac: properly support all display scaling and resolutions (fix #14, #19, #21, #23)
       - Mac: fix memory leaks (fix #24)
       - Linux: handle bad display value
       - Windows: take into account zoom factor for high-DPI displays (fix #20)
+      - doc: several fixes (fix #22)
+      - tests: a lot of tests added for better coverage
+      - add the 'Say Thanks' button
 
 3.0.1   2017/07/06
       - fix examples links
 
 3.0.0   2017/07/06
       - big refactor, introducing the ScreenShot class
-      - add Numpy array interface support
-      - examples: add OpenCV/Numpy, PIL pixels, FPS
+      - MSS: add Numpy array interface support to the Screenshot class
+      - docs: add OpenCV/Numpy, PIL pixels, FPS
 
 2.0.22  2017/04/29
       - new contributors: David Becker, redodo
-      - add an example to capture only a part of the screen
-      - better use of exception mechanism
+      - MSS: better use of exception mechanism
       - Linux: use of hasattr to prevent Exception on early exit
       - Mac: take into account extra black pixels added when screen with is not divisible by 16 (fix #14)
+      - docs: add an example to capture only a part of the screen
 
 2.0.18  2016/12/03
       - change license to MIT
       - new contributor: Jochen 'cycomanic' Schroeder
-      - add type hints
-      - add documentation (fix #10)
-      - add tests and use Travis CI (fix #9)
-      - remove unused code (reported by Vulture)
+      - MSS: add type hints
+      - MSS: remove unused code (reported by Vulture)
       - Linux: remove MSS library
       - Linux: insanely fast using only ctypes
       - Linux: skip unused monitors
       - Linux: use errcheck instead of deprecated restype with callable (fix #11)
       - Linux: fix security issue (reported by Bandit)
+      - docs: add documentation (fix #10)
+      - tests: add tests and use Travis CI (fix #9)
 
 2.0.0   2016/06/04
       - split the module into several files
-      - add issue and pull request templates
-      - a lot of code refactor and optimizations
+      - MSS: a lot of code refactor and optimizations
       - MSS: rename save_img() to to_png()
       - MSS: save(): replace 'screen' argument by 'mon'
       - Mac: get rid of the PyObjc module, 100% ctypes
@@ -72,6 +71,7 @@ dev     2018/xx/xx
       - Linux: prevent segfault when Xrandr is not loaded
       - Linux: get_pixels() insanely fast, use of MSS library (C code)
       - Windows: fix #6, screen shot not correct on Windows 8
+      - add issue and pull request templates
 
 1.0.2   2016/04/22
       - MSS: fix non existent alias
@@ -81,8 +81,7 @@ dev     2018/xx/xx
 
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
-      - code purgation and review, no more debug informations
-      - delete --debug argument
+      - MSS: code purgation and review, no more debug informations
       - MSS: fix #5, add a shortcut to take automatically use the proper MSS class
       - MSS: few optimizations into save_img()
       - Darwin: remove rotation from informations returned by enum_display_monitors()
@@ -90,19 +89,20 @@ dev     2018/xx/xx
       - Linux: use of XDestroyImage() instead of XFree()
       - Linux: optimizations of get_pixels()
       - Windows: huge optimization of get_pixels()
+      - CLI: delete --debug argument
 
 0.1.1   2015/04/10
-      - little code review
-      - add doc/TESTING
-      - remove Bonus section from README.rst
-      - tests: remove test-linux binary
+      - MSS: little code review
       - Linux: fix monitor count
+      - tests: remove test-linux binary
+      - docs: add doc/TESTING
+      - docs: remove Bonus section from README.rst
 
 0.1.0   2015/04/10
-      - fix code with YAPF tool
-      - better tests and examples
+      - MSS: fix code with YAPF tool
       - Linux: fully functional using Xrandr library
       - Linux: code purgation (no more XML files to parse)
+      - docs: better tests and examples
 
 0.0.8   2015/02/04
       - new contributors: sergey-vin, Alexander 'thehesiod' Mohr
@@ -116,16 +116,16 @@ dev     2018/xx/xx
 
 0.0.6   2014/03/19
       - new contributor: Sam from sametmax.com
-      - PEP8 compliant
       - Python 3.4 ready
-      - review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
-      - refactoring of all enum_display_monitors() methods
-      - fix misspellings using 'codespell' tool
-      - possibility to append '--debug' to the command line
-      - better way to manage output filenames (callback)
-      - several fixes here and there, code refactoring
+      - PEP8 compliant
+      - MSS: review module structure to fit the "Code Like a Pythonista: Idiomatic Python"
+      - MSS: refactoring of all enum_display_monitors() methods
+      - MSS: fix misspellings using 'codespell' tool
+      - MSS: better way to manage output filenames (callback)
+      - MSS: several fixes here and there, code refactoring
       - MSS: moved into a MSS:save_img() method
       - Linux: add XFCE4 support
+      - CLI: possibility to append '--debug' to the command line
 
 0.0.5   2013/11/01
       - MSS: code simplified
