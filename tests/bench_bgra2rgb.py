@@ -6,23 +6,23 @@ Maximum screenshots in 1 second by computing BGRA raw values to RGB.
 
 
 GNU/Linux
-  pil_frombytes_rgb 51
   pil_frombytes     139
   mss_rgb           119
+  pil_frombytes_rgb 51
   numpy_flip        31
   numpy_slice       29
 
 macOS
-  pil_frombytes_rgb 113
   pil_frombytes     209
   mss_rgb           174
+  pil_frombytes_rgb 113
   numpy_flip        39
   numpy_slice       36
 
 Windows
-  pil_frombytes_rgb 42
   pil_frombytes     81
   mss_rgb           66
+  pil_frombytes_rgb 42
   numpy_flip        25
   numpy_slice       22
 """
@@ -61,9 +61,9 @@ def pil_frombytes(im):
 def benchmark():
     with mss.mss() as sct:
         im = sct.grab(sct.monitors[0])
-        for func in (pil_frombytes_rgb,
-                     pil_frombytes,
+        for func in (pil_frombytes,
                      mss_rgb,
+                     pil_frombytes_rgb,
                      numpy_flip,
                      numpy_slice):
             count = 0
