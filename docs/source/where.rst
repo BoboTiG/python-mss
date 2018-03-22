@@ -15,6 +15,7 @@ AI, Computer Vison
 - `Open Source Self Driving Car Initiative <https://github.com/OSSDC/OSSDC-VisionBasedACC>`_;
 - `PUBGIS <https://github.com/andrewzwicky/PUBGIS>`_, a map generator of your position throughout PUBG gameplay;
 - `Self-Driving-Car-3D-Simulator-With-CNN <https://github.com/sagar448/Self-Driving-Car-3D-Simulator-With-CNN>`_;
+- `TensorKart <https://github.com/kevinhughes27/TensorKart>`_, a self-driving MarioKart with TensorFlow;
 
 Games
 =====
