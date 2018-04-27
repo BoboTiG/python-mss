@@ -82,6 +82,9 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._bmi = bmi
 
+        # set DPI aware to capture full screen on HiDPI monitors
+        ctypes.windll.user32.SetProcessDPIAware(1)
+
     def __exit__(self, *args):
         # type: (*str) -> None
         """ Cleanup. """
