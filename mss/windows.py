@@ -70,10 +70,11 @@ class MSS(MSSBase):
 
         # Set DPI aware to capture full screen on Hi-DPI monitors
         try:
-            # Windows 8+
-            ctypes.windll.user32.SetProcessDpiAwareness()
+            # Windows 8.1+
+            # Automatically scale for DPI changes
+            ctypes.windll.user32.SetProcessDpiAwareness(
+                ctypes.windll.user32.PROCESS_PER_MONITOR_DPI_AWARE)
         except AttributeError:
-            # Windows 7 and Vista
             ctypes.windll.user32.SetProcessDPIAware()
 
         self._srcdc = ctypes.windll.user32.GetWindowDC(0)
