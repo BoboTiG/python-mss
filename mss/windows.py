@@ -54,8 +54,6 @@ class MSS(MSSBase):
     _memdc = None
     _srcdc = None
 
-    __scale_factor = None  # type: float
-
     def __init__(self):
         # type: () -> None
         """ Windows initialisations. """
@@ -69,6 +67,15 @@ class MSS(MSSBase):
         )
         set_argtypes(self.monitorenumproc)
         set_restypes()
+
+        # Set DPI aware to capture full screen on Hi-DPI monitors
+        try:
+            # Windows 8.1+
+            # Automatically scale for DPI changes
+            ctypes.windll.user32.SetProcessDpiAwareness(
+                ctypes.windll.user32.PROCESS_PER_MONITOR_DPI_AWARE)
+        except AttributeError:
+            ctypes.windll.user32.SetProcessDPIAware()
 
         self._srcdc = ctypes.windll.user32.GetWindowDC(0)
         self._memdc = ctypes.windll.gdi32.CreateCompatibleDC(self._srcdc)
@@ -93,32 +100,6 @@ class MSS(MSSBase):
         super(MSS, self).__exit__(*args)
 
     @property
-    def scale_factor(self):
-        """ Compute the scale factor. """
-
-        if not self.__scale_factor:
-            display = None
-            try:
-                display = ctypes.windll.user32.GetWindowDC(0)
-                width = ctypes.windll.gdi32.GetDeviceCaps(display, 8)
-                width_orig = ctypes.windll.gdi32.GetDeviceCaps(display, 118)
-                scale = (100 + 100 - width * 100 // width_orig) / 100
-                self.__scale_factor = round(scale * 4) / 4
-            finally:
-                if display:
-                    ctypes.windll.gdi32.DeleteObject(display)
-
-        return self.__scale_factor
-
-    def scale(self, value):
-        # type: (float) -> int
-        """ Compute a monitor value at scale, rounded to 2. """
-
-        if self.scale_factor == 1.0:
-            return int(value)
-        return int(value * self.scale_factor * 2 + 0.5) // 2
-
-    @property
     def monitors(self):
         # type: () -> List[Dict[str, int]]
         """ Get positions of monitors (see parent class). """
@@ -132,11 +113,10 @@ class MSS(MSSBase):
             top = ctypes.windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = ctypes.windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
             self._monitors.append({
-                'left': self.scale(left),
-                'top': self.scale(top),
-                'width': self.scale(right - left),
-                'height': self.scale(bottom - top),
-                'scale': self.scale_factor,
+                'left': int(left),
+                'top': int(top),
+                'width': int(right - left),
+                'height': int(bottom - top),
             })
 
             # Each monitors
@@ -150,11 +130,10 @@ class MSS(MSSBase):
                 del monitor, data, dc_
                 rct = rect.contents
                 self._monitors.append({
-                    'left': self.scale(rct.left),
-                    'top': self.scale(rct.top),
-                    'width': self.scale(rct.right - rct.left),
-                    'height': self.scale(rct.bottom - rct.top),
-                    'scale': self.scale_factor,
+                    'left': int(rct.left),
+                    'top': int(rct.top),
+                    'width': int(rct.right - rct.left),
+                    'height': int(rct.bottom - rct.top),
                 })
                 return 1
 
