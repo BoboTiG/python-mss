@@ -31,7 +31,7 @@ author = 'Tiger-222'
 # built documents.
 #
 # The short X.Y version.
-version = '3.2.0'
+version = '3.2.1'
 
 # The full version, including alpha/beta/rc tags.
 release = 'latest'

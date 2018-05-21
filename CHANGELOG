@@ -2,8 +2,9 @@ History:
 
 <see Git checking messages for history>
 
-dev     2018/xx/xx
-
+3.2.1   2018/05/21
+      - new contributor: Ryan Fox
+      - Windows: enable Hi-DPI awareness
 
 3.2.0   2018/03/22
       - removed support for Python 3.4

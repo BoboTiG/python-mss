@@ -1,3 +1,12 @@
+3.2.1 (2018-05-21)
+==================
+
+windows.py
+----------
+- Removed ``MSS.scale_factor`` property
+- Removed ``MSS.scale()`` method
+
+
 3.2.0 (2018-03-22)
 ==================
 
