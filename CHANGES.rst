@@ -1,3 +1,15 @@
+3.3.0 (2018-08-xx)
+==================
+
+exception.py
+------------
+- Added ``details`` attribute to ``ScreenShotError`` exception. Empty dict by default.
+
+linux.py
+--------
+- Added ``error_handler()`` function
+
+
 3.2.1 (2018-05-21)
 ==================
 

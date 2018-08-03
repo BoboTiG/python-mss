@@ -88,18 +88,34 @@ def test_implementation(monkeypatch, is_travis):
         It is a naive approach, but works for now.
         """
 
-        if lib == 'Xrandr':
+        if lib == "Xrandr":
             return None
         return x11
 
     # No `Xrandr` library
-    monkeypatch.setattr(ctypes.util, 'find_library', find_lib)
+    monkeypatch.setattr(ctypes.util, "find_library", find_lib)
     with pytest.raises(ScreenShotError):
         mss.mss()
     monkeypatch.undo()
 
     # Bad display data
     import mss.linux
-    monkeypatch.setattr(mss.linux, 'Display', lambda: None)
+
+    monkeypatch.setattr(mss.linux, "Display", lambda: None)
     with pytest.raises(TypeError):
         mss.mss()
+
+
+def test_region_out_of_monitor_bounds(is_travis):
+    display = TEXT(":42") if is_travis else None
+    monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
+
+    with mss.mss(display=display) as sct:
+        with pytest.raises(ScreenShotError) as exc:
+            assert sct.grab(monitor)
+
+        assert str(exc.value)
+        assert exc.value.details["xerror"]
+        assert "retval" in exc.value.details
+        assert "args" in exc.value.details
+        assert isinstance(exc.value.details["xerror_details"], dict)

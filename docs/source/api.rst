@@ -26,6 +26,20 @@ GNU/Linux
 
         See :meth:`mss.base.MSSBase.grab()` for details.
 
+.. function:: error_handler(display, event)
+
+    :type display: ctypes.POINTER(Display)
+    :param display: The display impacted by the error.
+    :type event: ctypes.POINTER(Event)
+    :param event: XError details.
+    :return int: Always ``0``.
+
+    Error handler passed to `X11.XSetErrorHandler()` to catch any error that can happen when calling a X11 function.
+    This will prevent Python interpreter crashes.
+
+    When such an error happen, a :class:`mss.exception.ScreenShotError` exception is raised and all XError information are added to the :attr:`mss.exception.ScreenShotError.details` attribute.
+
+    .. versionadded:: 3.3.0
 
 Methods
 =======
@@ -230,6 +244,17 @@ Exception
 .. exception:: ScreenShotError
 
     Base class for MSS exceptions.
+
+    .. attribute:: details
+
+        On GNU/Linux, and if the error comes from the XServer, it contains XError details.
+        This is an empty dict by default.
+
+        For Xerrors, you can find information on `Using the Default Error Handlers <https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html>`_.
+
+        :rtype: dict[str, Any]
+
+        .. versionchanged:: 3.3.0
 
 
 Factory
