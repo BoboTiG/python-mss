@@ -25,6 +25,23 @@ class Display(ctypes.Structure):
     """
 
 
+class Event(ctypes.Structure):
+    """
+    XErrorEvent to debug eventual errors.
+    https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html
+    """
+
+    _fields_ = [
+        ("type", ctypes.c_int),
+        ("display", ctypes.POINTER(Display)),
+        ("serial", ctypes.c_ulong),
+        ("error_code", ctypes.c_ubyte),
+        ("request_code", ctypes.c_ubyte),
+        ("minor_code", ctypes.c_ubyte),
+        ("resourceid", ctypes.c_void_p),
+    ]
+
+
 class XWindowAttributes(ctypes.Structure):
     """ Attributes for the specified window. """
 
@@ -119,13 +136,16 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
+    last_error = None
+
     def __del__(self):
         # type: () -> None
         """ Disconnect from X server. """
 
-        if hasattr(self, 'display'):
-            self.xlib.XCloseDisplay(self.display)
-            self.display = None  # type: bytes
+        if hasattr(self, "display"):
+            if hasattr(self.display, "XCloseDisplay"):
+                self.xlib.XCloseDisplay(self.display)
+            self.display = None
 
     def __init__(self, display=None):
         # type: (bytes) -> None
@@ -148,13 +168,16 @@ class MSS(MSSBase):
             raise ScreenShotError('No X11 library found.', locals())
         self.xlib = ctypes.cdll.LoadLibrary(x11)
 
+        # Install the error handler to prevent interpreter crashes:
+        # any error will raise a ScreenShotError exception.
+        self.xlib.XSetErrorHandler(error_handler)
+
         xrandr = ctypes.util.find_library('Xrandr')
         if not xrandr:
             raise ScreenShotError('No Xrandr extension found.', locals())
         self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
 
-        self._set_argtypes()
-        self._set_restypes()
+        self._set_cfunctions()
 
         self.display = self.xlib.XOpenDisplay(display)
         try:
@@ -169,72 +192,150 @@ class MSS(MSSBase):
         #     expected LP_Display instance instead of LP_XWindowAttributes
         self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
 
-    def _set_argtypes(self):
-        # type: () -> None
-        """ Functions arguments. """
+    def _set_cfunctions(self):
+        """ Set all ctypes functions and attach them to attributes. """
 
-        self.xlib.XOpenDisplay.argtypes = [ctypes.c_char_p]
-        self.xlib.XDefaultScreen.argtypes = [ctypes.POINTER(Display)]
-        self.xlib.XDefaultRootWindow.argtypes = [
-            ctypes.POINTER(Display),
-            ctypes.c_int]
-        self.xlib.XGetWindowAttributes.argtypes = [
-            ctypes.POINTER(Display),
-            ctypes.POINTER(XWindowAttributes),
-            ctypes.POINTER(XWindowAttributes)]
-        self.xlib.XGetImage.argtypes = [
-            ctypes.POINTER(Display),
-            ctypes.POINTER(Display),
-            ctypes.c_int,
-            ctypes.c_int,
-            ctypes.c_uint,
-            ctypes.c_uint,
-            ctypes.c_ulong,
-            ctypes.c_int]
-        self.xlib.XDestroyImage.argtypes = [ctypes.POINTER(XImage)]
-        self.xlib.XCloseDisplay.argtypes = [ctypes.POINTER(Display)]
-        self.xrandr.XRRGetScreenResources.argtypes = [
-            ctypes.POINTER(Display),
-            ctypes.POINTER(Display)]
-        self.xrandr.XRRGetCrtcInfo.argtypes = [
-            ctypes.POINTER(Display),
-            ctypes.POINTER(XRRScreenResources),
-            ctypes.c_long]
-        self.xrandr.XRRFreeScreenResources.argtypes = [
-            ctypes.POINTER(XRRScreenResources)]
-        self.xrandr.XRRFreeCrtcInfo.argtypes = [ctypes.POINTER(XRRCrtcInfo)]
+        self._cfactory(
+            attr=self.xlib,
+            func="XSetErrorHandler",
+            argtypes=[ctypes.c_void_p],
+            restype=ctypes.c_int,
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XGetErrorText",
+            argtypes=[
+                ctypes.POINTER(Display),
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_int,
+            ],
+            restype=ctypes.c_void_p,
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XOpenDisplay",
+            argtypes=[ctypes.c_char_p],
+            restype=ctypes.POINTER(Display),
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XDefaultScreen",
+            argtypes=[ctypes.POINTER(Display)],
+            restype=ctypes.c_int,
+            errcheck=False,
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XDefaultRootWindow",
+            argtypes=[ctypes.POINTER(Display), ctypes.c_int],
+            restype=ctypes.POINTER(XWindowAttributes),
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XGetWindowAttributes",
+            argtypes=[
+                ctypes.POINTER(Display),
+                ctypes.POINTER(XWindowAttributes),
+                ctypes.POINTER(XWindowAttributes),
+            ],
+            restype=ctypes.c_int,
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XGetImage",
+            argtypes=[
+                ctypes.POINTER(Display),
+                ctypes.POINTER(Display),
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_uint,
+                ctypes.c_uint,
+                ctypes.c_ulong,
+                ctypes.c_int,
+            ],
+            restype=ctypes.POINTER(XImage),
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XDestroyImage",
+            argtypes=[ctypes.POINTER(XImage)],
+            restype=ctypes.c_void_p,
+        )
+        self._cfactory(
+            attr=self.xlib,
+            func="XCloseDisplay",
+            argtypes=[ctypes.POINTER(Display)],
+            restype=ctypes.c_void_p,
+        )
+        self._cfactory(
+            attr=self.xrandr,
+            func="XRRGetScreenResources",
+            argtypes=[ctypes.POINTER(Display), ctypes.POINTER(Display)],
+            restype=ctypes.POINTER(XRRScreenResources),
+        )
+        self._cfactory(
+            attr=self.xrandr,
+            func="XRRGetCrtcInfo",
+            argtypes=[
+                ctypes.POINTER(Display),
+                ctypes.POINTER(XRRScreenResources),
+                ctypes.c_long,
+            ],
+            restype=ctypes.POINTER(XRRCrtcInfo),
+        )
+        self._cfactory(
+            attr=self.xrandr,
+            func="XRRFreeScreenResources",
+            argtypes=[ctypes.POINTER(XRRScreenResources)],
+            restype=ctypes.c_void_p,
+        )
+        self._cfactory(
+            attr=self.xrandr,
+            func="XRRFreeCrtcInfo",
+            argtypes=[ctypes.POINTER(XRRCrtcInfo)],
+            restype=ctypes.c_void_p,
+        )
 
-    def _set_restypes(self):
-        # type: () -> None
-        """ Functions return type. """
+    def _cfactory(self, attr, func, argtypes, restype, errcheck=True):
+        # type: (Any, str, List[Any], Any, bool) -> None
+        """ Factory to create a ctype function and automatically manage errors. """
 
-        def validate(value, _, args):
-            # type: (int, Any, Tuple[Any, Any]) -> None
-            """ Validate the returned value of xrandr.XRRGetScreenResources().
-                We can end on a segfault if not:
-                    Xlib:  extension "RANDR" missing on display "...".
-            """
+        def validate(retval, func, args):
+            # type: (int, Any, Tuple[Any, Any]) -> Any
+            """ Validate the returned value of a xlib or xrand function. """
 
-            if value == 0:
-                raise ScreenShotError(('xrandr.XRRGetScreenResources() failed.'
-                                       ' NULL pointer received.'), locals())
+            if retval != 0 and not MSS.last_error:
+                return args
 
-            return args
+            err = "{0}() failed".format(func.__name__)
+            details = {
+                "retval": retval,
+                "args": args,
+            }
 
-        self.xlib.XOpenDisplay.restype = ctypes.POINTER(Display)
-        self.xlib.XDefaultScreen.restype = ctypes.c_int
-        self.xlib.XGetWindowAttributes.restype = ctypes.c_int
-        self.xlib.XGetImage.restype = ctypes.POINTER(XImage)
-        self.xlib.XDestroyImage.restype = ctypes.c_void_p
-        self.xlib.XCloseDisplay.restype = ctypes.c_void_p
-        self.xlib.XDefaultRootWindow.restype = \
-            ctypes.POINTER(XWindowAttributes)
-        self.xrandr.XRRGetScreenResources.restype = \
-            ctypes.POINTER(XRRScreenResources)
-        self.xrandr.XRRGetScreenResources.errcheck = validate
-        self.xrandr.XRRGetCrtcInfo.restype = ctypes.POINTER(XRRCrtcInfo)
-        self.xrandr.XRRFreeScreenResources.restype = ctypes.c_void_p
-        self.xrandr.XRRFreeCrtcInfo.restype = ctypes.c_void_p
+            if MSS.last_error:
+                details["xerror_details"] = MSS.last_error
+                MSS.last_error = None
+                xserver_error = ctypes.create_string_buffer(1024)
+                self.xlib.XGetErrorText(
+                    self.display,
+                    details.get("xerror_details", {}).get("error_code", 0),
+                    xserver_error,
+                    len(xserver_error),
+                )
+                xerror = xserver_error.value.decode("utf-8")
+                if xerror != "0":
+                    details["xerror"] = xerror
+                    err += ": {0}".format(xerror)
+
+            raise ScreenShotError(err, details=details)
+
+        meth = getattr(attr, func)
+        meth.argtypes = argtypes
+        meth.restype = restype
+        if errcheck:
+            meth.errcheck = validate
 
     @property
     def monitors(self):
@@ -292,8 +393,6 @@ class MSS(MSSBase):
                                      monitor['left'], monitor['top'],
                                      monitor['width'], monitor['height'],
                                      PLAINMASK, ZPIXMAP)
-        if not ximage:
-            raise ScreenShotError('xlib.XGetImage() failed.', locals())
 
         bits_per_pixel = ximage.contents.bits_per_pixel
         if bits_per_pixel != 32:
@@ -308,3 +407,19 @@ class MSS(MSSBase):
         self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
+
+
+@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
+def error_handler(display, event):
+    # type: (ctypes.POINTER(Display), ctypes.POINTER(Event)) -> int
+    """ Specifies the program's supplied error handler. """
+
+    evt = event.contents
+    MSS.last_error = {
+        "type": evt.type,
+        "serial": evt.serial,
+        "error_code": evt.error_code,
+        "request_code": evt.request_code,
+        "minor_code": evt.minor_code,
+    }
+    return 0
