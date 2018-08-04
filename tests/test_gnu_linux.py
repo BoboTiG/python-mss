@@ -41,11 +41,7 @@ def test_factory_systems(monkeypatch):
     with pytest.raises(ScreenShotError) as exc:
         mss.mss()
     monkeypatch.undo()
-    if not PY3:
-        error = exc.value[1]['self']
-    else:
-        error = exc.value.args[1]['self']
-    assert isinstance(error, MSSBase)
+    assert isinstance(exc.value.details['self'], MSSBase)
 
     # Windows
     monkeypatch.setattr(platform, 'system', lambda: 'wInDoWs')
@@ -88,12 +84,12 @@ def test_implementation(monkeypatch, is_travis):
         It is a naive approach, but works for now.
         """
 
-        if lib == "Xrandr":
+        if lib == 'Xrandr':
             return None
         return x11
 
     # No `Xrandr` library
-    monkeypatch.setattr(ctypes.util, "find_library", find_lib)
+    monkeypatch.setattr(ctypes.util, 'find_library', find_lib)
     with pytest.raises(ScreenShotError):
         mss.mss()
     monkeypatch.undo()
@@ -101,7 +97,7 @@ def test_implementation(monkeypatch, is_travis):
     # Bad display data
     import mss.linux
 
-    monkeypatch.setattr(mss.linux, "Display", lambda: None)
+    monkeypatch.setattr(mss.linux, 'Display', lambda: None)
     with pytest.raises(TypeError):
         mss.mss()
 
