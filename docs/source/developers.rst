@@ -11,6 +11,11 @@ Setup
 2. Create you own branch.
 3. Be sure to add/update tests and documentation within your patch.
 
+Additionnally, you can install `pre-commit <http://pre-commit.com/>`_ to ensure you are doing things well::
+
+    $ python -m pip install --upgrade --user pre-commit
+    $ pre-commit install
+
 
 Testing
 =======
@@ -20,7 +25,7 @@ Dependency
 
 You will need `pytest <https://pypi.python.org/pypi/pytest>`_::
 
-    $ pip install pytest
+    $ python -m pip install --upgrade --user pytest
 
 
 How to Test?
@@ -32,7 +37,7 @@ Enable the developer mode::
 
 Launch the test suit::
 
-    $ py.test
+    $ python -m pytest tests
 
 .. Note::
 
@@ -42,7 +47,7 @@ Launch the test suit::
 Validating the Code
 ===================
 
-It is important to keep a clean base code. Use tools like `flake8 <https://pypi.python.org/pypi/flake8>`_ and `Pylint <https://pypi.python.org/pypi/pylint>`_.
+It is important to keep a clean base code. Use tools like `flake8 <https://pypi.python.org/pypi/flake8>`_.
 
 
 Dependencies
@@ -50,7 +55,7 @@ Dependencies
 
 Install required packages::
 
-    $ pip install flake8 pylint
+    $ python -m pip install --upgrade --user flake8
 
 
 How to Validate?
@@ -58,8 +63,7 @@ How to Validate?
 
 ::
 
-    $ flake8
-    $ pylint mss
+    $ python -m flake8 .
 
 If there is no output, you are good ;)
 
@@ -76,7 +80,7 @@ Dependencies
 
 Install required packages::
 
-    $ pip install mypy-lang
+    $ python -m pip install --upgrade --user mypy-lang
 
 
 Running Mypy
@@ -95,7 +99,7 @@ Dependencies
 
 You will need `Sphinx <http://sphinx-doc.org/>`_::
 
-    $ pip install sphinx
+    $ python -m pip install --upgrade --user sphinx
 
 
 How to Build?

@@ -50,17 +50,17 @@ Methods
 
     The parent's class for every OS implementation.
 
-    .. method:: grab(monitor)
+    .. method:: grab(region)
 
-        :param dict monitor: monitor's information.
+        :param dict monitor: region's coordinates.
         :rtype: :class:`ScreenShot`
         :raises NotImplementedError: Subclasses need to implement this.
 
-        Retrieve screen pixels for a given monitor.
+        Retrieve screen pixels for a given *region*.
 
         .. note::
 
-            ``monitor`` can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
+            *monitor* can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
             it will be converted to the appropriate ``dict``.
 
     .. method:: save([mon=1], [output='mon-{mon}.png'], [callback=None])
@@ -68,12 +68,12 @@ Methods
         :param int mon: the monitor's number.
         :param str output: the output's file name.
         :type callback: callable or None
-        :param callback: callback called before saving the screen shot to a file. Takes the ``output`` argument as parameter.
+        :param callback: callback called before saving the screen shot to a file. Takes the *output* argument as parameter.
         :rtype: iterable
         :return: Created file(s).
 
         Grab a screen shot and save it to a file.
-        The ``output`` parameter can take several keywords to customize the filename:
+        The *output* parameter can take several keywords to customize the filename:
 
             - ``{mon}``: the monitor number
             - ``{top}``: the screen shot y-coordinate of the upper-left corner
@@ -130,17 +130,17 @@ Methods
     :param tuple size: The (width, height) pair.
     :param int level: PNG compression level.
     :param str output: output's file name.
-    :raises ScreenShotError: On error when writing ``data`` to ``output``.
-    :raises zlib.error: On bad compression ``level``.
+    :raises ScreenShotError: On error when writing *data* to *output*.
+    :raises zlib.error: On bad compression *level*.
 
     Dump data to the image file. Pure Python PNG implementation.
-    If ``output`` is ``None``, create no file but return the whole PNG data.
+    If *output* is ``None``, create no file but return the whole PNG data.
 
     .. versionadded:: 3.0.0
 
     .. versionadded:: 3.2.0
 
-        Added the ``level`` keyword argument to control the PNG compression level.
+        The *level* keyword argument to control the PNG compression level.
 
 
 Properties
@@ -250,11 +250,11 @@ Exception
         On GNU/Linux, and if the error comes from the XServer, it contains XError details.
         This is an empty dict by default.
 
-        For Xerrors, you can find information on `Using the Default Error Handlers <https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html>`_.
+        For XErrors, you can find information on `Using the Default Error Handlers <https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html>`_.
 
         :rtype: dict[str, Any]
 
-        .. versionchanged:: 3.3.0
+        .. versionadded:: 3.3.0
 
 
 Factory

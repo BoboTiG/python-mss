@@ -9,7 +9,7 @@ Recommended Way
 
 Quite simple::
 
-    $ pip install --upgrade mss
+    $ python -m pip install --upgrade --user mss
 
 
 From Sources
@@ -23,4 +23,4 @@ Alternatively, you can get a copy of the module from GitHub::
 
 And then::
 
-    $ sudo python setup.py install
+    $ python setup.py install --user

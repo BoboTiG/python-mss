@@ -1,0 +1,18 @@
+fail_fast: true
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: master
+    hooks:
+    - id: trailing-whitespace
+    - id: flake8
+    - id: end-of-file-fixer
+    - id: check-docstring-first
+    - id: debug-statements
+    - id: check-ast
+    - id: no-commit-to-branch
+-   repo: https://github.com/ambv/black
+    rev: stable
+    hooks:
+    - id: black
+      language_version: python3.6

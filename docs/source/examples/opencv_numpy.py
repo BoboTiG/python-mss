@@ -30,7 +30,7 @@ with mss.mss() as sct:
         # cv2.imshow('OpenCV/Numpy grayscale',
         #            cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY))
 
-        print('fps: {0}'.format(1 / (time.time()-last_time)))
+        print('fps: {0}'.format(1 / (time.time() - last_time)))
 
         # Press "q" to quit
         if cv2.waitKey(25) & 0xFF == ord('q'):

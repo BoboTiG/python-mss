@@ -3,7 +3,8 @@ python:
   - 2.7
   - 3.5
   - 3.6
-  - nightly # currently points to 3.7-dev
+  - 3.7-dev
+  - nightly # currently points to 3.8-dev
 
 addons:
   apt:
@@ -18,13 +19,12 @@ env:
   - DISPLAY=":42"
 
 install:
-  - pip install flake8 numpy pillow pylint sphinx
-  - pip install -e .
+  - python -m pip install flake8 numpy pillow sphinx
+  - python -m pip install -e .
 
 script:
-  - py.test --showlocals --display=":42.0"
-  - flake8 .
-  - if [[ $TRAVIS_PYTHON_VERSION < '3.7' ]]; then pylint mss; fi
+  - python -m pytest --display=":42.0" tests
+  - python -m flake8 .
   - if [[ $TRAVIS_PYTHON_VERSION > '2.8' ]]; then cd docs && make clean html; fi
 
 after_script:
