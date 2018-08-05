@@ -51,21 +51,23 @@ def numpy_slice(im):
 
 
 def pil_frombytes_rgb(im):
-    return Image.frombytes('RGB', im.size, im.rgb).tobytes()
+    return Image.frombytes("RGB", im.size, im.rgb).tobytes()
 
 
 def pil_frombytes(im):
-    return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
+    return Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").tobytes()
 
 
 def benchmark():
     with mss.mss() as sct:
         im = sct.grab(sct.monitors[0])
-        for func in (pil_frombytes,
-                     mss_rgb,
-                     pil_frombytes_rgb,
-                     numpy_flip,
-                     numpy_slice):
+        for func in (
+            pil_frombytes,
+            mss_rgb,
+            pil_frombytes_rgb,
+            numpy_flip,
+            numpy_slice,
+        ):
             count = 0
             start = time.time()
             while (time.time() - start) <= 1:

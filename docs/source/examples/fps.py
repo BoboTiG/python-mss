@@ -25,7 +25,7 @@ def screen_record():
     # 800x600 windowed mode
     mon = (0, 40, 800, 640)
 
-    title = '[PIL.ImageGrab] FPS benchmark'
+    title = "[PIL.ImageGrab] FPS benchmark"
     fps = 0
     last_time = time.time()
 
@@ -34,7 +34,7 @@ def screen_record():
         fps += 1
 
         cv2.imshow(title, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        if cv2.waitKey(25) & 0xFF == ord("q"):
             cv2.destroyAllWindows()
             break
 
@@ -43,9 +43,9 @@ def screen_record():
 
 def screen_record_efficient():
     # 800x600 windowed mode
-    mon = {'top': 40, 'left': 0, 'width': 800, 'height': 640}
+    mon = {"top": 40, "left": 0, "width": 800, "height": 640}
 
-    title = '[MSS] FPS benchmark'
+    title = "[MSS] FPS benchmark"
     fps = 0
     sct = mss.mss()
     last_time = time.time()
@@ -55,12 +55,12 @@ def screen_record_efficient():
         fps += 1
 
         cv2.imshow(title, img)
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        if cv2.waitKey(25) & 0xFF == ord("q"):
             cv2.destroyAllWindows()
             break
 
     return fps
 
 
-print('PIL:', screen_record())
-print('MSS:', screen_record_efficient())
+print("PIL:", screen_record())
+print("MSS:", screen_record_efficient())

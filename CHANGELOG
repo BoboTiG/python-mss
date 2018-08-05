@@ -4,6 +4,7 @@ History:
 
 3.3.0   2018/08/xx
       - Linux: add an error handler for the XServer to prevent interpreter crash (fix #61)
+      - big code clean-up using black
 
 3.2.1   2018/05/21
       - new contributor: Ryan Fox

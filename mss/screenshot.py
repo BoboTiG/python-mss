@@ -9,8 +9,8 @@ import collections
 from .exception import ScreenShotError
 
 
-Pos = collections.namedtuple('Pos', 'left, top')
-Size = collections.namedtuple('Size', 'width, height')
+Pos = collections.namedtuple("Pos", "left, top")
+Size = collections.namedtuple("Size", "width, height")
 
 
 class ScreenShot(object):
@@ -34,20 +34,19 @@ class ScreenShot(object):
         self.raw = bytearray(data)  # type: bytearray
 
         #: NamedTuple of the screen shot coordinates.
-        self.pos = Pos(monitor['left'], monitor['top'])  # type: Pos
+        self.pos = Pos(monitor["left"], monitor["top"])  # type: Pos
 
         if size is not None:
             #: NamedTuple of the screen shot size.
             self.size = size  # type: Size
         else:
-            self.size = Size(monitor['width'], monitor['height'])  # type: Size
+            self.size = Size(monitor["width"], monitor["height"])  # type: Size
 
     def __repr__(self):
         # type: () -> str
-        return ('<{!s}'
-                ' pos={cls.left},{cls.top}'
-                ' size={cls.width}x{cls.height}'
-                '>').format(type(self).__name__, cls=self)
+        return ("<{!s} pos={cls.left},{cls.top} size={cls.width}x{cls.height}>").format(
+            type(self).__name__, cls=self
+        )
 
     @property
     def __array_interface__(self):
@@ -60,10 +59,10 @@ class ScreenShot(object):
         """
 
         return {
-            'version': 3,
-            'shape': (self.height, self.width, 4),
-            'typestr': '|u1',
-            'data': self.raw,
+            "version": 3,
+            "shape": (self.height, self.width, 4),
+            "typestr": "|u1",
+            "data": self.raw,
         }
 
     @classmethod
@@ -71,7 +70,7 @@ class ScreenShot(object):
         # type: (bytearray, int, int) -> ScreenShot
         """ Instantiate a new class given only screen shot's data and size. """
 
-        monitor = {'left': 0, 'top': 0, 'width': width, 'height': height}
+        monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
 
     @property
@@ -149,4 +148,6 @@ class ScreenShot(object):
         try:
             return self.pixels[coord_y][coord_x]
         except IndexError:
-            raise ScreenShotError('Pixel location out of range.', locals())
+            raise ScreenShotError(
+                "Pixel location ({0}, {1}) is out of range.".format(coord_x, coord_y)
+            )

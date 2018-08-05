@@ -11,15 +11,15 @@ from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
 
-if platform.system().lower() != 'linux':
+if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip
 
 
 try:
     TEXT = unicode  # Python 2
 except NameError:
-    TEXT = str      # Python 3
-PY3 = sys.version[0] > '2'
+    TEXT = str  # Python 3
+PY3 = sys.version[0] > "2"
 
 
 def test_factory_systems(monkeypatch):
@@ -27,24 +27,23 @@ def test_factory_systems(monkeypatch):
     Here, we are testing all systems.
 
     Too hard to maintain the test for all platforms,
-    so est only on GNU/Linux.
+    so test only on GNU/Linux.
     """
 
     # GNU/Linux
-    monkeypatch.setattr(platform, 'system', lambda: 'LINUX')
-    sct = mss.mss()
-    assert isinstance(sct, MSSBase)
+    monkeypatch.setattr(platform, "system", lambda: "LINUX")
+    with mss.mss() as sct:
+        assert isinstance(sct, MSSBase)
     monkeypatch.undo()
 
     # macOS
-    monkeypatch.setattr(platform, 'system', lambda: 'Darwin')
-    with pytest.raises(ScreenShotError) as exc:
+    monkeypatch.setattr(platform, "system", lambda: "Darwin")
+    with pytest.raises(ScreenShotError):
         mss.mss()
     monkeypatch.undo()
-    assert isinstance(exc.value.details['self'], MSSBase)
 
     # Windows
-    monkeypatch.setattr(platform, 'system', lambda: 'wInDoWs')
+    monkeypatch.setattr(platform, "system", lambda: "wInDoWs")
     with pytest.raises(ValueError):
         # wintypes.py:19: ValueError: _type_ 'v' not supported
         mss.mss()
@@ -55,25 +54,26 @@ def test_implementation(monkeypatch, is_travis):
     import mss
 
     # Bad `display` type
-    if not is_travis:
-        mss.mss(display=TEXT(':0'))
-    else:
-        mss.mss(display=TEXT(':42'))
+    with mss.mss(display=TEXT(":42") if is_travis else TEXT(":0")):
+        pass
 
     with pytest.raises(ScreenShotError):
-        mss.mss(display=TEXT('0'))
+        with mss.mss(display=TEXT("0")):
+            pass
 
     # No `DISPLAY` in envars
-    monkeypatch.delenv('DISPLAY')
+    monkeypatch.delenv("DISPLAY")
     with pytest.raises(ScreenShotError):
-        mss.mss()
+        with mss.mss():
+            pass
     monkeypatch.undo()
 
     # No `X11` library
-    x11 = ctypes.util.find_library('X11')
-    monkeypatch.setattr(ctypes.util, 'find_library', lambda x: None)
+    x11 = ctypes.util.find_library("X11")
+    monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
     with pytest.raises(ScreenShotError):
-        mss.mss()
+        with mss.mss():
+            pass
     monkeypatch.undo()
 
     def find_lib(lib):
@@ -84,22 +84,24 @@ def test_implementation(monkeypatch, is_travis):
         It is a naive approach, but works for now.
         """
 
-        if lib == 'Xrandr':
+        if lib == "Xrandr":
             return None
         return x11
 
     # No `Xrandr` library
-    monkeypatch.setattr(ctypes.util, 'find_library', find_lib)
+    monkeypatch.setattr(ctypes.util, "find_library", find_lib)
     with pytest.raises(ScreenShotError):
-        mss.mss()
+        with mss.mss():
+            pass
     monkeypatch.undo()
 
     # Bad display data
     import mss.linux
 
-    monkeypatch.setattr(mss.linux, 'Display', lambda: None)
+    monkeypatch.setattr(mss.linux, "Display", lambda: None)
     with pytest.raises(TypeError):
-        mss.mss()
+        with mss.mss():
+            pass
 
 
 def test_region_out_of_monitor_bounds(is_travis):

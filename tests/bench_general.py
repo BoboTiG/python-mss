@@ -30,7 +30,7 @@ import mss.tools
 
 
 def grab(sct):
-    monitor = {'top': 144, 'left': 80, 'width': 1397, 'height': 782}
+    monitor = {"top": 144, "left": 80, "width": 1397, "height": 782}
     return sct.grab(monitor)
 
 
@@ -45,7 +45,7 @@ def output(sct, filename=None):
 
 
 def save(sct):
-    output(sct, filename='screenshot.png')
+    output(sct, filename="screenshot.png")
 
 
 def benchmark(func):

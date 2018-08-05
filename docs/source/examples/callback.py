@@ -19,11 +19,11 @@ def on_exists(fname):
     """
 
     if os.path.isfile(fname):
-        newfile = fname + '.old'
-        print('{0} -> {1}'.format(fname, newfile))
+        newfile = fname + ".old"
+        print("{0} -> {1}".format(fname, newfile))
         os.rename(fname, newfile)
 
 
 with mss.mss() as sct:
-    filename = sct.shot(output='mon-{mon}.png', callback=on_exists)
+    filename = sct.shot(output="mon-{mon}.png", callback=on_exists)
     print(filename)
