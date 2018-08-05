@@ -38,7 +38,7 @@ class MSSBase(object):
         :return :class:`ScreenShot <ScreenShot>`.
         """
 
-        raise NotImplementedError('Subclasses need to implement this!')
+        raise NotImplementedError("Subclasses need to implement this!")
 
     @property
     def monitors(self):
@@ -65,9 +65,9 @@ class MSSBase(object):
         it must be converted to the appropriate dict.
         """
 
-        raise NotImplementedError('Subclasses need to implement this!')
+        raise NotImplementedError("Subclasses need to implement this!")
 
-    def save(self, mon=0, output='monitor-{mon}.png', callback=None):
+    def save(self, mon=0, output="monitor-{mon}.png", callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]
         """
         Grab a screen shot and save it to a file.
@@ -98,7 +98,7 @@ class MSSBase(object):
 
         monitors = self.monitors
         if not monitors:
-            raise ScreenShotError('No monitor found.')
+            raise ScreenShotError("No monitor found.")
 
         if mon == 0:
             # One screen shot by monitor
@@ -107,10 +107,7 @@ class MSSBase(object):
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
-                to_png(sct.rgb,
-                       sct.size,
-                       level=self.compression_level,
-                       output=fname)
+                to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
                 yield fname
         else:
             # A screen shot of all monitors together or
@@ -119,16 +116,13 @@ class MSSBase(object):
             try:
                 monitor = monitors[mon]
             except IndexError:
-                raise ScreenShotError('Monitor does not exist.', locals())
+                raise ScreenShotError("Monitor {0!r} does not exist.".format(mon))
 
             output = output.format(mon=mon, date=datetime.now(), **monitor)
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)
-            to_png(sct.rgb,
-                   sct.size,
-                   level=self.compression_level,
-                   output=output)
+            to_png(sct.rgb, sct.size, level=self.compression_level, output=output)
             yield output
 
     def shot(self, **kwargs):
@@ -137,5 +131,5 @@ class MSSBase(object):
         You can pass the same arguments as for ``save``.
         """
 
-        kwargs['mon'] = kwargs.get('mon', 1)
+        kwargs["mon"] = kwargs.get("mon", 1)
         return next(self.save(**kwargs))

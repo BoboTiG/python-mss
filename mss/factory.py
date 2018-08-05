@@ -22,13 +22,15 @@ def mss(**kwargs):
     """
 
     operating_system = platform.system().lower()
-    if operating_system == 'darwin':
+    if operating_system == "darwin":
         from .darwin import MSS
-    elif operating_system == 'linux':
+    elif operating_system == "linux":
         from .linux import MSS
-    elif operating_system == 'windows':
+    elif operating_system == "windows":
         from .windows import MSS
     else:
-        raise ScreenShotError('System not (yet?) implemented.', locals())
+        raise ScreenShotError(
+            "System {0!r} not (yet?) implemented.".format(operating_system)
+        )
 
     return MSS(**kwargs)

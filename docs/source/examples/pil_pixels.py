@@ -15,12 +15,10 @@ with mss.mss() as sct:
     sct_img = sct.grab(sct.monitors[1])
 
     # Create an Image
-    img = Image.new('RGB', sct_img.size)
+    img = Image.new("RGB", sct_img.size)
 
     # Best solution: create a list(tuple(R, G, B), ...) for putdata()
-    pixels = zip(sct_img.raw[2::4],
-                 sct_img.raw[1::4],
-                 sct_img.raw[0::4])
+    pixels = zip(sct_img.raw[2::4], sct_img.raw[1::4], sct_img.raw[0::4])
     img.putdata(list(pixels))
 
     # But you can set individual pixels too (slower)

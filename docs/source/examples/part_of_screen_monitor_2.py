@@ -17,13 +17,13 @@ with mss.mss() as sct:
 
     # The screen part to capture
     monitor = {
-        'top': mon['top'] + 100,  # 100px from the top
-        'left': mon['left'] + 100,  # 100px from the left
-        'width': 160,
-        'height': 135,
-        'mon': monitor_number,
+        "top": mon["top"] + 100,  # 100px from the top
+        "left": mon["left"] + 100,  # 100px from the left
+        "width": 160,
+        "height": 135,
+        "mon": monitor_number,
     }
-    output = 'sct-mon{mon}_{top}x{left}_{width}x{height}.png'.format(**monitor)
+    output = "sct-mon{mon}_{top}x{left}_{width}x{height}.png".format(**monitor)
 
     # Grab the data
     sct_img = sct.grab(monitor)

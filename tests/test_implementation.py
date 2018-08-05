@@ -14,16 +14,18 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
 
-PY3 = sys.version[0] > '2'
+PY3 = sys.version[0] > "2"
 
 
 class MSS0(MSSBase):
     """ Nothing implemented. """
+
     pass
 
 
 class MSS1(MSSBase):
     """ Emulate no monitors. """
+
     @property
     def monitors(self):
         return []
@@ -31,9 +33,10 @@ class MSS1(MSSBase):
 
 class MSS2(MSSBase):
     """ Emulate one monitor. """
+
     @property
     def monitors(self):
-        return [{'top': 0, 'left': 0, 'width': 10, 'height': 10}]
+        return [{"top": 0, "left": 0, "width": 10, "height": 10}]
 
 
 def test_incomplete_class():
@@ -58,9 +61,9 @@ def test_incomplete_class():
 
 
 def test_repr(sct):
-    box = {'top': 0, 'left': 0, 'width': 10, 'height': 10}
+    box = {"top": 0, "left": 0, "width": 10, "height": 10}
     img = sct.grab(box)
-    ref = ScreenShot(bytearray(b'42'), box)
+    ref = ScreenShot(bytearray(b"42"), box)
     assert repr(img) == repr(ref)
 
 
@@ -70,7 +73,7 @@ def test_factory(monkeypatch):
         assert isinstance(sct, MSSBase)
 
     # Unknown
-    monkeypatch.setattr(platform, 'system', lambda: 'Chuck Norris')
+    monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
     with pytest.raises(ScreenShotError) as exc:
         mss.mss()
     monkeypatch.undo()
@@ -79,59 +82,59 @@ def test_factory(monkeypatch):
         error = exc.value[0]
     else:
         error = exc.value.args[0]
-    assert error == 'System not (yet?) implemented.'
+    assert error == "System 'chuck norris' not (yet?) implemented."
 
 
 def test_entry_point(capsys, sct):
     from mss.__main__ import main
     from datetime import datetime
 
-    for opt in ('-m', '--monitor'):
-        main([opt, '1'])
+    for opt in ("-m", "--monitor"):
+        main([opt, "1"])
         out, _ = capsys.readouterr()
-        assert out.endswith('monitor-1.png\n')
-        assert os.path.isfile('monitor-1.png')
-        os.remove('monitor-1.png')
+        assert out.endswith("monitor-1.png\n")
+        assert os.path.isfile("monitor-1.png")
+        os.remove("monitor-1.png")
 
-    for opt in zip(('-m 1', '--monitor=1'), ('-q', '--quiet')):
+    for opt in zip(("-m 1", "--monitor=1"), ("-q", "--quiet")):
         main(opt)
         out, _ = capsys.readouterr()
         assert not out
-        assert os.path.isfile('monitor-1.png')
-        os.remove('monitor-1.png')
+        assert os.path.isfile("monitor-1.png")
+        os.remove("monitor-1.png")
 
-    fmt = 'sct-{width}x{height}.png'
-    for opt in ('-o', '--out'):
+    fmt = "sct-{width}x{height}.png"
+    for opt in ("-o", "--out"):
         main([opt, fmt])
         filename = fmt.format(**sct.monitors[1])
         out, _ = capsys.readouterr()
-        assert out.endswith(filename + '\n')
+        assert out.endswith(filename + "\n")
         assert os.path.isfile(filename)
         os.remove(filename)
 
-    fmt = 'sct_{mon}-{date:%Y-%m-%d}.png'
-    for opt in ('-o', '--out'):
+    fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
+    for opt in ("-o", "--out"):
         main([opt, fmt])
         filename = fmt.format(mon=1, date=datetime.now())
         out, _ = capsys.readouterr()
-        assert out.endswith(filename + '\n')
+        assert out.endswith(filename + "\n")
         assert os.path.isfile(filename)
         os.remove(filename)
 
-    coordinates = '2,12,40,67'
-    for opt in ('-c', '--coordinates'):
+    coordinates = "2,12,40,67"
+    for opt in ("-c", "--coordinates"):
         main([opt, coordinates])
-        filename = 'sct-2x12_40x67.png'
+        filename = "sct-2x12_40x67.png"
         out, _ = capsys.readouterr()
-        assert out.endswith(filename + '\n')
+        assert out.endswith(filename + "\n")
         assert os.path.isfile(filename)
         os.remove(filename)
 
-    coordinates = '2,12,40'
-    for opt in ('-c', '--coordinates'):
+    coordinates = "2,12,40"
+    for opt in ("-c", "--coordinates"):
         main([opt, coordinates])
         out, _ = capsys.readouterr()
-        assert out == 'Coordinates syntax: top, left, width, height\n'
+        assert out == "Coordinates syntax: top, left, width, height\n"
 
 
 def test_grab_with_tuple(sct):
@@ -148,7 +151,7 @@ def test_grab_with_tuple(sct):
     assert im.size == (width, height)
 
     # MSS like
-    box2 = {'left': left, 'top': top, 'width': width, 'height': height}
+    box2 = {"left": left, "top": top, "width": width, "height": height}
     im2 = sct.grab(box2)
     assert im.size == im2.size
     assert im.pos == im2.pos
@@ -157,8 +160,8 @@ def test_grab_with_tuple(sct):
 
 def test_grab_with_tuple_percents(sct):
     monitor = sct.monitors[1]
-    left = monitor['left'] + monitor['width'] * 5 // 100  # 5% from the left
-    top = monitor['top'] + monitor['height'] * 5 // 100  # 5% from the top
+    left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
+    top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
     right = left + 500  # 500px
     lower = top + 500  # 500px
     width = right - left
@@ -170,7 +173,7 @@ def test_grab_with_tuple_percents(sct):
     assert im.size == (width, height)
 
     # MSS like
-    box2 = {'left': left, 'top': top, 'width': width, 'height': height}
+    box2 = {"left": left, "top": top, "width": width, "height": height}
     im2 = sct.grab(box2)
     assert im.size == im2.size
     assert im.pos == im2.pos

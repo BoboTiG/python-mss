@@ -17,70 +17,62 @@ except ImportError:
     Image = None
 
 
-@pytest.mark.skipif(
-    numpy is None,
-    reason='Numpy module not available.')
+@pytest.mark.skipif(numpy is None, reason="Numpy module not available.")
 def test_numpy(sct):
-    box = {'top': 0, 'left': 0, 'width': 10, 'height': 10}
+    box = {"top": 0, "left": 0, "width": 10, "height": 10}
     img = numpy.array(sct.grab(box))
     assert len(img) == 10
 
 
-@pytest.mark.skipif(
-    Image is None,
-    reason='PIL module not available.')
+@pytest.mark.skipif(Image is None, reason="PIL module not available.")
 def test_pil(sct):
     width, height = 16, 16
-    box = {'top': 0, 'left': 0, 'width': width, 'height': height}
+    box = {"top": 0, "left": 0, "width": width, "height": height}
     sct_img = sct.grab(box)
 
-    img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
-    assert img.mode == 'RGB'
+    img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
+    assert img.mode == "RGB"
     assert img.size == sct_img.size
 
     for x in range(width):
         for y in range(height):
             assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save('box.png')
-    assert os.path.isfile('box.png')
+    img.save("box.png")
+    assert os.path.isfile("box.png")
 
 
-@pytest.mark.skipif(
-    Image is None,
-    reason='PIL module not available.')
+@pytest.mark.skipif(Image is None, reason="PIL module not available.")
 def test_pil_bgra(sct):
     width, height = 16, 16
-    box = {'top': 0, 'left': 0, 'width': width, 'height': height}
+    box = {"top": 0, "left": 0, "width": width, "height": height}
     sct_img = sct.grab(box)
 
-    img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
-    assert img.mode == 'RGB'
+    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    assert img.mode == "RGB"
     assert img.size == sct_img.size
 
     for x in range(width):
         for y in range(height):
             assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save('box-bgra.png')
-    assert os.path.isfile('box-bgra.png')
+    img.save("box-bgra.png")
+    assert os.path.isfile("box-bgra.png")
 
 
-@pytest.mark.skipif(
-    Image is None,
-    reason='PIL module not available.')
+@pytest.mark.skipif(Image is None, reason="PIL module not available.")
 def test_pil_not_16_rounded(sct):
     width, height = 10, 10
-    box = {'top': 0, 'left': 0, 'width': width, 'height': height}
+    box = {"top": 0, "left": 0, "width": width, "height": height}
     sct_img = sct.grab(box)
 
-    img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
-    assert img.mode == 'RGB'
+    img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
+    assert img.mode == "RGB"
     assert img.size == sct_img.size
 
     for x in range(width):
         for y in range(height):
             assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save('box.png')
-    assert os.path.isfile('box.png')
+    img.save("box.png")
+    assert os.path.isfile("box.png")

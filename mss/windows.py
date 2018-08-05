@@ -12,7 +12,7 @@ import ctypes.wintypes
 from .base import MSSBase
 from .exception import ScreenShotError
 
-__all__ = ('MSS',)
+__all__ = ("MSS",)
 
 
 CAPTUREBLT = 0x40000000
@@ -23,17 +23,19 @@ SRCCOPY = 0x00CC0020
 class BITMAPINFOHEADER(ctypes.Structure):
     """ Information about the dimensions and color format of a DIB. """
 
-    _fields_ = [('biSize', ctypes.wintypes.DWORD),
-                ('biWidth', ctypes.wintypes.LONG),
-                ('biHeight', ctypes.wintypes.LONG),
-                ('biPlanes', ctypes.wintypes.WORD),
-                ('biBitCount', ctypes.wintypes.WORD),
-                ('biCompression', ctypes.wintypes.DWORD),
-                ('biSizeImage', ctypes.wintypes.DWORD),
-                ('biXPelsPerMeter', ctypes.wintypes.LONG),
-                ('biYPelsPerMeter', ctypes.wintypes.LONG),
-                ('biClrUsed', ctypes.wintypes.DWORD),
-                ('biClrImportant', ctypes.wintypes.DWORD)]
+    _fields_ = [
+        ("biSize", ctypes.wintypes.DWORD),
+        ("biWidth", ctypes.wintypes.LONG),
+        ("biHeight", ctypes.wintypes.LONG),
+        ("biPlanes", ctypes.wintypes.WORD),
+        ("biBitCount", ctypes.wintypes.WORD),
+        ("biCompression", ctypes.wintypes.DWORD),
+        ("biSizeImage", ctypes.wintypes.DWORD),
+        ("biXPelsPerMeter", ctypes.wintypes.LONG),
+        ("biYPelsPerMeter", ctypes.wintypes.LONG),
+        ("biClrUsed", ctypes.wintypes.DWORD),
+        ("biClrImportant", ctypes.wintypes.DWORD),
+    ]
 
 
 class BITMAPINFO(ctypes.Structure):
@@ -41,14 +43,16 @@ class BITMAPINFO(ctypes.Structure):
     Structure that defines the dimensions and color information for a DIB.
     """
 
-    _fields_ = [('bmiHeader', BITMAPINFOHEADER),
-                ('bmiColors', ctypes.wintypes.DWORD * 3)]
+    _fields_ = [
+        ("bmiHeader", BITMAPINFOHEADER),
+        ("bmiColors", ctypes.wintypes.DWORD * 3),
+    ]
 
 
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    _bbox = {'height': 0, 'width': 0}
+    _bbox = {"height": 0, "width": 0}
     _bmp = None
     _data = None
     _memdc = None
@@ -63,7 +67,7 @@ class MSS(MSSBase):
             ctypes.wintypes.DWORD,
             ctypes.wintypes.DWORD,
             ctypes.POINTER(ctypes.wintypes.RECT),
-            ctypes.wintypes.DOUBLE
+            ctypes.wintypes.DOUBLE,
         )
         set_argtypes(self.monitorenumproc)
         set_restypes()
@@ -73,7 +77,8 @@ class MSS(MSSBase):
             # Windows 8.1+
             # Automatically scale for DPI changes
             ctypes.windll.user32.SetProcessDpiAwareness(
-                ctypes.windll.user32.PROCESS_PER_MONITOR_DPI_AWARE)
+                ctypes.windll.user32.PROCESS_PER_MONITOR_DPI_AWARE
+            )
         except AttributeError:
             ctypes.windll.user32.SetProcessDPIAware()
 
@@ -112,12 +117,14 @@ class MSS(MSSBase):
             right = ctypes.windll.user32.GetSystemMetrics(sm_cxvirtualscreen)
             top = ctypes.windll.user32.GetSystemMetrics(sm_yvirtualscreen)
             bottom = ctypes.windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
-            self._monitors.append({
-                'left': int(left),
-                'top': int(top),
-                'width': int(right - left),
-                'height': int(bottom - top),
-            })
+            self._monitors.append(
+                {
+                    "left": int(left),
+                    "top": int(top),
+                    "width": int(right - left),
+                    "height": int(bottom - top),
+                }
+            )
 
             # Each monitors
             def _callback(monitor, data, rect, dc_):
@@ -129,12 +136,14 @@ class MSS(MSSBase):
 
                 del monitor, data, dc_
                 rct = rect.contents
-                self._monitors.append({
-                    'left': int(rct.left),
-                    'top': int(rct.top),
-                    'width': int(rct.right - rct.left),
-                    'height': int(rct.bottom - rct.top),
-                })
+                self._monitors.append(
+                    {
+                        "left": int(rct.left),
+                        "top": int(rct.top),
+                        "width": int(rct.right - rct.left),
+                        "height": int(rct.bottom - rct.top),
+                    }
+                )
                 return 1
 
             callback = self.monitorenumproc(_callback)
@@ -177,16 +186,16 @@ class MSS(MSSBase):
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
             monitor = {
-                'left': monitor[0],
-                'top': monitor[1],
-                'width': monitor[2] - monitor[0],
-                'height': monitor[3] - monitor[1],
+                "left": monitor[0],
+                "top": monitor[1],
+                "width": monitor[2] - monitor[0],
+                "height": monitor[3] - monitor[1],
             }
 
         gdi = ctypes.windll.gdi32
-        width, height = monitor['width'], monitor['height']
+        width, height = monitor["width"], monitor["height"]
 
-        if (self._bbox['height'], self._bbox['width']) != (height, width):
+        if (self._bbox["height"], self._bbox["width"]) != (height, width):
             self._bbox = monitor
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
@@ -194,13 +203,22 @@ class MSS(MSSBase):
             self._bmp = gdi.CreateCompatibleBitmap(self._srcdc, width, height)
             gdi.SelectObject(self._memdc, self._bmp)
 
-        gdi.BitBlt(self._memdc, 0, 0, width, height, self._srcdc,
-                   monitor['left'], monitor['top'], SRCCOPY | CAPTUREBLT)
-        bits = gdi.GetDIBits(self._memdc, self._bmp, 0, height, self._data,
-                             self._bmi, DIB_RGB_COLORS)
+        gdi.BitBlt(
+            self._memdc,
+            0,
+            0,
+            width,
+            height,
+            self._srcdc,
+            monitor["left"],
+            monitor["top"],
+            SRCCOPY | CAPTUREBLT,
+        )
+        bits = gdi.GetDIBits(
+            self._memdc, self._bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
+        )
         if bits != height:
-            del self._data
-            raise ScreenShotError('gdi32.GetDIBits() failed.', locals())
+            raise ScreenShotError("gdi32.GetDIBits() failed.")
 
         return self.cls_image(self._data, monitor)
 
@@ -214,17 +232,23 @@ def set_argtypes(callback):
         ctypes.wintypes.HDC,
         ctypes.c_void_p,
         callback,
-        ctypes.wintypes.LPARAM]
+        ctypes.wintypes.LPARAM,
+    ]
     ctypes.windll.user32.GetWindowDC.argtypes = [ctypes.wintypes.HWND]
-    ctypes.windll.gdi32.GetDeviceCaps.argtypes = [ctypes.wintypes.HWND,
-                                                  ctypes.wintypes.INT]
+    ctypes.windll.gdi32.GetDeviceCaps.argtypes = [
+        ctypes.wintypes.HWND,
+        ctypes.wintypes.INT,
+    ]
     ctypes.windll.gdi32.CreateCompatibleDC.argtypes = [ctypes.wintypes.HDC]
     ctypes.windll.gdi32.CreateCompatibleBitmap.argtypes = [
         ctypes.wintypes.HDC,
         ctypes.wintypes.INT,
-        ctypes.wintypes.INT]
-    ctypes.windll.gdi32.SelectObject.argtypes = [ctypes.wintypes.HDC,
-                                                 ctypes.wintypes.HGDIOBJ]
+        ctypes.wintypes.INT,
+    ]
+    ctypes.windll.gdi32.SelectObject.argtypes = [
+        ctypes.wintypes.HDC,
+        ctypes.wintypes.HGDIOBJ,
+    ]
     ctypes.windll.gdi32.BitBlt.argtypes = [
         ctypes.wintypes.HDC,
         ctypes.wintypes.INT,
@@ -234,7 +258,8 @@ def set_argtypes(callback):
         ctypes.wintypes.HDC,
         ctypes.wintypes.INT,
         ctypes.wintypes.INT,
-        ctypes.wintypes.DWORD]
+        ctypes.wintypes.DWORD,
+    ]
     ctypes.windll.gdi32.DeleteObject.argtypes = [ctypes.wintypes.HGDIOBJ]
     ctypes.windll.gdi32.GetDIBits.argtypes = [
         ctypes.wintypes.HDC,
@@ -243,7 +268,8 @@ def set_argtypes(callback):
         ctypes.wintypes.UINT,
         ctypes.c_void_p,
         ctypes.POINTER(BITMAPINFO),
-        ctypes.wintypes.UINT]
+        ctypes.wintypes.UINT,
+    ]
 
 
 def set_restypes():
@@ -255,8 +281,7 @@ def set_restypes():
     ctypes.windll.user32.GetWindowDC.restype = ctypes.wintypes.HDC
     ctypes.windll.gdi32.GetDeviceCaps.restype = ctypes.wintypes.INT
     ctypes.windll.gdi32.CreateCompatibleDC.restype = ctypes.wintypes.HDC
-    ctypes.windll.gdi32.CreateCompatibleBitmap.restype = \
-        ctypes.wintypes.HBITMAP
+    ctypes.windll.gdi32.CreateCompatibleBitmap.restype = ctypes.wintypes.HBITMAP
     ctypes.windll.gdi32.SelectObject.restype = ctypes.wintypes.HGDIOBJ
     ctypes.windll.gdi32.BitBlt.restype = ctypes.wintypes.BOOL
     ctypes.windll.gdi32.GetDIBits.restype = ctypes.wintypes.INT

@@ -15,7 +15,7 @@ def test_grab_monitor(sct):
 
 
 def test_grab_part_of_screen(sct):
-    monitor = {'top': 160, 'left': 160, 'width': 160, 'height': 160}
+    monitor = {"top": 160, "left": 160, "width": 160, "height": 160}
     image = sct.grab(monitor)
     assert isinstance(image, ScreenShot)
     assert isinstance(image.raw, bytearray)
@@ -27,7 +27,7 @@ def test_grab_part_of_screen(sct):
 
 
 def test_grab_part_of_screen_rounded(sct):
-    monitor = {'top': 160, 'left': 160, 'width': 161, 'height': 159}
+    monitor = {"top": 160, "left": 160, "width": 161, "height": 159}
     image = sct.grab(monitor)
     assert isinstance(image, ScreenShot)
     assert isinstance(image.raw, bytearray)
@@ -39,7 +39,7 @@ def test_grab_part_of_screen_rounded(sct):
 
 
 def test_grab_individual_pixels(sct):
-    monitor = {'top': 160, 'left': 160, 'width': 222, 'height': 42}
+    monitor = {"top": 160, "left": 160, "width": 222, "height": 42}
     image = sct.grab(monitor)
     assert isinstance(image.pixel(0, 0), tuple)
     with pytest.raises(ScreenShotError):
