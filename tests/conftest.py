@@ -53,4 +53,5 @@ def is_travis():
 
 @pytest.fixture(scope="session")
 def raw():
-    return open("tests/res/monitor-1024x768.raw", "rb").read()
+    with open("tests/res/monitor-1024x768.raw", "rb") as f:
+        yield f.read()
