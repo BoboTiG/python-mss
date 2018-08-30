@@ -112,7 +112,7 @@ Methods
 
         Instantiate a new class given only screen shot's data and size.
 
-    .. method:: pixels(coord_x, coord_y)
+    .. method:: pixel(coord_x, coord_y)
 
         :param int coord_x: The x coordinate.
         :param int coord_y: The y coordinate.
