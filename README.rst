@@ -37,4 +37,4 @@ Installation
 
 You can install it with pip::
 
-    pip install --upgrade mss
+    python -m pip install --upgrade mss

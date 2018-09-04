@@ -2,10 +2,11 @@ History:
 
 <see Git checking messages for history>
 
-3.3.0   2018/08/xx
+3.3.0   2018/09/04
       - Linux: add an error handler for the XServer to prevent interpreter crash (fix #61)
       - MSS: fix a ResourceWarning: unclosed file in setup.py
       - tests: fix a ResourceWarning: unclosed file
+      - doc: fix a typo in Screenshot.pixel() method (thanks to @mchlnix)
       - big code clean-up using black
 
 3.2.1   2018/05/21
