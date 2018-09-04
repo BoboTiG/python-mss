@@ -39,6 +39,10 @@ classifiers = [
     "Programming Language :: Python :: 3.7",
     "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
 ]
+
+with open("README.rst") as f:
+    description = f.read()
+
 config = {
     "name": "mss",
     "version": __version__,
@@ -51,7 +55,7 @@ config = {
         "An ultra fast cross-platform multiple screenshots module "
         "in pure python using ctypes."
     ),
-    "long_description": open("README.rst").read(),
+    "long_description": description,
     "classifiers": classifiers,
     "platforms": ["Darwin", "Linux", "Windows"],
     "packages": ["mss"],
