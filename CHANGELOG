@@ -2,6 +2,9 @@ History:
 
 <see Git checking messages for history>
 
+3.3.1   2018/xx/xx
+      - Linux: fix a memory leak introduced with 7e8ae5703f0669f40532c2be917df4328bc3985e
+
 3.3.0   2018/09/04
       - Linux: add an error handler for the XServer to prevent interpreter crash (fix #61)
       - MSS: fix a ResourceWarning: unclosed file in setup.py
