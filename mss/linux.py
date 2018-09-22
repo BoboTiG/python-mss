@@ -148,15 +148,13 @@ class MSS(MSSBase):
 
     def __del__(self):
         # type: () -> None
-        """ Disconnect from X server and clean-up locals. """
+        """ Clean-up. """
 
+        # Disconnect from the X server
         try:
             self.xlib.XCloseDisplay(self.display)
         except AttributeError:
             pass
-
-        for attr in list(vars(self)):
-            delattr(self, attr)
 
     def __init__(self, display=None):
         # type: (bytes) -> None
