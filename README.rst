@@ -1,10 +1,12 @@
 Python MSS
 ==========
 
+.. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=master
+    :target: https://travis-ci.org/BoboTiG/python-mss
 .. image:: https://img.shields.io/badge/say-thanks-ff69b4.svg
     :target: https://saythanks.io/to/BoboTiG
-.. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=dev
-    :target: https://travis-ci.org/BoboTiG/python-mss
+.. image:: https://pepy.tech/badge/mss
+    :target: https://pepy.tech/project/mss
 
 
 .. code-block:: python
