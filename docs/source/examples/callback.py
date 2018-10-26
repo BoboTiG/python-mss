@@ -20,7 +20,7 @@ def on_exists(fname):
 
     if os.path.isfile(fname):
         newfile = fname + ".old"
-        print("{0} -> {1}".format(fname, newfile))
+        print("{} -> {}".format(fname, newfile))
         os.rename(fname, newfile)
 
 

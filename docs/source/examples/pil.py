@@ -22,6 +22,6 @@ with mss.mss() as sct:
         # img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
 
         # And save it!
-        output = "monitor-{0}.png".format(num)
+        output = "monitor-{}.png".format(num)
         img.save(output)
         print(output)

@@ -170,7 +170,7 @@ class MSS(MSSBase):
             display = display.encode("utf-8")
 
         if b":" not in display:
-            raise ScreenShotError("Bad display value: {0!r}.".format(display))
+            raise ScreenShotError("Bad display value: {!r}.".format(display))
 
         x11 = ctypes.util.find_library("X11")
         if not x11:
@@ -313,7 +313,7 @@ class MSS(MSSBase):
             if retval != 0 and not MSS.last_error:
                 return args
 
-            err = "{0}() failed".format(func.__name__)
+            err = "{}() failed".format(func.__name__)
             details = {"retval": retval, "args": args}
 
             if MSS.last_error:
@@ -329,7 +329,7 @@ class MSS(MSSBase):
                 xerror = xserver_error.value.decode("utf-8")
                 if xerror != "0":
                     details["xerror"] = xerror
-                    err += ": {0}".format(xerror)
+                    err += ": {}".format(xerror)
 
             raise ScreenShotError(err, details=details)
 
@@ -407,7 +407,7 @@ class MSS(MSSBase):
         bits_per_pixel = ximage.contents.bits_per_pixel
         if bits_per_pixel != 32:
             raise ScreenShotError(
-                "[XImage] bits per pixel value not (yet?) implemented: {0}.".format(
+                "[XImage] bits per pixel value not (yet?) implemented: {}.".format(
                     bits_per_pixel
                 )
             )

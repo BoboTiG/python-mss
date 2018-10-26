@@ -116,7 +116,7 @@ class MSSBase(object):
             try:
                 monitor = monitors[mon]
             except IndexError:
-                raise ScreenShotError("Monitor {0!r} does not exist.".format(mon))
+                raise ScreenShotError("Monitor {!r} does not exist.".format(mon))
 
             output = output.format(mon=mon, date=datetime.now(), **monitor)
             if callable(callback):
