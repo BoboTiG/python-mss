@@ -30,7 +30,7 @@ def mss(**kwargs):
         from .windows import MSS
     else:
         raise ScreenShotError(
-            "System {0!r} not (yet?) implemented.".format(operating_system)
+            "System {!r} not (yet?) implemented.".format(operating_system)
         )
 
     return MSS(**kwargs)

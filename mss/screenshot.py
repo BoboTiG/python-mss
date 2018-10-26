@@ -149,5 +149,5 @@ class ScreenShot(object):
             return self.pixels[coord_y][coord_x]
         except IndexError:
             raise ScreenShotError(
-                "Pixel location ({0}, {1}) is out of range.".format(coord_x, coord_y)
+                "Pixel location ({}, {}) is out of range.".format(coord_x, coord_y)
             )

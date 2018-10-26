@@ -19,11 +19,11 @@ def purge_files():
     """ Remove all generated files from previous runs. """
 
     for fname in glob.glob("*.png"):
-        print("Deleting {0!r} ...".format(fname))
+        print("Deleting {!r} ...".format(fname))
         os.unlink(fname)
 
     for fname in glob.glob("*.png.old"):
-        print("Deleting {0!r} ...".format(fname))
+        print("Deleting {!r} ...".format(fname))
         os.unlink(fname)
 
 
