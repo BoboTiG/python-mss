@@ -55,6 +55,7 @@ config = {
         "in pure python using ctypes."
     ),
     "long_description": description,
+    "python_requires": ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*",
     "classifiers": classifiers,
     "platforms": ["Darwin", "Linux", "Windows"],
     "packages": ["mss"],
