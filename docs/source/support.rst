@@ -4,7 +4,7 @@ Support
 
 Feel free to try MSS on a system we had not tested, and let report us by creating an `issue <htps://github.com/BoboTiG/python-mss/issues>`_.
 
-GNU/Linux, macOS and Windows: **2.7**, 3.5, **3.6** and 3.7-dev.
+GNU/Linux, macOS and Windows: **2.7**, 3.5, 3.6 and **3.7**.
 
 
 Future
