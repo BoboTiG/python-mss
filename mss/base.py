@@ -16,7 +16,6 @@ class MSSBase(object):
 
     cls_image = ScreenShot  # type: object
     compression_level = 6  # type: int
-    _monitors = []  # type: List[Dict[str, int]]
 
     def __enter__(self):
         # type: () -> MSSBase

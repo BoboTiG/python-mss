@@ -160,6 +160,8 @@ class MSS(MSSBase):
         # type: (bytes) -> None
         """ GNU/Linux initialisations. """
 
+        self._monitors = []  # type: List[Dict[str, int]]
+
         if not display:
             try:
                 display = os.environ["DISPLAY"].encode("utf-8")
