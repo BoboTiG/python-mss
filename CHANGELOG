@@ -2,6 +2,13 @@ History:
 
 <see Git checking messages for history>
 
+3.3.2   2018/11/20
+      - new contributors: hugovk, Andreas Buhr
+      - MSS: do monitor detection in MSS constructor (fixes #79)
+      - MSS: specify compliant Python versions for pip install
+      - tests: enable Python 3.7
+      - tests: fix test_entry_point() with multiple monitors
+
 3.3.1   2018/09/22
       - Linux: fix a memory leak introduced with 7e8ae5703f0669f40532c2be917df4328bc3985e (fixes #72)
       - doc: add the download statistics badge
