@@ -62,6 +62,8 @@ class MSS(MSSBase):
         # type: () -> None
         """ Windows initialisations. """
 
+        self._monitors = []  # type: List[Dict[str, int]]
+
         self.monitorenumproc = ctypes.WINFUNCTYPE(
             ctypes.wintypes.INT,
             ctypes.wintypes.DWORD,

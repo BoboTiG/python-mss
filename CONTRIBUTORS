@@ -9,6 +9,9 @@
 Alexander 'thehesiod' Mohr [https://github.com/thehesiod]
     - Windows: robustness to MSS.get_pixels()
 
+Andreas Buhr [https://www.andreasbuhr.de]
+    - Bugfix for multi-monitor detection
+
 bubulle [http://indexerror.net/user/bubulle]
     - Windows: efficiency of MSS.get_pixels()
 

@@ -67,6 +67,8 @@ class MSS(MSSBase):
         # type: () -> None
         """ macOS initialisations. """
 
+        self._monitors = []  # type: List[Dict[str, int]]
+
         coregraphics = ctypes.util.find_library("CoreGraphics")
         if not coregraphics:
             raise ScreenShotError("No CoreGraphics library found.")

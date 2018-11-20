@@ -114,7 +114,7 @@ def test_entry_point(capsys, sct):
 
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):
-        main([opt, fmt])
+        main(["-m 1", opt, fmt])
         filename = fmt.format(mon=1, date=datetime.now())
         out, _ = capsys.readouterr()
         assert out.endswith(filename + "\n")
