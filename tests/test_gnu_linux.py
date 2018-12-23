@@ -4,11 +4,11 @@ import ctypes.util
 import platform
 import sys
 
-import pytest
-
 import mss
 from mss.base import MSSMixin
 from mss.exception import ScreenShotError
+
+import pytest
 
 
 if platform.system().lower() != "linux":

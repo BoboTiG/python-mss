@@ -1,8 +1,8 @@
 # coding: utf-8
 
-import pytest
-
 from mss.base import ScreenShot
+
+import pytest
 
 
 def test_bad_length():

@@ -31,10 +31,11 @@ from __future__ import print_function
 
 import time
 
-import numpy
 from PIL import Image
 
 import mss
+
+import numpy
 
 
 def mss_rgb(im):

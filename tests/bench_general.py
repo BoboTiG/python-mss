@@ -25,6 +25,7 @@ Windows
 """
 
 from time import time
+
 import mss
 import mss.tools
 

@@ -5,13 +5,13 @@ import os.path
 import platform
 import sys
 
-import pytest
-
 import mss
 import mss.tools
 from mss.base import MSSMixin
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
+
+import pytest
 
 
 PY3 = sys.version[0] > "2"
