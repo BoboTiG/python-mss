@@ -2,6 +2,9 @@ History:
 
 <see Git checking messages for history>
 
+4.0.0   2018/12/23
+      - MSS: renamed MSSBase to MSSMixin in base.py
+
 3.3.2   2018/11/20
       - new contributors: hugovk, Andreas Buhr
       - MSS: do monitor detection in MSS constructor (fixes #79)

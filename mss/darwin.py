@@ -12,7 +12,7 @@ import ctypes
 import ctypes.util
 import sys
 
-from .base import MSSBase
+from .base import MSSMixin
 from .exception import ScreenShotError
 from .screenshot import Size
 
@@ -55,7 +55,7 @@ class CGRect(ctypes.Structure):
         return "{}<{} {}>".format(type(self).__name__, self.origin, self.size)
 
 
-class MSS(MSSBase):
+class MSS(MSSMixin):
     """
     Multiple ScreenShots implementation for macOS.
     It uses intensively the CoreGraphics library.
@@ -180,7 +180,7 @@ class MSS(MSSBase):
     def grab(self, monitor):
         # type: (Dict[str, int]) -> ScreenShot
         """
-        See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
+        See :meth:`MSSMixin.grab <mss.base.MSSMixin.grab>` for full details.
         """
 
         # Convert PIL bbox style
