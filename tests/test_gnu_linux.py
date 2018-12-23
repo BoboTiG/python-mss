@@ -7,7 +7,7 @@ import sys
 import pytest
 
 import mss
-from mss.base import MSSBase
+from mss.base import MSSMixin
 from mss.exception import ScreenShotError
 
 
@@ -33,7 +33,7 @@ def test_factory_systems(monkeypatch):
     # GNU/Linux
     monkeypatch.setattr(platform, "system", lambda: "LINUX")
     with mss.mss() as sct:
-        assert isinstance(sct, MSSBase)
+        assert isinstance(sct, MSSMixin)
     monkeypatch.undo()
 
     # macOS

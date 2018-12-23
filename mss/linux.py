@@ -8,7 +8,7 @@ import ctypes
 import ctypes.util
 import os
 
-from .base import MSSBase
+from .base import MSSMixin
 from .exception import ScreenShotError
 
 __all__ = ("MSS",)
@@ -138,7 +138,7 @@ class XRRCrtcInfo(ctypes.Structure):
     ]
 
 
-class MSS(MSSBase):
+class MSS(MSSMixin):
     """
     Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.

@@ -9,7 +9,7 @@ from __future__ import division
 import ctypes
 import ctypes.wintypes
 
-from .base import MSSBase
+from .base import MSSMixin
 from .exception import ScreenShotError
 
 __all__ = ("MSS",)
@@ -49,7 +49,7 @@ class BITMAPINFO(ctypes.Structure):
     ]
 
 
-class MSS(MSSBase):
+class MSS(MSSMixin):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
     _bbox = {"height": 0, "width": 0}

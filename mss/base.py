@@ -11,14 +11,14 @@ from .screenshot import ScreenShot
 from .tools import to_png
 
 
-class MSSBase(object):
+class MSSMixin(object):
     """ This class will be overloaded by a system specific one. """
 
     cls_image = ScreenShot  # type: object
     compression_level = 6  # type: int
 
     def __enter__(self):
-        # type: () -> MSSBase
+        # type: () -> MSSMixin
         """ For the cool call `with MSS() as mss:`. """
 
         return self

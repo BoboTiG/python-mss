@@ -24,7 +24,7 @@ GNU/Linux
         :rtype: :class:`mss.base.ScreenShot`
         :raises ScreenShotError: When color depth is not 32 (rare).
 
-        See :meth:`mss.base.MSSBase.grab()` for details.
+        See :meth:`mss.base.MSSMixin.grab()` for details.
 
 .. function:: error_handler(display, event)
 
@@ -46,9 +46,11 @@ Methods
 
 .. module:: mss.base
 
-.. class:: MSSBase
+.. class:: MSSMixin
 
     The parent's class for every OS implementation.
+
+    .. versionchanged:: 4.0.0
 
     .. method:: grab(region)
 
@@ -146,7 +148,7 @@ Methods
 Properties
 ==========
 
-.. class:: MSSBase
+.. class:: MSSMixin
 
     .. attribute:: monitors
 
@@ -266,4 +268,4 @@ Factory
 
     Factory function to instance the appropriate MSS class.
 
-    :rtype: :class:`mss.base.MSSBase`
+    :rtype: :class:`mss.base.MSSMixin`

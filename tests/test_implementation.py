@@ -9,7 +9,7 @@ import pytest
 
 import mss
 import mss.tools
-from mss.base import MSSBase
+from mss.base import MSSMixin
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
@@ -17,13 +17,13 @@ from mss.screenshot import ScreenShot
 PY3 = sys.version[0] > "2"
 
 
-class MSS0(MSSBase):
+class MSS0(MSSMixin):
     """ Nothing implemented. """
 
     pass
 
 
-class MSS1(MSSBase):
+class MSS1(MSSMixin):
     """ Emulate no monitors. """
 
     @property
@@ -31,7 +31,7 @@ class MSS1(MSSBase):
         return []
 
 
-class MSS2(MSSBase):
+class MSS2(MSSMixin):
     """ Emulate one monitor. """
 
     @property
@@ -70,7 +70,7 @@ def test_repr(sct):
 def test_factory(monkeypatch):
     # Current system
     with mss.mss() as sct:
-        assert isinstance(sct, MSSBase)
+        assert isinstance(sct, MSSMixin)
 
     # Unknown
     monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
