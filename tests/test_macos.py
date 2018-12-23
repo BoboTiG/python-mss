@@ -3,10 +3,11 @@
 import ctypes.util
 import platform
 
-import pytest
-
 import mss
 from mss.exception import ScreenShotError
+
+import pytest
+
 
 if platform.system().lower() != "darwin":
     pytestmark = pytest.mark.skip

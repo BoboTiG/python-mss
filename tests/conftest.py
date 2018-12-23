@@ -5,9 +5,9 @@ from __future__ import print_function
 import glob
 import os
 
-import pytest
-
 import mss
+
+import pytest
 
 
 def pytest_addoption(parser):

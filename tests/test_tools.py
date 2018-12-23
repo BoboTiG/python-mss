@@ -4,9 +4,9 @@ import hashlib
 import os.path
 import zlib
 
-import pytest
-
 from mss.tools import to_png
+
+import pytest
 
 
 WIDTH = 10
