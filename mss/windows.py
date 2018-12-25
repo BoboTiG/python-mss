@@ -52,17 +52,14 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSMixin):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    _bbox = {"height": 0, "width": 0}
-    _bmp = None
-    _data = None
-    _memdc = None
-    _srcdc = None
-
     def __init__(self):
         # type: () -> None
         """ Windows initialisations. """
 
         self._monitors = []  # type: List[Dict[str, int]]
+
+        self._bbox = {"height": 0, "width": 0}
+        self._bmp = None
 
         self.monitorenumproc = ctypes.WINFUNCTYPE(
             ctypes.wintypes.INT,
@@ -100,7 +97,8 @@ class MSS(MSSMixin):
         # type: (*str) -> None
         """ Cleanup. """
 
-        for attr in (self._bmp, self._memdc, self._srcdc):
+        for attribute in {"_bmp", "_memdc", "_srcdc"}:
+            attr = getattr(self, attribute, None)
             if attr:
                 ctypes.windll.gdi32.DeleteObject(attr)
 
