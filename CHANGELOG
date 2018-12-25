@@ -4,6 +4,7 @@ History:
 
 4.0.0   201x/xx/xx
       - MSS: renamed MSSBase to MSSMixin in base.py
+      - Linux: ensure resources are freed in grab()
       - MSS: fix Flake8 C408: Unnecessary dict call - rewrite as a literal, in exceptions.py
       - MSS: fix Flake8 I100: Import statements are in the wrong order
       - MSS: fix Flake8 I201: Missing newline before sections or imports
