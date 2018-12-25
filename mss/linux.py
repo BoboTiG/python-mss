@@ -406,22 +406,25 @@ class MSS(MSSMixin):
             ZPIXMAP,
         )
 
-        bits_per_pixel = ximage.contents.bits_per_pixel
-        if bits_per_pixel != 32:
-            raise ScreenShotError(
-                "[XImage] bits per pixel value not (yet?) implemented: {}.".format(
-                    bits_per_pixel
+        try:
+            bits_per_pixel = ximage.contents.bits_per_pixel
+            if bits_per_pixel != 32:
+                raise ScreenShotError(
+                    "[XImage] bits per pixel value not (yet?) implemented: {}.".format(
+                        bits_per_pixel
+                    )
                 )
+
+            data = ctypes.cast(
+                ximage.contents.data,
+                ctypes.POINTER(
+                    ctypes.c_ubyte * monitor["height"] * monitor["width"] * 4
+                ),
             )
-
-        data = ctypes.cast(
-            ximage.contents.data,
-            ctypes.POINTER(ctypes.c_ubyte * monitor["height"] * monitor["width"] * 4),
-        )
-        data = bytearray(data.contents)
-
-        # Free
-        self.xlib.XDestroyImage(ximage)
+            data = bytearray(data.contents)
+        finally:
+            # Free
+            self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
 
