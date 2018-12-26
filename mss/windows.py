@@ -93,16 +93,27 @@ class MSS(MSSMixin):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._bmi = bmi
 
-    def __exit__(self, *args):
-        # type: (*str) -> None
-        """ Cleanup. """
+    def close(self):
+        # type: () -> None
+        """ Close GDI handles and free DCs. """
 
-        for attribute in {"_bmp", "_memdc", "_srcdc"}:
-            attr = getattr(self, attribute, None)
-            if attr:
-                ctypes.windll.gdi32.DeleteObject(attr)
+        try:
+            ctypes.windll.gdi32.DeleteObject(self._bmp)
+            del self._bmp
+        except AttributeError:
+            pass
 
-        super(MSS, self).__exit__(*args)
+        try:
+            ctypes.windll.gdi32.DeleteDC(self._memdc)
+            del self._memdc
+        except (OSError, AttributeError):
+            pass
+
+        try:
+            ctypes.windll.user32.ReleaseDC(0, self._srcdc)
+            del self._srcdc
+        except AttributeError:
+            pass
 
     @property
     def monitors(self):
@@ -235,6 +246,10 @@ def set_argtypes(callback):
         ctypes.wintypes.LPARAM,
     ]
     ctypes.windll.user32.GetWindowDC.argtypes = [ctypes.wintypes.HWND]
+    ctypes.windll.user32.ReleaseDC.argtypes = [
+        ctypes.wintypes.HWND,
+        ctypes.wintypes.HGDIOBJ,
+    ]
     ctypes.windll.gdi32.GetDeviceCaps.argtypes = [
         ctypes.wintypes.HWND,
         ctypes.wintypes.INT,
@@ -279,6 +294,7 @@ def set_restypes():
     ctypes.windll.user32.GetSystemMetrics.restype = ctypes.wintypes.INT
     ctypes.windll.user32.EnumDisplayMonitors.restype = ctypes.wintypes.BOOL
     ctypes.windll.user32.GetWindowDC.restype = ctypes.wintypes.HDC
+    ctypes.windll.user32.ReleaseDC.restype = ctypes.wintypes.INT
     ctypes.windll.gdi32.GetDeviceCaps.restype = ctypes.wintypes.INT
     ctypes.windll.gdi32.CreateCompatibleDC.restype = ctypes.wintypes.HDC
     ctypes.windll.gdi32.CreateCompatibleBitmap.restype = ctypes.wintypes.HBITMAP

@@ -3,7 +3,15 @@
 
 base.py
 -------
-- Renamed ``MSSBase`` class to ``MSSMixin``.
+- Renamed ``MSSBase`` class to ``MSSMixin``
+
+linux.py
+--------
+- Renamed ``__del__()`` method to ``close()``
+
+windows.py
+----------
+- Renamed ``__exit__()`` method to ``close()``
 
 
 3.3.0 (2018-09-04)

@@ -27,6 +27,14 @@ class MSSMixin(object):
         # type: (*str) -> None
         """ For the cool call `with MSS() as mss:`. """
 
+        self.close()
+
+    def close(self):
+        # type: () -> None
+        """ Clean-up. """
+
+        pass
+
     def grab(self, monitor):
         # type: (Dict[str, int]) -> ScreenShot
         """

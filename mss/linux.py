@@ -146,16 +146,6 @@ class MSS(MSSMixin):
 
     last_error = None
 
-    def __del__(self):
-        # type: () -> None
-        """ Clean-up. """
-
-        # Disconnect from the X server
-        try:
-            self.xlib.XCloseDisplay(self.display)
-        except AttributeError:
-            pass
-
     def __init__(self, display=None):
         # type: (bytes) -> None
         """ GNU/Linux initialisations. """
@@ -340,6 +330,20 @@ class MSS(MSSMixin):
         meth.restype = restype
         if errcheck:
             meth.errcheck = validate
+
+    def close(self):
+        # type: () -> None
+        """
+        Disconnect from the X server to prevent:
+            Maximum number of clients reached. Segmentation fault (core dumped)
+        """
+
+        try:
+            self.xlib.XCloseDisplay(self.display)
+            # Delete the attribute to prevent interpreter crash if called twice
+            del self.display
+        except AttributeError:
+            pass
 
     @property
     def monitors(self):
