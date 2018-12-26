@@ -24,7 +24,7 @@ def to_png(data, size, level=6, output=None):
     line = width * 3
     png_filter = struct.pack(">B", 0)
     scanlines = b"".join(
-        [png_filter + data[y * line:y * line + line] for y in range(height)]
+        [png_filter + data[y * line : y * line + line] for y in range(height)]
     )
 
     magic = struct.pack(">8B", 137, 80, 78, 71, 13, 10, 26, 10)

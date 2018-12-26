@@ -6,6 +6,7 @@ History:
       - MSS: renamed MSSBase to MSSMixin in base.py
       - Linux: ensure resources are freed in grab()
       - Windows: avoid unecessary class attributes
+      - MSS: ensure calls without context manager will not leak resources or document them (fixes #72 and #85)
       - MSS: fix Flake8 C408: Unnecessary dict call - rewrite as a literal, in exceptions.py
       - MSS: fix Flake8 I100: Import statements are in the wrong order
       - MSS: fix Flake8 I201: Missing newline before sections or imports

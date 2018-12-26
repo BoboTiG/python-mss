@@ -19,6 +19,12 @@ GNU/Linux
 
         GNU/Linux initializations.
 
+    .. method:: close()
+
+        Disconnect from the X server.
+
+        .. versionadded:: 4.0.0
+
     .. method:: grab(monitor)
 
         :rtype: :class:`mss.base.ScreenShot`
@@ -41,6 +47,21 @@ GNU/Linux
 
     .. versionadded:: 3.3.0
 
+
+Windows
+-------
+
+.. module:: mss.windows
+
+.. class:: MSS
+
+    .. method:: close()
+
+        Close GDI handles and free DCs.
+
+        .. versionadded:: 4.0.0
+
+
 Methods
 =======
 
@@ -50,7 +71,11 @@ Methods
 
     The parent's class for every OS implementation.
 
-    .. versionchanged:: 4.0.0
+    .. method:: close()
+
+        Clean-up method. Does nothing by default.
+
+        .. versionadded:: 4.0.0
 
     .. method:: grab(region)
 
@@ -147,6 +172,8 @@ Methods
 
 Properties
 ==========
+
+.. module:: mss.base
 
 .. class:: MSSMixin
 
