@@ -3,6 +3,7 @@ History:
 <see Git checking messages for history>
 
 4.0.0   201x/xx/xx
+      - MSS: remove use of setup.py for setup.cfg
       - MSS: renamed MSSBase to MSSMixin in base.py
       - Linux: ensure resources are freed in grab()
       - Windows: avoid unecessary class attributes
