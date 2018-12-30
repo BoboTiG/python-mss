@@ -7,11 +7,14 @@ base.py
 
 linux.py
 --------
-- Renamed ``__del__()`` method to ``close()``
+- Renamed ``MSS.__del__()`` method to ``MSS.close()``
+- Deleted ``MSS.last_error`` attribute. Use ``LAST_ERROR`` constant instead.
+- Added ``validate()`` function
+- Added ``MSS.get_error_details()`` method
 
 windows.py
 ----------
-- Renamed ``__exit__()`` method to ``close()``
+- Renamed ``MSS.__exit__()`` method to ``MSS.close()``
 
 
 3.3.0 (2018-09-04)

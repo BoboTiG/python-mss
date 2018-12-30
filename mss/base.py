@@ -33,8 +33,6 @@ class MSSMixin(object):
         # type: () -> None
         """ Clean-up. """
 
-        pass
-
     def grab(self, monitor):
         # type: (Dict[str, int]) -> ScreenShot
         """
@@ -140,3 +138,15 @@ class MSSMixin(object):
 
         kwargs["mon"] = kwargs.get("mon", 1)
         return next(self.save(**kwargs))
+
+    @staticmethod
+    def _cfactory(attr, func, argtypes, restype, errcheck=None):
+        # type: (Any, str, List[Any], Any, Optional[Callable]) -> None
+        # pylint: disable=too-many-locals
+        """ Factory to create a ctypes function and automatically manage errors. """
+
+        meth = getattr(attr, func)
+        meth.argtypes = argtypes
+        meth.restype = restype
+        if errcheck:
+            meth.errcheck = errcheck

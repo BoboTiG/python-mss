@@ -5,6 +5,7 @@ History:
 4.0.0   201x/xx/xx
       - MSS: remove use of setup.py for setup.cfg
       - MSS: renamed MSSBase to MSSMixin in base.py
+      - MSS: refactor ctypes argtype, restype and errcheck setup (fixes #84)
       - Linux: ensure resources are freed in grab()
       - Windows: avoid unecessary class attributes
       - MSS: ensure calls without context manager will not leak resources or document them (fixes #72 and #85)

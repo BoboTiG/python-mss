@@ -14,6 +14,7 @@ from .exception import ScreenShotError
 __all__ = ("MSS",)
 
 
+LAST_ERROR = None
 PLAINMASK = 0x00ffffff
 ZPIXMAP = 2
 
@@ -144,8 +145,6 @@ class MSS(MSSMixin):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    last_error = None
-
     def __init__(self, display=None):
         # type: (bytes) -> None
         """ GNU/Linux initialisations. """
@@ -192,144 +191,96 @@ class MSS(MSSMixin):
     def _set_cfunctions(self):
         """ Set all ctypes functions and attach them to attributes. """
 
-        self._cfactory(
-            attr=self.xlib,
-            func="XSetErrorHandler",
-            argtypes=[ctypes.c_void_p],
-            restype=ctypes.c_int,
-        )
-        self._cfactory(
-            attr=self.xlib,
+        def cfactory(
+            attr=self.xlib, func=None, argtypes=None, restype=None, errcheck=validate
+        ):
+            # type: (Any, str, List[Any], Any, Optional[Callable]) -> None
+            # pylint: disable=too-many-locals
+            """ Factorize ctypes creations. """
+            self._cfactory(
+                attr=attr,
+                errcheck=errcheck,
+                func=func,
+                argtypes=argtypes,
+                restype=restype,
+            )
+
+        void = ctypes.c_void_p
+        c_int = ctypes.c_int
+        uint = ctypes.c_uint
+        ulong = ctypes.c_ulong
+        c_long = ctypes.c_long
+        char_p = ctypes.c_char_p
+        pointer = ctypes.POINTER
+
+        cfactory(func="XSetErrorHandler", argtypes=[void], restype=c_int)
+        cfactory(
             func="XGetErrorText",
-            argtypes=[
-                ctypes.POINTER(Display),
-                ctypes.c_int,
-                ctypes.c_char_p,
-                ctypes.c_int,
-            ],
-            restype=ctypes.c_void_p,
+            argtypes=[pointer(Display), void, char_p, void],
+            restype=void,
         )
-        self._cfactory(
-            attr=self.xlib,
-            func="XOpenDisplay",
-            argtypes=[ctypes.c_char_p],
-            restype=ctypes.POINTER(Display),
-        )
-        self._cfactory(
-            attr=self.xlib,
+        cfactory(func="XOpenDisplay", argtypes=[char_p], restype=pointer(Display))
+        cfactory(
+            errcheck=None,
             func="XDefaultScreen",
-            argtypes=[ctypes.POINTER(Display)],
-            restype=ctypes.c_int,
-            errcheck=False,
+            argtypes=[pointer(Display)],
+            restype=void,
         )
-        self._cfactory(
-            attr=self.xlib,
+        cfactory(
             func="XDefaultRootWindow",
-            argtypes=[ctypes.POINTER(Display), ctypes.c_int],
-            restype=ctypes.POINTER(XWindowAttributes),
+            argtypes=[pointer(Display), void],
+            restype=pointer(XWindowAttributes),
         )
-        self._cfactory(
-            attr=self.xlib,
+        cfactory(
             func="XGetWindowAttributes",
             argtypes=[
-                ctypes.POINTER(Display),
-                ctypes.POINTER(XWindowAttributes),
-                ctypes.POINTER(XWindowAttributes),
+                pointer(Display),
+                pointer(XWindowAttributes),
+                pointer(XWindowAttributes),
             ],
-            restype=ctypes.c_int,
+            restype=void,
         )
-        self._cfactory(
-            attr=self.xlib,
+        cfactory(
             func="XGetImage",
             argtypes=[
-                ctypes.POINTER(Display),
-                ctypes.POINTER(Display),
-                ctypes.c_int,
-                ctypes.c_int,
-                ctypes.c_uint,
-                ctypes.c_uint,
-                ctypes.c_ulong,
-                ctypes.c_int,
+                pointer(Display),
+                pointer(Display),
+                void,
+                void,
+                uint,
+                uint,
+                ulong,
+                void,
             ],
-            restype=ctypes.POINTER(XImage),
+            restype=pointer(XImage),
         )
-        self._cfactory(
-            attr=self.xlib,
-            func="XDestroyImage",
-            argtypes=[ctypes.POINTER(XImage)],
-            restype=ctypes.c_void_p,
-        )
-        self._cfactory(
-            attr=self.xlib,
-            func="XCloseDisplay",
-            argtypes=[ctypes.POINTER(Display)],
-            restype=ctypes.c_void_p,
-        )
-        self._cfactory(
+        cfactory(func="XDestroyImage", argtypes=[pointer(XImage)], restype=void)
+        cfactory(func="XCloseDisplay", argtypes=[pointer(Display)], restype=void)
+
+        cfactory(
             attr=self.xrandr,
             func="XRRGetScreenResources",
-            argtypes=[ctypes.POINTER(Display), ctypes.POINTER(Display)],
-            restype=ctypes.POINTER(XRRScreenResources),
+            argtypes=[pointer(Display), pointer(Display)],
+            restype=pointer(XRRScreenResources),
         )
-        self._cfactory(
+        cfactory(
             attr=self.xrandr,
             func="XRRGetCrtcInfo",
-            argtypes=[
-                ctypes.POINTER(Display),
-                ctypes.POINTER(XRRScreenResources),
-                ctypes.c_long,
-            ],
-            restype=ctypes.POINTER(XRRCrtcInfo),
+            argtypes=[pointer(Display), pointer(XRRScreenResources), c_long],
+            restype=pointer(XRRCrtcInfo),
         )
-        self._cfactory(
+        cfactory(
             attr=self.xrandr,
             func="XRRFreeScreenResources",
-            argtypes=[ctypes.POINTER(XRRScreenResources)],
-            restype=ctypes.c_void_p,
+            argtypes=[pointer(XRRScreenResources)],
+            restype=void,
         )
-        self._cfactory(
+        cfactory(
             attr=self.xrandr,
             func="XRRFreeCrtcInfo",
-            argtypes=[ctypes.POINTER(XRRCrtcInfo)],
-            restype=ctypes.c_void_p,
+            argtypes=[pointer(XRRCrtcInfo)],
+            restype=void,
         )
-
-    def _cfactory(self, attr, func, argtypes, restype, errcheck=True):
-        # type: (Any, str, List[Any], Any, bool) -> None
-        """ Factory to create a ctype function and automatically manage errors. """
-
-        def validate(retval, func, args):
-            # type: (int, Any, Tuple[Any, Any]) -> Any
-            """ Validate the returned value of a xlib or xrand function. """
-
-            if retval != 0 and not MSS.last_error:
-                return args
-
-            err = "{}() failed".format(func.__name__)
-            details = {"retval": retval, "args": args}
-
-            if MSS.last_error:
-                details["xerror_details"] = MSS.last_error
-                MSS.last_error = None
-                xserver_error = ctypes.create_string_buffer(1024)
-                self.xlib.XGetErrorText(
-                    self.display,
-                    details.get("xerror_details", {}).get("error_code", 0),
-                    xserver_error,
-                    len(xserver_error),
-                )
-                xerror = xserver_error.value.decode("utf-8")
-                if xerror != "0":
-                    details["xerror"] = xerror
-                    err += ": {}".format(xerror)
-
-            raise ScreenShotError(err, details=details)
-
-        meth = getattr(attr, func)
-        meth.argtypes = argtypes
-        meth.restype = restype
-        if errcheck:
-            meth.errcheck = validate
 
     def close(self):
         # type: () -> None
@@ -338,12 +289,40 @@ class MSS(MSSMixin):
             Maximum number of clients reached. Segmentation fault (core dumped)
         """
 
+        global LAST_ERROR
+
         try:
             self.xlib.XCloseDisplay(self.display)
             # Delete the attribute to prevent interpreter crash if called twice
             del self.display
-        except AttributeError:
+        except Exception:
             pass
+
+        LAST_ERROR = None
+
+    def get_error_details(self):
+        # type: () -> Optional[Dict[str, Any]]
+        """ Get more information about the latest X server error. """
+
+        global LAST_ERROR
+
+        details = {}
+
+        if LAST_ERROR:
+            details = {"xerror_details": LAST_ERROR}
+            LAST_ERROR = None
+            xserver_error = ctypes.create_string_buffer(1024)
+            self.xlib.XGetErrorText(
+                self.display,
+                details.get("xerror_details", {}).get("error_code", 0),
+                xserver_error,
+                len(xserver_error),
+            )
+            xerror = xserver_error.value.decode("utf-8")
+            if xerror != "0":
+                details["xerror"] = xerror
+
+        return details
 
     @property
     def monitors(self):
@@ -434,12 +413,14 @@ class MSS(MSSMixin):
 
 
 @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
-def error_handler(display, event):
+def error_handler(_, event):
     # type: (ctypes.POINTER(Display), ctypes.POINTER(Event)) -> int
     """ Specifies the program's supplied error handler. """
 
+    global LAST_ERROR
+
     evt = event.contents
-    MSS.last_error = {
+    LAST_ERROR = {
         "type": evt.type,
         "serial": evt.serial,
         "error_code": evt.error_code,
@@ -447,3 +428,17 @@ def error_handler(display, event):
         "minor_code": evt.minor_code,
     }
     return 0
+
+
+def validate(retval, func, args):
+    # type: (int, Any, Tuple[Any, Any]) -> Any
+    """ Validate the returned value of a Xlib or XRANDR function. """
+
+    global LAST_ERROR
+
+    if retval != 0 and not LAST_ERROR:
+        return args
+
+    err = "{}() failed".format(func.__name__)
+    details = {"retval": retval, "args": args}
+    raise ScreenShotError(err, details=details)
