@@ -12,6 +12,7 @@ History:
       - MSS: fix Flake8 C408: Unnecessary dict call - rewrite as a literal, in exceptions.py
       - MSS: fix Flake8 I100: Import statements are in the wrong order
       - MSS: fix Flake8 I201: Missing newline before sections or imports
+      - MSS: fix PyLint bad-super-call: Bad first argument 'Exception' given to super()
 
 3.3.2   2018/11/20
       - new contributors: hugovk, Andreas Buhr
