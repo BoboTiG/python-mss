@@ -113,7 +113,9 @@ def test_region_out_of_monitor_bounds(is_travis):
             assert sct.grab(monitor)
 
         assert str(exc.value)
-        assert exc.value.details["xerror"]
         assert "retval" in exc.value.details
         assert "args" in exc.value.details
-        assert isinstance(exc.value.details["xerror_details"], dict)
+
+        details = sct.get_error_details()
+        assert details["xerror"]
+        assert isinstance(details["xerror_details"], dict)

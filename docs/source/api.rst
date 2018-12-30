@@ -10,6 +10,12 @@ GNU/Linux
 
 .. module:: mss.linux
 
+.. attribute:: LAST_ERROR
+
+    :type: dict[str, Any]
+
+    Contains the latest Xlib or XRANDR function.
+
 .. class:: MSS
 
     .. method:: __init__([display=None])
@@ -22,6 +28,33 @@ GNU/Linux
     .. method:: close()
 
         Disconnect from the X server.
+
+        .. versionadded:: 4.0.0
+
+    .. method:: get_error_details()
+
+        :rtype: Optional[dict[str, Any]]
+
+        Get more information about the latest X server error. To use in such scenario::
+
+            with mss.mss() as sct:
+                # Take a screenshot of a region out of monitor bounds
+                rect = {"left": -30, "top": 0, "width": 100, "height": 100}
+
+                try:
+                    sct.grab(rect)
+                except ScreenShotError:
+                    details = sct.get_error_details()
+                    """
+                    >>> import pprint
+                    >>> pprint.pprint(details)
+                    {'xerror': 'BadFont (invalid Font parameter)',
+                     'xerror_details': {'error_code': 7,
+                                        'minor_code': 0,
+                                        'request_code': 0,
+                                        'serial': 422,
+                                        'type': 0}}
+                    """
 
         .. versionadded:: 4.0.0
 
@@ -43,7 +76,7 @@ GNU/Linux
     Error handler passed to `X11.XSetErrorHandler()` to catch any error that can happen when calling a X11 function.
     This will prevent Python interpreter crashes.
 
-    When such an error happen, a :class:`mss.exception.ScreenShotError` exception is raised and all XError information are added to the :attr:`mss.exception.ScreenShotError.details` attribute.
+    When such an error happen, a :class:`mss.exception.ScreenShotError` exception is raised and all `XError` information are added to the :attr:`mss.exception.ScreenShotError.details` attribute.
 
     .. versionadded:: 3.3.0
 
@@ -173,9 +206,7 @@ Methods
 Properties
 ==========
 
-.. module:: mss.base
-
-.. class:: MSSMixin
+.. class:: mss.base.MSSMixin
 
     .. attribute:: monitors
 
@@ -198,7 +229,7 @@ Properties
 
         :rtype:  list[dict[str, int]]
 
-.. class:: ScreenShot
+.. class:: mss.base.ScreenShot
 
     .. attribute:: __array_interface__()
 

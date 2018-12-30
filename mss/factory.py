@@ -21,6 +21,8 @@ def mss(**kwargs):
         instantiation.
     """
 
+    # pylint: disable=import-error
+
     operating_system = platform.system().lower()
     if operating_system == "darwin":
         from .darwin import MSS

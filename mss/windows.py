@@ -7,7 +7,21 @@ Source: https://github.com/BoboTiG/python-mss
 from __future__ import division
 
 import ctypes
-import ctypes.wintypes
+from ctypes.wintypes import (
+    BOOL,
+    DOUBLE,
+    DWORD,
+    HBITMAP,
+    HDC,
+    HGDIOBJ,
+    HWND,
+    INT,
+    LPARAM,
+    LONG,
+    RECT,
+    UINT,
+    WORD,
+)
 
 from .base import MSSMixin
 from .exception import ScreenShotError
@@ -24,17 +38,17 @@ class BITMAPINFOHEADER(ctypes.Structure):
     """ Information about the dimensions and color format of a DIB. """
 
     _fields_ = [
-        ("biSize", ctypes.wintypes.DWORD),
-        ("biWidth", ctypes.wintypes.LONG),
-        ("biHeight", ctypes.wintypes.LONG),
-        ("biPlanes", ctypes.wintypes.WORD),
-        ("biBitCount", ctypes.wintypes.WORD),
-        ("biCompression", ctypes.wintypes.DWORD),
-        ("biSizeImage", ctypes.wintypes.DWORD),
-        ("biXPelsPerMeter", ctypes.wintypes.LONG),
-        ("biYPelsPerMeter", ctypes.wintypes.LONG),
-        ("biClrUsed", ctypes.wintypes.DWORD),
-        ("biClrImportant", ctypes.wintypes.DWORD),
+        ("biSize", DWORD),
+        ("biWidth", LONG),
+        ("biHeight", LONG),
+        ("biPlanes", WORD),
+        ("biBitCount", WORD),
+        ("biCompression", DWORD),
+        ("biSizeImage", DWORD),
+        ("biXPelsPerMeter", LONG),
+        ("biYPelsPerMeter", LONG),
+        ("biClrUsed", DWORD),
+        ("biClrImportant", DWORD),
     ]
 
 
@@ -43,10 +57,7 @@ class BITMAPINFO(ctypes.Structure):
     Structure that defines the dimensions and color information for a DIB.
     """
 
-    _fields_ = [
-        ("bmiHeader", BITMAPINFOHEADER),
-        ("bmiColors", ctypes.wintypes.DWORD * 3),
-    ]
+    _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3)]
 
 
 class MSS(MSSMixin):
@@ -60,29 +71,28 @@ class MSS(MSSMixin):
 
         self._bbox = {"height": 0, "width": 0}
         self._bmp = None
+        self._data = None
 
         self.monitorenumproc = ctypes.WINFUNCTYPE(
-            ctypes.wintypes.INT,
-            ctypes.wintypes.DWORD,
-            ctypes.wintypes.DWORD,
-            ctypes.POINTER(ctypes.wintypes.RECT),
-            ctypes.wintypes.DOUBLE,
+            INT, DWORD, DWORD, ctypes.POINTER(RECT), DOUBLE
         )
-        set_argtypes(self.monitorenumproc)
-        set_restypes()
+
+        self.user32 = ctypes.windll.user32
+        self.gdi32 = ctypes.windll.gdi32
+        self._set_cfunctions()
 
         # Set DPI aware to capture full screen on Hi-DPI monitors
         try:
             # Windows 8.1+
             # Automatically scale for DPI changes
-            ctypes.windll.user32.SetProcessDpiAwareness(
-                ctypes.windll.user32.PROCESS_PER_MONITOR_DPI_AWARE
+            self.user32.SetProcessDpiAwareness(
+                self.user32.PROCESS_PER_MONITOR_DPI_AWARE
             )
         except AttributeError:
-            ctypes.windll.user32.SetProcessDPIAware()
+            self.user32.SetProcessDPIAware()
 
-        self._srcdc = ctypes.windll.user32.GetWindowDC(0)
-        self._memdc = ctypes.windll.gdi32.CreateCompatibleDC(self._srcdc)
+        self._srcdc = self.user32.GetWindowDC(0)
+        self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -93,24 +103,80 @@ class MSS(MSSMixin):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._bmi = bmi
 
+    def _set_cfunctions(self):
+        """ Set all ctypes functions and attach them to attributes. """
+
+        void = ctypes.c_void_p
+        pointer = ctypes.POINTER
+
+        self._cfactory(
+            attr=self.user32, func="GetSystemMetrics", argtypes=[INT], restype=INT
+        )
+        self._cfactory(
+            attr=self.user32,
+            func="EnumDisplayMonitors",
+            argtypes=[HDC, void, self.monitorenumproc, LPARAM],
+            restype=BOOL,
+        )
+        self._cfactory(
+            attr=self.user32, func="GetWindowDC", argtypes=[HWND], restype=HDC
+        )
+        self._cfactory(
+            attr=self.user32, func="ReleaseDC", argtypes=[HWND, HGDIOBJ], restype=INT
+        )
+
+        self._cfactory(
+            attr=self.gdi32, func="GetDeviceCaps", argtypes=[HWND, INT], restype=INT
+        )
+        self._cfactory(
+            attr=self.gdi32, func="CreateCompatibleDC", argtypes=[HDC], restype=HDC
+        )
+        self._cfactory(
+            attr=self.gdi32,
+            func="CreateCompatibleBitmap",
+            argtypes=[HDC, INT, INT],
+            restype=HBITMAP,
+        )
+        self._cfactory(
+            attr=self.gdi32,
+            func="SelectObject",
+            argtypes=[HDC, HGDIOBJ],
+            restype=HGDIOBJ,
+        )
+        self._cfactory(
+            attr=self.gdi32,
+            func="BitBlt",
+            argtypes=[HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD],
+            restype=BOOL,
+        )
+        self._cfactory(
+            attr=self.gdi32, func="DeleteObject", argtypes=[HGDIOBJ], restype=INT
+        )
+        self._cfactory(
+            attr=self.gdi32,
+            func="GetDIBits",
+            argtypes=[HDC, HBITMAP, UINT, UINT, void, pointer(BITMAPINFO), UINT],
+            restype=BOOL,
+        )
+
     def close(self):
         # type: () -> None
         """ Close GDI handles and free DCs. """
 
         try:
-            ctypes.windll.gdi32.DeleteObject(self._bmp)
+            self.gdi32.DeleteObject(self._bmp)
             del self._bmp
         except AttributeError:
             pass
 
         try:
-            ctypes.windll.gdi32.DeleteDC(self._memdc)
+            self.gdi32.DeleteDC(self._memdc)
             del self._memdc
         except (OSError, AttributeError):
             pass
 
         try:
-            ctypes.windll.user32.ReleaseDC(0, self._srcdc)
+            self.user32.ReleaseDC(0, self._srcdc)
             del self._srcdc
         except AttributeError:
             pass
@@ -124,10 +190,10 @@ class MSS(MSSMixin):
             # All monitors
             sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
             sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
-            left = ctypes.windll.user32.GetSystemMetrics(sm_xvirtualscreen)
-            right = ctypes.windll.user32.GetSystemMetrics(sm_cxvirtualscreen)
-            top = ctypes.windll.user32.GetSystemMetrics(sm_yvirtualscreen)
-            bottom = ctypes.windll.user32.GetSystemMetrics(sm_cyvirtualscreen)
+            left = self.user32.GetSystemMetrics(sm_xvirtualscreen)
+            right = self.user32.GetSystemMetrics(sm_cxvirtualscreen)
+            top = self.user32.GetSystemMetrics(sm_yvirtualscreen)
+            bottom = self.user32.GetSystemMetrics(sm_cyvirtualscreen)
             self._monitors.append(
                 {
                     "left": int(left),
@@ -158,7 +224,7 @@ class MSS(MSSMixin):
                 return 1
 
             callback = self.monitorenumproc(_callback)
-            ctypes.windll.user32.EnumDisplayMonitors(0, 0, callback, 0)
+            self.user32.EnumDisplayMonitors(0, 0, callback, 0)
 
         return self._monitors
 
@@ -203,7 +269,6 @@ class MSS(MSSMixin):
                 "height": monitor[3] - monitor[1],
             }
 
-        gdi = ctypes.windll.gdi32
         width, height = monitor["width"], monitor["height"]
 
         if (self._bbox["height"], self._bbox["width"]) != (height, width):
@@ -211,10 +276,10 @@ class MSS(MSSMixin):
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
             self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            self._bmp = gdi.CreateCompatibleBitmap(self._srcdc, width, height)
-            gdi.SelectObject(self._memdc, self._bmp)
+            self._bmp = self.gdi32.CreateCompatibleBitmap(self._srcdc, width, height)
+            self.gdi32.SelectObject(self._memdc, self._bmp)
 
-        gdi.BitBlt(
+        self.gdi32.BitBlt(
             self._memdc,
             0,
             0,
@@ -225,80 +290,10 @@ class MSS(MSSMixin):
             monitor["top"],
             SRCCOPY | CAPTUREBLT,
         )
-        bits = gdi.GetDIBits(
+        bits = self.gdi32.GetDIBits(
             self._memdc, self._bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
         )
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
         return self.cls_image(self._data, monitor)
-
-
-def set_argtypes(callback):
-    # type: (Callable[[int, Any, Any, Any, float], int]) -> None
-    """ Functions arguments. """
-
-    ctypes.windll.user32.GetSystemMetrics.argtypes = [ctypes.wintypes.INT]
-    ctypes.windll.user32.EnumDisplayMonitors.argtypes = [
-        ctypes.wintypes.HDC,
-        ctypes.c_void_p,
-        callback,
-        ctypes.wintypes.LPARAM,
-    ]
-    ctypes.windll.user32.GetWindowDC.argtypes = [ctypes.wintypes.HWND]
-    ctypes.windll.user32.ReleaseDC.argtypes = [
-        ctypes.wintypes.HWND,
-        ctypes.wintypes.HGDIOBJ,
-    ]
-    ctypes.windll.gdi32.GetDeviceCaps.argtypes = [
-        ctypes.wintypes.HWND,
-        ctypes.wintypes.INT,
-    ]
-    ctypes.windll.gdi32.CreateCompatibleDC.argtypes = [ctypes.wintypes.HDC]
-    ctypes.windll.gdi32.CreateCompatibleBitmap.argtypes = [
-        ctypes.wintypes.HDC,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.INT,
-    ]
-    ctypes.windll.gdi32.SelectObject.argtypes = [
-        ctypes.wintypes.HDC,
-        ctypes.wintypes.HGDIOBJ,
-    ]
-    ctypes.windll.gdi32.BitBlt.argtypes = [
-        ctypes.wintypes.HDC,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.HDC,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.INT,
-        ctypes.wintypes.DWORD,
-    ]
-    ctypes.windll.gdi32.DeleteObject.argtypes = [ctypes.wintypes.HGDIOBJ]
-    ctypes.windll.gdi32.GetDIBits.argtypes = [
-        ctypes.wintypes.HDC,
-        ctypes.wintypes.HBITMAP,
-        ctypes.wintypes.UINT,
-        ctypes.wintypes.UINT,
-        ctypes.c_void_p,
-        ctypes.POINTER(BITMAPINFO),
-        ctypes.wintypes.UINT,
-    ]
-
-
-def set_restypes():
-    # type: () -> None
-    """ Functions return type. """
-
-    ctypes.windll.user32.GetSystemMetrics.restype = ctypes.wintypes.INT
-    ctypes.windll.user32.EnumDisplayMonitors.restype = ctypes.wintypes.BOOL
-    ctypes.windll.user32.GetWindowDC.restype = ctypes.wintypes.HDC
-    ctypes.windll.user32.ReleaseDC.restype = ctypes.wintypes.INT
-    ctypes.windll.gdi32.GetDeviceCaps.restype = ctypes.wintypes.INT
-    ctypes.windll.gdi32.CreateCompatibleDC.restype = ctypes.wintypes.HDC
-    ctypes.windll.gdi32.CreateCompatibleBitmap.restype = ctypes.wintypes.HBITMAP
-    ctypes.windll.gdi32.SelectObject.restype = ctypes.wintypes.HGDIOBJ
-    ctypes.windll.gdi32.BitBlt.restype = ctypes.wintypes.BOOL
-    ctypes.windll.gdi32.GetDIBits.restype = ctypes.wintypes.INT
-    ctypes.windll.gdi32.DeleteObject.restype = ctypes.wintypes.BOOL
