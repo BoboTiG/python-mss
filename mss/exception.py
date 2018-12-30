@@ -10,5 +10,5 @@ class ScreenShotError(Exception):
 
     def __init__(self, message, details=None):
         # type: (Dict[str, Any]) -> None
-        super(Exception, self).__init__(message)
+        super(ScreenShotError, self).__init__(message)
         self.details = details or {}
