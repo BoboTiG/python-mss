@@ -11,3 +11,5 @@ MANIFEST*
 *.png.old
 *.pyc
 .pytest_cache
+.tox
+.vscode

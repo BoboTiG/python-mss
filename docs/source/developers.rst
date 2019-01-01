@@ -23,49 +23,20 @@ Testing
 Dependency
 ----------
 
-You will need `pytest <https://pypi.python.org/pypi/pytest>`_::
+You will need `tox <https://pypi.org/project/tox/>`_::
 
-    $ python -m pip install --upgrade --user pytest
+    $ python -m pip install --upgrade --user tox
 
 
 How to Test?
 ------------
 
-Enable the developer mode::
-
-    $ python -m pip install -e .
-
 Launch the test suit::
 
-    $ python -m pytest tests
+    $ tox
+    # TOXENV=py37 tox
 
-.. Note::
-
-    As he module is Python 2 and 3 compliant, do no forgot to test for both. If you cannot, just say it when sending the patch, someone else will validate for you.
-
-
-Validating the Code
-===================
-
-It is important to keep a clean base code. Use tools like `flake8 <https://pypi.python.org/pypi/flake8>`_.
-
-
-Dependencies
-------------
-
-Install required packages::
-
-    $ python -m pip install --upgrade --user flake8
-
-
-How to Validate?
-----------------
-
-::
-
-    $ python -m flake8 .
-
-If there is no output, you are good ;)
+This will test MSS and ensure a good code quality.
 
 
 Static Type Checking
@@ -94,18 +65,6 @@ Running Mypy
 Documentation
 =============
 
-Dependencies
-------------
+To build the documentation, simply type::
 
-You will need `Sphinx <http://sphinx-doc.org/>`_::
-
-    $ python -m pip install --upgrade --user sphinx
-
-
-How to Build?
--------------
-
-::
-
-    $ cd docs
-    $ make clean html
+    $ TOXENV=docs tox

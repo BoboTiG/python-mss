@@ -1,38 +1,77 @@
 language: python
-python:
-  - 2.7
-  - 3.5
-  - 3.6
-  - nightly # currently points to 3.8-dev
 
-# Enable 3.7 without globally enabling sudo and dist: xenial for other build jobs
 matrix:
   include:
-    - python: 3.7
+    - os: linux
+      python: "2.7"
+      env:
+        - TOXENV=py27
+        - DISPLAY=":42"
       dist: xenial
       sudo: true
+    - os: linux
+      python: "3.5"
+      env:
+        - TOXENV=py35
+        - DISPLAY=":42"
+      dist: xenial
+      sudo: true
+    - os: linux
+      python: "3.6"
+      env:
+        - TOXENV=py36
+        - DISPLAY=":42"
+      dist: xenial
+      sudo: true
+    - os: linux
+      python: "3.7"
+      env:
+        - TOXENV=py37
+        - DISPLAY=":42"
+      dist: xenial
+      sudo: true
+    - os: linux
+      python: "pypy"
+      env:
+        - TOXENV=pypy
+        - DISPLAY=":42"
+      dist: xenial
+      sudo: true
+    - os: linux
+      python: "pypy3.5"
+      env:
+        - TOXENV=pypy3
+        - DISPLAY=":42"
+      dist: xenial
+      sudo: true
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=2.7
+        - TOXENV=py27
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.7
+        - TOXENV=py37
+  allow_failures:
+    - python: pypy
+    - python: pypy3.5
 
 addons:
   apt:
     packages:
-      - xpra
-      - xserver-xorg-video-dummy
+      - lsof
 
 before_install:
-  - xpra --xvfb="Xorg +extension RANDR -config `pwd`/tests/res/dummy.xorg.conf -logfile ${HOME}/.xpra/xorg.log" start :42
-
-env:
-  - DISPLAY=":42"
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash .travis/install.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $DISPLAY -ac -screen 0 1280x1024x24; fi
 
 install:
-  - python -m pip install flake8 numpy pillow sphinx
-  - python -m pip install -e .
+  - python -m pip install --upgrade pip tox
+
+before_script:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start; fi
 
 script:
-  - python -m pytest --display=":42.0" tests
-  - python -m flake8 .
-  - if [[ $TRAVIS_PYTHON_VERSION > '2.8' ]]; then cd docs && make clean html; fi
-
-after_script:
-  - xpra stop :42
-  - cat ~/.xpra/*.log
+- tox

@@ -1,6 +1,7 @@
 # coding: utf-8
 
 import ctypes.util
+import os
 import platform
 import sys
 
@@ -50,13 +51,15 @@ def test_factory_systems(monkeypatch):
     monkeypatch.undo()
 
 
-def test_implementation(monkeypatch, is_travis):
+def test_arg_display(monkeypatch):
     import mss
 
-    # Bad `display` type
-    with mss.mss(display=TEXT(":42") if is_travis else TEXT(":0")):
+    # Good value
+    display = TEXT(os.getenv("DISPLAY"))
+    with mss.mss(display=display):
         pass
 
+    # Bad `display` type
     with pytest.raises(ScreenShotError):
         with mss.mss(display=TEXT("0")):
             pass
@@ -68,17 +71,31 @@ def test_implementation(monkeypatch, is_travis):
             pass
     monkeypatch.undo()
 
-    # No `X11` library
-    x11 = ctypes.util.find_library("X11")
+
+def test_bad_display_structure(monkeypatch):
+    import mss.linux
+
+    monkeypatch.setattr(mss.linux, "Display", lambda: None)
+    with pytest.raises(TypeError):
+        with mss.mss():
+            pass
+    monkeypatch.undo()
+
+
+def test_no_xlib_library(monkeypatch):
     monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
     with pytest.raises(ScreenShotError):
         with mss.mss():
             pass
     monkeypatch.undo()
 
-    def find_lib(lib):
+
+def test_no_xrandr_extension(monkeypatch):
+    x11 = ctypes.util.find_library("X11")
+
+    def find_lib_mocked(lib):
         """
-        Returns None to emulate no Xrandr library.
+        Returns None to emulate no XRANDR library.
         Returns the previous found X11 library else.
 
         It is a naive approach, but works for now.
@@ -89,23 +106,15 @@ def test_implementation(monkeypatch, is_travis):
         return x11
 
     # No `Xrandr` library
-    monkeypatch.setattr(ctypes.util, "find_library", find_lib)
+    monkeypatch.setattr(ctypes.util, "find_library", find_lib_mocked)
     with pytest.raises(ScreenShotError):
         with mss.mss():
             pass
     monkeypatch.undo()
 
-    # Bad display data
-    import mss.linux
 
-    monkeypatch.setattr(mss.linux, "Display", lambda: None)
-    with pytest.raises(TypeError):
-        with mss.mss():
-            pass
-
-
-def test_region_out_of_monitor_bounds(is_travis):
-    display = TEXT(":42") if is_travis else None
+def test_region_out_of_monitor_bounds():
+    display = os.getenv("DISPLAY")
     monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
 
     with mss.mss(display=display) as sct:
