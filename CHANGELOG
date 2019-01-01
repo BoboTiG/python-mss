@@ -2,7 +2,7 @@ History:
 
 <see Git checking messages for history>
 
-4.0.0   201x/xx/xx
+4.0.0   2019/xx/xx
       - MSS: remove use of setup.py for setup.cfg
       - MSS: renamed MSSBase to MSSMixin in base.py
       - MSS: refactor ctypes argtype, restype and errcheck setup (fixes #84)
@@ -13,6 +13,7 @@ History:
       - MSS: fix Flake8 I100: Import statements are in the wrong order
       - MSS: fix Flake8 I201: Missing newline before sections or imports
       - MSS: fix PyLint bad-super-call: Bad first argument 'Exception' given to super()
+      - tests: use tox, enable PyPy and PyPy3, add macOS and Windows CI
 
 3.3.2   2018/11/20
       - new contributors: hugovk, Andreas Buhr

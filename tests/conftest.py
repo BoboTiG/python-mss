@@ -10,11 +10,6 @@ import mss
 import pytest
 
 
-def pytest_addoption(parser):
-    txt = 'Display to use (examples: ":0.1", ":0" [default])'
-    parser.addoption("--display", action="store", default=":0", help=txt)
-
-
 def purge_files():
     """ Remove all generated files from previous runs. """
 
@@ -32,16 +27,11 @@ def before_tests(request):
     request.addfinalizer(purge_files)
 
 
-@pytest.fixture(scope="session")
-def display(request):
-    return request.config.getoption("--display")
-
-
 @pytest.fixture(scope="module")
-def sct(display):
+def sct():
     try:
-        # `display` keyword is only for GNU/Linux
-        return mss.mss(display=display)
+        # `display` kwarg is only for GNU/Linux
+        return mss.mss(display=os.getenv("DISPLAY"))
     except TypeError:
         return mss.mss()
 

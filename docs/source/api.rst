@@ -144,6 +144,12 @@ Methods
 
         As it is using the :py:func:`format()` function, you can specify formatting options like ``{date:%Y-%m-%s}``.
 
+        .. warning:: On Windows, the default date format may result with a filename containing ':' which is not allowed::
+
+                IOerror: [Errno 22] invalid mode ('wb') or filename: 'sct_1-2019-01-01 21:20:43.114194.png'
+
+            To fix this, you must provide a custom formatting.
+
     .. method:: shot()
 
         :return str: The created file.
