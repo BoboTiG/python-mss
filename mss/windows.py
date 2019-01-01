@@ -131,6 +131,7 @@ class MSS(MSSMixin):
         self._cfactory(
             attr=self.gdi32, func="CreateCompatibleDC", argtypes=[HDC], restype=HDC
         )
+        self._cfactory(attr=self.gdi32, func="DeleteDC", argtypes=[HDC], restype=BOOL)
         self._cfactory(
             attr=self.gdi32,
             func="CreateCompatibleBitmap",
