@@ -16,6 +16,8 @@ GNU/Linux
 
     Contains the latest Xlib or XRANDR function.
 
+    .. versionadded:: 4.0.0
+
 .. class:: MSS
 
     .. method:: __init__([display=None])
@@ -60,10 +62,10 @@ GNU/Linux
 
     .. method:: grab(monitor)
 
-        :rtype: :class:`mss.base.ScreenShot`
+        :rtype: :class:`~mss.base.ScreenShot`
         :raises ScreenShotError: When color depth is not 32 (rare).
 
-        See :meth:`mss.base.MSSMixin.grab()` for details.
+        See :meth:`~mss.base.MSSMixin.grab()` for details.
 
 .. function:: error_handler(display, event)
 
@@ -76,7 +78,7 @@ GNU/Linux
     Error handler passed to `X11.XSetErrorHandler()` to catch any error that can happen when calling a X11 function.
     This will prevent Python interpreter crashes.
 
-    When such an error happen, a :class:`mss.exception.ScreenShotError` exception is raised and all `XError` information are added to the :attr:`mss.exception.ScreenShotError.details` attribute.
+    When such an error happen, a :class:`~mss.exception.ScreenShotError` exception is raised and all `XError` information are added to the :attr:`~mss.exception.ScreenShotError.details` attribute.
 
     .. versionadded:: 3.3.0
 
@@ -106,7 +108,10 @@ Methods
 
     .. method:: close()
 
-        Clean-up method. Does nothing by default.
+        Clean-up method. Does nothing by default. For more information, see specific implementations:
+
+            - :meth:`~mss.linux.MSS.close()` for GNU/Linux
+            - :meth:`~mss.windows.MSS.close()` for Windows
 
         .. versionadded:: 4.0.0
 
@@ -148,7 +153,7 @@ Methods
 
                 IOerror: [Errno 22] invalid mode ('wb') or filename: 'sct_1-2019-01-01 21:20:43.114194.png'
 
-            To fix this, you must provide a custom formatting.
+            To fix this, you must provide a custom date formatting.
 
     .. method:: shot()
 
@@ -204,7 +209,7 @@ Methods
 
     .. versionadded:: 3.0.0
 
-    .. versionadded:: 3.2.0
+    .. versionchanged:: 3.2.0
 
         The *level* keyword argument to control the PNG compression level.
 
@@ -331,5 +336,3 @@ Factory
 .. function:: mss()
 
     Factory function to instance the appropriate MSS class.
-
-    :rtype: :class:`mss.base.MSSMixin`

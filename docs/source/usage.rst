@@ -39,7 +39,7 @@ So the module can be used as simply as::
         sct.grab()
         # or any attribute/method of sct
 
-    Then you will have to **manually** call :meth:`mss.linux.MSSMixin.close()` to free resources.
+    Then you will have to **manually** call :meth:`~mss.base.MSSMixin.close()` to free resources.
 
 .. warning::
 

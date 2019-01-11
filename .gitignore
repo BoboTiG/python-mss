@@ -13,3 +13,4 @@ MANIFEST*
 .pytest_cache
 .tox
 .vscode
+docs/output/

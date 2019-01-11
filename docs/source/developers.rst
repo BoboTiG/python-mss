@@ -34,7 +34,9 @@ How to Test?
 Launch the test suit::
 
     $ tox
-    # TOXENV=py37 tox
+
+    # or
+    $ TOXENV=py37 tox
 
 This will test MSS and ensure a good code quality.
 
