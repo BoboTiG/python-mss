@@ -2,7 +2,7 @@ History:
 
 <see Git checking messages for history>
 
-4.0.0   2019/xx/xx
+4.0.0   2019/01/11
       - MSS: remove use of setup.py for setup.cfg
       - MSS: renamed MSSBase to MSSMixin in base.py
       - MSS: refactor ctypes argtype, restype and errcheck setup (fixes #84)
