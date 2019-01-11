@@ -23,7 +23,7 @@ AI, Computer Vison
 Games
 =====
 
-- Go Review Partner <https://github.com/pnprog/goreviewpartner>`_, a tool to help analyse and review your game of go (weiqi, baduk) using strong bots;
+- `Go Review Partner <https://github.com/pnprog/goreviewpartner>`_, a tool to help analyse and review your game of go (weiqi, baduk) using strong bots;
 - `Serpent.AI <https://github.com/SerpentAI/SerpentAI>`_, a Game Agent Framework;
 
 Learning
