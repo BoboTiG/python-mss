@@ -4,6 +4,7 @@ History:
 
 4.0.1   2019/0x/xx
       - Linux: fix several XLib functions signature (fixes #92)
+      - Linux: improve monitors finding by a factor of 44
 
 4.0.0   2019/01/11
       - MSS: remove use of setup.py for setup.cfg
