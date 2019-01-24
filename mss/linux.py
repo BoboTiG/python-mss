@@ -180,16 +180,17 @@ class MSS(MSSMixin):
         self._set_cfunctions()
 
         self.display = self.xlib.XOpenDisplay(display)
-        self.root = self.xlib.XDefaultRootWindow(
-            self.display, self.xlib.XDefaultScreen(self.display)
-        )
+        self.root = self.xlib.XDefaultRootWindow(self.display)
 
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
 
     def _set_cfunctions(self):
-        """ Set all ctypes functions and attach them to attributes. """
+        """
+        Set all ctypes functions and attach them to attributes.
+        See https://tronche.com/gui/x/xlib/function-index.html for details.
+        """
 
         def cfactory(
             attr=self.xlib, func=None, argtypes=None, restype=None, errcheck=validate
@@ -216,19 +217,13 @@ class MSS(MSSMixin):
         cfactory(func="XSetErrorHandler", argtypes=[void], restype=c_int)
         cfactory(
             func="XGetErrorText",
-            argtypes=[pointer(Display), void, char_p, void],
+            argtypes=[pointer(Display), c_int, char_p, c_int],
             restype=void,
         )
         cfactory(func="XOpenDisplay", argtypes=[char_p], restype=pointer(Display))
         cfactory(
-            errcheck=None,
-            func="XDefaultScreen",
-            argtypes=[pointer(Display)],
-            restype=void,
-        )
-        cfactory(
             func="XDefaultRootWindow",
-            argtypes=[pointer(Display), void],
+            argtypes=[pointer(Display)],
             restype=pointer(XWindowAttributes),
         )
         cfactory(
@@ -238,19 +233,19 @@ class MSS(MSSMixin):
                 pointer(XWindowAttributes),
                 pointer(XWindowAttributes),
             ],
-            restype=void,
+            restype=c_int,
         )
         cfactory(
             func="XGetImage",
             argtypes=[
                 pointer(Display),
                 pointer(Display),
-                void,
-                void,
+                c_int,
+                c_int,
                 uint,
                 uint,
                 ulong,
-                void,
+                c_int,
             ],
             restype=pointer(XImage),
         )
