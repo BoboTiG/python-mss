@@ -252,12 +252,26 @@ class MSS(MSSMixin):
         cfactory(func="XDestroyImage", argtypes=[pointer(XImage)], restype=void)
         cfactory(func="XCloseDisplay", argtypes=[pointer(Display)], restype=void)
 
-        cfactory(
-            attr=self.xrandr,
-            func="XRRGetScreenResources",
-            argtypes=[pointer(Display), pointer(Display)],
-            restype=pointer(XRRScreenResources),
-        )
+        # A simple benchmark calling 10 times those 2 functions:
+        # XRRGetScreenResources():        0.1755971429956844 s
+        # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
+        # The second is faster by a factor of 44! So try to use it first.
+        try:
+            cfactory(
+                attr=self.xrandr,
+                func="XRRGetScreenResourcesCurrent",
+                argtypes=[pointer(Display), pointer(Display)],
+                restype=pointer(XRRScreenResources),
+            )
+        except AttributeError:
+            cfactory(
+                attr=self.xrandr,
+                func="XRRGetScreenResources",
+                argtypes=[pointer(Display), pointer(Display)],
+                restype=pointer(XRRScreenResources),
+            )
+            self.xrandr.XRRGetScreenResourcesCurrent = self.xrandr.XRRGetScreenResources
+
         cfactory(
             attr=self.xrandr,
             func="XRRGetCrtcInfo",
@@ -338,7 +352,7 @@ class MSS(MSSMixin):
             )
 
             # Each monitors
-            mon = self.xrandr.XRRGetScreenResources(self.display, self.drawable)
+            mon = self.xrandr.XRRGetScreenResourcesCurrent(self.display, self.drawable)
             for idx in range(mon.contents.ncrtc):
                 crtc = self.xrandr.XRRGetCrtcInfo(
                     self.display, mon, mon.contents.crtcs[idx]
