@@ -1,4 +1,12 @@
-4.0.0 (2019-xx-xx)
+4.0.1 (2019-0x-xx)
+==================
+
+linux.py
+--------
+- Removed use of ``MSS.xlib.XDefaultScreen()``
+
+
+4.0.0 (2019-01-11)
 ==================
 
 base.py
