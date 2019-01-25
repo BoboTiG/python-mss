@@ -21,8 +21,10 @@ try:
 except NameError:
     TEXT = str  # Python 3
 PY3 = sys.version[0] > "2"
+PYPY = platform.python_implementation() == "PyPy"
 
 
+@pytest.mark.skipif(PYPY, reason="Failure on PyPy")
 def test_factory_systems(monkeypatch):
     """
     Here, we are testing all systems.
@@ -72,6 +74,7 @@ def test_arg_display(monkeypatch):
     monkeypatch.undo()
 
 
+@pytest.mark.skipif(PYPY, reason="Failure on PyPy")
 def test_bad_display_structure(monkeypatch):
     import mss.linux
 
