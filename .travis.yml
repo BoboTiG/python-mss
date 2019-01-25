@@ -1,4 +1,6 @@
 language: python
+dist: xenial
+sudo: true
 
 matrix:
   include:
@@ -6,44 +8,18 @@ matrix:
       python: "2.7"
       env:
         - TOXENV=py27
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
     - os: linux
       python: "3.5"
-      env:
-        - TOXENV=py35
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
+      env: TOXENV=py35
     - os: linux
       python: "3.6"
-      env:
-        - TOXENV=py36
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
+      env: TOXENV=py36
     - os: linux
       python: "3.7"
-      env:
-        - TOXENV=py37
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
-    - os: linux
-      python: "pypy"
-      env:
-        - TOXENV=pypy
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
+      env: TOXENV=py37
     - os: linux
       python: "pypy3.5"
-      env:
-        - TOXENV=pypy3
-        - DISPLAY=":42"
-      dist: xenial
-      sudo: true
+      env: TOXENV=pypy3
     - os: osx
       language: generic
       env:
@@ -54,24 +30,20 @@ matrix:
       env:
         - PYTHON_VERSION=3.7
         - TOXENV=py37
-  allow_failures:
-    - python: pypy
-    - python: pypy3.5
 
 addons:
   apt:
     packages:
       - lsof
 
+services:
+  - xvfb
+
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash .travis/install.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- $DISPLAY -ac -screen 0 1280x1024x24; fi
 
 install:
   - python -m pip install --upgrade pip tox
 
-before_script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sh -e /etc/init.d/xvfb start; fi
-
 script:
-- tox
+  - tox
