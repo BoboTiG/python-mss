@@ -139,6 +139,38 @@ class XRRCrtcInfo(ctypes.Structure):
     ]
 
 
+@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
+def error_handler(_, event):
+    # type: (ctypes.POINTER(Display), ctypes.POINTER(Event)) -> int
+    """ Specifies the program's supplied error handler. """
+
+    global LAST_ERROR
+
+    evt = event.contents
+    LAST_ERROR = {
+        "type": evt.type,
+        "serial": evt.serial,
+        "error_code": evt.error_code,
+        "request_code": evt.request_code,
+        "minor_code": evt.minor_code,
+    }
+    return 0
+
+
+def validate(retval, func, args):
+    # type: (int, Any, Tuple[Any, Any]) -> Any
+    """ Validate the returned value of a Xlib or XRANDR function. """
+
+    global LAST_ERROR
+
+    if retval != 0 and not LAST_ERROR:
+        return args
+
+    err = "{}() failed".format(func.__name__)
+    details = {"retval": retval, "args": args}
+    raise ScreenShotError(err, details=details)
+
+
 class MSS(MSSMixin):
     """
     Multiple ScreenShots implementation for GNU/Linux.
@@ -419,35 +451,3 @@ class MSS(MSSMixin):
             self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
-
-
-@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
-def error_handler(_, event):
-    # type: (ctypes.POINTER(Display), ctypes.POINTER(Event)) -> int
-    """ Specifies the program's supplied error handler. """
-
-    global LAST_ERROR
-
-    evt = event.contents
-    LAST_ERROR = {
-        "type": evt.type,
-        "serial": evt.serial,
-        "error_code": evt.error_code,
-        "request_code": evt.request_code,
-        "minor_code": evt.minor_code,
-    }
-    return 0
-
-
-def validate(retval, func, args):
-    # type: (int, Any, Tuple[Any, Any]) -> Any
-    """ Validate the returned value of a Xlib or XRANDR function. """
-
-    global LAST_ERROR
-
-    if retval != 0 and not LAST_ERROR:
-        return args
-
-    err = "{}() failed".format(func.__name__)
-    details = {"retval": retval, "args": args}
-    raise ScreenShotError(err, details=details)
