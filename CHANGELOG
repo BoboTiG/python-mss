@@ -2,7 +2,7 @@ History:
 
 <see Git checking messages for history>
 
-4.0.1   2019/0x/xx
+4.0.1   2019/01/26
       - Linux: fix several XLib functions signature (fixes #92)
       - Linux: improve monitors finding by a factor of 44
 
