@@ -1,13 +1,8 @@
 language: python
 dist: xenial
-sudo: true
 
 matrix:
   include:
-    - os: linux
-      python: "2.7"
-      env:
-        - TOXENV=py27
     - os: linux
       python: "3.5"
       env: TOXENV=py35
@@ -20,11 +15,6 @@ matrix:
     - os: linux
       python: "pypy3.5"
       env: TOXENV=pypy3
-    - os: osx
-      language: generic
-      env:
-        - PYTHON_VERSION=2.7
-        - TOXENV=py27
     - os: osx
       language: generic
       env:
