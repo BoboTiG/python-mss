@@ -11,7 +11,7 @@ from .screenshot import ScreenShot
 from .tools import to_png
 
 
-class MSSMixin(object):
+class MSSMixin:
     """ This class will be overloaded by a system specific one. """
 
     cls_image = ScreenShot  # type: object

@@ -9,7 +9,7 @@ Screenshot of the monitor 1, using a custom class to handle the data.
 import mss
 
 
-class SimpleScreenShot(object):
+class SimpleScreenShot:
     """
     Define your own custom method to deal with screen shot raw data.
     Of course, you can inherit from the ScreenShot class and change
