@@ -121,7 +121,7 @@ class XRRScreenResources(ctypes.Structure):
 
 
 class XRRCrtcInfo(ctypes.Structure):
-    """ Structure that contains CRTC informations. """
+    """ Structure that contains CRTC information. """
 
     _fields_ = [
         ("timestamp", ctypes.c_ulong),

@@ -137,7 +137,7 @@ Simple naive benchmark to compare with `Reading game frames in Python with OpenC
 BGRA to RGB
 ===========
 
-Differents possiblities to convert raw BGRA values to RGB::
+Different possibilities to convert raw BGRA values to RGB::
 
     def mss_rgb(im):
         """ Better than Numpy versions, but slower than Pillow. """

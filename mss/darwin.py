@@ -47,7 +47,7 @@ class CGSize(ctypes.Structure):
 
 
 class CGRect(ctypes.Structure):
-    """ Structure that contains informations about a rectangle. """
+    """ Structure that contains information about a rectangle. """
 
     _fields_ = [("origin", CGPoint), ("size", CGSize)]
 

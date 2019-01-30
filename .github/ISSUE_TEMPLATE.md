@@ -1,4 +1,4 @@
-General informations:
+General information:
 
 * OS name: _Debian GNU/Linux_
 * OS version: __sid__
@@ -27,5 +27,5 @@ A description of the issue with optional steps to reproduce.
 
 ### Other details
 
-More informations, if you think it is needed.
+More information, if you think it is needed.
 

@@ -11,7 +11,7 @@ History:
       - MSS: renamed MSSBase to MSSMixin in base.py
       - MSS: refactor ctypes argtype, restype and errcheck setup (fixes #84)
       - Linux: ensure resources are freed in grab()
-      - Windows: avoid unecessary class attributes
+      - Windows: avoid unnecessary class attributes
       - MSS: ensure calls without context manager will not leak resources or document them (fixes #72 and #85)
       - MSS: fix Flake8 C408: Unnecessary dict call - rewrite as a literal, in exceptions.py
       - MSS: fix Flake8 I100: Import statements are in the wrong order
@@ -120,10 +120,10 @@ History:
 
 1.0.0   2015/04/16
       - Python 2.6 to 3.5 ready
-      - MSS: code purgation and review, no more debug informations
+      - MSS: code purgation and review, no more debug information
       - MSS: fix #5, add a shortcut to take automatically use the proper MSS class
       - MSS: few optimizations into save_img()
-      - Darwin: remove rotation from informations returned by enum_display_monitors()
+      - Darwin: remove rotation from information returned by enum_display_monitors()
       - Linux: fix object has no attribute 'display' into __del__
       - Linux: use of XDestroyImage() instead of XFree()
       - Linux: optimizations of get_pixels()

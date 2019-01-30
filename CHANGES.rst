@@ -116,7 +116,7 @@ base.py
 
 darwin.py
 ---------
-- Removed ``_crop_width()`` method. Screen shots are now using the width setted by the OS (rounded to 16).
+- Removed ``_crop_width()`` method. Screen shots are now using the width set by the OS (rounded to 16).
 
 exception.py
 ------------
