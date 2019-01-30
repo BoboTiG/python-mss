@@ -1,5 +1,5 @@
 # http://read-the-docs.readthedocs.io/en/latest/yaml-config.html
 
-# Use that Python version to buil the documentation
+# Use that Python version to build the documentation
 python:
    version: 3

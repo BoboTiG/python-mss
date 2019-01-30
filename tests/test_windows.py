@@ -14,7 +14,7 @@ if platform.system().lower() != "windows":
 
 
 def test_implementation(monkeypatch):
-    # Test bad data retreival
+    # Test bad data retrieval
     with mss.mss() as sct:
         monkeypatch.setattr(ctypes.windll.gdi32, "GetDIBits", lambda *args: 0)
         with pytest.raises(ScreenShotError):

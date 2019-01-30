@@ -57,7 +57,7 @@ def test_implementation(monkeypatch):
         assert original["height"] == modified["width"]
         monkeypatch.undo()
 
-        # Test bad data retreival
+        # Test bad data retrieval
         monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *args: None)
         with pytest.raises(ScreenShotError):
             sct.grab(sct.monitors[1])

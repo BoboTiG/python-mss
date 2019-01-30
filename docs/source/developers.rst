@@ -11,7 +11,7 @@ Setup
 2. Create you own branch.
 3. Be sure to add/update tests and documentation within your patch.
 
-Additionnally, you can install `pre-commit <http://pre-commit.com/>`_ to ensure you are doing things well::
+Additionally, you can install `pre-commit <http://pre-commit.com/>`_ to ensure you are doing things well::
 
     $ python -m pip install --upgrade --user pre-commit
     $ pre-commit install
