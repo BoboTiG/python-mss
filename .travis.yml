@@ -3,6 +3,11 @@ dist: xenial
 
 matrix:
   include:
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.7
+        - TOXENV=py37
     - os: linux
       python: "3.5"
       env: TOXENV=py35
@@ -15,11 +20,6 @@ matrix:
     - os: linux
       python: "pypy3.5"
       env: TOXENV=pypy3
-    - os: osx
-      language: generic
-      env:
-        - PYTHON_VERSION=3.7
-        - TOXENV=py37
 
 addons:
   apt:
