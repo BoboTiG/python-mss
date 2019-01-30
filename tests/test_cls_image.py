@@ -1,7 +1,7 @@
 # coding: utf-8
 
 
-class SimpleScreenShot(object):
+class SimpleScreenShot:
     def __init__(self, data, monitor, **kwargs):
         self.raw = bytes(data)
         self.monitor = monitor

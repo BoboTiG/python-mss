@@ -13,7 +13,7 @@ Pos = collections.namedtuple("Pos", "left, top")
 Size = collections.namedtuple("Size", "width, height")
 
 
-class ScreenShot(object):
+class ScreenShot:
     """
     Screen shot object.
 
