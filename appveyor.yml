@@ -6,12 +6,6 @@ cache:
 environment:
   fast_finish: true
   matrix:
-    - python: py27
-      tox_env: py27
-      python_path: c:\python27
-    - python: py27-x64
-      tox_env: py27
-      python_path: c:\python27-x64
     - python: py35
       tox_env: py35
       python_path: c:\python35

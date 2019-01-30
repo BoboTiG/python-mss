@@ -1,22 +1,13 @@
 #!/bin/bash
 # Taken largely from https://stackoverflow.com/q/45257534
-if [[ "$PYTHON_VERSION" == "2.7" ]]; then
-    which virtualenv
-    # Create and activate a virtualenv for conda
-    virtualenv -p python condavenv
-    source condavenv/bin/activate
-    # Grab Miniconda 2
-    wget https://repo.continuum.io/miniconda/Miniconda2-latest-MacOSX-x86_64.sh -O miniconda.sh
-else
-    # Install or upgrade to Python 3
-    brew update 1>/dev/null
-    brew upgrade python
-    # Create and activate a virtualenv for conda
-    virtualenv -p python3 condavenv
-    source condavenv/bin/activate
-    # Grab Miniconda 3
-    wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
-fi
+# Install or upgrade to Python 3
+brew update 1>/dev/null
+brew upgrade python
+# Create and activate a virtualenv for conda
+virtualenv -p python3 condavenv
+source condavenv/bin/activate
+# Grab Miniconda 3
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh
 
 # Install our version of miniconda
 bash miniconda.sh -b -p $HOME/miniconda
