@@ -1,5 +1,5 @@
 # Many thanks to all those who helped :)
-# (sorted alphabeticaly)
+# (sorted alphabetically)
 
 # Nickname or fullname <email> <email2> <emailN> [URL] [URL2] [URLN]
 #     - major contribution
@@ -20,6 +20,9 @@ Condé 'Eownis' Titouan <me@titouan.co> <eownis@eownis.me> [https://titouan.co]
 
 David Becker [https://davide.me] and redodo [https://github.com/redodo]
     - Mac: Take into account extra black pixels added when screen with is not divisible by 16
+
+Hugo van Kemenade [https://github.com/hugovk]
+    - Drop support for legacy Python 2.7
 
 Jochen 'cycomanic' Schroeder [https://github.com/cycomanic]
     - GNU/Linux: use errcheck instead of deprecated restype with callable, for enum_display_monitors()
