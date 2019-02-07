@@ -1,10 +1,14 @@
 # coding: utf-8
 import os
 import platform
+from typing import TYPE_CHECKING
 
 from mss import mss
 
 import pytest
+
+if TYPE_CHECKING:
+    from typing import Callable  # noqa
 
 
 OS = platform.system().lower()
@@ -42,13 +46,13 @@ def get_handles():
 
 @pytest.fixture
 def monitor_func():
-    # type: () -> Callable
+    # type: () -> Callable[[], int]
     """ OS specific function to check resources in use. """
 
     if OS == "linux":
         return get_opened_socket
-    elif OS == "windows":
-        return get_handles
+
+    return get_handles
 
 
 def bound_instance_without_cm():

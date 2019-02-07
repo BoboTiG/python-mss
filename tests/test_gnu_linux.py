@@ -3,7 +3,6 @@
 import ctypes.util
 import os
 import platform
-import sys
 
 import mss
 from mss.base import MSSMixin
@@ -16,11 +15,6 @@ if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip
 
 
-try:
-    TEXT = unicode  # Python 2
-except NameError:
-    TEXT = str  # Python 3
-PY3 = sys.version[0] > "2"
 PYPY = platform.python_implementation() == "PyPy"
 
 
@@ -57,13 +51,13 @@ def test_arg_display(monkeypatch):
     import mss
 
     # Good value
-    display = TEXT(os.getenv("DISPLAY"))
+    display = str(os.getenv("DISPLAY"))
     with mss.mss(display=display):
         pass
 
     # Bad `display` type
     with pytest.raises(ScreenShotError):
-        with mss.mss(display=TEXT("0")):
+        with mss.mss(display=str("0")):
             pass
 
     # No `DISPLAY` in envars

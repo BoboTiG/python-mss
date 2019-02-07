@@ -7,15 +7,24 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import os
+from types import SimpleNamespace
+from typing import TYPE_CHECKING
 
 from .base import MSSMixin
 from .exception import ScreenShotError
 
+if TYPE_CHECKING:
+    from typing import Any, Dict, List, Optional, Tuple, Union  # noqa
+
+    from .models import Monitor, Monitors  # noqa
+    from .screenshot import ScreenShot  # noqa
+
+
 __all__ = ("MSS",)
 
 
-LAST_ERROR = None
-PLAINMASK = 0x00ffffff
+ERROR = SimpleNamespace(details=None)
+PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 
 
@@ -141,13 +150,11 @@ class XRRCrtcInfo(ctypes.Structure):
 
 @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
 def error_handler(_, event):
-    # type: (ctypes.POINTER(Display), ctypes.POINTER(Event)) -> int
+    # type: (Any, Any) -> int
     """ Specifies the program's supplied error handler. """
 
-    global LAST_ERROR
-
     evt = event.contents
-    LAST_ERROR = {
+    ERROR.details = {
         "type": evt.type,
         "serial": evt.serial,
         "error_code": evt.error_code,
@@ -158,12 +165,10 @@ def error_handler(_, event):
 
 
 def validate(retval, func, args):
-    # type: (int, Any, Tuple[Any, Any]) -> Any
+    # type: (int, Any, Tuple[Any, Any]) -> Optional[Tuple[Any, Any]]
     """ Validate the returned value of a Xlib or XRANDR function. """
 
-    global LAST_ERROR
-
-    if retval != 0 and not LAST_ERROR:
+    if retval != 0 and not ERROR.details:
         return args
 
     err = "{}() failed".format(func.__name__)
@@ -178,10 +183,10 @@ class MSS(MSSMixin):
     """
 
     def __init__(self, display=None):
-        # type: (bytes) -> None
+        # type: (Optional[Union[bytes, str]]) -> None
         """ GNU/Linux initialisations. """
 
-        self._monitors = []  # type: List[Dict[str, int]]
+        self._monitors = []  # type: Monitors
 
         if not display:
             try:
@@ -224,15 +229,12 @@ class MSS(MSSMixin):
         See https://tronche.com/gui/x/xlib/function-index.html for details.
         """
 
-        def cfactory(
-            attr=self.xlib, func=None, argtypes=None, restype=None, errcheck=validate
-        ):
-            # type: (Any, str, List[Any], Any, Optional[Callable]) -> None
-            # pylint: disable=too-many-locals
+        def cfactory(attr=self.xlib, func=None, argtypes=None, restype=None):
+            # type: (Any, str, List[Any], Any) -> None
             """ Factorize ctypes creations. """
             self._cfactory(
                 attr=attr,
-                errcheck=errcheck,
+                errcheck=validate,
                 func=func,
                 argtypes=argtypes,
                 restype=restype,
@@ -330,28 +332,22 @@ class MSS(MSSMixin):
             Maximum number of clients reached. Segmentation fault (core dumped)
         """
 
-        global LAST_ERROR
-
         try:
             self.xlib.XCloseDisplay(self.display)
             # Delete the attribute to prevent interpreter crash if called twice
             del self.display
-        except Exception:
+        except AttributeError:
             pass
-
-        LAST_ERROR = None
 
     def get_error_details(self):
         # type: () -> Optional[Dict[str, Any]]
         """ Get more information about the latest X server error. """
 
-        global LAST_ERROR
+        details = {}  # type: Dict[str, Any]
 
-        details = {}
-
-        if LAST_ERROR:
-            details = {"xerror_details": LAST_ERROR}
-            LAST_ERROR = None
+        if ERROR.details:
+            details = {"xerror_details": ERROR.details}
+            ERROR.details = None
             xserver_error = ctypes.create_string_buffer(1024)
             self.xlib.XGetErrorText(
                 self.display,
@@ -367,7 +363,7 @@ class MSS(MSSMixin):
 
     @property
     def monitors(self):
-        # type: () -> List[Dict[str, int]]
+        # type: () -> Monitors
         """ Get positions of monitors (see parent class property). """
 
         if not self._monitors:
@@ -407,7 +403,7 @@ class MSS(MSSMixin):
         return self._monitors
 
     def grab(self, monitor):
-        # type: (Dict[str, int]) -> ScreenShot
+        # type: (Monitor) -> ScreenShot
         """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
 
         # Convert PIL bbox style
@@ -439,13 +435,13 @@ class MSS(MSSMixin):
                     )
                 )
 
-            data = ctypes.cast(
+            raw_data = ctypes.cast(
                 ximage.contents.data,
                 ctypes.POINTER(
                     ctypes.c_ubyte * monitor["height"] * monitor["width"] * 4
                 ),
             )
-            data = bytearray(data.contents)
+            data = bytearray(raw_data.contents)
         finally:
             # Free
             self.xlib.XDestroyImage(ximage)

@@ -4,13 +4,15 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
-import collections
+from typing import TYPE_CHECKING
 
+from .models import Size, Pos
 from .exception import ScreenShotError
 
+if TYPE_CHECKING:
+    from typing import Any, Dict, Iterator, Optional  # noqa
 
-Pos = collections.namedtuple("Pos", "left, top")
-Size = collections.namedtuple("Size", "width, height")
+    from .models import Monitor, Pixel, Pixels  # noqa
 
 
 class ScreenShot:
@@ -23,27 +25,26 @@ class ScreenShot:
         with PIL.Image, it has been decided to use *ScreenShot*.
     """
 
-    __pixels = None  # type: List[Tuple[int, int, int]]
-    __rgb = None  # type: bytes
-
     def __init__(self, data, monitor, size=None):
-        # type: (bytearray, Dict[str, int], Any) -> None
+        # type: (bytearray, Monitor, Optional[Size]) -> None
+
+        self.__pixels = None  # type: Optional[Pixels]
+        self.__rgb = None  # type: Optional[bytes]
 
         #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
-        self.raw = bytearray(data)  # type: bytearray
+        self.raw = data
 
         #: NamedTuple of the screen shot coordinates.
-        self.pos = Pos(monitor["left"], monitor["top"])  # type: Pos
+        self.pos = Pos(monitor["left"], monitor["top"])
 
         if size is not None:
             #: NamedTuple of the screen shot size.
-            self.size = size  # type: Size
+            self.size = size
         else:
-            self.size = Size(monitor["width"], monitor["height"])  # type: Size
+            self.size = Size(monitor["width"], monitor["height"])
 
     def __repr__(self):
-        # type: () -> str
         return ("<{!s} pos={cls.left},{cls.top} size={cls.width}x{cls.height}>").format(
             type(self).__name__, cls=self
         )
@@ -93,14 +94,16 @@ class ScreenShot:
 
     @property
     def pixels(self):
-        # type: () -> List[Tuple[int, int, int]]
+        # type: () -> Pixels
         """
         :return list: RGB tuples.
         """
 
         if not self.__pixels:
-            rgb_tuples = zip(self.raw[2::4], self.raw[1::4], self.raw[0::4])
-            self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
+            rgb_tuples = zip(
+                self.raw[2::4], self.raw[1::4], self.raw[0::4]
+            )  # type: Iterator[Pixel]
+            self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))  # type: ignore
 
         return self.__pixels
 
@@ -136,7 +139,7 @@ class ScreenShot:
         return self.size.width
 
     def pixel(self, coord_x, coord_y):
-        # type: (int, int) -> Tuple[int, int, int]
+        # type: (int, int) -> Pixel
         """
         Returns the pixel value at a given position.
 
@@ -146,7 +149,7 @@ class ScreenShot:
         """
 
         try:
-            return self.pixels[coord_y][coord_x]
+            return self.pixels[coord_y][coord_x]  # type: ignore
         except IndexError:
             raise ScreenShotError(
                 "Pixel location ({}, {}) is out of range.".format(coord_x, coord_y)

@@ -5,17 +5,23 @@ Source: https://github.com/BoboTiG/python-mss
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from .exception import ScreenShotError
 from .screenshot import ScreenShot
 from .tools import to_png
 
+if TYPE_CHECKING:
+    from typing import Any, Callable, Iterator, List, Optional, Type  # noqa
+
+    from .models import Monitor, Monitors  # noqa
+
 
 class MSSMixin:
     """ This class will be overloaded by a system specific one. """
 
-    cls_image = ScreenShot  # type: object
-    compression_level = 6  # type: int
+    cls_image = ScreenShot  # type: Type[ScreenShot]
+    compression_level = 6
 
     def __enter__(self):
         # type: () -> MSSMixin
@@ -24,7 +30,6 @@ class MSSMixin:
         return self
 
     def __exit__(self, *_):
-        # type: (*str) -> None
         """ For the cool call `with MSS() as mss:`. """
 
         self.close()
@@ -34,7 +39,7 @@ class MSSMixin:
         """ Clean-up. """
 
     def grab(self, monitor):
-        # type: (Dict[str, int]) -> ScreenShot
+        # type: (Monitor) -> ScreenShot
         """
         Retrieve screen pixels for a given monitor.
 
@@ -47,7 +52,7 @@ class MSSMixin:
 
     @property
     def monitors(self):
-        # type: () -> List[Dict[str, int]]
+        # type: () -> Monitors
         """
         Get positions of all monitors.
         If the monitor has rotation, you have to deal with it
@@ -131,6 +136,7 @@ class MSSMixin:
             yield output
 
     def shot(self, **kwargs):
+        # type: (Any) -> str
         """
         Helper to save the screen shot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
@@ -142,7 +148,6 @@ class MSSMixin:
     @staticmethod
     def _cfactory(attr, func, argtypes, restype, errcheck=None):
         # type: (Any, str, List[Any], Any, Optional[Callable]) -> None
-        # pylint: disable=too-many-locals
         """ Factory to create a ctypes function and automatically manage errors. """
 
         meth = getattr(attr, func)

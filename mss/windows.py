@@ -22,9 +22,16 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
+from typing import TYPE_CHECKING
 
 from .base import MSSMixin
 from .exception import ScreenShotError
+
+if TYPE_CHECKING:
+    from typing import Any  # noqa
+
+    from .models import Monitor, Monitors  # noqa
+    from .screenshot import ScreenShot  # noqa
 
 __all__ = ("MSS",)
 
@@ -63,15 +70,14 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSMixin):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, **_):
+        # type: (Any) -> None
         """ Windows initialisations. """
 
-        self._monitors = []  # type: List[Dict[str, int]]
-
+        self._monitors = []  # type: Monitors
         self._bbox = {"height": 0, "width": 0}
         self._bmp = None
-        self._data = None
+        self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
         self.monitorenumproc = ctypes.WINFUNCTYPE(
             INT, DWORD, DWORD, ctypes.POINTER(RECT), DOUBLE
@@ -184,7 +190,7 @@ class MSS(MSSMixin):
 
     @property
     def monitors(self):
-        # type: () -> List[Dict[str, int]]
+        # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
 
         if not self._monitors:
@@ -206,12 +212,11 @@ class MSS(MSSMixin):
 
             # Each monitors
             def _callback(monitor, data, rect, dc_):
-                # type: (Any, Any, Any, float) -> int
+                # types: (int, HDC, LPRECT, LPARAM) -> int
                 """
                 Callback for monitorenumproc() function, it will return
                 a RECT with appropriate values.
                 """
-
                 del monitor, data, dc_
                 rct = rect.contents
                 self._monitors.append(
@@ -230,7 +235,7 @@ class MSS(MSSMixin):
         return self._monitors
 
     def grab(self, monitor):
-        # type: (Dict[str, int]) -> ScreenShot
+        # type: (Monitor) -> ScreenShot
         """ Retrieve all pixels from a monitor. Pixels have to be RGB.
 
             In the code, there are few interesting things:
@@ -297,4 +302,4 @@ class MSS(MSSMixin):
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
-        return self.cls_image(self._data, monitor)
+        return self.cls_image(bytearray(self._data), monitor)

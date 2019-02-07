@@ -10,13 +10,13 @@ GNU/Linux
 
 .. module:: mss.linux
 
-.. attribute:: LAST_ERROR
+.. attribute:: ERROR
 
-    :type: dict[str, Any]
+    :type: types.SimpleNamspacedict
 
-    Contains the latest Xlib or XRANDR function.
+    The `details` attribute contains the latest Xlib or XRANDR function. It is a dict.
 
-    .. versionadded:: 4.0.0
+    .. versionadded:: 5.0.0
 
 .. class:: MSS
 
