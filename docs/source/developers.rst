@@ -41,27 +41,20 @@ Launch the test suit::
 This will test MSS and ensure a good code quality.
 
 
+Code Quality
+============
+
+To ensure the code is always well enough using `flake8 <https://pypi.org/project/flake8/>`_::
+
+    $ TOXENV=lint tox
+
+
 Static Type Checking
 ====================
 
-`mypy <http://mypy-lang.org/>`_ is a compile-time static type checker for Python, allowing optional, gradual typing of Python code.
-MSS is using special files syntax for type annotations, which means that type annotations are written inside **pyi** files.
+To check type annotation using `mypy <http://mypy-lang.org/>`_::
 
-
-Dependencies
-------------
-
-Install required packages::
-
-    $ python -m pip install --upgrade --user mypy-lang
-
-
-Running Mypy
-------------
-
-::
-
-    $ sh check-types.sh -p mss
+    $ TOXENV=types tox
 
 
 Documentation

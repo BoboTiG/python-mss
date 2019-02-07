@@ -6,10 +6,14 @@ Source: https://github.com/BoboTiG/python-mss
 
 import struct
 import zlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Optional, Tuple  # noqa
 
 
 def to_png(data, size, level=6, output=None):
-    # type: (bytes, Tuple[int, int], int, Optional[str]) -> Union[None, bytes]
+    # type: (bytes, Tuple[int, int], int, Optional[str]) -> Optional[bytes]
     """
     Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.
@@ -32,17 +36,17 @@ def to_png(data, size, level=6, output=None):
     # Header: size, marker, data, CRC32
     ihdr = [b"", b"IHDR", b"", b""]
     ihdr[2] = struct.pack(">2I5B", width, height, 8, 2, 0, 0, 0)
-    ihdr[3] = struct.pack(">I", zlib.crc32(b"".join(ihdr[1:3])) & 0xffffffff)
+    ihdr[3] = struct.pack(">I", zlib.crc32(b"".join(ihdr[1:3])) & 0xFFFFFFFF)
     ihdr[0] = struct.pack(">I", len(ihdr[2]))
 
     # Data: size, marker, data, CRC32
     idat = [b"", b"IDAT", zlib.compress(scanlines, level), b""]
-    idat[3] = struct.pack(">I", zlib.crc32(b"".join(idat[1:3])) & 0xffffffff)
+    idat[3] = struct.pack(">I", zlib.crc32(b"".join(idat[1:3])) & 0xFFFFFFFF)
     idat[0] = struct.pack(">I", len(idat[2]))
 
     # Footer: size, marker, None, CRC32
     iend = [b"", b"IEND", b"", b""]
-    iend[3] = struct.pack(">I", zlib.crc32(iend[1]) & 0xffffffff)
+    iend[3] = struct.pack(">I", zlib.crc32(iend[1]) & 0xFFFFFFFF)
     iend[0] = struct.pack(">I", len(iend[2]))
 
     if not output:

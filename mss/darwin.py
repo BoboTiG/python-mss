@@ -11,16 +11,23 @@ from __future__ import division
 import ctypes
 import ctypes.util
 import sys
+from typing import TYPE_CHECKING
 
 from .base import MSSMixin
 from .exception import ScreenShotError
 from .screenshot import Size
 
+if TYPE_CHECKING:
+    from typing import Any, List, Type, Union  # noqa
+
+    from .models import Monitor, Monitors  # noqa
+    from .screenshot import ScreenShot  # noqa
+
 __all__ = ("MSS",)
 
 
 def cgfloat():
-    # type: () -> Any
+    # type: () -> Union[Type[ctypes.c_double], Type[ctypes.c_float]]
     """ Get the appropriate value for a float. """
 
     return ctypes.c_double if sys.maxsize > 2 ** 32 else ctypes.c_float
@@ -61,13 +68,11 @@ class MSS(MSSMixin):
     It uses intensively the CoreGraphics library.
     """
 
-    max_displays = 32  # type: int
-
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, **_):
         """ macOS initialisations. """
 
-        self._monitors = []  # type: List[Dict[str, int]]
+        self._monitors = []  # type: Monitors
+        self.max_displays = 32
 
         coregraphics = ctypes.util.find_library("CoreGraphics")
         if not coregraphics:
@@ -77,13 +82,15 @@ class MSS(MSSMixin):
         self._set_cfunctions()
 
     def _set_cfunctions(self):
+        # type: () -> None
         """ Set all ctypes functions and attach them to attributes. """
 
-        def cfactory(attr=self.core, func=None, argtypes=None, restype=None):
-            # type: (Any, str, List[Any], Any) -> None
-            # pylint: disable=too-many-locals
+        def cfactory(func, argtypes, restype):
+            # type: (str, List[Any], Any) -> None
             """ Factorize ctypes creations. """
-            self._cfactory(attr=attr, func=func, argtypes=argtypes, restype=restype)
+            self._cfactory(
+                attr=self.core, func=func, argtypes=argtypes, restype=restype
+            )
 
         uint32 = ctypes.c_uint32
         void = ctypes.c_void_p
@@ -117,7 +124,7 @@ class MSS(MSSMixin):
 
     @property
     def monitors(self):
-        # type: () -> List[Dict[str, int]]
+        # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
 
         if not self._monitors:
@@ -165,7 +172,7 @@ class MSS(MSSMixin):
         return self._monitors
 
     def grab(self, monitor):
-        # type: (Dict[str, int]) -> ScreenShot
+        # type: (Monitor) -> ScreenShot
         """
         See :meth:`MSSMixin.grab <mss.base.MSSMixin.grab>` for full details.
         """

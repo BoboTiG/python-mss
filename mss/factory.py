@@ -10,7 +10,6 @@ from .exception import ScreenShotError
 
 
 def mss(**kwargs):
-    # type: (**str) -> MSS
     """ Factory returning a proper MSS class instance.
 
         It detects the plateform we are running on
@@ -25,11 +24,11 @@ def mss(**kwargs):
 
     operating_system = platform.system().lower()
     if operating_system == "darwin":
-        from .darwin import MSS
+        from .darwin import MSS  # type: ignore
     elif operating_system == "linux":
-        from .linux import MSS
+        from .linux import MSS  # type: ignore
     elif operating_system == "windows":
-        from .windows import MSS
+        from .windows import MSS  # type: ignore
     else:
         raise ScreenShotError(
             "System {!r} not (yet?) implemented.".format(operating_system)

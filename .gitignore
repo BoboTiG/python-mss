@@ -14,3 +14,4 @@ MANIFEST*
 .tox
 .vscode
 docs/output/
+.mypy_cache/

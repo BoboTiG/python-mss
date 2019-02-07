@@ -9,11 +9,15 @@ from __future__ import print_function
 import os.path
 import sys
 from argparse import ArgumentParser
+from typing import TYPE_CHECKING
 
 from . import __version__
 from .exception import ScreenShotError
 from .factory import mss
 from .tools import to_png
+
+if TYPE_CHECKING:
+    from typing import List, Optional  # noqa
 
 
 def main(args=None):

@@ -1,3 +1,25 @@
+5.0.0 (2019-xx-xx)
+==================
+
+linux.py
+--------
+- Deleted ``LAST_ERROR`` constant. Use ``ERROR`` namespace instead, specially the ``ERROR.details`` attribute.
+
+models.py
+---------
+- Added ``Monitor``
+- Added ``Monitors``
+- Added ``Pixel``
+- Added ``Pixels``
+- Added ``Pos``
+- Added ``Size``
+
+screenshot.py
+-------------
+- Removed ``Pos``. Use ``models.Pos`` instead.
+- Removed ``Size``. Use ``models.Size`` instead.
+
+
 4.0.1 (2019-01-26)
 ==================
 
