@@ -1,4 +1,7 @@
-# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
 
 import ctypes.util
 import os
@@ -44,20 +47,19 @@ def test_factory_systems(monkeypatch):
     with pytest.raises(ValueError):
         # wintypes.py:19: ValueError: _type_ 'v' not supported
         mss.mss()
-    monkeypatch.undo()
 
 
 def test_arg_display(monkeypatch):
     import mss
 
     # Good value
-    display = str(os.getenv("DISPLAY"))
+    display = os.getenv("DISPLAY")
     with mss.mss(display=display):
         pass
 
-    # Bad `display` type
+    # Bad `display` (missing ":" in front of the number)
     with pytest.raises(ScreenShotError):
-        with mss.mss(display=str("0")):
+        with mss.mss(display="0"):
             pass
 
     # No `DISPLAY` in envars
@@ -65,7 +67,6 @@ def test_arg_display(monkeypatch):
     with pytest.raises(ScreenShotError):
         with mss.mss():
             pass
-    monkeypatch.undo()
 
 
 @pytest.mark.skipif(PYPY, reason="Failure on PyPy")
@@ -76,7 +77,6 @@ def test_bad_display_structure(monkeypatch):
     with pytest.raises(TypeError):
         with mss.mss():
             pass
-    monkeypatch.undo()
 
 
 def test_no_xlib_library(monkeypatch):
@@ -84,7 +84,6 @@ def test_no_xlib_library(monkeypatch):
     with pytest.raises(ScreenShotError):
         with mss.mss():
             pass
-    monkeypatch.undo()
 
 
 def test_no_xrandr_extension(monkeypatch):
@@ -107,7 +106,6 @@ def test_no_xrandr_extension(monkeypatch):
     with pytest.raises(ScreenShotError):
         with mss.mss():
             pass
-    monkeypatch.undo()
 
 
 def test_region_out_of_monitor_bounds():

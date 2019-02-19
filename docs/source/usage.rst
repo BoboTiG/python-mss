@@ -81,7 +81,7 @@ On GNU/Linux, you can specify which display to use (useful for distant screensho
 A more specific example to only target GNU/Linux:
 
 .. literalinclude:: examples/linux_display_keyword.py
-    :lines: 9-
+    :lines: 8-
 
 
 Command Line

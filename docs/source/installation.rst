@@ -9,7 +9,7 @@ Recommended Way
 
 Quite simple::
 
-    $ python -m pip install --upgrade --user mss
+    $ python -m pip install -U --user mss
 
 
 From Sources

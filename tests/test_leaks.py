@@ -1,4 +1,8 @@
-# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
+
 import os
 import platform
 from typing import TYPE_CHECKING

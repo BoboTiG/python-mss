@@ -1,10 +1,7 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
-from __future__ import print_function
 
 import os.path
 import sys

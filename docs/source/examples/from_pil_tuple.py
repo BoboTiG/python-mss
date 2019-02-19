@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
@@ -24,7 +23,7 @@ with mss.mss() as sct:
     # Grab the picture
     # Using PIL would be something like:
     # im = ImageGrab(bbox=bbox)
-    im = sct.grab(bbox)
+    im = sct.grab(bbox)  # type: ignore
 
     # Save it!
     mss.tools.to_png(im.rgb, im.size, output="screenshot.png")

@@ -1,10 +1,7 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
-from __future__ import division
 
 import ctypes
 from ctypes.wintypes import (

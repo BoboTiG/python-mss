@@ -13,7 +13,7 @@ Setup
 
 Additionally, you can install `pre-commit <http://pre-commit.com/>`_ to ensure you are doing things well::
 
-    $ python -m pip install --upgrade --user pre-commit
+    $ python -m pip install -U --user pre-commit
     $ pre-commit install
 
 
@@ -25,7 +25,7 @@ Dependency
 
 You will need `tox <https://pypi.org/project/tox/>`_::
 
-    $ python -m pip install --upgrade --user tox
+    $ python -m pip install -U --user tox
 
 
 How to Test?

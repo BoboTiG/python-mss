@@ -1,12 +1,7 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
-# pylint: disable=import-error, too-many-locals
-
-from __future__ import division
 
 import ctypes
 import ctypes.util
@@ -176,6 +171,8 @@ class MSS(MSSMixin):
         """
         See :meth:`MSSMixin.grab <mss.base.MSSMixin.grab>` for full details.
         """
+
+        # pylint: disable=too-many-locals
 
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
