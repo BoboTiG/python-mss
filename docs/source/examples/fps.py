@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
@@ -6,8 +5,6 @@ Source: https://github.com/BoboTiG/python-mss
 Simple naive benchmark to compare with:
     https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/
 """
-
-from __future__ import print_function
 
 import time
 

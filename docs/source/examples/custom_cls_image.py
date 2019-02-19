@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
@@ -22,6 +21,6 @@ class SimpleScreenShot:
 
 
 with mss.mss() as sct:
-    sct.cls_image = SimpleScreenShot
+    sct.cls_image = SimpleScreenShot  # type: ignore
     image = sct.grab(sct.monitors[1])
     # ...

@@ -1,4 +1,7 @@
-# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
 
 import ctypes.util
 import platform
@@ -61,4 +64,3 @@ def test_implementation(monkeypatch):
         monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *args: None)
         with pytest.raises(ScreenShotError):
             sct.grab(sct.monitors[1])
-        monkeypatch.undo()

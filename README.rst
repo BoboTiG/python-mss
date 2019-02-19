@@ -13,7 +13,6 @@ Python MSS
 
     from mss import mss
 
-
     # The simplest use, save a screen shot of the 1st monitor
     with mss() as sct:
         sct.shot()
@@ -21,7 +20,7 @@ Python MSS
 
 An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
 
-- **Python 2 & 3** and PEP8 compliant, no dependency;
+- **Python 3.5+** and PEP8 compliant, no dependency;
 - very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file;
 - but you can use PIL and benefit from all its formats (or add yours directly);
 - integrate well with Numpy and OpenCV;
@@ -39,4 +38,4 @@ Installation
 
 You can install it with pip::
 
-    python -m pip install --upgrade mss
+    python -m pip install -U --user mss

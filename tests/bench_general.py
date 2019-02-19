@@ -1,5 +1,7 @@
-# coding: utf-8
 """
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+
 2018-03-19.
 
 Original means MSS 3.1.2.

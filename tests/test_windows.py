@@ -1,4 +1,7 @@
-# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
 
 import ctypes.util
 import platform
@@ -19,4 +22,3 @@ def test_implementation(monkeypatch):
         monkeypatch.setattr(ctypes.windll.gdi32, "GetDIBits", lambda *args: 0)
         with pytest.raises(ScreenShotError):
             sct.shot()
-        monkeypatch.undo()

@@ -1,5 +1,7 @@
-# coding: utf-8
 """
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+
 2018-03-19.
 
 Maximum screenshots in 1 second by computing BGRA raw values to RGB.
@@ -26,8 +28,6 @@ Windows
   numpy_flip        25
   numpy_slice       22
 """
-
-from __future__ import print_function
 
 import time
 

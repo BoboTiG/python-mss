@@ -1,15 +1,22 @@
-# coding: utf-8
 """
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
 import platform
+from typing import TYPE_CHECKING
 
 from .exception import ScreenShotError
 
 
+if TYPE_CHECKING:
+    from typing import Any  # noqa
+
+    from .base import MSSMixin  # noqa
+
+
 def mss(**kwargs):
+    # type: (Any) -> MSSMixin
     """ Factory returning a proper MSS class instance.
 
         It detects the plateform we are running on
@@ -20,18 +27,21 @@ def mss(**kwargs):
         instantiation.
     """
 
-    # pylint: disable=import-error
+    os_ = platform.system().lower()
 
-    operating_system = platform.system().lower()
-    if operating_system == "darwin":
-        from .darwin import MSS  # type: ignore
-    elif operating_system == "linux":
-        from .linux import MSS  # type: ignore
-    elif operating_system == "windows":
-        from .windows import MSS  # type: ignore
-    else:
-        raise ScreenShotError(
-            "System {!r} not (yet?) implemented.".format(operating_system)
-        )
+    if os_ == "darwin":
+        from . import darwin
 
-    return MSS(**kwargs)
+        return darwin.MSS(**kwargs)
+
+    if os_ == "linux":
+        from . import linux
+
+        return linux.MSS(**kwargs)
+
+    if os_ == "windows":
+        from . import windows
+
+        return windows.MSS(**kwargs)
+
+    raise ScreenShotError("System {!r} not (yet?) implemented.".format(os_))

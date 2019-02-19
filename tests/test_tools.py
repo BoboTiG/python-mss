@@ -1,4 +1,7 @@
-# coding: utf-8
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
 
 import hashlib
 import os.path

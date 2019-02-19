@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 An ultra fast cross-platform multiple screenshots module in pure python
 using ctypes.

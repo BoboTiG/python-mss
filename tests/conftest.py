@@ -1,6 +1,7 @@
-# coding: utf-8
-
-from __future__ import print_function
+"""
+This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss
+"""
 
 import glob
 import os
