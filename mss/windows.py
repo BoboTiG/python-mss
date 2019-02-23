@@ -95,7 +95,7 @@ class MSS(MSSMixin):
             try:
                 self.user32.SetProcessDPIAware()
             except AttributeError:
-                pass # Windows XP doesn't have SetProcessDPIAware
+                pass  # Windows XP doesn't have SetProcessDPIAware
 
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
