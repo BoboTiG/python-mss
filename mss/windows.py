@@ -80,8 +80,8 @@ class MSS(MSSMixin):
             INT, DWORD, DWORD, ctypes.POINTER(RECT), DOUBLE
         )
 
-        self.user32 = ctypes.windll.user32
-        self.gdi32 = ctypes.windll.gdi32
+        self.user32 = ctypes.WinDLL("user32")
+        self.gdi32 = ctypes.WinDLL("gdi32")
         self._set_cfunctions()
 
         # Set DPI aware to capture full screen on Hi-DPI monitors
