@@ -5,9 +5,8 @@ Source: https://github.com/BoboTiG/python-mss
 PIL example using frombytes().
 """
 
-from PIL import Image
-
 import mss
+from PIL import Image
 
 
 with mss.mss() as sct:

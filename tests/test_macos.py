@@ -7,9 +7,8 @@ import ctypes.util
 import platform
 
 import mss
-from mss.exception import ScreenShotError
-
 import pytest
+from mss.exception import ScreenShotError
 
 
 if platform.system().lower() != "darwin":

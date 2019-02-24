@@ -8,10 +8,9 @@ import os
 import platform
 
 import mss
+import pytest
 from mss.base import MSSMixin
 from mss.exception import ScreenShotError
-
-import pytest
 
 
 if platform.system().lower() != "linux":

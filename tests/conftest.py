@@ -7,7 +7,6 @@ import glob
 import os
 
 import mss
-
 import pytest
 
 
