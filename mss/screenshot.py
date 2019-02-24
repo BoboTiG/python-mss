@@ -24,6 +24,8 @@ class ScreenShot:
         with PIL.Image, it has been decided to use *ScreenShot*.
     """
 
+    __slots__ = {"__pixels", "__rgb", "pos", "raw", "size"}
+
     def __init__(self, data, monitor, size=None):
         # type: (bytearray, Monitor, Optional[Size]) -> None
 

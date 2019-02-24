@@ -1,8 +1,13 @@
 5.0.0 (2019-xx-xx)
 ==================
 
+darwin.py
+---------
+- Added `MSS.__slots__`
+
 linux.py
 --------
+- Added `MSS.__slots__`
 - Deleted ``LAST_ERROR`` constant. Use ``ERROR`` namespace instead, specially the ``ERROR.details`` attribute.
 
 models.py
@@ -16,8 +21,13 @@ models.py
 
 screenshot.py
 -------------
+- Added `ScreenShot.__slots__`
 - Removed ``Pos``. Use ``models.Pos`` instead.
 - Removed ``Size``. Use ``models.Size`` instead.
+
+windows.py
+----------
+- Added `MSS.__slots__`
 
 
 4.0.1 (2019-01-26)
