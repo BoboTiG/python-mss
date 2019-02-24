@@ -129,9 +129,20 @@ Benchmark
 Simple naive benchmark to compare with `Reading game frames in Python with OpenCV - Python Plays GTA V <https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/>`_:
 
 .. literalinclude:: examples/fps.py
-    :lines: 12-
+    :lines: 9-
 
 .. versionadded:: 3.0.0
+
+Multiprocessing
+---------------
+
+Performances can be improved by delegating the PNG file creation to a specific worker.
+This is a simple example using the :py:mod:`multiprocessing` inspired by the `TensorFlow Object Detection Introduction <https://github.com/pythonlessons/TensorFlow-object-detection-tutorial>`_ project:
+
+.. literalinclude:: examples/fps_multiprocessing.py
+    :lines: 9-
+
+.. versionadded:: 5.0.0
 
 
 BGRA to RGB
