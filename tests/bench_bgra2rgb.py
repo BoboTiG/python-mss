@@ -31,11 +31,9 @@ Windows
 
 import time
 
-from PIL import Image
-
 import mss
-
 import numpy
+from PIL import Image
 
 
 def mss_rgb(im):

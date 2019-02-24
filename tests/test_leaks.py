@@ -7,9 +7,8 @@ import os
 import platform
 from typing import TYPE_CHECKING
 
-from mss import mss
-
 import pytest
+from mss import mss
 
 if TYPE_CHECKING:
     from typing import Callable  # noqa

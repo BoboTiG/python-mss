@@ -7,9 +7,8 @@ import hashlib
 import os.path
 import zlib
 
-from mss.tools import to_png
-
 import pytest
+from mss.tools import to_png
 
 
 WIDTH = 10

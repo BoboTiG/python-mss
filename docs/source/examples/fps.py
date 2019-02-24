@@ -9,9 +9,7 @@ Simple naive benchmark to compare with:
 import time
 
 import cv2
-
 import mss
-
 import numpy
 
 

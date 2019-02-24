@@ -3,9 +3,8 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
-from mss.base import ScreenShot
-
 import pytest
+from mss.base import ScreenShot
 
 
 def test_bad_length():

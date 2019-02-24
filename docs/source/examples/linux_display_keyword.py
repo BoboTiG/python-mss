@@ -5,9 +5,9 @@ Source: https://github.com/BoboTiG/python-mss
 Usage example with a specific display.
 """
 
-from mss.linux import MSS
+import mss
 
 
-with MSS(display=":0.0") as sct:
+with mss.mss(display=":0.0") as sct:
     for filename in sct.save():
         print(filename)

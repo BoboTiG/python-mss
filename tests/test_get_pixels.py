@@ -3,10 +3,9 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+import pytest
 from mss.base import ScreenShot
 from mss.exception import ScreenShotError
-
-import pytest
 
 
 def test_grab_monitor(sct):
