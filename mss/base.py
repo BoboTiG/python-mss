@@ -19,8 +19,12 @@ if TYPE_CHECKING:
 class MSSMixin:
     """ This class will be overloaded by a system specific one. """
 
-    cls_image = ScreenShot  # type: Type[ScreenShot]
-    compression_level = 6
+    __slots__ = {"_monitors", "cls_image", "compression_level"}
+
+    def __init__(self):
+        self.cls_image = ScreenShot  # type: Type[ScreenShot]
+        self.compression_level = 6
+        self._monitors = []  # type: Monitors
 
     def __enter__(self):
         # type: () -> MSSMixin

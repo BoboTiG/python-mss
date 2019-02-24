@@ -181,11 +181,13 @@ class MSS(MSSMixin):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
+    __slots__ = {"display", "drawable", "root", "xlib", "xrandr"}
+
     def __init__(self, display=None):
         # type: (Optional[Union[bytes, str]]) -> None
         """ GNU/Linux initialisations. """
 
-        self._monitors = []  # type: Monitors
+        super().__init__()
 
         if not display:
             try:

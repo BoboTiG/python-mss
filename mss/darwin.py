@@ -63,10 +63,13 @@ class MSS(MSSMixin):
     It uses intensively the CoreGraphics library.
     """
 
+    __slots__ = {"core", "max_displays"}
+
     def __init__(self, **_):
         """ macOS initialisations. """
 
-        self._monitors = []  # type: Monitors
+        super().__init__()
+
         self.max_displays = 32
 
         coregraphics = ctypes.util.find_library("CoreGraphics")

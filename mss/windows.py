@@ -67,11 +67,24 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSMixin):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
+    __slots__ = {
+        "_bbox",
+        "_bmi",
+        "_bmp",
+        "_data",
+        "_memdc",
+        "_srcdc",
+        "gdi32",
+        "monitorenumproc",
+        "user32",
+    }
+
     def __init__(self, **_):
         # type: (Any) -> None
         """ Windows initialisations. """
 
-        self._monitors = []  # type: Monitors
+        super().__init__()
+
         self._bbox = {"height": 0, "width": 0}
         self._bmp = None
         self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
