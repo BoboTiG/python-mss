@@ -7,6 +7,7 @@ History:
       - MSS: improve type annotations and add CI check
       - MSS: use __slots__ for better performances
       - Windows: use our own instances of GDI32 and User32 DLLs
+      - doc: add project_urls to setup.cfg
       - doc: add an example using the multiprocessing module (closes #82)
 
 4.0.2   2019/02/23
