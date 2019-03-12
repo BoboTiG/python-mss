@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 
 import ctypes
+import platform
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -95,20 +96,7 @@ class MSS(MSSMixin):
 
         self.user32 = ctypes.WinDLL("user32")
         self.gdi32 = ctypes.WinDLL("gdi32")
-        self._set_cfunctions()
-
-        # Set DPI aware to capture full screen on Hi-DPI monitors
-        try:
-            # Windows 8.1+
-            # Automatically scale for DPI changes
-            self.user32.SetProcessDpiAwareness(
-                self.user32.PROCESS_PER_MONITOR_DPI_AWARE
-            )
-        except AttributeError:
-            try:
-                self.user32.SetProcessDPIAware()
-            except AttributeError:
-                pass  # Windows XP doesn't have SetProcessDPIAware
+        self._set_cfunctions()   
 
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
@@ -179,6 +167,7 @@ class MSS(MSSMixin):
             restype=BOOL,
         )
 
+
     def close(self):
         # type: () -> None
         """ Close GDI handles and free DCs. """
@@ -201,10 +190,26 @@ class MSS(MSSMixin):
         except AttributeError:
             pass
 
+
+    def _set_dpi_awerness(self):
+        """
+        Set DPI aware to capture full screen on Hi-DPI monitors
+        Automatically scale for DPI changes
+        """
+
+        release = int(platform.win32_ver()[0])
+        if release >= 8: #windows 10 and 8
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        elif release >= 6 and release < 8: #windows 6(vista) and 7
+            ctypes.windll.user32.SetProcessDPIAware() 
+
+
     @property
     def monitors(self):
         # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
+
+        self._set_dpi_awerness()
 
         if not self._monitors:
             # All monitors
