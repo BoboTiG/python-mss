@@ -214,16 +214,12 @@ class MSS(MSSMixin):
             # All monitors
             sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
             sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
-            left = self.user32.GetSystemMetrics(sm_xvirtualscreen)
-            right = self.user32.GetSystemMetrics(sm_cxvirtualscreen)
-            top = self.user32.GetSystemMetrics(sm_yvirtualscreen)
-            bottom = self.user32.GetSystemMetrics(sm_cyvirtualscreen)
             self._monitors.append(
                 {
-                    "left": int(left),
-                    "top": int(top),
-                    "width": int(right - left),
-                    "height": int(bottom - top),
+                    "left": int(self.user32.GetSystemMetrics(sm_xvirtualscreen)),
+                    "top": int(self.user32.GetSystemMetrics(sm_yvirtualscreen)),
+                    "width": int(self.user32.GetSystemMetrics(sm_cxvirtualscreen)),
+                    "height": int(self.user32.GetSystemMetrics(sm_cyvirtualscreen)),
                 }
             )
 
