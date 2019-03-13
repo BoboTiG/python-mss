@@ -97,6 +97,7 @@ class MSS(MSSMixin):
         self.user32 = ctypes.WinDLL("user32")
         self.gdi32 = ctypes.WinDLL("gdi32")
         self._set_cfunctions()
+        self._set_dpi_awareness()
 
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
@@ -211,8 +212,6 @@ class MSS(MSSMixin):
     def monitors(self):
         # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
-
-        self._set_dpi_awareness()
 
         if not self._monitors:
             # All monitors
