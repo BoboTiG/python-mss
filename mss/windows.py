@@ -190,7 +190,7 @@ class MSS(MSSMixin):
             pass
 
 
-    def _set_dpi_awarness(self):
+    def _set_dpi_awareness(self):
         """
         Set DPI aware to capture full screen on Hi-DPI monitors
         Automatically scale for DPI changes
@@ -210,7 +210,7 @@ class MSS(MSSMixin):
         # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
 
-        self._set_dpi_awarness()
+        self._set_dpi_awareness()
 
         if not self._monitors:
             # All monitors
