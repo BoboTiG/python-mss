@@ -3,6 +3,7 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+import sys
 import ctypes
 from ctypes.wintypes import (
     BOOL,
@@ -97,17 +98,6 @@ class MSS(MSSMixin):
         self.gdi32 = ctypes.WinDLL("gdi32")
         self._set_cfunctions()
 
-        # Set DPI aware to capture full screen on Hi-DPI monitors
-        try:
-            # Windows 8.1+
-            # Automatically scale for DPI changes
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        except (AttributeError, OSError) as e:
-            try:
-                self.user32.SetProcessDPIAware()
-            except AttributeError:
-                pass  # Windows XP doesn't have SetProcessDPIAware
-
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
 
@@ -199,10 +189,28 @@ class MSS(MSSMixin):
         except AttributeError:
             pass
 
+
+    def _set_dpi_awarness(self):
+        """
+        Set DPI aware to capture full screen on Hi-DPI monitors
+        Automatically scale for DPI changes
+        """
+
+        major, minor = sys.getwindowsversion()[:2]
+        # Windows 8.1+
+        if major == 10 or (major == 6 and minor == 3):
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        # Windows Vista, 7 and 8
+        if major == 6 and minor < 3:
+            ctypes.windll.user32.SetProcessDPIAware()
+
+
     @property
     def monitors(self):
         # type: () -> Monitors
         """ Get positions of monitors (see parent class). """
+
+        self._set_dpi_awarness()
 
         if not self._monitors:
             # All monitors
