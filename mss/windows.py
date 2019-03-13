@@ -191,11 +191,8 @@ class MSS(MSSMixin):
             pass
 
     def _set_dpi_awareness(self):
-        """
-        Set DPI aware to capture full screen on Hi-DPI monitors
-        Automatically scale for DPI changes
-        """
-        
+        """ Set DPI aware to capture full screen on Hi-DPI monitors. """
+
         version = sys.getwindowsversion()[:2]
         if version >= (6, 3):
             # Windows 8.1+
@@ -204,7 +201,7 @@ class MSS(MSSMixin):
             #     created and adjusts the scale factor whenever the DPI changes.
             #     These applications are not automatically scaled by the system.
             ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        elif (6,0) <= version < (6, 3):
+        elif (6, 0) <= version < (6, 3):
             # Windows Vista, 7, 8 and Server 2012
             self.user32.SetProcessDPIAware()
 
