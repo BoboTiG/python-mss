@@ -101,10 +101,8 @@ class MSS(MSSMixin):
         try:
             # Windows 8.1+
             # Automatically scale for DPI changes
-            self.user32.SetProcessDpiAwareness(
-                self.user32.PROCESS_PER_MONITOR_DPI_AWARE
-            )
-        except AttributeError:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except (AttributeError, OSError) as e:
             try:
                 self.user32.SetProcessDPIAware()
             except AttributeError:
