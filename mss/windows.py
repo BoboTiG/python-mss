@@ -3,6 +3,7 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+import sys
 import ctypes
 from ctypes.wintypes import (
     BOOL,
@@ -96,19 +97,7 @@ class MSS(MSSMixin):
         self.user32 = ctypes.WinDLL("user32")
         self.gdi32 = ctypes.WinDLL("gdi32")
         self._set_cfunctions()
-
-        # Set DPI aware to capture full screen on Hi-DPI monitors
-        try:
-            # Windows 8.1+
-            # Automatically scale for DPI changes
-            self.user32.SetProcessDpiAwareness(
-                self.user32.PROCESS_PER_MONITOR_DPI_AWARE
-            )
-        except AttributeError:
-            try:
-                self.user32.SetProcessDPIAware()
-            except AttributeError:
-                pass  # Windows XP doesn't have SetProcessDPIAware
+        self._set_dpi_awareness()
 
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
@@ -200,6 +189,21 @@ class MSS(MSSMixin):
             del self._srcdc
         except AttributeError:
             pass
+
+    def _set_dpi_awareness(self):
+        """ Set DPI aware to capture full screen on Hi-DPI monitors. """
+
+        version = sys.getwindowsversion()[:2]
+        if version >= (6, 3):
+            # Windows 8.1+
+            # Here 2 = PROCESS_PER_MONITOR_DPI_AWARE, which means:
+            #     per monitor DPI aware. This app checks for the DPI when it is
+            #     created and adjusts the scale factor whenever the DPI changes.
+            #     These applications are not automatically scaled by the system.
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        elif (6, 0) <= version < (6, 3):
+            # Windows Vista, 7, 8 and Server 2012
+            self.user32.SetProcessDPIAware()
 
     @property
     def monitors(self):
