@@ -189,7 +189,6 @@ class MSS(MSSMixin):
         except AttributeError:
             pass
 
-
     def _set_dpi_awareness(self):
         """
         Set DPI aware to capture full screen on Hi-DPI monitors
@@ -207,7 +206,6 @@ class MSS(MSSMixin):
         elif (6,0) <= version < (6, 3):
             # Windows Vista, 7, 8 and Server 2012
             self.user32.SetProcessDPIAware()
-
 
     @property
     def monitors(self):
