@@ -198,9 +198,11 @@ class MSS(MSSMixin):
         """
 
         release = int(platform.win32_ver()[0])
-        if release >= 8: #windows 10 and 8
+        #windows 10 and 8
+        if release >= 8: 
             ctypes.windll.shcore.SetProcessDpiAwareness(2)
-        elif release >= 6 and release < 8: #windows 6(vista) and 7
+        #windows 6(vista) and 7
+        if release >= 6 and release < 8:
             ctypes.windll.user32.SetProcessDPIAware() 
 
 
