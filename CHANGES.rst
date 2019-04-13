@@ -8,6 +8,7 @@ darwin.py
 linux.py
 --------
 - Added `MSS.__slots__`
+- Deleted `MSS.close()`
 - Deleted ``LAST_ERROR`` constant. Use ``ERROR`` namespace instead, specially the ``ERROR.details`` attribute.
 
 models.py
@@ -28,6 +29,7 @@ screenshot.py
 windows.py
 ----------
 - Added `MSS.__slots__`
+- Deleted `MSS.close()`
 
 
 4.0.1 (2019-01-26)

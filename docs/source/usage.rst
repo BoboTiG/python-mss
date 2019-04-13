@@ -9,7 +9,6 @@ So MSS can be used as simply as::
 
     from mss import mss
 
-
 Or import the good one base on your operating system::
 
     # MacOS X
@@ -29,26 +28,6 @@ So the module can be used as simply as::
 
     with mss() as sct:
         # ...
-
-.. note::
-
-    On GNU/Linux and Windows, if you are using this kind of code::
-
-        sct = mss()
-        sct.shot()
-        sct.grab()
-        # or any attribute/method of sct
-
-    Then you will have to **manually** call :meth:`~mss.base.MSSMixin.close()` to free resources.
-
-.. warning::
-
-    This code is **highly** unadvised as there will be **resources leaks** without possibility to do something to clean them::
-
-        mss().shot()
-        mss().grab()
-        # or any mss().xxx or mss().xxx()
-
 
 Intensive Use
 =============

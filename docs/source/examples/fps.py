@@ -56,7 +56,6 @@ def screen_record_efficient():
             cv2.destroyAllWindows()
             break
 
-    sct.close()
     return fps
 
 

@@ -181,7 +181,11 @@ class MSS(MSSMixin):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"display", "drawable", "root", "xlib", "xrandr"}
+    __slots__ = {"drawable", "root", "xlib", "xrandr"}
+
+    # Class attribute to store the display opened with XOpenDisplay().
+    # Instancied one time to prevent resource leak.
+    display = None
 
     def __init__(self, display=None):
         # type: (Optional[Union[bytes, str]]) -> None
@@ -217,8 +221,9 @@ class MSS(MSSMixin):
 
         self._set_cfunctions()
 
-        self.display = self.xlib.XOpenDisplay(display)
-        self.root = self.xlib.XDefaultRootWindow(self.display)
+        if not MSS.display:
+            MSS.display = self.xlib.XOpenDisplay(display)
+        self.root = self.xlib.XDefaultRootWindow(MSS.display)
 
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
@@ -285,7 +290,6 @@ class MSS(MSSMixin):
             restype=pointer(XImage),
         )
         cfactory(func="XDestroyImage", argtypes=[pointer(XImage)], restype=void)
-        cfactory(func="XCloseDisplay", argtypes=[pointer(Display)], restype=void)
 
         # A simple benchmark calling 10 times those 2 functions:
         # XRRGetScreenResources():        0.1755971429956844 s
@@ -326,20 +330,6 @@ class MSS(MSSMixin):
             restype=void,
         )
 
-    def close(self):
-        # type: () -> None
-        """
-        Disconnect from the X server to prevent:
-            Maximum number of clients reached. Segmentation fault (core dumped)
-        """
-
-        try:
-            self.xlib.XCloseDisplay(self.display)
-            # Delete the attribute to prevent interpreter crash if called twice
-            del self.display
-        except AttributeError:
-            pass
-
     def get_error_details(self):
         # type: () -> Optional[Dict[str, Any]]
         """ Get more information about the latest X server error. """
@@ -351,7 +341,7 @@ class MSS(MSSMixin):
             ERROR.details = None
             xserver_error = ctypes.create_string_buffer(1024)
             self.xlib.XGetErrorText(
-                self.display,
+                MSS.display,
                 details.get("xerror_details", {}).get("error_code", 0),
                 xserver_error,
                 len(xserver_error),
@@ -368,9 +358,11 @@ class MSS(MSSMixin):
         """ Get positions of monitors (see parent class property). """
 
         if not self._monitors:
+            display = MSS.display
+
             # All monitors
             gwa = XWindowAttributes()
-            self.xlib.XGetWindowAttributes(self.display, self.root, ctypes.byref(gwa))
+            self.xlib.XGetWindowAttributes(display, self.root, ctypes.byref(gwa))
             self._monitors.append(
                 {
                     "left": int(gwa.x),
@@ -381,11 +373,9 @@ class MSS(MSSMixin):
             )
 
             # Each monitors
-            mon = self.xrandr.XRRGetScreenResourcesCurrent(self.display, self.drawable)
+            mon = self.xrandr.XRRGetScreenResourcesCurrent(display, self.drawable)
             for idx in range(mon.contents.ncrtc):
-                crtc = self.xrandr.XRRGetCrtcInfo(
-                    self.display, mon, mon.contents.crtcs[idx]
-                )
+                crtc = self.xrandr.XRRGetCrtcInfo(display, mon, mon.contents.crtcs[idx])
                 if crtc.contents.noutput == 0:
                     self.xrandr.XRRFreeCrtcInfo(crtc)
                     continue
@@ -417,7 +407,7 @@ class MSS(MSSMixin):
             }
 
         ximage = self.xlib.XGetImage(
-            self.display,
+            MSS.display,
             self.drawable,
             monitor["left"],
             monitor["top"],
