@@ -27,12 +27,6 @@ GNU/Linux
 
         GNU/Linux initializations.
 
-    .. method:: close()
-
-        Disconnect from the X server.
-
-        .. versionadded:: 4.0.0
-
     .. method:: get_error_details()
 
         :rtype: Optional[dict[str, Any]]
@@ -83,20 +77,6 @@ GNU/Linux
     .. versionadded:: 3.3.0
 
 
-Windows
--------
-
-.. module:: mss.windows
-
-.. class:: MSS
-
-    .. method:: close()
-
-        Close GDI handles and free DCs.
-
-        .. versionadded:: 4.0.0
-
-
 Methods
 =======
 
@@ -108,10 +88,7 @@ Methods
 
     .. method:: close()
 
-        Clean-up method. Does nothing by default. For more information, see specific implementations:
-
-            - :meth:`~mss.linux.MSS.close()` for GNU/Linux
-            - :meth:`~mss.windows.MSS.close()` for Windows
+        Clean-up method. Does nothing by default.
 
         .. versionadded:: 4.0.0
 

@@ -6,6 +6,7 @@ History:
       - removed support for Python 2.7
       - MSS: improve type annotations and add CI check
       - MSS: use __slots__ for better performances
+      - MSS: better handle resources to prevent leaks
       - Windows: use our own instances of GDI32 and User32 DLLs
       - doc: add project_urls to setup.cfg
       - doc: add an example using the multiprocessing module (closes #82)

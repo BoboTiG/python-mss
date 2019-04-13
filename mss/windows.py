@@ -68,27 +68,18 @@ class BITMAPINFO(ctypes.Structure):
 class MSS(MSSMixin):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    __slots__ = {
-        "_bbox",
-        "_bmi",
-        "_bmp",
-        "_data",
-        "_memdc",
-        "_srcdc",
-        "gdi32",
-        "monitorenumproc",
-        "user32",
-    }
+    __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "monitorenumproc", "user32"}
+
+    # Class attributes instancied one time to prevent resource leaks.
+    bmp = None
+    memdc = None
+    srcdc = None
 
     def __init__(self, **_):
         # type: (Any) -> None
         """ Windows initialisations. """
 
         super().__init__()
-
-        self._bbox = {"height": 0, "width": 0}
-        self._bmp = None
-        self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
         self.monitorenumproc = ctypes.WINFUNCTYPE(
             INT, DWORD, DWORD, ctypes.POINTER(RECT), DOUBLE
@@ -99,8 +90,12 @@ class MSS(MSSMixin):
         self._set_cfunctions()
         self._set_dpi_awareness()
 
-        self._srcdc = self.user32.GetWindowDC(0)
-        self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
+        self._bbox = {"height": 0, "width": 0}
+        self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
+
+        if not MSS.srcdc or not MSS.memdc:
+            MSS.srcdc = self.user32.GetWindowDC(0)
+            MSS.memdc = self.gdi32.CreateCompatibleDC(MSS.srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -129,9 +124,6 @@ class MSS(MSSMixin):
         self._cfactory(
             attr=self.user32, func="GetWindowDC", argtypes=[HWND], restype=HDC
         )
-        self._cfactory(
-            attr=self.user32, func="ReleaseDC", argtypes=[HWND, HGDIOBJ], restype=INT
-        )
 
         self._cfactory(
             attr=self.gdi32, func="GetDeviceCaps", argtypes=[HWND, INT], restype=INT
@@ -139,7 +131,6 @@ class MSS(MSSMixin):
         self._cfactory(
             attr=self.gdi32, func="CreateCompatibleDC", argtypes=[HDC], restype=HDC
         )
-        self._cfactory(attr=self.gdi32, func="DeleteDC", argtypes=[HDC], restype=BOOL)
         self._cfactory(
             attr=self.gdi32,
             func="CreateCompatibleBitmap",
@@ -168,32 +159,10 @@ class MSS(MSSMixin):
             restype=BOOL,
         )
 
-    def close(self):
-        # type: () -> None
-        """ Close GDI handles and free DCs. """
-
-        try:
-            self.gdi32.DeleteObject(self._bmp)
-            del self._bmp
-        except AttributeError:
-            pass
-
-        try:
-            self.gdi32.DeleteDC(self._memdc)
-            del self._memdc
-        except (OSError, AttributeError):
-            pass
-
-        try:
-            self.user32.ReleaseDC(0, self._srcdc)
-            del self._srcdc
-        except AttributeError:
-            pass
-
     def _set_dpi_awareness(self):
         """ Set DPI aware to capture full screen on Hi-DPI monitors. """
 
-        version = sys.getwindowsversion()[:2]
+        version = sys.getwindowsversion()[:2]  # pylint: disable=no-member
         if version >= (6, 3):
             # Windows 8.1+
             # Here 2 = PROCESS_PER_MONITOR_DPI_AWARE, which means:
@@ -288,6 +257,7 @@ class MSS(MSSMixin):
                 "height": monitor[3] - monitor[1],
             }
 
+        srcdc, memdc = MSS.srcdc, MSS.memdc
         width, height = monitor["width"], monitor["height"]
 
         if (self._bbox["height"], self._bbox["width"]) != (height, width):
@@ -295,22 +265,24 @@ class MSS(MSSMixin):
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
             self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            self._bmp = self.gdi32.CreateCompatibleBitmap(self._srcdc, width, height)
-            self.gdi32.SelectObject(self._memdc, self._bmp)
+            if MSS.bmp:
+                self.gdi32.DeleteObject(MSS.bmp)
+            MSS.bmp = self.gdi32.CreateCompatibleBitmap(srcdc, width, height)
+            self.gdi32.SelectObject(memdc, MSS.bmp)
 
         self.gdi32.BitBlt(
-            self._memdc,
+            memdc,
             0,
             0,
             width,
             height,
-            self._srcdc,
+            srcdc,
             monitor["left"],
             monitor["top"],
             SRCCOPY | CAPTUREBLT,
         )
         bits = self.gdi32.GetDIBits(
-            self._memdc, self._bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
+            memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
         )
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")

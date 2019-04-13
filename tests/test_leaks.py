@@ -59,13 +59,11 @@ def monitor_func():
 
 
 def bound_instance_without_cm():
-    """ This is bad. """
     sct = mss()
     sct.shot()
 
 
 def bound_instance_without_cm_but_use_close():
-    """ This is better. """
     sct = mss()
     sct.shot()
     sct.close()
@@ -74,28 +72,29 @@ def bound_instance_without_cm_but_use_close():
 
 
 def unbound_instance_without_cm():
-    """ This is really bad. """
     mss().shot()
 
 
 def with_context_manager():
-    """ This is the best. """
     with mss() as sct:
         sct.shot()
 
 
 @pytest.mark.skipif(OS == "darwin", reason="No possible leak on macOS.")
 @pytest.mark.parametrize(
-    "func, will_leak_resources",
+    "func",
     (
-        (bound_instance_without_cm, True),
-        (bound_instance_without_cm_but_use_close, False),
-        (unbound_instance_without_cm, True),
-        (with_context_manager, False),
+        bound_instance_without_cm,
+        bound_instance_without_cm_but_use_close,
+        unbound_instance_without_cm,
+        with_context_manager,
     ),
 )
-def test_resource_leaks(func, will_leak_resources, monitor_func):
+def test_resource_leaks(func, monitor_func):
     """ Check for resource leaks with different use cases. """
+
+    # Warm-up
+    func()
 
     original_resources = monitor_func()
     allocated_resources = 0
@@ -105,8 +104,4 @@ def test_resource_leaks(func, will_leak_resources, monitor_func):
         new_resources = monitor_func()
         allocated_resources = max(allocated_resources, new_resources)
 
-    if will_leak_resources:
-        assert original_resources < allocated_resources
-        pytest.xfail("Resources leak!")
-    else:
-        assert original_resources == allocated_resources
+    assert original_resources == allocated_resources
