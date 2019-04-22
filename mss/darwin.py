@@ -126,6 +126,9 @@ class MSS(MSSMixin):
         """ Get positions of monitors (see parent class). """
 
         if not self._monitors:
+            int_ = int
+            core = self.core
+
             # All monitors
             # We need to update the value with every single monitor found
             # using CGRectUnion.  Else we will end with infinite values.
@@ -135,36 +138,36 @@ class MSS(MSSMixin):
             # Each monitors
             display_count = ctypes.c_uint32(0)
             active_displays = (ctypes.c_uint32 * self.max_displays)()
-            self.core.CGGetActiveDisplayList(
+            core.CGGetActiveDisplayList(
                 self.max_displays, active_displays, ctypes.byref(display_count)
             )
             rotations = {0.0: "normal", 90.0: "right", -90.0: "left"}
             for idx in range(display_count.value):
                 display = active_displays[idx]
-                rect = self.core.CGDisplayBounds(display)
-                rect = self.core.CGRectStandardize(rect)
+                rect = core.CGDisplayBounds(display)
+                rect = core.CGRectStandardize(rect)
                 width, height = rect.size.width, rect.size.height
-                rot = self.core.CGDisplayRotation(display)
+                rot = core.CGDisplayRotation(display)
                 if rotations[rot] in ["left", "right"]:
                     width, height = height, width
                 self._monitors.append(
                     {
-                        "left": int(rect.origin.x),
-                        "top": int(rect.origin.y),
-                        "width": int(width),
-                        "height": int(height),
+                        "left": int_(rect.origin.x),
+                        "top": int_(rect.origin.y),
+                        "width": int_(width),
+                        "height": int_(height),
                     }
                 )
 
                 # Update AiO monitor's values
-                all_monitors = self.core.CGRectUnion(all_monitors, rect)
+                all_monitors = core.CGRectUnion(all_monitors, rect)
 
             # Set the AiO monitor's values
             self._monitors[0] = {
-                "left": int(all_monitors.origin.x),
-                "top": int(all_monitors.origin.y),
-                "width": int(all_monitors.size.width),
-                "height": int(all_monitors.size.height),
+                "left": int_(all_monitors.origin.x),
+                "top": int_(all_monitors.origin.y),
+                "width": int_(all_monitors.size.width),
+                "height": int_(all_monitors.size.height),
             }
 
         return self._monitors
