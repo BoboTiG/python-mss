@@ -359,37 +359,40 @@ class MSS(MSSMixin):
 
         if not self._monitors:
             display = MSS.display
+            int_ = int
+            xrandr = self.xrandr
 
             # All monitors
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(display, self.root, ctypes.byref(gwa))
             self._monitors.append(
                 {
-                    "left": int(gwa.x),
-                    "top": int(gwa.y),
-                    "width": int(gwa.width),
-                    "height": int(gwa.height),
+                    "left": int_(gwa.x),
+                    "top": int_(gwa.y),
+                    "width": int_(gwa.width),
+                    "height": int_(gwa.height),
                 }
             )
 
             # Each monitors
-            mon = self.xrandr.XRRGetScreenResourcesCurrent(display, self.drawable)
-            for idx in range(mon.contents.ncrtc):
-                crtc = self.xrandr.XRRGetCrtcInfo(display, mon, mon.contents.crtcs[idx])
-                if crtc.contents.noutput == 0:
-                    self.xrandr.XRRFreeCrtcInfo(crtc)
+            mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
+            crtcs = mon.crtcs
+            for idx in range(mon.ncrtc):
+                crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
+                if crtc.noutput == 0:
+                    xrandr.XRRFreeCrtcInfo(crtc)
                     continue
 
                 self._monitors.append(
                     {
-                        "left": int(crtc.contents.x),
-                        "top": int(crtc.contents.y),
-                        "width": int(crtc.contents.width),
-                        "height": int(crtc.contents.height),
+                        "left": int_(crtc.x),
+                        "top": int_(crtc.y),
+                        "width": int_(crtc.width),
+                        "height": int_(crtc.height),
                     }
                 )
-                self.xrandr.XRRFreeCrtcInfo(crtc)
-            self.xrandr.XRRFreeScreenResources(mon)
+                xrandr.XRRFreeCrtcInfo(crtc)
+            xrandr.XRRFreeScreenResources(mon)
 
         return self._monitors
 

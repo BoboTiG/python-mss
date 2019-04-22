@@ -180,15 +180,17 @@ class MSS(MSSMixin):
         """ Get positions of monitors (see parent class). """
 
         if not self._monitors:
+            int_ = int
+            user32 = self.user32
+            get_system_metrics = user32.GetSystemMetrics
+
             # All monitors
-            sm_xvirtualscreen, sm_yvirtualscreen = 76, 77
-            sm_cxvirtualscreen, sm_cyvirtualscreen = 78, 79
             self._monitors.append(
                 {
-                    "left": int(self.user32.GetSystemMetrics(sm_xvirtualscreen)),
-                    "top": int(self.user32.GetSystemMetrics(sm_yvirtualscreen)),
-                    "width": int(self.user32.GetSystemMetrics(sm_cxvirtualscreen)),
-                    "height": int(self.user32.GetSystemMetrics(sm_cyvirtualscreen)),
+                    "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
+                    "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
+                    "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
+                    "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
                 }
             )
 
@@ -199,20 +201,21 @@ class MSS(MSSMixin):
                 Callback for monitorenumproc() function, it will return
                 a RECT with appropriate values.
                 """
-                del monitor, data, dc_
+                # pylint: disable=unused-argument
+
                 rct = rect.contents
                 self._monitors.append(
                     {
-                        "left": int(rct.left),
-                        "top": int(rct.top),
-                        "width": int(rct.right - rct.left),
-                        "height": int(rct.bottom - rct.top),
+                        "left": int_(rct.left),
+                        "top": int_(rct.top),
+                        "width": int_(rct.right - rct.left),
+                        "height": int_(rct.bottom - rct.top),
                     }
                 )
                 return 1
 
             callback = self.monitorenumproc(_callback)
-            self.user32.EnumDisplayMonitors(0, 0, callback, 0)
+            user32.EnumDisplayMonitors(0, 0, callback, 0)
 
         return self._monitors
 
