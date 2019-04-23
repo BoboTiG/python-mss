@@ -2,8 +2,11 @@ History:
 
 <see Git checking messages for history>
 
-4.0.3   2019/xx/xx
+4.0.3   2019/04/23
+      - The source code is now derived from master, where Python 2 support has been dropped.
+      - new contributor: @grintor, @SergeyKalutsky
       - Windows: use our own instances of GDI32 and User32 DLLs (backported from 5.0.0)
+      - Windows: fix the screen bounding AiO rectangle
 
 4.0.2   2019/02/23
       - new contributor: foone

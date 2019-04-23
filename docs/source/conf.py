@@ -29,7 +29,7 @@ author = "Tiger-222"
 # built documents.
 #
 # The short X.Y version.
-version = "4.0.2"
+version = "4.0.3"
 
 # The full version, including alpha/beta/rc tags.
 release = "latest"
