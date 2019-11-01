@@ -26,6 +26,7 @@ def mss(**kwargs):
         It then proxies its arguments to the class for
         instantiation.
     """
+    # pylint: disable=import-outside-toplevel
 
     os_ = platform.system().lower()
 
