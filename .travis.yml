@@ -4,32 +4,66 @@ dist: xenial
 matrix:
   fast_finish: true
   include:
-    - os: linux
-      python: "3.7"
+    - name: Code quality checks
+      os: linux
+      python: "3.8"
       env: TOXENV=lint
-    - os: linux
-      python: "3.7"
+    - name: Types checking
+      os: linux
+      python: "3.8"
       env: TOXENV=types
-    - os: linux
-      python: "3.7"
+    - name: Documentation build
+      os: linux
+      python: "3.8"
       env: TOXENV=docs
     - os: osx
-      language: generic
+      language: shell
+      before_install:
+        - bash .travis/install.sh
+      env:
+        - PYTHON_VERSION=3.5
+        - TOXENV=py35
+    - name: "Python 3.6 on macOS 10.13"
+      os: osx
+      osx_image: xcode9.4  # Python 3.6.5 running on macOS 10.13
+      language: shell
+      env:
+        - PYTHON_VERSION=3.6
+        - TOXENV=py36
+    - name: "Python 3.7 on macOS 10.14"
+      os: osx
+      osx_image: xcode10.2  # Python 3.7.3 running on macOS 10.14.3
+      language: shell
       env:
         - PYTHON_VERSION=3.7
         - TOXENV=py37
-    - os: linux
+    - os: osx
+      language: shell
+      before_install:
+        - bash .travis/install.sh
+      env:
+        - PYTHON_VERSION=3.8
+        - TOXENV=py38
+    - name: "PyPy 3.6 on GNU/Linux"
+      os: linux
+      python: "pypy3"
+      env: TOXENV=pypy3
+    - name: "Python 3.5 on GNU/Linux"
+      os: linux
       python: "3.5"
       env: TOXENV=py35
-    - os: linux
+    - name: "Python 3.6 on GNU/Linux"
+      os: linux
       python: "3.6"
       env: TOXENV=py36
-    - os: linux
+    - name: "Python 3.7 on GNU/Linux"
+      os: linux
       python: "3.7"
       env: TOXENV=py37
-    - os: linux
-      python: "pypy3.5"
-      env: TOXENV=pypy3
+    - name: "Python 3.8 on GNU/Linux"
+      os: linux
+      python: "3.8"
+      env: TOXENV=py38
 
 addons:
   apt:
@@ -38,9 +72,6 @@ addons:
 
 services:
   - xvfb
-
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then bash .travis/install.sh; fi
 
 install:
   - python -m pip install --upgrade pip tox

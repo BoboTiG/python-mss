@@ -24,6 +24,12 @@ environment:
     - python: py37-x64
       tox_env: py37
       python_path: c:\python37-x64
+    - python: py38
+      tox_env: py38
+      python_path: c:\python38
+    - python: py38-x64
+      tox_env: py38
+      python_path: c:\python38-x64
 
 install:
   - python -m pip install virtualenv
