@@ -235,8 +235,8 @@ class MSS(MSSMixin):
         See https://tronche.com/gui/x/xlib/function-index.html for details.
         """
 
-        def cfactory(attr=self.xlib, func=None, argtypes=None, restype=None):
-            # type: (Any, str, List[Any], Any) -> None
+        def cfactory(func, argtypes, restype, attr=self.xlib):
+            # type: (str, List[Any], Any, Any) -> None
             """ Factorize ctypes creations. """
             self._cfactory(
                 attr=attr,
@@ -254,30 +254,18 @@ class MSS(MSSMixin):
         char_p = ctypes.c_char_p
         pointer = ctypes.POINTER
 
-        cfactory(func="XSetErrorHandler", argtypes=[void], restype=c_int)
+        cfactory("XSetErrorHandler", [void], c_int)
+        cfactory("XGetErrorText", [pointer(Display), c_int, char_p, c_int], void)
+        cfactory("XOpenDisplay", [char_p], pointer(Display))
+        cfactory("XDefaultRootWindow", [pointer(Display)], pointer(XWindowAttributes))
         cfactory(
-            func="XGetErrorText",
-            argtypes=[pointer(Display), c_int, char_p, c_int],
-            restype=void,
-        )
-        cfactory(func="XOpenDisplay", argtypes=[char_p], restype=pointer(Display))
-        cfactory(
-            func="XDefaultRootWindow",
-            argtypes=[pointer(Display)],
-            restype=pointer(XWindowAttributes),
+            "XGetWindowAttributes",
+            [pointer(Display), pointer(XWindowAttributes), pointer(XWindowAttributes)],
+            c_int,
         )
         cfactory(
-            func="XGetWindowAttributes",
-            argtypes=[
-                pointer(Display),
-                pointer(XWindowAttributes),
-                pointer(XWindowAttributes),
-            ],
-            restype=c_int,
-        )
-        cfactory(
-            func="XGetImage",
-            argtypes=[
+            "XGetImage",
+            [
                 pointer(Display),
                 pointer(Display),
                 c_int,
@@ -287,9 +275,9 @@ class MSS(MSSMixin):
                 ulong,
                 c_int,
             ],
-            restype=pointer(XImage),
+            pointer(XImage),
         )
-        cfactory(func="XDestroyImage", argtypes=[pointer(XImage)], restype=void)
+        cfactory("XDestroyImage", [pointer(XImage)], void)
 
         # A simple benchmark calling 10 times those 2 functions:
         # XRRGetScreenResources():        0.1755971429956844 s
@@ -297,38 +285,33 @@ class MSS(MSSMixin):
         # The second is faster by a factor of 44! So try to use it first.
         try:
             cfactory(
+                "XRRGetScreenResourcesCurrent",
+                [pointer(Display), pointer(Display)],
+                pointer(XRRScreenResources),
                 attr=self.xrandr,
-                func="XRRGetScreenResourcesCurrent",
-                argtypes=[pointer(Display), pointer(Display)],
-                restype=pointer(XRRScreenResources),
             )
         except AttributeError:
             cfactory(
+                "XRRGetScreenResources",
+                [pointer(Display), pointer(Display)],
+                pointer(XRRScreenResources),
                 attr=self.xrandr,
-                func="XRRGetScreenResources",
-                argtypes=[pointer(Display), pointer(Display)],
-                restype=pointer(XRRScreenResources),
             )
             self.xrandr.XRRGetScreenResourcesCurrent = self.xrandr.XRRGetScreenResources
 
         cfactory(
+            "XRRGetCrtcInfo",
+            [pointer(Display), pointer(XRRScreenResources), c_long],
+            pointer(XRRCrtcInfo),
             attr=self.xrandr,
-            func="XRRGetCrtcInfo",
-            argtypes=[pointer(Display), pointer(XRRScreenResources), c_long],
-            restype=pointer(XRRCrtcInfo),
         )
         cfactory(
+            "XRRFreeScreenResources",
+            [pointer(XRRScreenResources)],
+            void,
             attr=self.xrandr,
-            func="XRRFreeScreenResources",
-            argtypes=[pointer(XRRScreenResources)],
-            restype=void,
         )
-        cfactory(
-            attr=self.xrandr,
-            func="XRRFreeCrtcInfo",
-            argtypes=[pointer(XRRCrtcInfo)],
-            restype=void,
-        )
+        cfactory("XRRFreeCrtcInfo", [pointer(XRRCrtcInfo)], void, attr=self.xrandr)
 
     def get_error_details(self):
         # type: () -> Optional[Dict[str, Any]]
