@@ -1,6 +1,10 @@
 fail_fast: true
 
 repos:
+-   repo: https://github.com/ambv/black
+    rev: stable
+    hooks:
+    - id: black
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: master
     hooks:
@@ -11,7 +15,3 @@ repos:
     - id: debug-statements
     - id: check-ast
     - id: no-commit-to-branch
--   repo: https://github.com/ambv/black
-    rev: stable
-    hooks:
-    - id: black
