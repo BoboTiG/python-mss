@@ -26,7 +26,7 @@ from .base import MSSMixin
 from .exception import ScreenShotError
 
 if TYPE_CHECKING:
-    from typing import Any  # noqa
+    from typing import Any, Dict  # noqa
 
     from .models import Monitor, Monitors  # noqa
     from .screenshot import ScreenShot  # noqa
@@ -90,7 +90,7 @@ class MSS(MSSMixin):
         self._set_cfunctions()
         self._set_dpi_awareness()
 
-        self._bbox = {"height": 0, "width": 0}
+        self._bbox = {}  # type: Dict[str, int]
         self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
         if not MSS.srcdc or not MSS.memdc:
@@ -263,8 +263,7 @@ class MSS(MSSMixin):
         srcdc, memdc = MSS.srcdc, MSS.memdc
         width, height = monitor["width"], monitor["height"]
 
-        if (self._bbox["height"], self._bbox["width"]) != (height, width):
-            self._bbox = monitor
+        if self._bbox != monitor:
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
             self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
@@ -272,6 +271,7 @@ class MSS(MSSMixin):
                 self.gdi32.DeleteObject(MSS.bmp)
             MSS.bmp = self.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             self.gdi32.SelectObject(memdc, MSS.bmp)
+            self._bbox = monitor
 
         self.gdi32.BitBlt(
             memdc,
