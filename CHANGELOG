@@ -2,9 +2,6 @@ History:
 
 <see Git checking messages for history>
 
-5.0.1   2020/xx/xx
-      - Windows: fix region caching that resulted in bad captures
-
 5.0.0   2019/12/31
       - removed support for Python 2.7
       - MSS: improve type annotations and add CI check
