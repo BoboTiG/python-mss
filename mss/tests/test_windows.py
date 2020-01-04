@@ -40,10 +40,10 @@ def test_region_caching():
         sct.grab(region1)
         bmp1 = MSS.bmp
 
-        # Grab the area 2, the cached BMP is updated
+        # Grab the area 2, the cached BMP is used
         sct.grab(region2)
         bmp2 = MSS.bmp
-        assert bmp1 is not bmp2
+        assert bmp1 is bmp2
 
         # Grab the area 2 again, the cached BMP is used
         sct.grab(region2)
