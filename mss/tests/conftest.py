@@ -6,8 +6,8 @@ Source: https://github.com/BoboTiG/python-mss
 import glob
 import os
 
-import mss
 import pytest
+import mss
 
 
 def purge_files():
@@ -47,3 +47,15 @@ def raw():
     file = os.path.join(here, "res", "monitor-1024x768.raw")
     with open(file, "rb") as f:
         yield f.read()
+
+
+@pytest.fixture(scope="module")
+def pixel_ratio(sct):
+    """Get the pixel, used to adapt test checks."""
+    # Grab a 1x1 screenshot
+    region = {"top": 0, "left": 0, "width": 1, "height": 1}
+
+    # On macOS with Retina display,the width will be 2 instead of 1
+    pixel_size = sct.grab(region).size[0]
+
+    return pixel_size

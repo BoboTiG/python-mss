@@ -63,10 +63,16 @@ def test_incomplete_class():
         sct.grab(sct.shot(mon=222))
 
 
-def test_repr(sct):
+def test_repr(sct, pixel_ratio):
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_box = {
+        "top": 0,
+        "left": 0,
+        "width": 10 * pixel_ratio,
+        "height": 10 * pixel_ratio,
+    }
     img = sct.grab(box)
-    ref = ScreenShot(bytearray(b"42"), box)
+    ref = ScreenShot(bytearray(b"42"), expected_box)
     assert repr(img) == repr(ref)
 
 
@@ -140,7 +146,7 @@ def test_entry_point(capsys, sct):
         assert out == "Coordinates syntax: top, left, width, height\n"
 
 
-def test_grab_with_tuple(sct):
+def test_grab_with_tuple(sct, pixel_ratio):
     left = 100
     top = 100
     right = 500
@@ -151,7 +157,7 @@ def test_grab_with_tuple(sct):
     # PIL like
     box = (left, top, right, lower)
     im = sct.grab(box)
-    assert im.size == (width, height)
+    assert im.size == (width * pixel_ratio, height * pixel_ratio)
 
     # MSS like
     box2 = {"left": left, "top": top, "width": width, "height": height}
@@ -161,7 +167,7 @@ def test_grab_with_tuple(sct):
     assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(sct):
+def test_grab_with_tuple_percents(sct, pixel_ratio):
     monitor = sct.monitors[1]
     left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
     top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
@@ -173,7 +179,7 @@ def test_grab_with_tuple_percents(sct):
     # PIL like
     box = (left, top, right, lower)
     im = sct.grab(box)
-    assert im.size == (width, height)
+    assert im.size == (width * pixel_ratio, height * pixel_ratio)
 
     # MSS like
     box2 = {"left": left, "top": top, "width": width, "height": height}

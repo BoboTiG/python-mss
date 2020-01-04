@@ -21,10 +21,10 @@ except ImportError:
 
 
 @pytest.mark.skipif(numpy is None, reason="Numpy module not available.")
-def test_numpy(sct):
+def test_numpy(sct, pixel_ratio):
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     img = numpy.array(sct.grab(box))
-    assert len(img) == 10
+    assert len(img) == 10 * pixel_ratio
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
