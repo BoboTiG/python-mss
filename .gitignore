@@ -3,7 +3,6 @@ build/
 dist/
 *.egg-info/
 .idea/
-MANIFEST*
 .DS_Store
 *.orig
 *.jpg

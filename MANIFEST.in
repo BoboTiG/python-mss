@@ -1,0 +1,3 @@
+# Include tests files and data
+include mss/tests/*.py
+recursive-include mss/tests/res *
