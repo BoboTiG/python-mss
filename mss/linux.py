@@ -9,7 +9,7 @@ import os
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
-from .base import MSSMixin
+from .base import MSSBase
 from .exception import ScreenShotError
 
 if TYPE_CHECKING:
@@ -175,7 +175,7 @@ def validate(retval, func, args):
     raise ScreenShotError(err, details=details)
 
 
-class MSS(MSSMixin):
+class MSS(MSSBase):
     """
     Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.

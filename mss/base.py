@@ -3,6 +3,7 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from .models import Monitor, Monitors  # noqa
 
 
-class MSSMixin:
+class MSSBase(metaclass=ABCMeta):
     """ This class will be overloaded by a system specific one. """
 
     __slots__ = {"_monitors", "cls_image", "compression_level"}
@@ -27,7 +28,7 @@ class MSSMixin:
         self._monitors = []  # type: Monitors
 
     def __enter__(self):
-        # type: () -> MSSMixin
+        # type: () -> MSSBase
         """ For the cool call `with MSS() as mss:`. """
 
         return self
@@ -41,6 +42,7 @@ class MSSMixin:
         # type: () -> None
         """ Clean-up. """
 
+    @abstractmethod
     def grab(self, monitor):
         # type: (Monitor) -> ScreenShot
         """
@@ -51,9 +53,8 @@ class MSSMixin:
         :return :class:`ScreenShot <ScreenShot>`.
         """
 
-        raise NotImplementedError("Subclasses need to implement this!")
-
     @property
+    @abstractmethod
     def monitors(self):
         # type: () -> Monitors
         """

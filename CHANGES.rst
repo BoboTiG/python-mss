@@ -1,4 +1,15 @@
-5.0.0 (2019-xx-xx)
+5.0.1 (2020-xx-xx)
+==================
+
+base.py
+-------
+- Renamed back ``MSSMixin`` class to ``MSSBase``
+- ``MSSBase`` is now derived from ``abc.ABCMeta``
+- ``MSSBase.monitor`` is now an abstract property
+- ``MSSBase.grab()`` is now an abstract method
+
+
+5.0.0 (2019-12-31)
 ==================
 
 darwin.py
