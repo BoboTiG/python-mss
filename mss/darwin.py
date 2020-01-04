@@ -8,7 +8,7 @@ import ctypes.util
 import sys
 from typing import TYPE_CHECKING
 
-from .base import MSSMixin
+from .base import MSSBase
 from .exception import ScreenShotError
 from .screenshot import Size
 
@@ -57,7 +57,7 @@ class CGRect(ctypes.Structure):
         return "{}<{} {}>".format(type(self).__name__, self.origin, self.size)
 
 
-class MSS(MSSMixin):
+class MSS(MSSBase):
     """
     Multiple ScreenShots implementation for macOS.
     It uses intensively the CoreGraphics library.
@@ -175,7 +175,7 @@ class MSS(MSSMixin):
     def grab(self, monitor):
         # type: (Monitor) -> ScreenShot
         """
-        See :meth:`MSSMixin.grab <mss.base.MSSMixin.grab>` for full details.
+        See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
         """
 
         # pylint: disable=too-many-locals

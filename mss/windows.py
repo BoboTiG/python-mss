@@ -22,7 +22,7 @@ from ctypes.wintypes import (
 )
 from typing import TYPE_CHECKING
 
-from .base import MSSMixin
+from .base import MSSBase
 from .exception import ScreenShotError
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class BITMAPINFO(ctypes.Structure):
     _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3)]
 
 
-class MSS(MSSMixin):
+class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
     __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "monitorenumproc", "user32"}

@@ -12,11 +12,11 @@ from .exception import ScreenShotError
 if TYPE_CHECKING:
     from typing import Any  # noqa
 
-    from .base import MSSMixin  # noqa
+    from .base import MSSBase  # noqa
 
 
 def mss(**kwargs):
-    # type: (Any) -> MSSMixin
+    # type: (Any) -> MSSBase
     """ Factory returning a proper MSS class instance.
 
         It detects the plateform we are running on

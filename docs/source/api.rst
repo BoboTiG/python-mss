@@ -59,7 +59,7 @@ GNU/Linux
         :rtype: :class:`~mss.base.ScreenShot`
         :raises ScreenShotError: When color depth is not 32 (rare).
 
-        See :meth:`~mss.base.MSSMixin.grab()` for details.
+        See :meth:`~mss.base.MSSBase.grab()` for details.
 
 .. function:: error_handler(display, event)
 
@@ -82,7 +82,7 @@ Methods
 
 .. module:: mss.base
 
-.. class:: MSSMixin
+.. class:: MSSBase
 
     The parent's class for every OS implementation.
 
@@ -96,9 +96,9 @@ Methods
 
         :param dict monitor: region's coordinates.
         :rtype: :class:`ScreenShot`
-        :raises NotImplementedError: Subclasses need to implement this.
 
         Retrieve screen pixels for a given *region*.
+        Subclasses need to implement this.
 
         .. note::
 
@@ -194,7 +194,7 @@ Methods
 Properties
 ==========
 
-.. class:: mss.base.MSSMixin
+.. class:: mss.base.MSSBase
 
     .. attribute:: monitors
 
@@ -214,6 +214,8 @@ Properties
         - ``top``: the y-coordinate of the upper-left corner
         - ``width``: the width
         - ``height``: the height
+
+        Subclasses need to implement this.
 
         :rtype:  list[dict[str, int]]
 
