@@ -79,8 +79,6 @@ class MSSBase(metaclass=ABCMeta):
         it must be converted to the appropriate dict.
         """
 
-        raise NotImplementedError("Subclasses need to implement this!")
-
     def save(self, mon=0, output="monitor-{mon}.png", callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]
         """
