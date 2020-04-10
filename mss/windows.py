@@ -93,7 +93,7 @@ class MSS(MSSBase):
         self._bbox = {"height": 0, "width": 0}
         self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
-        if not MSS.srcdc or not MSS.memdc:
+        if not (MSS.srcdc and MSS.memdc):
             MSS.srcdc = self.user32.GetWindowDC(0)
             MSS.memdc = self.gdi32.CreateCompatibleDC(MSS.srcdc)
 

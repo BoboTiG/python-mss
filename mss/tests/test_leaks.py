@@ -82,21 +82,21 @@ def with_context_manager():
 
 def regression_issue_128():
     """Regression test for issue #128: areas overlap."""
-    area1 = {"top": 50, "left": 7, "width": 400, "height": 320, "mon": 1}
-    area2 = {"top": 200, "left": 200, "width": 320, "height": 320, "mon": 1}
     with mss() as sct:
+        area1 = {"top": 50, "left": 7, "width": 400, "height": 320, "mon": 1}
         sct.grab(area1)
+        area2 = {"top": 200, "left": 200, "width": 320, "height": 320, "mon": 1}
         sct.grab(area2)
 
 
 def regression_issue_135():
     """Regression test for issue #135: multiple areas."""
-    bounding_box_notes = {"top": 0, "left": 0, "width": 100, "height": 100}
-    bounding_box_score = {"top": 110, "left": 110, "width": 100, "height": 100}
-    bounding_box_test = {"top": 220, "left": 220, "width": 100, "height": 100}
     with mss() as sct:
+        bounding_box_notes = {"top": 0, "left": 0, "width": 100, "height": 100}
         sct.grab(bounding_box_notes)
+        bounding_box_test = {"top": 220, "left": 220, "width": 100, "height": 100}
         sct.grab(bounding_box_test)
+        bounding_box_score = {"top": 110, "left": 110, "width": 100, "height": 100}
         sct.grab(bounding_box_score)
 
 

@@ -26,19 +26,19 @@ def test_region_caching():
     """The region to grab is cached, ensure this is well-done."""
     from mss.windows import MSS
 
-    # Same sizes but different positions
-    region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
-    region2 = {"top": 200, "left": 200, "width": 200, "height": 200}
-
     with mss.mss() as sct:
         # Reset the current BMP
         if MSS.bmp:
             sct.gdi32.DeleteObject(MSS.bmp)
             MSS.bmp = None
 
+        # Same sizes but different positions
+        region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
         # Grab the area 1
         sct.grab(region1)
         bmp1 = MSS.bmp
+
+        region2 = {"top": 200, "left": 200, "width": 200, "height": 200}
 
         # Grab the area 2, the cached BMP is used
         sct.grab(region2)
@@ -47,4 +47,4 @@ def test_region_caching():
 
         # Grab the area 2 again, the cached BMP is used
         sct.grab(region2)
-        assert bmp2 is MSS.bmp
+        assert bmp2 is bmp2
