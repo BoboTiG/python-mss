@@ -44,3 +44,4 @@ Utilities
 - `Philips Hue Lights Ambiance <https://github.com/digital-concrete-jungle/hue-ambiance>`_;
 - `Flexx Python UI toolkit <https://github.com/zoofio/flexx>`_;
 - `NativeShot <https://addons.mozilla.org/en-US/firefox/addon/nativeshot/>`_ (Mozilla Firefox module);
+- `normcap <https://github.com/dynobo/normcap>`_, OCR powered screen-capture tool to capture information instead of images;
