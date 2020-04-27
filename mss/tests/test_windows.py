@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 
 import platform
+import threading
 
 import mss
 import pytest
@@ -48,3 +49,22 @@ def test_region_caching():
         # Grab the area 2 again, the cached BMP is used
         sct.grab(region2)
         assert bmp2 is MSS.bmp
+
+
+def run_child_thread(loops):
+    # every loop will take about 1 second.
+    for i in range(loops):
+        with mss.mss() as sct:
+            mon = sct.monitors[1]
+            sct.grab(mon)
+
+
+def test_thread_safety():
+    """Thread safety test for issue #150."""
+    # let thread 1 finished ahead of thread2
+    thread1 = threading.Thread(target=run_child_thread, args=(30,))
+    thread2 = threading.Thread(target=run_child_thread, args=(50,))
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()

@@ -8,6 +8,11 @@ base.py
 - ``MSSBase.monitor`` is now an abstract property
 - ``MSSBase.grab()`` is now an abstract method
 
+windows.py
+----------
+ - replace ``MSS.srcdc`` with ``MSS.srcdc_dict``
+ - add a threading lock ``MSS._lock``
+
 
 5.0.0 (2019-12-31)
 ==================
