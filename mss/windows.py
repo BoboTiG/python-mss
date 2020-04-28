@@ -74,9 +74,11 @@ class MSS(MSSBase):
     # Class attributes instanced one time to prevent resource leaks.
     bmp = None
     memdc = None
-    # a dict to maintain srcdc values created by multiple threads.
+
+    # A dict to maintain *srcdc* values created by multiple threads.
     srcdc_dict = {}
-    # a threading lock to lock resources(bmp/memdc/srcdc) inside grab method.
+
+    # A threading lock to lock resources(bmp/memdc/srcdc) inside .grab() method.
     _lock = threading.Lock()
 
     def __init__(self, **_):
