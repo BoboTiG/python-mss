@@ -8,6 +8,10 @@ base.py
 - ``MSSBase.monitor`` is now an abstract property
 - ``MSSBase.grab()`` is now an abstract method
 
+windows.py
+----------
+ - Replaced ``MSS.srcdc`` with ``MSS.srcdc_dict``
+
 
 5.0.0 (2019-12-31)
 ==================

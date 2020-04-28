@@ -7,6 +7,8 @@ History:
       - MSS: renamed again MSSMixin to MSSBase, now derived from abc.ABCMeta
       - tools: force write of file when saving a PNG file
       - tests: fix tests on macOS with Retina display
+      - Windows: fixed multi-thread safety (fixes #150)
+      - :heart: contributors: @narumishi
 
 5.0.0   2019/12/31
       - removed support for Python 2.7

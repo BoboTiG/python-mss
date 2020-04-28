@@ -5,6 +5,7 @@ Source: https://github.com/BoboTiG/python-mss
 
 import sys
 import ctypes
+import threading
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -70,10 +71,15 @@ class MSS(MSSBase):
 
     __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "monitorenumproc", "user32"}
 
-    # Class attributes instancied one time to prevent resource leaks.
+    # Class attributes instanced one time to prevent resource leaks.
     bmp = None
     memdc = None
-    srcdc = None
+
+    # A dict to maintain *srcdc* values created by multiple threads.
+    srcdc_dict = {}
+
+    # A threading lock to lock resources(bmp/memdc/srcdc) inside .grab() method.
+    _lock = threading.Lock()
 
     def __init__(self, **_):
         # type: (Any) -> None
@@ -93,9 +99,9 @@ class MSS(MSSBase):
         self._bbox = {"height": 0, "width": 0}
         self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
-        if not MSS.srcdc or not MSS.memdc:
-            MSS.srcdc = self.user32.GetWindowDC(0)
-            MSS.memdc = self.gdi32.CreateCompatibleDC(MSS.srcdc)
+        srcdc = self._get_srcdc()
+        if not MSS.memdc:
+            MSS.memdc = self.gdi32.CreateCompatibleDC(srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -174,6 +180,20 @@ class MSS(MSSBase):
             # Windows Vista, 7, 8 and Server 2012
             self.user32.SetProcessDPIAware()
 
+    def _get_srcdc(self):
+        """
+        Retrieve a thread-safe HDC from GetWindowDC().
+        In multithreading, if the thread who creates *srcdc* is dead, *srcdc* will
+        no longer be valid to grab the screen. The *srcdc* attribute is replaced
+        with *srcdc_dict* to maintain the *srcdc* values in multithreading.
+        Since the current thread and main thread are always alive, reuse their *srcdc* value first.
+        """
+        cur_thread, main_thread = threading.current_thread(), threading.main_thread()
+        srcdc = MSS.srcdc_dict.get(cur_thread) or MSS.srcdc_dict.get(main_thread)
+        if not srcdc:
+            srcdc = MSS.srcdc_dict[cur_thread] = self.user32.GetWindowDC(0)
+        return srcdc
+
     @property
     def monitors(self):
         # type: () -> Monitors
@@ -251,6 +271,9 @@ class MSS(MSSBase):
             Thanks to http://stackoverflow.com/a/3688682
         """
 
+        # Acquire lock to prevent resources from being modified by multiple threads at same time.
+        MSS._lock.acquire()
+
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
             monitor = {
@@ -260,7 +283,7 @@ class MSS(MSSBase):
                 "height": monitor[3] - monitor[1],
             }
 
-        srcdc, memdc = MSS.srcdc, MSS.memdc
+        srcdc, memdc = self._get_srcdc(), MSS.memdc
         width, height = monitor["width"], monitor["height"]
 
         if (self._bbox["height"], self._bbox["width"]) != (height, width):
@@ -287,6 +310,7 @@ class MSS(MSSBase):
         bits = self.gdi32.GetDIBits(
             memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
         )
+        MSS._lock.release()
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 

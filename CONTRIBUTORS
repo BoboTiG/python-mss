@@ -30,6 +30,9 @@ Jochen 'cycomanic' Schroeder [https://github.com/cycomanic]
 Karan Lyons <karan@karanlyons.com> [https://karanlyons.com] [https://github.com/karanlyons]
     - MacOS: Proper support for display scaling
 
+narumi [https://github.com/narumishi]
+    - Windows: fix multi-thread unsafe
+
 Oros <oros@ecirtam.net> [https://ecirtam.net]
     - GNU/Linux tester
 
