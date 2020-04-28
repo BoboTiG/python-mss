@@ -52,11 +52,10 @@ def test_region_caching():
 
 
 def run_child_thread(loops):
-    # every loop will take about 1 second.
-    for i in range(loops):
+    """Every loop will take about 1 second."""
+    for _ in range(loops):
         with mss.mss() as sct:
-            mon = sct.monitors[1]
-            sct.grab(mon)
+            sct.grab(sct.monitors[1])
 
 
 def test_thread_safety():
