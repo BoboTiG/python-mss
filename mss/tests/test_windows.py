@@ -59,8 +59,10 @@ def run_child_thread(loops):
 
 
 def test_thread_safety():
-    """Thread safety test for issue #150."""
-    # let thread 1 finished ahead of thread2
+    """Thread safety test for issue #150.
+    The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
+    """
+    # Let thread 1 finished ahead of thread 2
     thread1 = threading.Thread(target=run_child_thread, args=(30,))
     thread2 = threading.Thread(target=run_child_thread, args=(50,))
     thread1.start()
