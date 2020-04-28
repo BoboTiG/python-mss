@@ -27,7 +27,7 @@ from .base import MSSBase
 from .exception import ScreenShotError
 
 if TYPE_CHECKING:
-    from typing import Any  # noqa
+    from typing import Any, Dict  # noqa
 
     from .models import Monitor, Monitors  # noqa
     from .screenshot import ScreenShot  # noqa
@@ -76,7 +76,7 @@ class MSS(MSSBase):
     memdc = None
 
     # A dict to maintain *srcdc* values created by multiple threads.
-    srcdc_dict = {}
+    srcdc_dict = {}  # type: Dict[int, Any]
 
     # A threading lock to lock resources(bmp/memdc/srcdc) inside .grab() method.
     _lock = threading.Lock()
