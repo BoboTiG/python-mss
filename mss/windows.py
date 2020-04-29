@@ -76,7 +76,7 @@ class MSS(MSSBase):
     memdc = None
 
     # A dict to maintain *srcdc* values created by multiple threads.
-    srcdc_dict = {}  # type: Dict[int, Any]
+    srcdc_dict = {}  # type: Dict[threading.Thread, int]
 
     # A threading lock to lock resources(bmp/memdc/srcdc) inside .grab() method.
     _lock = threading.Lock()
