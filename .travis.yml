@@ -32,18 +32,25 @@ matrix:
         - TOXENV=py36
     - name: "Python 3.7 on macOS 10.14"
       os: osx
-      osx_image: xcode10.2  # Python 3.7.3 running on macOS 10.14.3
+      osx_image: xcode11.2  # Python 3.7.4 running on macOS 10.14.4
       language: shell
       env:
         - PYTHON_VERSION=3.7
         - TOXENV=py37
+    - name: "Python 3.8 on macOS 10.14"
+      os: osx
+      osx_image: xcode11.3  # Python 3.8.0 running on macOS 10.14.6
+      language: shell
+      env:
+        - PYTHON_VERSION=3.8
+        - TOXENV=py38
     - os: osx
       language: shell
       before_install:
         - bash .travis/install.sh
       env:
-        - PYTHON_VERSION=3.8
-        - TOXENV=py38
+        - PYTHON_VERSION=3.9
+        - TOXENV=py39
     - name: "PyPy 3.6 on GNU/Linux"
       os: linux
       python: "pypy3"
@@ -64,6 +71,10 @@ matrix:
       os: linux
       python: "3.8"
       env: TOXENV=py38
+    - name: "Python 3.9 on GNU/Linux"
+      os: linux
+      python: "nightly"
+      env: TOXENV=py39
 
 addons:
   apt:
