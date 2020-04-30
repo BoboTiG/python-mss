@@ -3,7 +3,7 @@ History:
 <see Git checking messages for history>
 
 5.1.1   2020/xx/xx
-      -
+      - removed usage of deprecated "license_file" option for "license_files"
       - :heart: contributors: @
 
 5.1.0   2020/04/30
