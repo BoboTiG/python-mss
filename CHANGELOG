@@ -2,6 +2,10 @@ History:
 
 <see Git checking messages for history>
 
+5.1.1   2020/xx/xx
+      -
+      - :heart: contributors: @
+
 5.1.0   2020/04/30
       - produce wheels for Python 3 only
       - MSS: renamed again MSSMixin to MSSBase, now derived from abc.ABCMeta
