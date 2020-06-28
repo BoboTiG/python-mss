@@ -6,6 +6,7 @@ History:
       - removed usage of deprecated "license_file" option for "license_files"
       - fixed flake8 usage in pre-commit
       - MSS: the implementation is now thread-safe on all OSes (fixes #169)
+      - tests: fixed a random bug on test_grab_with_tuple_percents() (fixes #142)
       - :heart: contributors: @
 
 5.1.0   2020/04/30
