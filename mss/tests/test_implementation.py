@@ -168,3 +168,32 @@ def test_grab_with_tuple_percents(sct, pixel_ratio):
     assert im.size == im2.size
     assert im.pos == im2.pos
     assert im.rgb == im2.rgb
+
+
+def test_thread_safety():
+    """Regression test for issue #169."""
+    import threading
+    import time
+
+    def record(check):
+        """Record for one second."""
+
+        start_time = time.time()
+        while time.time() - start_time < 1:
+            with mss.mss() as sct:
+                sct.grab(sct.monitors[1])
+
+        check[threading.current_thread()] = True
+
+    checkpoint = {}
+    t1 = threading.Thread(target=record, args=(checkpoint,))
+    t2 = threading.Thread(target=record, args=(checkpoint,))
+
+    t1.start()
+    time.sleep(0.5)
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+    assert len(checkpoint) == 2
