@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import os
+import threading
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -187,6 +188,12 @@ class MSS(MSSBase):
     # Instancied one time to prevent resource leak.
     display = None
 
+    # A dict to maintain *display* values created by multiple threads.
+    _display_dict = {}  # type: Dict[threading.Thread, int]
+
+    # A threading lock to lock resources.
+    _lock = threading.Lock()
+
     def __init__(self, display=None):
         # type: (Optional[Union[bytes, str]]) -> None
         """ GNU/Linux initialisations. """
@@ -221,13 +228,28 @@ class MSS(MSSBase):
 
         self._set_cfunctions()
 
-        if not MSS.display:
-            MSS.display = self.xlib.XOpenDisplay(display)
-        self.root = self.xlib.XDefaultRootWindow(MSS.display)
+        self.root = self.xlib.XDefaultRootWindow(self._get_display(display))
 
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
+
+    def _get_display(self, disp=None):
+        """
+        Retrieve a thread-safe display from XOpenDisplay().
+        In multithreading, if the thread who creates *display* is dead, *display* will
+        no longer be valid to grab the screen. The *display* attribute is replaced
+        with *_display_dict* to maintain the *display* values in multithreading.
+        Since the current thread and main thread are always alive, reuse their
+        *display* value first.
+        """
+        cur_thread, main_thread = threading.current_thread(), threading.main_thread()
+        display = MSS._display_dict.get(cur_thread) or MSS._display_dict.get(
+            main_thread
+        )
+        if not display:
+            display = MSS._display_dict[cur_thread] = self.xlib.XOpenDisplay(disp)
+        return display
 
     def _set_cfunctions(self):
         """
@@ -324,7 +346,7 @@ class MSS(MSSBase):
             ERROR.details = None
             xserver_error = ctypes.create_string_buffer(1024)
             self.xlib.XGetErrorText(
-                MSS.display,
+                self._get_display(),
                 details.get("xerror_details", {}).get("error_code", 0),
                 xserver_error,
                 len(xserver_error),
@@ -335,53 +357,66 @@ class MSS(MSSBase):
 
         return details
 
+    def _monitors_impl(self):
+        # type: () -> None
+        """
+        Get positions of monitors (has to be run using a threading lock).
+        It will populate self._monitors.
+        """
+
+        display = self._get_display()
+        int_ = int
+        xrandr = self.xrandr
+
+        # All monitors
+        gwa = XWindowAttributes()
+        self.xlib.XGetWindowAttributes(display, self.root, ctypes.byref(gwa))
+        self._monitors.append(
+            {
+                "left": int_(gwa.x),
+                "top": int_(gwa.y),
+                "width": int_(gwa.width),
+                "height": int_(gwa.height),
+            }
+        )
+
+        # Each monitors
+        mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
+        crtcs = mon.crtcs
+        for idx in range(mon.ncrtc):
+            crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
+            if crtc.noutput == 0:
+                xrandr.XRRFreeCrtcInfo(crtc)
+                continue
+
+            self._monitors.append(
+                {
+                    "left": int_(crtc.x),
+                    "top": int_(crtc.y),
+                    "width": int_(crtc.width),
+                    "height": int_(crtc.height),
+                }
+            )
+            xrandr.XRRFreeCrtcInfo(crtc)
+        xrandr.XRRFreeScreenResources(mon)
+
     @property
     def monitors(self):
         # type: () -> Monitors
         """ Get positions of monitors (see parent class property). """
 
         if not self._monitors:
-            display = MSS.display
-            int_ = int
-            xrandr = self.xrandr
-
-            # All monitors
-            gwa = XWindowAttributes()
-            self.xlib.XGetWindowAttributes(display, self.root, ctypes.byref(gwa))
-            self._monitors.append(
-                {
-                    "left": int_(gwa.x),
-                    "top": int_(gwa.y),
-                    "width": int_(gwa.width),
-                    "height": int_(gwa.height),
-                }
-            )
-
-            # Each monitors
-            mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
-            crtcs = mon.crtcs
-            for idx in range(mon.ncrtc):
-                crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
-                if crtc.noutput == 0:
-                    xrandr.XRRFreeCrtcInfo(crtc)
-                    continue
-
-                self._monitors.append(
-                    {
-                        "left": int_(crtc.x),
-                        "top": int_(crtc.y),
-                        "width": int_(crtc.width),
-                        "height": int_(crtc.height),
-                    }
-                )
-                xrandr.XRRFreeCrtcInfo(crtc)
-            xrandr.XRRFreeScreenResources(mon)
+            with MSS._lock:
+                self._monitors_impl()
 
         return self._monitors
 
-    def grab(self, monitor):
+    def _grab_impl(self, monitor):
         # type: (Monitor) -> ScreenShot
-        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
+        """
+        Retrieve all pixels from a monitor. Pixels have to be RGB.
+        That method has to be run using a threading lock.
+        """
 
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
@@ -393,7 +428,7 @@ class MSS(MSSBase):
             }
 
         ximage = self.xlib.XGetImage(
-            MSS.display,
+            self._get_display(),
             self.drawable,
             monitor["left"],
             monitor["top"],
@@ -424,3 +459,10 @@ class MSS(MSSBase):
             self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
+
+    def grab(self, monitor):
+        # type: (Monitor) -> ScreenShot
+        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
+
+        with MSS._lock:
+            return self._grab_impl(monitor)
