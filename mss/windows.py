@@ -76,10 +76,7 @@ class MSS(MSSBase):
     memdc = None
 
     # A dict to maintain *srcdc* values created by multiple threads.
-    srcdc_dict = {}  # type: Dict[threading.Thread, int]
-
-    # A threading lock to lock resources(bmp/memdc/srcdc) inside .grab() method.
-    _lock = threading.Lock()
+    _srcdc_dict = {}  # type: Dict[threading.Thread, int]
 
     def __init__(self, **_):
         # type: (Any) -> None
@@ -185,103 +182,88 @@ class MSS(MSSBase):
         Retrieve a thread-safe HDC from GetWindowDC().
         In multithreading, if the thread who creates *srcdc* is dead, *srcdc* will
         no longer be valid to grab the screen. The *srcdc* attribute is replaced
-        with *srcdc_dict* to maintain the *srcdc* values in multithreading.
+        with *_srcdc_dict* to maintain the *srcdc* values in multithreading.
         Since the current thread and main thread are always alive, reuse their *srcdc* value first.
         """
         cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        srcdc = MSS.srcdc_dict.get(cur_thread) or MSS.srcdc_dict.get(main_thread)
+        srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(main_thread)
         if not srcdc:
-            srcdc = MSS.srcdc_dict[cur_thread] = self.user32.GetWindowDC(0)
+            srcdc = MSS._srcdc_dict[cur_thread] = self.user32.GetWindowDC(0)
         return srcdc
 
-    @property
-    def monitors(self):
-        # type: () -> Monitors
-        """ Get positions of monitors (see parent class). """
+    def _monitors_impl(self):
+        # type: () -> None
+        """ Get positions of monitors. It will populate self._monitors. """
 
-        if not self._monitors:
-            int_ = int
-            user32 = self.user32
-            get_system_metrics = user32.GetSystemMetrics
+        int_ = int
+        user32 = self.user32
+        get_system_metrics = user32.GetSystemMetrics
 
-            # All monitors
+        # All monitors
+        self._monitors.append(
+            {
+                "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
+                "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
+                "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
+                "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
+            }
+        )
+
+        # Each monitors
+        def _callback(monitor, data, rect, dc_):
+            # types: (int, HDC, LPRECT, LPARAM) -> int
+            """
+            Callback for monitorenumproc() function, it will return
+            a RECT with appropriate values.
+            """
+            # pylint: disable=unused-argument
+
+            rct = rect.contents
             self._monitors.append(
                 {
-                    "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
-                    "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
-                    "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
-                    "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
+                    "left": int_(rct.left),
+                    "top": int_(rct.top),
+                    "width": int_(rct.right - rct.left),
+                    "height": int_(rct.bottom - rct.top),
                 }
             )
+            return 1
 
-            # Each monitors
-            def _callback(monitor, data, rect, dc_):
-                # types: (int, HDC, LPRECT, LPARAM) -> int
-                """
-                Callback for monitorenumproc() function, it will return
-                a RECT with appropriate values.
-                """
-                # pylint: disable=unused-argument
+        callback = self.monitorenumproc(_callback)
+        user32.EnumDisplayMonitors(0, 0, callback, 0)
 
-                rct = rect.contents
-                self._monitors.append(
-                    {
-                        "left": int_(rct.left),
-                        "top": int_(rct.top),
-                        "width": int_(rct.right - rct.left),
-                        "height": int_(rct.bottom - rct.top),
-                    }
-                )
-                return 1
-
-            callback = self.monitorenumproc(_callback)
-            user32.EnumDisplayMonitors(0, 0, callback, 0)
-
-        return self._monitors
-
-    def grab(self, monitor):
+    def _grab_impl(self, monitor):
         # type: (Monitor) -> ScreenShot
-        """ Retrieve all pixels from a monitor. Pixels have to be RGB.
-
-            In the code, there are few interesting things:
-
-            [1] bmi.bmiHeader.biHeight = -height
-
-            A bottom-up DIB is specified by setting the height to a
-            positive number, while a top-down DIB is specified by
-            setting the height to a negative number.
-            https://msdn.microsoft.com/en-us/library/ms787796.aspx
-            https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
-
-
-            [2] bmi.bmiHeader.biBitCount = 32
-                image_data = create_string_buffer(height * width * 4)
-
-            We grab the image in RGBX mode, so that each word is 32bit
-            and we have no striding, then we transform to RGB.
-            Inspired by https://github.com/zoofIO/flexx
-
-
-            [3] bmi.bmiHeader.biClrUsed = 0
-                bmi.bmiHeader.biClrImportant = 0
-
-            When biClrUsed and biClrImportant are set to zero, there
-            is "no" color table, so we can read the pixels of the bitmap
-            retrieved by gdi32.GetDIBits() as a sequence of RGB values.
-            Thanks to http://stackoverflow.com/a/3688682
         """
+        Retrieve all pixels from a monitor. Pixels have to be RGB.
 
-        # Acquire lock to prevent resources from being modified by multiple threads at same time.
-        MSS._lock.acquire()
+        In the code, there are few interesting things:
 
-        # Convert PIL bbox style
-        if isinstance(monitor, tuple):
-            monitor = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
+        [1] bmi.bmiHeader.biHeight = -height
+
+        A bottom-up DIB is specified by setting the height to a
+        positive number, while a top-down DIB is specified by
+        setting the height to a negative number.
+        https://msdn.microsoft.com/en-us/library/ms787796.aspx
+        https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
+
+
+        [2] bmi.bmiHeader.biBitCount = 32
+            image_data = create_string_buffer(height * width * 4)
+
+        We grab the image in RGBX mode, so that each word is 32bit
+        and we have no striding.
+        Inspired by https://github.com/zoofIO/flexx
+
+
+        [3] bmi.bmiHeader.biClrUsed = 0
+            bmi.bmiHeader.biClrImportant = 0
+
+        When biClrUsed and biClrImportant are set to zero, there
+        is "no" color table, so we can read the pixels of the bitmap
+        retrieved by gdi32.GetDIBits() as a sequence of RGB values.
+        Thanks to http://stackoverflow.com/a/3688682
+        """
 
         srcdc, memdc = self._get_srcdc(), MSS.memdc
         width, height = monitor["width"], monitor["height"]
@@ -310,7 +292,6 @@ class MSS(MSSBase):
         bits = self.gdi32.GetDIBits(
             memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
         )
-        MSS._lock.release()
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
