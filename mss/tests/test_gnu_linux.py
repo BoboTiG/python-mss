@@ -109,10 +109,9 @@ def test_no_xrandr_extension(monkeypatch):
 
 def test_region_out_of_monitor_bounds():
     display = os.getenv("DISPLAY")
-    monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
-
     with mss.mss(display=display) as sct:
         with pytest.raises(ScreenShotError) as exc:
+            monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
             assert sct.grab(monitor)
 
         assert str(exc.value)
