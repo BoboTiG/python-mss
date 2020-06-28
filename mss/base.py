@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING
+from threading import Lock
 
 from .exception import ScreenShotError
 from .screenshot import ScreenShot
@@ -15,6 +16,9 @@ if TYPE_CHECKING:
     from typing import Any, Callable, Iterator, List, Optional, Type  # noqa
 
     from .models import Monitor, Monitors  # noqa
+
+
+lock = Lock()
 
 
 class MSSBase(metaclass=ABCMeta):
@@ -38,23 +42,51 @@ class MSSBase(metaclass=ABCMeta):
 
         self.close()
 
+    @abstractmethod
+    def _grab_impl(self, monitor):
+        # type: (Monitor) -> ScreenShot
+        """
+        Retrieve all pixels from a monitor. Pixels have to be RGB.
+        That method has to be run using a threading lock.
+        """
+
+    @abstractmethod
+    def _monitors_impl(self):
+        # type: () -> None
+        """
+        Get positions of monitors (has to be run using a threading lock).
+        It must populate self._monitors.
+        """
+
     def close(self):
         # type: () -> None
         """ Clean-up. """
 
-    @abstractmethod
     def grab(self, monitor):
         # type: (Monitor) -> ScreenShot
         """
         Retrieve screen pixels for a given monitor.
+
+        Note: *monitor* can be a tuple like PIL.Image.grab() accepts.
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
         :return :class:`ScreenShot <ScreenShot>`.
         """
 
+        # Convert PIL bbox style
+        if isinstance(monitor, tuple):
+            monitor = {
+                "left": monitor[0],
+                "top": monitor[1],
+                "width": monitor[2] - monitor[0],
+                "height": monitor[3] - monitor[1],
+            }
+
+        with lock:
+            return self._grab_impl(monitor)
+
     @property
-    @abstractmethod
     def monitors(self):
         # type: () -> Monitors
         """
@@ -74,10 +106,13 @@ class MSSBase(metaclass=ABCMeta):
             'width':  the width,
             'height': the height
         }
-
-        Note: monitor can be a tuple like PIL.Image.grab() accepts,
-        it must be converted to the appropriate dict.
         """
+
+        if not self._monitors:
+            with lock:
+                self._monitors_impl()
+
+        return self._monitors
 
     def save(self, mon=0, output="monitor-{mon}.png", callback=None):
         # type: (int, str, Callable[[str], None]) -> Iterator[str]

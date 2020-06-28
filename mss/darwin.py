@@ -120,74 +120,59 @@ class MSS(MSSBase):
         cfactory(func="CGDataProviderRelease", argtypes=[void], restype=void)
         cfactory(func="CFRelease", argtypes=[void], restype=void)
 
-    @property
-    def monitors(self):
-        # type: () -> Monitors
-        """ Get positions of monitors (see parent class). """
+    def _monitors_impl(self):
+        # type: () -> None
+        """ Get positions of monitors. It will populate self._monitors. """
 
-        if not self._monitors:
-            int_ = int
-            core = self.core
+        int_ = int
+        core = self.core
 
-            # All monitors
-            # We need to update the value with every single monitor found
-            # using CGRectUnion.  Else we will end with infinite values.
-            all_monitors = CGRect()
-            self._monitors.append({})
+        # All monitors
+        # We need to update the value with every single monitor found
+        # using CGRectUnion.  Else we will end with infinite values.
+        all_monitors = CGRect()
+        self._monitors.append({})
 
-            # Each monitors
-            display_count = ctypes.c_uint32(0)
-            active_displays = (ctypes.c_uint32 * self.max_displays)()
-            core.CGGetActiveDisplayList(
-                self.max_displays, active_displays, ctypes.byref(display_count)
+        # Each monitors
+        display_count = ctypes.c_uint32(0)
+        active_displays = (ctypes.c_uint32 * self.max_displays)()
+        core.CGGetActiveDisplayList(
+            self.max_displays, active_displays, ctypes.byref(display_count)
+        )
+        rotations = {0.0: "normal", 90.0: "right", -90.0: "left"}
+        for idx in range(display_count.value):
+            display = active_displays[idx]
+            rect = core.CGDisplayBounds(display)
+            rect = core.CGRectStandardize(rect)
+            width, height = rect.size.width, rect.size.height
+            rot = core.CGDisplayRotation(display)
+            if rotations[rot] in ["left", "right"]:
+                width, height = height, width
+            self._monitors.append(
+                {
+                    "left": int_(rect.origin.x),
+                    "top": int_(rect.origin.y),
+                    "width": int_(width),
+                    "height": int_(height),
+                }
             )
-            rotations = {0.0: "normal", 90.0: "right", -90.0: "left"}
-            for idx in range(display_count.value):
-                display = active_displays[idx]
-                rect = core.CGDisplayBounds(display)
-                rect = core.CGRectStandardize(rect)
-                width, height = rect.size.width, rect.size.height
-                rot = core.CGDisplayRotation(display)
-                if rotations[rot] in ["left", "right"]:
-                    width, height = height, width
-                self._monitors.append(
-                    {
-                        "left": int_(rect.origin.x),
-                        "top": int_(rect.origin.y),
-                        "width": int_(width),
-                        "height": int_(height),
-                    }
-                )
 
-                # Update AiO monitor's values
-                all_monitors = core.CGRectUnion(all_monitors, rect)
+            # Update AiO monitor's values
+            all_monitors = core.CGRectUnion(all_monitors, rect)
 
-            # Set the AiO monitor's values
-            self._monitors[0] = {
-                "left": int_(all_monitors.origin.x),
-                "top": int_(all_monitors.origin.y),
-                "width": int_(all_monitors.size.width),
-                "height": int_(all_monitors.size.height),
-            }
+        # Set the AiO monitor's values
+        self._monitors[0] = {
+            "left": int_(all_monitors.origin.x),
+            "top": int_(all_monitors.origin.y),
+            "width": int_(all_monitors.size.width),
+            "height": int_(all_monitors.size.height),
+        }
 
-        return self._monitors
-
-    def grab(self, monitor):
+    def _grab_impl(self, monitor):
         # type: (Monitor) -> ScreenShot
-        """
-        See :meth:`MSSBase.grab <mss.base.MSSBase.grab>` for full details.
-        """
+        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
 
         # pylint: disable=too-many-locals
-
-        # Convert PIL bbox style
-        if isinstance(monitor, tuple):
-            monitor = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
 
         core = self.core
         rect = CGRect(

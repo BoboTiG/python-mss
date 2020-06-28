@@ -191,9 +191,6 @@ class MSS(MSSBase):
     # A dict to maintain *display* values created by multiple threads.
     _display_dict = {}  # type: Dict[threading.Thread, int]
 
-    # A threading lock to lock resources.
-    _lock = threading.Lock()
-
     def __init__(self, display=None):
         # type: (Optional[Union[bytes, str]]) -> None
         """ GNU/Linux initialisations. """
@@ -359,10 +356,7 @@ class MSS(MSSBase):
 
     def _monitors_impl(self):
         # type: () -> None
-        """
-        Get positions of monitors (has to be run using a threading lock).
-        It will populate self._monitors.
-        """
+        """ Get positions of monitors. It will populate self._monitors. """
 
         display = self._get_display()
         int_ = int
@@ -400,32 +394,9 @@ class MSS(MSSBase):
             xrandr.XRRFreeCrtcInfo(crtc)
         xrandr.XRRFreeScreenResources(mon)
 
-    @property
-    def monitors(self):
-        # type: () -> Monitors
-        """ Get positions of monitors (see parent class property). """
-
-        if not self._monitors:
-            with MSS._lock:
-                self._monitors_impl()
-
-        return self._monitors
-
     def _grab_impl(self, monitor):
         # type: (Monitor) -> ScreenShot
-        """
-        Retrieve all pixels from a monitor. Pixels have to be RGB.
-        That method has to be run using a threading lock.
-        """
-
-        # Convert PIL bbox style
-        if isinstance(monitor, tuple):
-            monitor = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
+        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
 
         ximage = self.xlib.XGetImage(
             self._get_display(),
@@ -459,10 +430,3 @@ class MSS(MSSBase):
             self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
-
-    def grab(self, monitor):
-        # type: (Monitor) -> ScreenShot
-        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
-
-        with MSS._lock:
-            return self._grab_impl(monitor)

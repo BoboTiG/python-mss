@@ -1,7 +1,30 @@
-5.1.1 (2020-xx-xx)
+6.0.0 (2020-xx-xx)
 ==================
 
+base.py
+-------
+ - Added ``lock``
+ - Added ``MSS._grab_impl()`` (abstract method)
+ - Added ``MSS._monitors_impl()`` (abstract method)
+ - ``MSS.grab()`` is no more an abstract method
+ - ``MSS.monitors`` is no more an abstract property
 
+darwin.py
+---------
+ - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+ - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
+
+linux.py
+--------
+ - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+ - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
+
+windows.py
+----------
+ - Removed ``MSS._lock``
+ - Renamed ``MSS.srcdc_dict`` to ``MSS._srcdc_dict``
+ - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+ - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
 
 
 5.1.0 (2020-04-30)
