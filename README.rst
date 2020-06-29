@@ -9,6 +9,8 @@ Python MSS
     :target: https://saythanks.io/to/BoboTiG
 .. image:: https://pepy.tech/badge/mss
     :target: https://pepy.tech/project/mss
+.. image:: https://anaconda.org/conda-forge/python-mss/badges/installer/conda.svg
+    :target: https://anaconda.org/conda-forge/python-mss
 
 
 .. code-block:: python
@@ -41,3 +43,7 @@ Installation
 You can install it with pip::
 
     python -m pip install -U --user mss
+
+Or you can install it with conda::
+
+    conda install -c conda-forge python-mss
