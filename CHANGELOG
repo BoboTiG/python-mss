@@ -7,6 +7,7 @@ History:
       - fixed flake8 usage in pre-commit
       - the module is now available on conda (closes #170)
       - MSS: the implementation is now thread-safe on all OSes (fixes #169)
+      - Linux: better handling of the Xrandr extension (fixes #168)
       - tests: fixed a random bug on test_grab_with_tuple_percents() (fixes #142)
       - :heart: contributors: @
 

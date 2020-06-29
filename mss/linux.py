@@ -10,7 +10,7 @@ import threading
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
-from .base import MSSBase
+from .base import MSSBase, lock
 from .exception import ScreenShotError
 
 if TYPE_CHECKING:
@@ -227,9 +227,35 @@ class MSS(MSSBase):
 
         self.root = self.xlib.XDefaultRootWindow(self._get_display(display))
 
+        if not self.has_extension("RANDR"):
+            raise ScreenShotError("No Xrandr extension found.")
+
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
         self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
+
+    def has_extension(self, extension):
+        # type: (str) -> bool
+        """Return True if the given *extension* is part of the extensions list of the server."""
+        with lock:
+            byref = ctypes.byref
+            c_int = ctypes.c_int
+            major_opcode_return = c_int()
+            first_event_return = c_int()
+            first_error_return = c_int()
+
+            try:
+                self.xlib.XQueryExtension(
+                    self._get_display(),
+                    extension.encode("latin1"),
+                    byref(major_opcode_return),
+                    byref(first_event_return),
+                    byref(first_error_return),
+                )
+            except ScreenShotError:
+                return False
+            else:
+                return True
 
     def _get_display(self, disp=None):
         """
@@ -297,6 +323,11 @@ class MSS(MSSBase):
             pointer(XImage),
         )
         cfactory("XDestroyImage", [pointer(XImage)], void)
+        cfactory(
+            "XQueryExtension",
+            [pointer(Display), char_p, pointer(c_int), pointer(c_int), pointer(c_int)],
+            uint,
+        )
 
         # A simple benchmark calling 10 times those 2 functions:
         # XRRGetScreenResources():        0.1755971429956844 s

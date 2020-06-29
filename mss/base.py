@@ -13,6 +13,7 @@ from .screenshot import ScreenShot
 from .tools import to_png
 
 if TYPE_CHECKING:
+    # pylint: disable=ungrouped-imports
     from typing import Any, Callable, Iterator, List, Optional, Type  # noqa
 
     from .models import Monitor, Monitors  # noqa
