@@ -121,3 +121,10 @@ def test_region_out_of_monitor_bounds():
         details = sct.get_error_details()
         assert details["xerror"]
         assert isinstance(details["xerror_details"], dict)
+
+
+def test_has_extension():
+    display = os.getenv("DISPLAY")
+    with mss.mss(display=display) as sct:
+        assert sct.has_extension("RANDR")
+        assert not sct.has_extension("NOEXT")
