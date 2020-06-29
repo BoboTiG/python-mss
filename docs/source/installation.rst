@@ -11,6 +11,12 @@ Quite simple::
 
     $ python -m pip install -U --user mss
 
+Conda Package
+-------------
+
+The module is also available from conda::
+
+    $ conda install -c conda-forge python-mss
 
 From Sources
 ============
