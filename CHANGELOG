@@ -2,7 +2,7 @@ History:
 
 <see Git checking messages for history>
 
-6.0.0   2020/xx/xx
+6.0.0   2020/06/30
       - removed usage of deprecated "license_file" option for "license_files"
       - fixed flake8 usage in pre-commit
       - the module is now available on conda (closes #170)
