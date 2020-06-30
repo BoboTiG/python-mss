@@ -17,6 +17,7 @@ darwin.py
 linux.py
 --------
  - Added ``MSS.has_extension()``
+ - Removed ``MSS.display``
  - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
  - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
 
