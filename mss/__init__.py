@@ -12,7 +12,7 @@ If that URL should fail, try contacting the author.
 from .exception import ScreenShotError
 from .factory import mss
 
-__version__ = "6.0.0"
+__version__ = "6.0.1"
 __author__ = "Mickaël 'Tiger-222' Schoentgen"
 __copyright__ = """
     Copyright (c) 2013-2020, Mickaël 'Tiger-222' Schoentgen

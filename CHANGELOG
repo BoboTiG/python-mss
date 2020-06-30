@@ -2,6 +2,9 @@ History:
 
 <see Git checking messages for history>
 
+6.0.1   2020/xx/xx
+      - :heart: contributors: @
+
 6.0.0   2020/06/30
       - removed usage of deprecated "license_file" option for "license_files"
       - fixed flake8 usage in pre-commit
@@ -9,7 +12,6 @@ History:
       - MSS: the implementation is now thread-safe on all OSes (fixes #169)
       - Linux: better handling of the Xrandr extension (fixes #168)
       - tests: fixed a random bug on test_grab_with_tuple_percents() (fixes #142)
-      - :heart: contributors: @
 
 5.1.0   2020/04/30
       - produce wheels for Python 3 only
