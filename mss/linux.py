@@ -184,10 +184,6 @@ class MSS(MSSBase):
 
     __slots__ = {"drawable", "root", "xlib", "xrandr"}
 
-    # Class attribute to store the display opened with XOpenDisplay().
-    # Instancied one time to prevent resource leak.
-    display = None
-
     # A dict to maintain *display* values created by multiple threads.
     _display_dict = {}  # type: Dict[threading.Thread, int]
 
