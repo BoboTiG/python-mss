@@ -4,6 +4,7 @@ History:
 
 6.0.1   2020/xx/xx
       - Mac: reduce the number of function calls
+      - tests: fix macOS intepreter not found on Travis-CI
       - :heart: contributors: @
 
 6.0.0   2020/06/30
