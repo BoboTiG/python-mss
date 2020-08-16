@@ -92,7 +92,6 @@ class MSS(MSSBase):
 
         uint32 = ctypes.c_uint32
         void = ctypes.c_void_p
-        size_t = ctypes.c_size_t
         pointer = ctypes.POINTER
 
         cfactory(
@@ -109,14 +108,14 @@ class MSS(MSSBase):
             argtypes=[CGRect, uint32, uint32, uint32],
             restype=void,
         )
-        cfactory(func="CGImageGetWidth", argtypes=[void], restype=size_t)
-        cfactory(func="CGImageGetHeight", argtypes=[void], restype=size_t)
+        cfactory(func="CGImageGetWidth", argtypes=[void], restype=int)
+        cfactory(func="CGImageGetHeight", argtypes=[void], restype=int)
         cfactory(func="CGImageGetDataProvider", argtypes=[void], restype=void)
         cfactory(func="CGDataProviderCopyData", argtypes=[void], restype=void)
         cfactory(func="CFDataGetBytePtr", argtypes=[void], restype=void)
         cfactory(func="CFDataGetLength", argtypes=[void], restype=ctypes.c_uint64)
-        cfactory(func="CGImageGetBytesPerRow", argtypes=[void], restype=size_t)
-        cfactory(func="CGImageGetBitsPerPixel", argtypes=[void], restype=size_t)
+        cfactory(func="CGImageGetBytesPerRow", argtypes=[void], restype=int)
+        cfactory(func="CGImageGetBitsPerPixel", argtypes=[void], restype=int)
         cfactory(func="CGDataProviderRelease", argtypes=[void], restype=void)
         cfactory(func="CFRelease", argtypes=[void], restype=void)
 
@@ -183,8 +182,8 @@ class MSS(MSSBase):
         if not image_ref:
             raise ScreenShotError("CoreGraphics.CGWindowListCreateImage() failed.")
 
-        width = int(core.CGImageGetWidth(image_ref))
-        height = int(core.CGImageGetHeight(image_ref))
+        width = core.CGImageGetWidth(image_ref)
+        height = core.CGImageGetHeight(image_ref)
         prov = copy_data = None
         try:
             prov = core.CGImageGetDataProvider(image_ref)
@@ -195,8 +194,8 @@ class MSS(MSSBase):
             data = bytearray(raw.contents)
 
             # Remove padding per row
-            bytes_per_row = int(core.CGImageGetBytesPerRow(image_ref))
-            bytes_per_pixel = int(core.CGImageGetBitsPerPixel(image_ref))
+            bytes_per_row = core.CGImageGetBytesPerRow(image_ref)
+            bytes_per_pixel = core.CGImageGetBitsPerPixel(image_ref)
             bytes_per_pixel = (bytes_per_pixel + 7) // 8
 
             if bytes_per_pixel * width != bytes_per_row:
