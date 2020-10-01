@@ -22,7 +22,7 @@ Python MSS
         sct.shot()
 
 
-An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
+ Presenting an amazing ultra fast cross-platform multiple screenshots module in pure python using ctypes.
 
 - **Python 3.5+** and PEP8 compliant, no dependency, thread-safe;
 - very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file;
@@ -47,3 +47,7 @@ You can install it with pip::
 Or you can install it with conda::
 
     conda install -c conda-forge python-mss
+    
+
+***Thank you reading the whole guide . Hope you'd liked it :D***
+***Enjoy coding!***
