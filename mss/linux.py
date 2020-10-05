@@ -148,6 +148,26 @@ class XRRCrtcInfo(ctypes.Structure):
     ]
 
 
+class XFixesCursorImage(ctypes.Structure):
+    """
+    XFixes is an X Window System extension.
+    See /usr/include/X11/extensions/Xfixes.h
+    """
+
+    _fields_ = [
+        ('x', ctypes.c_short),
+        ('y', ctypes.c_short),
+        ('width', ctypes.c_ushort),
+        ('height', ctypes.c_ushort),
+        ('xhot', ctypes.c_ushort),
+        ('yhot', ctypes.c_ushort),
+        ('cursor_serial', ctypes.c_ulong),
+        ('pixels', ctypes.POINTER(ctypes.c_ulong)),
+        ('atom', ctypes.c_ulong),
+        ('name', ctypes.c_char_p),
+    ]
+
+
 @ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
 def error_handler(_, event):
     # type: (Any, Any) -> int
@@ -182,7 +202,7 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"drawable", "root", "xlib", "xrandr"}
+    __slots__ = {"drawable", "root", "xlib", "xrandr", "xfixes"}
 
     # A dict to maintain *display* values created by multiple threads.
     _display_dict = {}  # type: Dict[threading.Thread, int]
@@ -219,6 +239,12 @@ class MSS(MSSBase):
         if not xrandr:
             raise ScreenShotError("No Xrandr extension found.")
         self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
+
+        xfixes = ctypes.util.find_library("Xfixes")
+        if not xfixes:
+            # FIXME : instead of raising, disable cursor capture
+            raise Exception("No XFixes extension found.")
+        self.xfixes = ctypes.cdll.LoadLibrary(xfixes)
 
         self._set_cfunctions()
 
@@ -287,6 +313,7 @@ class MSS(MSSBase):
         cfactory = self._cfactory
         xlib = self.xlib
         xrandr = self.xrandr
+        xfixes = self.xfixes
 
         # Note: keep it sorted
         for attr, func, argtypes, restype in (
@@ -297,6 +324,12 @@ class MSS(MSSBase):
                 pointer(XWindowAttributes),
             ),
             (xlib, "XDestroyImage", [pointer(XImage)], void),
+            (
+                xfixes,
+                "XFixesGetCursorImage",
+                [pointer(Display)],
+                pointer(XFixesCursorImage),
+            ),
             (xlib, "XGetErrorText", [pointer(Display), c_int, char_p, c_int], void),
             (
                 xlib,
@@ -472,5 +505,44 @@ class MSS(MSSBase):
         finally:
             # Free
             self.xlib.XDestroyImage(ximage)
+
+        return self.cls_image(data, monitor)
+
+    def _cursor_impl(self):
+        # type: () -> ScreenShot
+        """ Retrieve all cursor data. Pixels have to be RGB. """
+
+        # Call the function. Read data of cursor/mouse-pointer.
+        cursor_data = self.xfixes.XFixesGetCursorImage(
+            self._get_display()
+        )
+
+        if not (cursor_data and cursor_data[0]):
+            raise Exception("Cannot read XFixesGetCursorImage()")
+
+        # Note: cursor_data is a pointer, take cursor_data[0]
+        ximage = cursor_data[0]
+
+        monitor = {
+            "left": ximage.x - ximage.xhot,
+            "top": ximage.y - ximage.yhot,
+            "width": ximage.width,
+            "height": ximage.height,
+        }
+
+        raw_data = ctypes.cast(
+            ximage.pixels,
+            ctypes.POINTER(
+                ctypes.c_ulong * monitor["height"] * monitor["width"]
+            ),
+        )[0]
+
+        raw = bytearray(raw_data)
+
+        data = bytearray(monitor["height"] * monitor["width"] * 4)
+        data[3::4] = raw[3::8]
+        data[2::4] = raw[2::8]
+        data[1::4] = raw[1::8]
+        data[0::4] = raw[0::8]
 
         return self.cls_image(data, monitor)

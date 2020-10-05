@@ -63,8 +63,8 @@ class MSSBase(metaclass=ABCMeta):
         # type: () -> None
         """ Clean-up. """
 
-    def grab(self, monitor):
-        # type: (Monitor) -> ScreenShot
+    def grab(self, monitor, with_cursor=False):
+        # type: (Monitor, Optional[bool]) -> ScreenShot
         """
         Retrieve screen pixels for a given monitor.
 
@@ -72,6 +72,10 @@ class MSSBase(metaclass=ABCMeta):
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
+
+        :param bool with_cursor: include mouse cursor in capture or not.
+                        See :meth:`monitors <monitors>` for object details.
+
         :return :class:`ScreenShot <ScreenShot>`.
         """
 
@@ -85,7 +89,16 @@ class MSSBase(metaclass=ABCMeta):
             }
 
         with lock:
-            return self._grab_impl(monitor)
+            screenshot = self._grab_impl(monitor)
+            if with_cursor:
+                try:
+                    return self.draw(
+                        screenshot, self._cursor_impl()
+                    )
+                except NotImplementedError:
+                    return screenshot
+            else:
+                return screenshot
 
     @property
     def monitors(self):
@@ -194,3 +207,63 @@ class MSSBase(metaclass=ABCMeta):
         meth.restype = restype
         if errcheck:
             meth.errcheck = errcheck
+
+    @staticmethod
+    def draw(background, foreground):
+        # type: (ScreenShot, ScreenShot) -> ScreenShot
+        """ Create composite image by blending screenshot and mouse cursor. """
+
+        (cx, cy), (cw, ch) = foreground.pos, foreground.size
+        (x, y), (w, h) = background.pos, background.size
+
+        cx2, cy2 = cx + cw, cy + ch
+        x2, y2 = x + w, y + h
+
+        overlap = (cx < x2 and cx2 > x and
+                   cy < y2 and cy2 > y)
+
+        if not overlap:
+            return background
+
+        screen = background.raw
+        cursor = foreground.raw
+        rgb = range(3)
+
+        cy, cy2 = (cy - y) * 4, (cy2 - y2) * 4
+        cx, cx2 = (cx - x) * 4, (cx2 - x2) * 4
+
+        startCountY = - cy if cy < 0 else 0
+        startCountX = - cx if cx < 0 else 0
+
+        stopCountY = ch * 4 - (cy2 if cy2 > 0 else 0)
+        stopCountX = cw * 4 - (cx2 if cx2 > 0 else 0)
+
+        Yrange = range(startCountY, stopCountY, 4)
+        Xrange = range(startCountX, stopCountX, 4)
+
+        for countY in Yrange:
+
+            sPos = (countY + cy) * w + cx
+            cPos = countY * cw
+
+            for countX in Xrange:
+
+                spos = sPos + countX
+                cpos = cPos + countX
+                alpha = cursor[cpos + 3]
+
+                if not alpha:
+                    continue
+
+                elif alpha == 255:
+                    screen[spos:spos + 3] = cursor[cpos:cpos + 3]
+
+                else:
+                    alpha = alpha / 255
+                    for i in rgb:
+                        screen[spos + i] = int(
+                            cursor[cpos + i] * alpha +
+                            screen[spos + i] * (1 - alpha)
+                        )
+
+        return background
