@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import sys
+from platform import mac_ver
 from typing import TYPE_CHECKING
 
 from .base import MSSBase
@@ -72,12 +73,22 @@ class MSS(MSSBase):
 
         self.max_displays = 32
 
-        coregraphics = ctypes.util.find_library("CoreGraphics")
+        self._init_library()
+        self._set_cfunctions()
+
+    def _init_library(self):
+        """ Load the CoreGraphics library. """
+        version = float(".".join(mac_ver()[0].split(".")[:2]))
+        if version < 10.16:
+            coregraphics = ctypes.util.find_library("CoreGraphics")
+        else:
+            # macOS Big Sur and newer
+            # pylint: disable=line-too-long
+            coregraphics = "/System/Library/Frameworks/CoreGraphics.framework/Versions/Current/CoreGraphics"
+
         if not coregraphics:
             raise ScreenShotError("No CoreGraphics library found.")
         self.core = ctypes.cdll.LoadLibrary(coregraphics)
-
-        self._set_cfunctions()
 
     def _set_cfunctions(self):
         # type: () -> None

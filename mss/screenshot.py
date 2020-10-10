@@ -152,6 +152,7 @@ class ScreenShot:
         try:
             return self.pixels[coord_y][coord_x]  # type: ignore
         except IndexError:
+            # pylint: disable=raise-missing-from
             raise ScreenShotError(
                 "Pixel location ({}, {}) is out of range.".format(coord_x, coord_y)
             )

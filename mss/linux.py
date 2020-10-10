@@ -197,6 +197,7 @@ class MSS(MSSBase):
             try:
                 display = os.environ["DISPLAY"].encode("utf-8")
             except KeyError:
+                # pylint: disable=raise-missing-from
                 raise ScreenShotError("$DISPLAY not set.")
 
         if not isinstance(display, bytes):
