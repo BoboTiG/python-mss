@@ -277,17 +277,6 @@ class MSS(MSSBase):
         See https://tronche.com/gui/x/xlib/function-index.html for details.
         """
 
-        def cfactory(func, argtypes, restype, attr=self.xlib):
-            # type: (str, List[Any], Any, Any) -> None
-            """ Factorize ctypes creations. """
-            self._cfactory(
-                attr=attr,
-                errcheck=validate,
-                func=func,
-                argtypes=argtypes,
-                restype=restype,
-            )
-
         void = ctypes.c_void_p
         c_int = ctypes.c_int
         uint = ctypes.c_uint
@@ -295,36 +284,75 @@ class MSS(MSSBase):
         c_long = ctypes.c_long
         char_p = ctypes.c_char_p
         pointer = ctypes.POINTER
+        cfactory = self._cfactory
+        xlib = self.xlib
+        xrandr = self.xrandr
 
-        cfactory("XSetErrorHandler", [void], c_int)
-        cfactory("XGetErrorText", [pointer(Display), c_int, char_p, c_int], void)
-        cfactory("XOpenDisplay", [char_p], pointer(Display))
-        cfactory("XDefaultRootWindow", [pointer(Display)], pointer(XWindowAttributes))
-        cfactory(
-            "XGetWindowAttributes",
-            [pointer(Display), pointer(XWindowAttributes), pointer(XWindowAttributes)],
-            c_int,
-        )
-        cfactory(
-            "XGetImage",
-            [
-                pointer(Display),
-                pointer(Display),
+        # Note: keep it sorted
+        for attr, func, argtypes, restype in (
+            (
+                xlib,
+                "XDefaultRootWindow",
+                [pointer(Display)],
+                pointer(XWindowAttributes),
+            ),
+            (xlib, "XDestroyImage", [pointer(XImage)], void),
+            (xlib, "XGetErrorText", [pointer(Display), c_int, char_p, c_int], void),
+            (
+                xlib,
+                "XGetImage",
+                [
+                    pointer(Display),
+                    pointer(Display),
+                    c_int,
+                    c_int,
+                    uint,
+                    uint,
+                    ulong,
+                    c_int,
+                ],
+                pointer(XImage),
+            ),
+            (
+                xlib,
+                "XGetWindowAttributes",
+                [
+                    pointer(Display),
+                    pointer(XWindowAttributes),
+                    pointer(XWindowAttributes),
+                ],
                 c_int,
-                c_int,
+            ),
+            (xlib, "XOpenDisplay", [char_p], pointer(Display)),
+            (
+                xlib,
+                "XQueryExtension",
+                [
+                    pointer(Display),
+                    char_p,
+                    pointer(c_int),
+                    pointer(c_int),
+                    pointer(c_int),
+                ],
                 uint,
-                uint,
-                ulong,
-                c_int,
-            ],
-            pointer(XImage),
-        )
-        cfactory("XDestroyImage", [pointer(XImage)], void)
-        cfactory(
-            "XQueryExtension",
-            [pointer(Display), char_p, pointer(c_int), pointer(c_int), pointer(c_int)],
-            uint,
-        )
+            ),
+            (xlib, "XSetErrorHandler", [void], c_int),
+            (xrandr, "XRRFreeCrtcInfo", [pointer(XRRCrtcInfo)], void),
+            (xrandr, "XRRFreeScreenResources", [pointer(XRRScreenResources)], void),
+            (
+                xrandr,
+                "XRRGetCrtcInfo",
+                [pointer(Display), pointer(XRRScreenResources), c_long],
+                pointer(XRRCrtcInfo),
+            ),
+        ):
+            cfactory(
+                attr=attr,
+                errcheck=validate,
+                func=func,
+                argtypes=argtypes,
+                restype=restype,
+            )  # type: ignore
 
         # A simple benchmark calling 10 times those 2 functions:
         # XRRGetScreenResources():        0.1755971429956844 s
@@ -332,33 +360,21 @@ class MSS(MSSBase):
         # The second is faster by a factor of 44! So try to use it first.
         try:
             cfactory(
-                "XRRGetScreenResourcesCurrent",
-                [pointer(Display), pointer(Display)],
-                pointer(XRRScreenResources),
-                attr=self.xrandr,
+                attr=xrandr,
+                func="XRRGetScreenResourcesCurrent",
+                errcheck=validate,
+                argtypes=[pointer(Display), pointer(Display)],
+                restype=pointer(XRRScreenResources),
             )
         except AttributeError:
             cfactory(
-                "XRRGetScreenResources",
-                [pointer(Display), pointer(Display)],
-                pointer(XRRScreenResources),
-                attr=self.xrandr,
+                attr=xrandr,
+                func="XRRGetScreenResources",
+                errcheck=validate,
+                argtypes=[pointer(Display), pointer(Display)],
+                restype=pointer(XRRScreenResources),
             )
-            self.xrandr.XRRGetScreenResourcesCurrent = self.xrandr.XRRGetScreenResources
-
-        cfactory(
-            "XRRGetCrtcInfo",
-            [pointer(Display), pointer(XRRScreenResources), c_long],
-            pointer(XRRCrtcInfo),
-            attr=self.xrandr,
-        )
-        cfactory(
-            "XRRFreeScreenResources",
-            [pointer(XRRScreenResources)],
-            void,
-            attr=self.xrandr,
-        )
-        cfactory("XRRFreeCrtcInfo", [pointer(XRRCrtcInfo)], void, attr=self.xrandr)
+            xrandr.XRRGetScreenResourcesCurrent = xrandr.XRRGetScreenResources
 
     def get_error_details(self):
         # type: () -> Optional[Dict[str, Any]]

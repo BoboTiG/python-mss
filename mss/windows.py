@@ -114,53 +114,34 @@ class MSS(MSSBase):
 
         void = ctypes.c_void_p
         pointer = ctypes.POINTER
+        cfactory = self._cfactory
+        gdi32 = self.gdi32
+        user32 = self.user32
 
-        self._cfactory(
-            attr=self.user32, func="GetSystemMetrics", argtypes=[INT], restype=INT
-        )
-        self._cfactory(
-            attr=self.user32,
-            func="EnumDisplayMonitors",
-            argtypes=[HDC, void, self.monitorenumproc, LPARAM],
-            restype=BOOL,
-        )
-        self._cfactory(
-            attr=self.user32, func="GetWindowDC", argtypes=[HWND], restype=HDC
-        )
-
-        self._cfactory(
-            attr=self.gdi32, func="GetDeviceCaps", argtypes=[HWND, INT], restype=INT
-        )
-        self._cfactory(
-            attr=self.gdi32, func="CreateCompatibleDC", argtypes=[HDC], restype=HDC
-        )
-        self._cfactory(
-            attr=self.gdi32,
-            func="CreateCompatibleBitmap",
-            argtypes=[HDC, INT, INT],
-            restype=HBITMAP,
-        )
-        self._cfactory(
-            attr=self.gdi32,
-            func="SelectObject",
-            argtypes=[HDC, HGDIOBJ],
-            restype=HGDIOBJ,
-        )
-        self._cfactory(
-            attr=self.gdi32,
-            func="BitBlt",
-            argtypes=[HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD],
-            restype=BOOL,
-        )
-        self._cfactory(
-            attr=self.gdi32, func="DeleteObject", argtypes=[HGDIOBJ], restype=INT
-        )
-        self._cfactory(
-            attr=self.gdi32,
-            func="GetDIBits",
-            argtypes=[HDC, HBITMAP, UINT, UINT, void, pointer(BITMAPINFO), UINT],
-            restype=BOOL,
-        )
+        # Note: keep it sorted
+        for attr, func, argtypes, restype in (
+            (gdi32, "BitBlt", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
+            (gdi32, "CreateCompatibleBitmap", [HDC, INT, INT], HBITMAP),
+            (gdi32, "CreateCompatibleDC", [HDC], HDC),
+            (gdi32, "DeleteObject", [HGDIOBJ], INT),
+            (gdi32, "GetDeviceCaps", [HWND, INT], INT),
+            (
+                gdi32,
+                "GetDIBits",
+                [HDC, HBITMAP, UINT, UINT, void, pointer(BITMAPINFO), UINT],
+                BOOL,
+            ),
+            (gdi32, "SelectObject", [HDC, HGDIOBJ], HGDIOBJ),
+            (
+                user32,
+                "EnumDisplayMonitors",
+                [HDC, void, self.monitorenumproc, LPARAM],
+                BOOL,
+            ),
+            (user32, "GetSystemMetrics", [INT], INT),
+            (user32, "GetWindowDC", [HWND], HDC),
+        ):
+            cfactory(attr=attr, func=func, argtypes=argtypes, restype=restype)  # type: ignore
 
     def _set_dpi_awareness(self):
         """ Set DPI aware to capture full screen on Hi-DPI monitors. """

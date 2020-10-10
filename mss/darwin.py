@@ -94,41 +94,36 @@ class MSS(MSSBase):
         # type: () -> None
         """ Set all ctypes functions and attach them to attributes. """
 
-        def cfactory(func, argtypes, restype):
-            # type: (str, List[Any], Any) -> None
-            """ Factorize ctypes creations. """
-            self._cfactory(
-                attr=self.core, func=func, argtypes=argtypes, restype=restype
-            )
-
         uint32 = ctypes.c_uint32
         void = ctypes.c_void_p
         pointer = ctypes.POINTER
+        cfactory = self._cfactory
+        core = self.core
 
-        cfactory(
-            func="CGGetActiveDisplayList",
-            argtypes=[uint32, pointer(uint32), pointer(uint32)],
-            restype=ctypes.c_int32,
-        )
-        cfactory(func="CGDisplayBounds", argtypes=[uint32], restype=CGRect)
-        cfactory(func="CGRectStandardize", argtypes=[CGRect], restype=CGRect)
-        cfactory(func="CGRectUnion", argtypes=[CGRect, CGRect], restype=CGRect)
-        cfactory(func="CGDisplayRotation", argtypes=[uint32], restype=ctypes.c_float)
-        cfactory(
-            func="CGWindowListCreateImage",
-            argtypes=[CGRect, uint32, uint32, uint32],
-            restype=void,
-        )
-        cfactory(func="CGImageGetWidth", argtypes=[void], restype=int)
-        cfactory(func="CGImageGetHeight", argtypes=[void], restype=int)
-        cfactory(func="CGImageGetDataProvider", argtypes=[void], restype=void)
-        cfactory(func="CGDataProviderCopyData", argtypes=[void], restype=void)
-        cfactory(func="CFDataGetBytePtr", argtypes=[void], restype=void)
-        cfactory(func="CFDataGetLength", argtypes=[void], restype=ctypes.c_uint64)
-        cfactory(func="CGImageGetBytesPerRow", argtypes=[void], restype=int)
-        cfactory(func="CGImageGetBitsPerPixel", argtypes=[void], restype=int)
-        cfactory(func="CGDataProviderRelease", argtypes=[void], restype=void)
-        cfactory(func="CFRelease", argtypes=[void], restype=void)
+        # Note: keep it sorted
+        for func, argtypes, restype in (
+            ("CGDataProviderCopyData", [void], void),
+            ("CGDisplayBounds", [uint32], CGRect),
+            ("CGDisplayRotation", [uint32], ctypes.c_float),
+            ("CFDataGetBytePtr", [void], void),
+            ("CFDataGetLength", [void], ctypes.c_uint64),
+            ("CFRelease", [void], void),
+            ("CGDataProviderRelease", [void], void),
+            (
+                "CGGetActiveDisplayList",
+                [uint32, pointer(uint32), pointer(uint32)],
+                ctypes.c_int32,
+            ),
+            ("CGImageGetBitsPerPixel", [void], int),
+            ("CGImageGetBytesPerRow", [void], int),
+            ("CGImageGetDataProvider", [void], void),
+            ("CGImageGetHeight", [void], int),
+            ("CGImageGetWidth", [void], int),
+            ("CGRectStandardize", [CGRect], CGRect),
+            ("CGRectUnion", [CGRect, CGRect], CGRect),
+            ("CGWindowListCreateImage", [CGRect, uint32, uint32, uint32], void),
+        ):
+            cfactory(attr=core, func=func, argtypes=argtypes, restype=restype)  # type: ignore
 
     def _monitors_impl(self):
         # type: () -> None
