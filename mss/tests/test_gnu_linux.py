@@ -37,7 +37,8 @@ def test_factory_systems(monkeypatch):
 
     # macOS
     monkeypatch.setattr(platform, "system", lambda: "Darwin")
-    with pytest.raises(ScreenShotError):
+    with pytest.raises((ScreenShotError, ValueError)):
+        # ValueError on macOS Big Sur
         mss.mss()
     monkeypatch.undo()
 

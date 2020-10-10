@@ -164,6 +164,7 @@ class MSSBase(metaclass=ABCMeta):
             try:
                 monitor = monitors[mon]
             except IndexError:
+                # pylint: disable=raise-missing-from
                 raise ScreenShotError("Monitor {!r} does not exist.".format(mon))
 
             output = output.format(mon=mon, date=datetime.now(), **monitor)

@@ -44,10 +44,13 @@ def test_repr():
 
 def test_implementation(monkeypatch):
     # No `CoreGraphics` library
-    monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
-    with pytest.raises(ScreenShotError):
-        mss.mss()
-    monkeypatch.undo()
+    version = float(".".join(platform.mac_ver()[0].split(".")[:2]))
+
+    if version < 10.16:
+        monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
+        with pytest.raises(ScreenShotError):
+            mss.mss()
+        monkeypatch.undo()
 
     with mss.mss() as sct:
         # Test monitor's rotation
