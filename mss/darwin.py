@@ -218,3 +218,9 @@ class MSS(MSSBase):
                 core.CFRelease(copy_data)
 
         return self.cls_image(data, monitor, size=Size(width, height))
+
+    def _cursor_impl(self):
+        # type: () -> ScreenShot
+        """ Retrieve all cursor data. Pixels have to be RGB. """
+
+        raise NotImplementedError

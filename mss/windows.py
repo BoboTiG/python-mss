@@ -277,3 +277,9 @@ class MSS(MSSBase):
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
         return self.cls_image(bytearray(self._data), monitor)
+
+    def _cursor_impl(self):
+        # type: () -> ScreenShot
+        """ Retrieve all cursor data. Pixels have to be RGB. """
+
+        raise NotImplementedError
