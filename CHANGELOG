@@ -3,6 +3,7 @@ History:
 <see Git checking messages for history>
 
 6.0.1   2020/xx/xx
+      - MSS: reworked how C functions are initialised
       - Mac: reduce the number of function calls
       - Mac: support macOS Big Sur (fixes #178)
       - tests: fix macOS intepreter not found on Travis-CI

@@ -5,10 +5,19 @@ MSS API
 Classes
 =======
 
+macOS
+-----
+
+.. module:: mss.darwin
+
+.. attribute:: CFUNCTIONS
+
 GNU/Linux
 ---------
 
 .. module:: mss.linux
+
+.. attribute:: CFUNCTIONS
 
 .. attribute:: ERROR
 
@@ -17,6 +26,10 @@ GNU/Linux
     The `details` attribute contains the latest Xlib or XRANDR function. It is a dict.
 
     .. versionadded:: 5.0.0
+
+.. attribute:: PLAINMASK
+
+.. attribute:: ZPIXMAP
 
 .. class:: MSS
 
@@ -76,6 +89,18 @@ GNU/Linux
 
     .. versionadded:: 3.3.0
 
+Windows
+-------
+
+.. module:: mss.windows
+
+.. attribute:: CAPTUREBLT
+
+.. attribute:: CFUNCTIONS
+
+.. attribute:: DIB_RGB_COLORS
+
+.. attribute:: SRCCOPY
 
 Methods
 =======
