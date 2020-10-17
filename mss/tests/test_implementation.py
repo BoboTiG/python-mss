@@ -96,11 +96,12 @@ def test_entry_point(capsys, sct):
     fmt = "sct-{width}x{height}.png"
     for opt in ("-o", "--out"):
         main([opt, fmt])
-        filename = fmt.format(**sct.monitors[1])
         out, _ = capsys.readouterr()
-        assert out.endswith(filename + "\n")
-        assert os.path.isfile(filename)
-        os.remove(filename)
+        for monitor, line in zip(sct.monitors[1:], out.splitlines()):
+            filename = fmt.format(**monitor)
+            assert line.endswith(filename)
+            assert os.path.isfile(filename)
+            os.remove(filename)
 
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):

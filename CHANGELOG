@@ -6,6 +6,7 @@ History:
       - Mac: reduce the number of function calls
       - Mac: support macOS Big Sur (fixes #178)
       - tests: fix macOS intepreter not found on Travis-CI
+      - tests: fix test_entry_point() when there are several monitors
       - :heart: contributors: @
 
 6.0.0   2020/06/30
