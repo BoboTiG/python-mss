@@ -44,8 +44,8 @@ def test_factory_systems(monkeypatch):
 
     # Windows
     monkeypatch.setattr(platform, "system", lambda: "wInDoWs")
-    with pytest.raises(ValueError):
-        # wintypes.py:19: ValueError: _type_ 'v' not supported
+    with pytest.raises(ImportError):
+        # ImportError: cannot import name 'WINFUNCTYPE'
         mss.mss()
 
 

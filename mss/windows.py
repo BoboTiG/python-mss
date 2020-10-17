@@ -6,6 +6,7 @@ Source: https://github.com/BoboTiG/python-mss
 import sys
 import ctypes
 import threading
+from ctypes import POINTER, Structure, WINFUNCTYPE, c_void_p
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -40,7 +41,7 @@ DIB_RGB_COLORS = 0
 SRCCOPY = 0x00CC0020
 
 
-class BITMAPINFOHEADER(ctypes.Structure):
+class BITMAPINFOHEADER(Structure):
     """ Information about the dimensions and color format of a DIB. """
 
     _fields_ = [
@@ -58,7 +59,7 @@ class BITMAPINFOHEADER(ctypes.Structure):
     ]
 
 
-class BITMAPINFO(ctypes.Structure):
+class BITMAPINFO(Structure):
     """
     Structure that defines the dimensions and color information for a DIB.
     """
@@ -66,10 +67,39 @@ class BITMAPINFO(ctypes.Structure):
     _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3)]
 
 
+MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
+
+
+# C functions that will be initialised later.
+#
+# This is a dict:
+#    cfunction: (attr, argtypes, restype)
+#
+# Available attr: gdi32, user32.
+#
+# Note: keep it sorted by cfunction.
+CFUNCTIONS = {
+    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
+    "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
+    "CreateCompatibleDC": ("gdi32", [HDC], HDC),
+    "DeleteObject": ("gdi32", [HGDIOBJ], INT),
+    "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
+    "GetDIBits": (
+        "gdi32",
+        [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT],
+        BOOL,
+    ),
+    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
+    "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
+    "GetSystemMetrics": ("user32", [INT], INT),
+    "GetWindowDC": ("user32", [HWND], HDC),
+}
+
+
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "monitorenumproc", "user32"}
+    __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "user32"}
 
     # Class attributes instanced one time to prevent resource leaks.
     bmp = None
@@ -83,10 +113,6 @@ class MSS(MSSBase):
         """ Windows initialisations. """
 
         super().__init__()
-
-        self.monitorenumproc = ctypes.WINFUNCTYPE(
-            INT, DWORD, DWORD, ctypes.POINTER(RECT), DOUBLE
-        )
 
         self.user32 = ctypes.WinDLL("user32")
         self.gdi32 = ctypes.WinDLL("gdi32")
@@ -112,36 +138,18 @@ class MSS(MSSBase):
     def _set_cfunctions(self):
         """ Set all ctypes functions and attach them to attributes. """
 
-        void = ctypes.c_void_p
-        pointer = ctypes.POINTER
         cfactory = self._cfactory
-        gdi32 = self.gdi32
-        user32 = self.user32
-
-        # Note: keep it sorted
-        for attr, func, argtypes, restype in (
-            (gdi32, "BitBlt", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
-            (gdi32, "CreateCompatibleBitmap", [HDC, INT, INT], HBITMAP),
-            (gdi32, "CreateCompatibleDC", [HDC], HDC),
-            (gdi32, "DeleteObject", [HGDIOBJ], INT),
-            (gdi32, "GetDeviceCaps", [HWND, INT], INT),
-            (
-                gdi32,
-                "GetDIBits",
-                [HDC, HBITMAP, UINT, UINT, void, pointer(BITMAPINFO), UINT],
-                BOOL,
-            ),
-            (gdi32, "SelectObject", [HDC, HGDIOBJ], HGDIOBJ),
-            (
-                user32,
-                "EnumDisplayMonitors",
-                [HDC, void, self.monitorenumproc, LPARAM],
-                BOOL,
-            ),
-            (user32, "GetSystemMetrics", [INT], INT),
-            (user32, "GetWindowDC", [HWND], HDC),
-        ):
-            cfactory(attr=attr, func=func, argtypes=argtypes, restype=restype)  # type: ignore
+        attrs = {
+            "gdi32": self.gdi32,
+            "user32": self.user32,
+        }
+        for func, (attr, argtypes, restype) in CFUNCTIONS.items():
+            cfactory(
+                attr=attrs[attr],
+                func=func,
+                argtypes=argtypes,
+                restype=restype,
+            )  # type: ignore
 
     def _set_dpi_awareness(self):
         """ Set DPI aware to capture full screen on Hi-DPI monitors. """
@@ -210,7 +218,7 @@ class MSS(MSSBase):
             )
             return 1
 
-        callback = self.monitorenumproc(_callback)
+        callback = MONITORNUMPROC(_callback)
         user32.EnumDisplayMonitors(0, 0, callback, 0)
 
     def _grab_impl(self, monitor):

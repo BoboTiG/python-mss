@@ -6,6 +6,17 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import sys
+from ctypes import (
+    POINTER,
+    Structure,
+    c_double,
+    c_float,
+    c_int32,
+    c_uint64,
+    c_ubyte,
+    c_uint32,
+    c_void_p,
+)
 from platform import mac_ver
 from typing import TYPE_CHECKING
 
@@ -23,13 +34,13 @@ __all__ = ("MSS",)
 
 
 def cgfloat():
-    # type: () -> Union[Type[ctypes.c_double], Type[ctypes.c_float]]
+    # type: () -> Union[Type[c_double], Type[c_float]]
     """ Get the appropriate value for a float. """
 
-    return ctypes.c_double if sys.maxsize > 2 ** 32 else ctypes.c_float
+    return c_double if sys.maxsize > 2 ** 32 else c_float
 
 
-class CGPoint(ctypes.Structure):
+class CGPoint(Structure):
     """ Structure that contains coordinates of a rectangle. """
 
     _fields_ = [("x", cgfloat()), ("y", cgfloat())]
@@ -38,7 +49,7 @@ class CGPoint(ctypes.Structure):
         return "{}(left={} top={})".format(type(self).__name__, self.x, self.y)
 
 
-class CGSize(ctypes.Structure):
+class CGSize(Structure):
     """ Structure that contains dimensions of an rectangle. """
 
     _fields_ = [("width", cgfloat()), ("height", cgfloat())]
@@ -49,13 +60,49 @@ class CGSize(ctypes.Structure):
         )
 
 
-class CGRect(ctypes.Structure):
+class CGRect(Structure):
     """ Structure that contains information about a rectangle. """
 
     _fields_ = [("origin", CGPoint), ("size", CGSize)]
 
     def __repr__(self):
         return "{}<{} {}>".format(type(self).__name__, self.origin, self.size)
+
+
+# C functions that will be initialised later.
+#
+# This is a dict:
+#    cfunction: (attr, argtypes, restype)
+#
+# Available attr: core.
+#
+# Note: keep it sorted by cfunction.
+CFUNCTIONS = {
+    "CGDataProviderCopyData": ("core", [c_void_p], c_void_p),
+    "CGDisplayBounds": ("core", [c_uint32], CGRect),
+    "CGDisplayRotation": ("core", [c_uint32], c_float),
+    "CFDataGetBytePtr": ("core", [c_void_p], c_void_p),
+    "CFDataGetLength": ("core", [c_void_p], c_uint64),
+    "CFRelease": ("core", [c_void_p], c_void_p),
+    "CGDataProviderRelease": ("core", [c_void_p], c_void_p),
+    "CGGetActiveDisplayList": (
+        "core",
+        [c_uint32, POINTER(c_uint32), POINTER(c_uint32)],
+        c_int32,
+    ),
+    "CGImageGetBitsPerPixel": ("core", [c_void_p], int),
+    "CGImageGetBytesPerRow": ("core", [c_void_p], int),
+    "CGImageGetDataProvider": ("core", [c_void_p], c_void_p),
+    "CGImageGetHeight": ("core", [c_void_p], int),
+    "CGImageGetWidth": ("core", [c_void_p], int),
+    "CGRectStandardize": ("core", [CGRect], CGRect),
+    "CGRectUnion": ("core", [CGRect, CGRect], CGRect),
+    "CGWindowListCreateImage": (
+        "core",
+        [CGRect, c_uint32, c_uint32, c_uint32],
+        c_void_p,
+    ),
+}
 
 
 class MSS(MSSBase):
@@ -94,36 +141,15 @@ class MSS(MSSBase):
         # type: () -> None
         """ Set all ctypes functions and attach them to attributes. """
 
-        uint32 = ctypes.c_uint32
-        void = ctypes.c_void_p
-        pointer = ctypes.POINTER
         cfactory = self._cfactory
-        core = self.core
-
-        # Note: keep it sorted
-        for func, argtypes, restype in (
-            ("CGDataProviderCopyData", [void], void),
-            ("CGDisplayBounds", [uint32], CGRect),
-            ("CGDisplayRotation", [uint32], ctypes.c_float),
-            ("CFDataGetBytePtr", [void], void),
-            ("CFDataGetLength", [void], ctypes.c_uint64),
-            ("CFRelease", [void], void),
-            ("CGDataProviderRelease", [void], void),
-            (
-                "CGGetActiveDisplayList",
-                [uint32, pointer(uint32), pointer(uint32)],
-                ctypes.c_int32,
-            ),
-            ("CGImageGetBitsPerPixel", [void], int),
-            ("CGImageGetBytesPerRow", [void], int),
-            ("CGImageGetDataProvider", [void], void),
-            ("CGImageGetHeight", [void], int),
-            ("CGImageGetWidth", [void], int),
-            ("CGRectStandardize", [CGRect], CGRect),
-            ("CGRectUnion", [CGRect, CGRect], CGRect),
-            ("CGWindowListCreateImage", [CGRect, uint32, uint32, uint32], void),
-        ):
-            cfactory(attr=core, func=func, argtypes=argtypes, restype=restype)  # type: ignore
+        attrs = {"core": self.core}
+        for func, (attr, argtypes, restype) in CFUNCTIONS.items():
+            cfactory(
+                attr=attrs[attr],
+                func=func,
+                argtypes=argtypes,  # type: ignore
+                restype=restype,
+            )
 
     def _monitors_impl(self):
         # type: () -> None
@@ -139,8 +165,8 @@ class MSS(MSSBase):
         self._monitors.append({})
 
         # Each monitors
-        display_count = ctypes.c_uint32(0)
-        active_displays = (ctypes.c_uint32 * self.max_displays)()
+        display_count = c_uint32(0)
+        active_displays = (c_uint32 * self.max_displays)()
         core.CGGetActiveDisplayList(
             self.max_displays, active_displays, ctypes.byref(display_count)
         )
@@ -196,7 +222,7 @@ class MSS(MSSBase):
             copy_data = core.CGDataProviderCopyData(prov)
             data_ref = core.CFDataGetBytePtr(copy_data)
             buf_len = core.CFDataGetLength(copy_data)
-            raw = ctypes.cast(data_ref, ctypes.POINTER(ctypes.c_ubyte * buf_len))
+            raw = ctypes.cast(data_ref, POINTER(c_ubyte * buf_len))
             data = bytearray(raw.contents)
 
             # Remove padding per row

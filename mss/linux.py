@@ -7,6 +7,21 @@ import ctypes
 import ctypes.util
 import os
 import threading
+from ctypes import (
+    POINTER,
+    CFUNCTYPE,
+    Structure,
+    c_char_p,
+    c_int,
+    c_int32,
+    c_long,
+    c_ubyte,
+    c_uint,
+    c_uint32,
+    c_ulong,
+    c_ushort,
+    c_void_p,
+)
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -28,127 +43,127 @@ PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 
 
-class Display(ctypes.Structure):
+class Display(Structure):
     """
     Structure that serves as the connection to the X server
     and that contains all the information about that X server.
     """
 
 
-class Event(ctypes.Structure):
+class Event(Structure):
     """
     XErrorEvent to debug eventual errors.
     https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html
     """
 
     _fields_ = [
-        ("type", ctypes.c_int),
-        ("display", ctypes.POINTER(Display)),
-        ("serial", ctypes.c_ulong),
-        ("error_code", ctypes.c_ubyte),
-        ("request_code", ctypes.c_ubyte),
-        ("minor_code", ctypes.c_ubyte),
-        ("resourceid", ctypes.c_void_p),
+        ("type", c_int),
+        ("display", POINTER(Display)),
+        ("serial", c_ulong),
+        ("error_code", c_ubyte),
+        ("request_code", c_ubyte),
+        ("minor_code", c_ubyte),
+        ("resourceid", c_void_p),
     ]
 
 
-class XWindowAttributes(ctypes.Structure):
+class XWindowAttributes(Structure):
     """ Attributes for the specified window. """
 
     _fields_ = [
-        ("x", ctypes.c_int32),
-        ("y", ctypes.c_int32),
-        ("width", ctypes.c_int32),
-        ("height", ctypes.c_int32),
-        ("border_width", ctypes.c_int32),
-        ("depth", ctypes.c_int32),
-        ("visual", ctypes.c_ulong),
-        ("root", ctypes.c_ulong),
-        ("class", ctypes.c_int32),
-        ("bit_gravity", ctypes.c_int32),
-        ("win_gravity", ctypes.c_int32),
-        ("backing_store", ctypes.c_int32),
-        ("backing_planes", ctypes.c_ulong),
-        ("backing_pixel", ctypes.c_ulong),
-        ("save_under", ctypes.c_int32),
-        ("colourmap", ctypes.c_ulong),
-        ("mapinstalled", ctypes.c_uint32),
-        ("map_state", ctypes.c_uint32),
-        ("all_event_masks", ctypes.c_ulong),
-        ("your_event_mask", ctypes.c_ulong),
-        ("do_not_propagate_mask", ctypes.c_ulong),
-        ("override_redirect", ctypes.c_int32),
-        ("screen", ctypes.c_ulong),
+        ("x", c_int32),
+        ("y", c_int32),
+        ("width", c_int32),
+        ("height", c_int32),
+        ("border_width", c_int32),
+        ("depth", c_int32),
+        ("visual", c_ulong),
+        ("root", c_ulong),
+        ("class", c_int32),
+        ("bit_gravity", c_int32),
+        ("win_gravity", c_int32),
+        ("backing_store", c_int32),
+        ("backing_planes", c_ulong),
+        ("backing_pixel", c_ulong),
+        ("save_under", c_int32),
+        ("colourmap", c_ulong),
+        ("mapinstalled", c_uint32),
+        ("map_state", c_uint32),
+        ("all_event_masks", c_ulong),
+        ("your_event_mask", c_ulong),
+        ("do_not_propagate_mask", c_ulong),
+        ("override_redirect", c_int32),
+        ("screen", c_ulong),
     ]
 
 
-class XImage(ctypes.Structure):
+class XImage(Structure):
     """
     Description of an image as it exists in the client's memory.
     https://tronche.com/gui/x/xlib/graphics/images.html
     """
 
     _fields_ = [
-        ("width", ctypes.c_int),
-        ("height", ctypes.c_int),
-        ("xoffset", ctypes.c_int),
-        ("format", ctypes.c_int),
-        ("data", ctypes.c_void_p),
-        ("byte_order", ctypes.c_int),
-        ("bitmap_unit", ctypes.c_int),
-        ("bitmap_bit_order", ctypes.c_int),
-        ("bitmap_pad", ctypes.c_int),
-        ("depth", ctypes.c_int),
-        ("bytes_per_line", ctypes.c_int),
-        ("bits_per_pixel", ctypes.c_int),
-        ("red_mask", ctypes.c_ulong),
-        ("green_mask", ctypes.c_ulong),
-        ("blue_mask", ctypes.c_ulong),
+        ("width", c_int),
+        ("height", c_int),
+        ("xoffset", c_int),
+        ("format", c_int),
+        ("data", c_void_p),
+        ("byte_order", c_int),
+        ("bitmap_unit", c_int),
+        ("bitmap_bit_order", c_int),
+        ("bitmap_pad", c_int),
+        ("depth", c_int),
+        ("bytes_per_line", c_int),
+        ("bits_per_pixel", c_int),
+        ("red_mask", c_ulong),
+        ("green_mask", c_ulong),
+        ("blue_mask", c_ulong),
     ]
 
 
-class XRRModeInfo(ctypes.Structure):
+class XRRModeInfo(Structure):
     """ Voilà, voilà. """
 
 
-class XRRScreenResources(ctypes.Structure):
+class XRRScreenResources(Structure):
     """
     Structure that contains arrays of XIDs that point to the
     available outputs and associated CRTCs.
     """
 
     _fields_ = [
-        ("timestamp", ctypes.c_ulong),
-        ("configTimestamp", ctypes.c_ulong),
-        ("ncrtc", ctypes.c_int),
-        ("crtcs", ctypes.POINTER(ctypes.c_long)),
-        ("noutput", ctypes.c_int),
-        ("outputs", ctypes.POINTER(ctypes.c_long)),
-        ("nmode", ctypes.c_int),
-        ("modes", ctypes.POINTER(XRRModeInfo)),
+        ("timestamp", c_ulong),
+        ("configTimestamp", c_ulong),
+        ("ncrtc", c_int),
+        ("crtcs", POINTER(c_long)),
+        ("noutput", c_int),
+        ("outputs", POINTER(c_long)),
+        ("nmode", c_int),
+        ("modes", POINTER(XRRModeInfo)),
     ]
 
 
-class XRRCrtcInfo(ctypes.Structure):
+class XRRCrtcInfo(Structure):
     """ Structure that contains CRTC information. """
 
     _fields_ = [
-        ("timestamp", ctypes.c_ulong),
-        ("x", ctypes.c_int),
-        ("y", ctypes.c_int),
-        ("width", ctypes.c_int),
-        ("height", ctypes.c_int),
-        ("mode", ctypes.c_long),
-        ("rotation", ctypes.c_int),
-        ("noutput", ctypes.c_int),
-        ("outputs", ctypes.POINTER(ctypes.c_long)),
-        ("rotations", ctypes.c_ushort),
-        ("npossible", ctypes.c_int),
-        ("possible", ctypes.POINTER(ctypes.c_long)),
+        ("timestamp", c_ulong),
+        ("x", c_int),
+        ("y", c_int),
+        ("width", c_int),
+        ("height", c_int),
+        ("mode", c_long),
+        ("rotation", c_int),
+        ("noutput", c_int),
+        ("outputs", POINTER(c_long)),
+        ("rotations", c_ushort),
+        ("npossible", c_int),
+        ("possible", POINTER(c_long)),
     ]
 
 
-@ctypes.CFUNCTYPE(ctypes.c_int, ctypes.POINTER(Display), ctypes.POINTER(Event))
+@CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
 def error_handler(_, event):
     # type: (Any, Any) -> int
     """ Specifies the program's supplied error handler. """
@@ -174,6 +189,71 @@ def validate(retval, func, args):
     err = "{}() failed".format(func.__name__)
     details = {"retval": retval, "args": args}
     raise ScreenShotError(err, details=details)
+
+
+# C functions that will be initialised later.
+# See https://tronche.com/gui/x/xlib/function-index.html for details.
+#
+# This is a dict:
+#    cfunction: (attr, argtypes, restype)
+#
+# Available attr: xlib, xrandr.
+#
+# Note: keep it sorted by cfunction.
+CFUNCTIONS = {
+    "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
+    "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
+    "XGetErrorText": ("xlib", [POINTER(Display), c_int, c_char_p, c_int], c_void_p),
+    "XGetImage": (
+        "xlib",
+        [
+            POINTER(Display),
+            POINTER(Display),
+            c_int,
+            c_int,
+            c_uint,
+            c_uint,
+            c_ulong,
+            c_int,
+        ],
+        POINTER(XImage),
+    ),
+    "XGetWindowAttributes": (
+        "xlib",
+        [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)],
+        c_int,
+    ),
+    "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
+    "XQueryExtension": (
+        "xlib",
+        [
+            POINTER(Display),
+            c_char_p,
+            POINTER(c_int),
+            POINTER(c_int),
+            POINTER(c_int),
+        ],
+        c_uint,
+    ),
+    "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
+    "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
+    "XRRGetCrtcInfo": (
+        "xrandr",
+        [POINTER(Display), POINTER(XRRScreenResources), c_long],
+        POINTER(XRRCrtcInfo),
+    ),
+    "XRRGetScreenResources": (
+        "xrandr",
+        [POINTER(Display), POINTER(Display)],
+        POINTER(XRRScreenResources),
+    ),
+    "XRRGetScreenResourcesCurrent": (
+        "xrandr",
+        [POINTER(Display), POINTER(Display)],
+        POINTER(XRRScreenResources),
+    ),
+    "XSetErrorHandler": ("xlib", [c_void_p], c_int),
+}
 
 
 class MSS(MSSBase):
@@ -229,14 +309,12 @@ class MSS(MSSBase):
 
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
-        self.drawable = ctypes.cast(self.root, ctypes.POINTER(Display))
+        self.drawable = ctypes.cast(self.root, POINTER(Display))
 
     def has_extension(self, extension):
         # type: (str) -> bool
         """Return True if the given *extension* is part of the extensions list of the server."""
         with lock:
-            byref = ctypes.byref
-            c_int = ctypes.c_int
             major_opcode_return = c_int()
             first_event_return = c_int()
             first_error_return = c_int()
@@ -245,9 +323,9 @@ class MSS(MSSBase):
                 self.xlib.XQueryExtension(
                     self._get_display(),
                     extension.encode("latin1"),
-                    byref(major_opcode_return),
-                    byref(first_event_return),
-                    byref(first_error_return),
+                    ctypes.byref(major_opcode_return),
+                    ctypes.byref(first_event_return),
+                    ctypes.byref(first_error_return),
                 )
             except ScreenShotError:
                 return False
@@ -272,109 +350,24 @@ class MSS(MSSBase):
         return display
 
     def _set_cfunctions(self):
-        """
-        Set all ctypes functions and attach them to attributes.
-        See https://tronche.com/gui/x/xlib/function-index.html for details.
-        """
+        """ Set all ctypes functions and attach them to attributes. """
 
-        void = ctypes.c_void_p
-        c_int = ctypes.c_int
-        uint = ctypes.c_uint
-        ulong = ctypes.c_ulong
-        c_long = ctypes.c_long
-        char_p = ctypes.c_char_p
-        pointer = ctypes.POINTER
         cfactory = self._cfactory
-        xlib = self.xlib
-        xrandr = self.xrandr
-
-        # Note: keep it sorted
-        for attr, func, argtypes, restype in (
-            (
-                xlib,
-                "XDefaultRootWindow",
-                [pointer(Display)],
-                pointer(XWindowAttributes),
-            ),
-            (xlib, "XDestroyImage", [pointer(XImage)], void),
-            (xlib, "XGetErrorText", [pointer(Display), c_int, char_p, c_int], void),
-            (
-                xlib,
-                "XGetImage",
-                [
-                    pointer(Display),
-                    pointer(Display),
-                    c_int,
-                    c_int,
-                    uint,
-                    uint,
-                    ulong,
-                    c_int,
-                ],
-                pointer(XImage),
-            ),
-            (
-                xlib,
-                "XGetWindowAttributes",
-                [
-                    pointer(Display),
-                    pointer(XWindowAttributes),
-                    pointer(XWindowAttributes),
-                ],
-                c_int,
-            ),
-            (xlib, "XOpenDisplay", [char_p], pointer(Display)),
-            (
-                xlib,
-                "XQueryExtension",
-                [
-                    pointer(Display),
-                    char_p,
-                    pointer(c_int),
-                    pointer(c_int),
-                    pointer(c_int),
-                ],
-                uint,
-            ),
-            (xlib, "XSetErrorHandler", [void], c_int),
-            (xrandr, "XRRFreeCrtcInfo", [pointer(XRRCrtcInfo)], void),
-            (xrandr, "XRRFreeScreenResources", [pointer(XRRScreenResources)], void),
-            (
-                xrandr,
-                "XRRGetCrtcInfo",
-                [pointer(Display), pointer(XRRScreenResources), c_long],
-                pointer(XRRCrtcInfo),
-            ),
-        ):
-            cfactory(
-                attr=attr,
-                errcheck=validate,
-                func=func,
-                argtypes=argtypes,
-                restype=restype,
-            )  # type: ignore
-
-        # A simple benchmark calling 10 times those 2 functions:
-        # XRRGetScreenResources():        0.1755971429956844 s
-        # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
-        # The second is faster by a factor of 44! So try to use it first.
-        try:
-            cfactory(
-                attr=xrandr,
-                func="XRRGetScreenResourcesCurrent",
-                errcheck=validate,
-                argtypes=[pointer(Display), pointer(Display)],
-                restype=pointer(XRRScreenResources),
-            )
-        except AttributeError:
-            cfactory(
-                attr=xrandr,
-                func="XRRGetScreenResources",
-                errcheck=validate,
-                argtypes=[pointer(Display), pointer(Display)],
-                restype=pointer(XRRScreenResources),
-            )
-            xrandr.XRRGetScreenResourcesCurrent = xrandr.XRRGetScreenResources
+        attrs = {
+            "xlib": self.xlib,
+            "xrandr": self.xrandr,
+        }
+        for func, (attr, argtypes, restype) in CFUNCTIONS.items():
+            try:
+                cfactory(
+                    attr=attrs[attr],
+                    errcheck=validate,
+                    func=func,
+                    argtypes=argtypes,
+                    restype=restype,
+                )  # type: ignore
+            except AttributeError:
+                pass
 
     def get_error_details(self):
         # type: () -> Optional[Dict[str, Any]]
@@ -419,7 +412,15 @@ class MSS(MSSBase):
         )
 
         # Each monitors
-        mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
+        # A simple benchmark calling 10 times those 2 functions:
+        # XRRGetScreenResources():        0.1755971429956844 s
+        # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
+        # The second is faster by a factor of 44! So try to use it first.
+        try:
+            mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
+        except AttributeError:
+            mon = xrandr.XRRGetScreenResources(display, self.drawable).contents
+
         crtcs = mon.crtcs
         for idx in range(mon.ncrtc):
             crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
@@ -464,9 +465,7 @@ class MSS(MSSBase):
 
             raw_data = ctypes.cast(
                 ximage.contents.data,
-                ctypes.POINTER(
-                    ctypes.c_ubyte * monitor["height"] * monitor["width"] * 4
-                ),
+                POINTER(c_ubyte * monitor["height"] * monitor["width"] * 4),
             )
             data = bytearray(raw_data.contents)
         finally:
