@@ -11,7 +11,8 @@ import pytest
 
 try:
     import numpy
-except ImportError:
+except (ImportError, RuntimeError):
+    # RuntimeError on Python 3.9 (macOS): Polyfit sanity test emitted a warning, ...
     numpy = None
 
 try:
