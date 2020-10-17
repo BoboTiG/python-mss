@@ -83,16 +83,16 @@ CFUNCTIONS = {
     "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
     "DeleteObject": ("gdi32", [HGDIOBJ], INT),
+    "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
     "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
     "GetDIBits": (
         "gdi32",
         [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT],
         BOOL,
     ),
-    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
-    "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
     "GetSystemMetrics": ("user32", [INT], INT),
     "GetWindowDC": ("user32", [HWND], HDC),
+    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
 }
 
 
