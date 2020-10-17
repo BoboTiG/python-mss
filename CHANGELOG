@@ -6,6 +6,7 @@ History:
       - MSS: reworked how C functions are initialised
       - Mac: reduce the number of function calls
       - Mac: support macOS Big Sur (fixes #178)
+      - tests: expand Python versions to 3.9 and 3.10
       - tests: fix macOS intepreter not found on Travis-CI
       - tests: fix test_entry_point() when there are several monitors
       - :heart: contributors: @

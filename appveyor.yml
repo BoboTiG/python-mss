@@ -1,47 +1,38 @@
 build: off
 
-cache:
-  - '%LOCALAPPDATA%\pip\Cache'
+image:
+  - Visual Studio 2019
+
+platform:
+  - x64
+  - x86
 
 environment:
   fast_finish: true
   matrix:
-    - python: py35
-      tox_env: py35
-      python_path: c:\python35
-    - python: py35-x64
-      tox_env: py35
-      python_path: c:\python35-x64
-    - python: py36
-      tox_env: py36
-      python_path: c:\python36
-    - python: py36-x64
-      tox_env: py36
-      python_path: c:\python36-x64
-    - python: py37
-      tox_env: py37
-      python_path: c:\python37
-    - python: py37-x64
-      tox_env: py37
-      python_path: c:\python37-x64
-    - python: py38
-      tox_env: py38
-      python_path: c:\python38
-    - python: py38-x64
-      tox_env: py38
-      python_path: c:\python38-x64
-    - python: py39
-      tox_env: py39
-      python_path: c:\python39
-    - python: py39-x64
-      tox_env: py39
-      python_path: c:\python39-x64
+    - PYTHON_VERSION: 3.10
+    - PYTHON_VERSION: 3.9
+    - PYTHON_VERSION: 3.8
+    - PYTHON_VERSION: 3.7
+    - PYTHON_VERSION: 3.6
+    - PYTHON_VERSION: 3.5
+
+matrix:
+  allow_failures:
+    - PYTHON_VERSION: 3.10
+    - PYTHON_VERSION: 3.9
+
+init:
+  # Update Environment Variables based on matrix/platform
+  - set PY_VER=%PYTHON_VERSION:.=%
+  - set PYTHON=C:\PYTHON%PY_VER%
+  - if %PLATFORM%==x64 (set PYTHON=%PYTHON%-x64)
+
+  # Put desired Python version first in PATH
+  - set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
 
 install:
-  - python -m pip install virtualenv
-  - python -m virtualenv env
-  - env\Scripts\activate.bat
   - python -m pip install --upgrade pip tox
 
 test_script:
-  tox -e %tox_env%
+  - tox -e py%PY_VER%
