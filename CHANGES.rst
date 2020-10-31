@@ -1,7 +1,19 @@
-6.0.1 (2020-xx-xx)
+6.1.0 (2020-10-31)
 ==================
 
+darwin.py
+---------
+ - Added ``CFUNCTIONS``
 
+linux.py
+--------
+ - Added ``CFUNCTIONS``
+
+windows.py
+----------
+ - Added ``CFUNCTIONS``
+ - Added ``MONITORNUMPROC``
+ - Removed ``MSS.monitorenumproc``. Use ``MONITORNUMPROC`` instead.
 
 
 6.0.0 (2020-06-30)

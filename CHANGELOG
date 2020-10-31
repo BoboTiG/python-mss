@@ -2,14 +2,13 @@ History:
 
 <see Git checking messages for history>
 
-6.0.1   2020/xx/xx
+6.1.0   2020/10/31
       - MSS: reworked how C functions are initialised
       - Mac: reduce the number of function calls
       - Mac: support macOS Big Sur (fixes #178)
       - tests: expand Python versions to 3.9 and 3.10
       - tests: fix macOS intepreter not found on Travis-CI
       - tests: fix test_entry_point() when there are several monitors
-      - :heart: contributors: @
 
 6.0.0   2020/06/30
       - removed usage of deprecated "license_file" option for "license_files"
