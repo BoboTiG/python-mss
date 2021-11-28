@@ -9,7 +9,7 @@ So MSS can be used as simply as::
 
     from mss import mss
 
-Or import the good one base on your operating system::
+Or import the good one based on your operating system::
 
     # MacOS X
     from mss.darwin import MSS as mss
@@ -46,7 +46,7 @@ This is a much better usage, memory efficient::
         for _ in range(100):
             sct.shot()
 
-Also, it is a good thing to save the MSS instance inside an attribute of you class and calling it when needed.
+Also, it is a good thing to save the MSS instance inside an attribute of your class and calling it when needed.
 
 
 GNU/Linux
@@ -57,7 +57,7 @@ On GNU/Linux, you can specify which display to use (useful for distant screensho
     with mss(display=":0.0") as sct:
         # ...
 
-A more specific example to only target GNU/Linux:
+A more specific example (only valid on GNU/Linux):
 
 .. literalinclude:: examples/linux_display_keyword.py
     :lines: 8-
