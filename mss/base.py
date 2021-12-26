@@ -68,7 +68,7 @@ class MSSBase(metaclass=ABCMeta):
         """
         Retrieve screen pixels for a given monitor.
 
-        Note: *monitor* can be a tuple like PIL.Image.grab() accepts.
+        Note: *monitor* can be a tuple like the one PIL.Image.grab() accepts.
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.

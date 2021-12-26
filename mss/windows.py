@@ -152,7 +152,7 @@ class MSS(MSSBase):
             )  # type: ignore
 
     def _set_dpi_awareness(self):
-        """ Set DPI aware to capture full screen on Hi-DPI monitors. """
+        """ Set DPI awareness to capture full screen on Hi-DPI monitors. """
 
         version = sys.getwindowsversion()[:2]  # pylint: disable=no-member
         if version >= (6, 3):
@@ -169,7 +169,7 @@ class MSS(MSSBase):
     def _get_srcdc(self):
         """
         Retrieve a thread-safe HDC from GetWindowDC().
-        In multithreading, if the thread who creates *srcdc* is dead, *srcdc* will
+        In multithreading, if the thread that creates *srcdc* is dead, *srcdc* will
         no longer be valid to grab the screen. The *srcdc* attribute is replaced
         with *_srcdc_dict* to maintain the *srcdc* values in multithreading.
         Since the current thread and main thread are always alive, reuse their *srcdc* value first.
@@ -198,7 +198,7 @@ class MSS(MSSBase):
             }
         )
 
-        # Each monitors
+        # Each monitor
         def _callback(monitor, data, rect, dc_):
             # types: (int, HDC, LPRECT, LPARAM) -> int
             """
@@ -226,7 +226,7 @@ class MSS(MSSBase):
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
 
-        In the code, there are few interesting things:
+        In the code, there are a few interesting things:
 
         [1] bmi.bmiHeader.biHeight = -height
 

@@ -335,7 +335,7 @@ class MSS(MSSBase):
     def _get_display(self, disp=None):
         """
         Retrieve a thread-safe display from XOpenDisplay().
-        In multithreading, if the thread who creates *display* is dead, *display* will
+        In multithreading, if the thread that creates *display* is dead, *display* will
         no longer be valid to grab the screen. The *display* attribute is replaced
         with *_display_dict* to maintain the *display* values in multithreading.
         Since the current thread and main thread are always alive, reuse their
@@ -411,7 +411,7 @@ class MSS(MSSBase):
             }
         )
 
-        # Each monitors
+        # Each monitor
         # A simple benchmark calling 10 times those 2 functions:
         # XRRGetScreenResources():        0.1755971429956844 s
         # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s

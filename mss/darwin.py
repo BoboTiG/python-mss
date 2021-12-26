@@ -164,7 +164,7 @@ class MSS(MSSBase):
         all_monitors = CGRect()
         self._monitors.append({})
 
-        # Each monitors
+        # Each monitor
         display_count = c_uint32(0)
         active_displays = (c_uint32 * self.max_displays)()
         core.CGGetActiveDisplayList(
