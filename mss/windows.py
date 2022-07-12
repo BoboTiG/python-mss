@@ -99,7 +99,7 @@ CFUNCTIONS = {
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    __slots__ = {"height", "width", "_bmi", "_data", "gdi32", "user32"}
+    __slots__ = {"_bmi", "_data", "gdi32", "user32"}
 
     # Class attributes instanced one time to prevent resource leaks.
     bmp = None
