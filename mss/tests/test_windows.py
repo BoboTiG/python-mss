@@ -49,10 +49,36 @@ def test_region_caching():
         sct.grab(region2)
         assert bmp2 == id(MSS.bmp)
 
+def test_region_not_caching():
+    """The region to grab is not bad cached previous grab.
+    """
+    from mss.windows import MSS
 
-def run_child_thread(loops):
+    grab1 = mss.mss()
+    grab2 = mss.mss()
+
+    # Reset the current BMP
+    if MSS.bmp:
+        grab1.gdi32.DeleteObject(MSS.bmp)
+        MSS.bmp = None
+
+    region1 = {'top': 0, 'left': 0, 'width': 100, 'height': 100}
+    region2 = {'top': 0, 'left': 0, 'width': 50, 'height': 1}
+    grab1.grab(region1)
+    bmp1 = id(MSS.bmp)
+    grab2.grab(region2)
+    bmp2 = id(MSS.bmp)
+    assert bmp1 != bmp2
+
+    # Grab the area 1, is not bad cached BMP previous grab the area 2
+    grab1.grab(region1)
+    bmp1 = id(MSS.bmp)
+    assert bmp1 != bmp2
+
+
+def run_child_thread(loops):    
     for _ in range(loops):
-        with mss.mss() as sct:
+        with mss.mss() as sct:  # New sct for every loop
             sct.grab(sct.monitors[1])
 
 
@@ -63,6 +89,26 @@ def test_thread_safety():
     # Let thread 1 finished ahead of thread 2
     thread1 = threading.Thread(target=run_child_thread, args=(30,))
     thread2 = threading.Thread(target=run_child_thread, args=(50,))
+    thread1.start()
+    thread2.start()
+    thread1.join()
+    thread2.join()
+
+
+def run_child_thread_bbox(loops, bbox):
+    with mss.mss() as sct:  # One sct for all loops
+        for _ in range(loops):
+            sct.grab(bbox)
+
+
+def test_thread_safety_regions():
+    """Thread safety test for different regions
+    The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
+    """
+    thread1 = threading.Thread(target=run_child_thread_bbox,
+                               args=(100, (0, 0, 100, 100)))
+    thread2 = threading.Thread(target=run_child_thread_bbox,
+                               args=(100, (0, 0, 50, 1)))
     thread1.start()
     thread2.start()
     thread1.join()
