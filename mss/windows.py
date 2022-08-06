@@ -99,13 +99,12 @@ CFUNCTIONS = {
 class MSS(MSSBase):
     """ Multiple ScreenShots implementation for Microsoft Windows. """
 
-    __slots__ = {"_bmi", "_data", "gdi32", "user32"}
+    __slots__ = {"_bmi", "_data", "_h_w", "gdi32", "user32"}
 
     # Class attributes instanced one time to prevent resource leaks.
     bmp = None
     memdc = None
-    height = 0
-    width = 0
+    h_w = (0, 0)
 
     # A dict to maintain *srcdc* values created by multiple threads.
     _srcdc_dict = {}  # type: Dict[threading.Thread, int]
@@ -121,6 +120,7 @@ class MSS(MSSBase):
         self._set_cfunctions()
         self._set_dpi_awareness()
 
+        self._h_w = (0, 0)
         self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
 
         srcdc = self._get_srcdc()
@@ -258,16 +258,17 @@ class MSS(MSSBase):
         srcdc, memdc = self._get_srcdc(), MSS.memdc
         width, height = monitor["width"], monitor["height"]
 
-        if (MSS.height, MSS.width) != (height, width):
+        if self._h_w != (height, width):
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
             self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            MSS.height = height
-            MSS.width = width
+            self._h_w = (height, width)
+        if MSS.h_w != self._h_w:
             if MSS.bmp:
                 self.gdi32.DeleteObject(MSS.bmp)
             MSS.bmp = self.gdi32.CreateCompatibleBitmap(srcdc, width, height)
             self.gdi32.SelectObject(memdc, MSS.bmp)
+            MSS.h_w = self._h_w
 
         self.gdi32.BitBlt(
             memdc,
