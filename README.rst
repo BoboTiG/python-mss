@@ -51,7 +51,7 @@ Or you can install it with conda::
 Maintenance
 -----------
 
-For the maintainers, here are commands to upload a new release:
+For the maintainers, here are commands to upload a new release::
 
     rm -rf build dist
     python -m build --sdist --wheel
