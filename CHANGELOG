@@ -2,6 +2,9 @@ History:
 
 <see Git checking messages for history>
 
+7.0.1   2022/10/27
+      - fixed the wheel package
+
 7.0.0   2022/10/27
       - added support for Python 3.11
       - added support for Python 3.10

@@ -53,6 +53,7 @@ Maintenance
 
 For the maintainers, here are commands to upload a new release:
 
+    rm -rf build dist
     python -m build --sdist --wheel
     twine check dist/*
     twine upload dist/*
