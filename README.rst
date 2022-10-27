@@ -9,7 +9,7 @@ Python MSS
     :target: https://saythanks.io/to/BoboTiG
 .. image:: https://pepy.tech/badge/mss
     :target: https://pepy.tech/project/mss
-.. image:: https://anaconda.org/conda-forge/python-mss/badges/installer/conda.svg
+.. image:: https://anaconda.org/conda-forge/python-mss/badges/version.svg
     :target: https://anaconda.org/conda-forge/python-mss
 
 
