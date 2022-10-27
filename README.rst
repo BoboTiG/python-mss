@@ -1,14 +1,14 @@
 Python MSS
 ==========
 
-.. image:: https://travis-ci.org/BoboTiG/python-mss.svg?branch=master
-    :target: https://travis-ci.org/BoboTiG/python-mss
-.. image:: https://ci.appveyor.com/api/projects/status/72dik18r6b746mb0?svg=true
-    :target: https://ci.appveyor.com/project/BoboTiG/python-mss
-.. image:: https://pepy.tech/badge/mss
-    :target: https://pepy.tech/project/mss
+.. image:: https://badge.fury.io/py/mss.svg
+    :target: https://pypi.org/project/mss/
 .. image:: https://anaconda.org/conda-forge/python-mss/badges/version.svg
     :target: https://anaconda.org/conda-forge/python-mss
+.. image:: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg
+    :target: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml
+.. image:: https://static.pepy.tech/personalized-badge/mss?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads
+    :target: https://pepy.tech/project/mss
 
 
 .. code-block:: python
