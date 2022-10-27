@@ -9,7 +9,7 @@ History:
       - added support for Python 3.11
       - added support for Python 3.10
       - removed support for Python 3.5
-      - MSS: modernized the code base (types, f-string, ran isort & black)
+      - MSS: modernized the code base (types, f-string, ran isort & black) (close #101)
       - MSS: fixed several Sourcery issues
       - MSS: fixed typos here, and there
       - doc: fixed an error when building the documentation
