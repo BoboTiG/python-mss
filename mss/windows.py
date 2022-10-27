@@ -2,11 +2,10 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
-import sys
 import ctypes
+import sys
 import threading
-from ctypes import POINTER, Structure, WINFUNCTYPE, c_void_p
+from ctypes import POINTER, WINFUNCTYPE, Structure, c_void_p
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -18,20 +17,17 @@ from ctypes.wintypes import (
     INT,
     LONG,
     LPARAM,
+    LPRECT,
     RECT,
     UINT,
     WORD,
 )
-from typing import TYPE_CHECKING
+from typing import Any, Dict
 
 from .base import MSSBase
 from .exception import ScreenShotError
-
-if TYPE_CHECKING:
-    from typing import Any, Dict  # noqa
-
-    from .models import Monitor, Monitors  # noqa
-    from .screenshot import ScreenShot  # noqa
+from .models import CFunctions, Monitor
+from .screenshot import ScreenShot
 
 __all__ = ("MSS",)
 
@@ -42,7 +38,7 @@ SRCCOPY = 0x00CC0020
 
 
 class BITMAPINFOHEADER(Structure):
-    """ Information about the dimensions and color format of a DIB. """
+    """Information about the dimensions and color format of a DIB."""
 
     _fields_ = [
         ("biSize", DWORD),
@@ -78,7 +74,7 @@ MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
 # Available attr: gdi32, user32.
 #
 # Note: keep it sorted by cfunction.
-CFUNCTIONS = {
+CFUNCTIONS: CFunctions = {
     "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
     "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
@@ -97,7 +93,7 @@ CFUNCTIONS = {
 
 
 class MSS(MSSBase):
-    """ Multiple ScreenShots implementation for Microsoft Windows. """
+    """Multiple ScreenShots implementation for Microsoft Windows."""
 
     __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "user32"}
 
@@ -106,11 +102,10 @@ class MSS(MSSBase):
     memdc = None
 
     # A dict to maintain *srcdc* values created by multiple threads.
-    _srcdc_dict = {}  # type: Dict[threading.Thread, int]
+    _srcdc_dict: Dict[threading.Thread, int] = {}
 
-    def __init__(self, **_):
-        # type: (Any) -> None
-        """ Windows initialisations. """
+    def __init__(self, **_: Any) -> None:
+        """Windows initialisations."""
 
         super().__init__()
 
@@ -120,7 +115,7 @@ class MSS(MSSBase):
         self._set_dpi_awareness()
 
         self._bbox = {"height": 0, "width": 0}
-        self._data = ctypes.create_string_buffer(0)  # type: ctypes.Array[ctypes.c_char]
+        self._data: ctypes.Array[ctypes.c_char] = ctypes.create_string_buffer(0)
 
         srcdc = self._get_srcdc()
         if not MSS.memdc:
@@ -135,8 +130,8 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._bmi = bmi
 
-    def _set_cfunctions(self):
-        """ Set all ctypes functions and attach them to attributes. """
+    def _set_cfunctions(self) -> None:
+        """Set all ctypes functions and attach them to attributes."""
 
         cfactory = self._cfactory
         attrs = {
@@ -149,10 +144,10 @@ class MSS(MSSBase):
                 func=func,
                 argtypes=argtypes,
                 restype=restype,
-            )  # type: ignore
+            )
 
-    def _set_dpi_awareness(self):
-        """ Set DPI awareness to capture full screen on Hi-DPI monitors. """
+    def _set_dpi_awareness(self) -> None:
+        """Set DPI awareness to capture full screen on Hi-DPI monitors."""
 
         version = sys.getwindowsversion()[:2]  # pylint: disable=no-member
         if version >= (6, 3):
@@ -166,7 +161,7 @@ class MSS(MSSBase):
             # Windows Vista, 7, 8 and Server 2012
             self.user32.SetProcessDPIAware()
 
-    def _get_srcdc(self):
+    def _get_srcdc(self) -> int:
         """
         Retrieve a thread-safe HDC from GetWindowDC().
         In multithreading, if the thread that creates *srcdc* is dead, *srcdc* will
@@ -175,14 +170,18 @@ class MSS(MSSBase):
         Since the current thread and main thread are always alive, reuse their *srcdc* value first.
         """
         cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(main_thread)
-        if not srcdc:
-            srcdc = MSS._srcdc_dict[cur_thread] = self.user32.GetWindowDC(0)
+        current_srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(
+            main_thread
+        )
+        if current_srcdc:
+            srcdc = current_srcdc
+        else:
+            srcdc = self.user32.GetWindowDC(0)
+            MSS._srcdc_dict[cur_thread] = srcdc
         return srcdc
 
-    def _monitors_impl(self):
-        # type: () -> None
-        """ Get positions of monitors. It will populate self._monitors. """
+    def _monitors_impl(self) -> None:
+        """Get positions of monitors. It will populate self._monitors."""
 
         int_ = int
         user32 = self.user32
@@ -199,8 +198,7 @@ class MSS(MSSBase):
         )
 
         # Each monitor
-        def _callback(monitor, data, rect, dc_):
-            # types: (int, HDC, LPRECT, LPARAM) -> int
+        def _callback(monitor: int, data: HDC, rect: LPRECT, dc_: LPARAM) -> int:
             """
             Callback for monitorenumproc() function, it will return
             a RECT with appropriate values.
@@ -212,8 +210,8 @@ class MSS(MSSBase):
                 {
                     "left": int_(rct.left),
                     "top": int_(rct.top),
-                    "width": int_(rct.right - rct.left),
-                    "height": int_(rct.bottom - rct.top),
+                    "width": int_(rct.right) - int_(rct.left),
+                    "height": int_(rct.bottom) - int_(rct.top),
                 }
             )
             return 1
@@ -221,8 +219,7 @@ class MSS(MSSBase):
         callback = MONITORNUMPROC(_callback)
         user32.EnumDisplayMonitors(0, 0, callback, 0)
 
-    def _grab_impl(self, monitor):
-        # type: (Monitor) -> ScreenShot
+    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
 

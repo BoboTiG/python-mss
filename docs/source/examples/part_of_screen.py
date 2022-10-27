@@ -4,10 +4,8 @@ Source: https://github.com/BoboTiG/python-mss
 
 Example to capture part of the screen.
 """
-
 import mss
 import mss.tools
-
 
 with mss.mss() as sct:
     # The screen part to capture

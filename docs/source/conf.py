@@ -19,7 +19,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Python MSS"
-copyright = "2013-2021, Mickaël 'Tiger-222' Schoentgen & contributors"
+copyright = "2013-2022, Mickaël 'Tiger-222' Schoentgen & contributors"
 author = "Tiger-222"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -27,7 +27,7 @@ author = "Tiger-222"
 # built documents.
 #
 # The short X.Y version.
-version = "6.1.0"
+version = "7.0.0"
 
 # The full version, including alpha/beta/rc tags.
 release = "latest"
@@ -37,7 +37,7 @@ release = "latest"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

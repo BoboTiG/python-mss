@@ -2,29 +2,22 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import platform
-from typing import TYPE_CHECKING
+from typing import Any
 
+from .base import MSSBase
 from .exception import ScreenShotError
 
 
-if TYPE_CHECKING:
-    from typing import Any  # noqa
+def mss(**kwargs: Any) -> MSSBase:
+    """Factory returning a proper MSS class instance.
 
-    from .base import MSSBase  # noqa
+    It detects the platform we are running on
+    and chooses the most adapted mss_class to take
+    screenshots.
 
-
-def mss(**kwargs):
-    # type: (Any) -> MSSBase
-    """ Factory returning a proper MSS class instance.
-
-        It detects the platform we are running on
-        and chooses the most adapted mss_class to take
-        screenshots.
-
-        It then proxies its arguments to the class for
-        instantiation.
+    It then proxies its arguments to the class for
+    instantiation.
     """
     # pylint: disable=import-outside-toplevel
 
@@ -45,4 +38,4 @@ def mss(**kwargs):
 
         return windows.MSS(**kwargs)
 
-    raise ScreenShotError("System {!r} not (yet?) implemented.".format(os_))
+    raise ScreenShotError(f"System {os_!r} not (yet?) implemented.")

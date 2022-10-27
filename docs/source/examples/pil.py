@@ -4,10 +4,9 @@ Source: https://github.com/BoboTiG/python-mss
 
 PIL example using frombytes().
 """
-
-import mss
 from PIL import Image
 
+import mss
 
 with mss.mss() as sct:
     # Get rid of the first, as it represents the "All in One" monitor:
@@ -21,6 +20,6 @@ with mss.mss() as sct:
         # img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
 
         # And save it!
-        output = "monitor-{}.png".format(num)
+        output = f"monitor-{num}.png"
         img.save(output)
         print(output)

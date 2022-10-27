@@ -2,69 +2,57 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING
 from threading import Lock
+from typing import Any, Callable, Iterator, List, Optional, Tuple, Type, Union
 
 from .exception import ScreenShotError
+from .models import Monitor, Monitors
 from .screenshot import ScreenShot
 from .tools import to_png
-
-if TYPE_CHECKING:
-    # pylint: disable=ungrouped-imports
-    from typing import Any, Callable, Iterator, List, Optional, Type  # noqa
-
-    from .models import Monitor, Monitors  # noqa
-
 
 lock = Lock()
 
 
 class MSSBase(metaclass=ABCMeta):
-    """ This class will be overloaded by a system specific one. """
+    """This class will be overloaded by a system specific one."""
 
     __slots__ = {"_monitors", "cls_image", "compression_level"}
 
-    def __init__(self):
-        self.cls_image = ScreenShot  # type: Type[ScreenShot]
+    def __init__(self) -> None:
+        self.cls_image: Type[ScreenShot] = ScreenShot
         self.compression_level = 6
-        self._monitors = []  # type: Monitors
+        self._monitors: Monitors = []
 
-    def __enter__(self):
-        # type: () -> MSSBase
-        """ For the cool call `with MSS() as mss:`. """
+    def __enter__(self) -> "MSSBase":
+        """For the cool call `with MSS() as mss:`."""
 
         return self
 
-    def __exit__(self, *_):
-        """ For the cool call `with MSS() as mss:`. """
+    def __exit__(self, *_: Any) -> None:
+        """For the cool call `with MSS() as mss:`."""
 
         self.close()
 
     @abstractmethod
-    def _grab_impl(self, monitor):
-        # type: (Monitor) -> ScreenShot
+    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
         That method has to be run using a threading lock.
         """
 
     @abstractmethod
-    def _monitors_impl(self):
-        # type: () -> None
+    def _monitors_impl(self) -> None:
         """
         Get positions of monitors (has to be run using a threading lock).
         It must populate self._monitors.
         """
 
-    def close(self):
-        # type: () -> None
-        """ Clean-up. """
+    def close(self) -> None:
+        """Clean-up."""
 
-    def grab(self, monitor):
-        # type: (Monitor) -> ScreenShot
+    def grab(self, monitor: Union[Monitor, Tuple[int, int, int, int]]) -> ScreenShot:
         """
         Retrieve screen pixels for a given monitor.
 
@@ -88,8 +76,7 @@ class MSSBase(metaclass=ABCMeta):
             return self._grab_impl(monitor)
 
     @property
-    def monitors(self):
-        # type: () -> Monitors
+    def monitors(self) -> Monitors:
         """
         Get positions of all monitors.
         If the monitor has rotation, you have to deal with it
@@ -115,8 +102,12 @@ class MSSBase(metaclass=ABCMeta):
 
         return self._monitors
 
-    def save(self, mon=0, output="monitor-{mon}.png", callback=None):
-        # type: (int, str, Callable[[str], None]) -> Iterator[str]
+    def save(
+        self,
+        mon: int = 0,
+        output: str = "monitor-{mon}.png",
+        callback: Callable[[str], None] = None,
+    ) -> Iterator[str]:
         """
         Grab a screen shot and save it to a file.
 
@@ -165,7 +156,7 @@ class MSSBase(metaclass=ABCMeta):
                 monitor = monitors[mon]
             except IndexError:
                 # pylint: disable=raise-missing-from
-                raise ScreenShotError("Monitor {!r} does not exist.".format(mon))
+                raise ScreenShotError(f"Monitor {mon!r} does not exist.")
 
             output = output.format(mon=mon, date=datetime.now(), **monitor)
             if callable(callback):
@@ -174,8 +165,7 @@ class MSSBase(metaclass=ABCMeta):
             to_png(sct.rgb, sct.size, level=self.compression_level, output=output)
             yield output
 
-    def shot(self, **kwargs):
-        # type: (Any) -> str
+    def shot(self, **kwargs: Any) -> str:
         """
         Helper to save the screen shot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
@@ -185,9 +175,14 @@ class MSSBase(metaclass=ABCMeta):
         return next(self.save(**kwargs))
 
     @staticmethod
-    def _cfactory(attr, func, argtypes, restype, errcheck=None):
-        # type: (Any, str, List[Any], Any, Optional[Callable]) -> None
-        """ Factory to create a ctypes function and automatically manage errors. """
+    def _cfactory(
+        attr: Any,
+        func: str,
+        argtypes: List[Any],
+        restype: Any,
+        errcheck: Optional[Callable] = None,
+    ) -> None:
+        """Factory to create a ctypes function and automatically manage errors."""
 
         meth = getattr(attr, func)
         meth.argtypes = argtypes

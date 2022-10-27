@@ -2,24 +2,18 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import os.path
-import sys
 from argparse import ArgumentParser
-from typing import TYPE_CHECKING
+from typing import List, Optional
 
 from . import __version__
 from .exception import ScreenShotError
 from .factory import mss
 from .tools import to_png
 
-if TYPE_CHECKING:
-    from typing import List, Optional  # noqa
 
-
-def main(args=None):
-    # type: (Optional[List[str]]) -> int
-    """ Main logic. """
+def main(args: Optional[List[str]] = None) -> int:
+    """Main logic."""
 
     cli_args = ArgumentParser()
     cli_args.add_argument(
@@ -88,4 +82,6 @@ def main(args=None):
 
 
 if __name__ == "__main__":
+    import sys
+
     sys.exit(main(sys.argv[1:]))

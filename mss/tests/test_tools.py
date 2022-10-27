@@ -2,14 +2,13 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import hashlib
 import os.path
 import zlib
 
 import pytest
-from mss.tools import to_png
 
+from mss.tools import to_png
 
 WIDTH = 10
 HEIGHT = 10
@@ -27,7 +26,7 @@ def test_bad_compression_level(sct):
 
 def test_compression_level(sct):
     data = b"rgb" * WIDTH * HEIGHT
-    output = "{}x{}.png".format(WIDTH, HEIGHT)
+    output = f"{WIDTH}x{HEIGHT}.png"
 
     to_png(data, (WIDTH, HEIGHT), level=sct.compression_level, output=output)
     with open(output, "rb") as png:
@@ -58,7 +57,7 @@ def test_compression_levels(level, checksum):
 
 def test_output_file():
     data = b"rgb" * WIDTH * HEIGHT
-    output = "{}x{}.png".format(WIDTH, HEIGHT)
+    output = f"{WIDTH}x{HEIGHT}.png"
     to_png(data, (WIDTH, HEIGHT), output=output)
 
     assert os.path.isfile(output)

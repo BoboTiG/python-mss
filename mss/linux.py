@@ -2,14 +2,14 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
+import contextlib
 import ctypes
 import ctypes.util
 import os
 import threading
 from ctypes import (
-    POINTER,
     CFUNCTYPE,
+    POINTER,
     Structure,
     c_char_p,
     c_int,
@@ -23,17 +23,12 @@ from ctypes import (
     c_void_p,
 )
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import Any, Dict, Optional, Tuple, Union
 
 from .base import MSSBase, lock
 from .exception import ScreenShotError
-
-if TYPE_CHECKING:
-    from typing import Any, Dict, List, Optional, Tuple, Union  # noqa
-
-    from .models import Monitor, Monitors  # noqa
-    from .screenshot import ScreenShot  # noqa
-
+from .models import CFunctions, Monitor
+from .screenshot import ScreenShot
 
 __all__ = ("MSS",)
 
@@ -68,7 +63,7 @@ class Event(Structure):
 
 
 class XWindowAttributes(Structure):
-    """ Attributes for the specified window. """
+    """Attributes for the specified window."""
 
     _fields_ = [
         ("x", c_int32),
@@ -123,7 +118,7 @@ class XImage(Structure):
 
 
 class XRRModeInfo(Structure):
-    """ Voilà, voilà. """
+    """Voilà, voilà."""
 
 
 class XRRScreenResources(Structure):
@@ -145,7 +140,7 @@ class XRRScreenResources(Structure):
 
 
 class XRRCrtcInfo(Structure):
-    """ Structure that contains CRTC information. """
+    """Structure that contains CRTC information."""
 
     _fields_ = [
         ("timestamp", c_ulong),
@@ -164,10 +159,8 @@ class XRRCrtcInfo(Structure):
 
 
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
-def error_handler(_, event):
-    # type: (Any, Any) -> int
-    """ Specifies the program's supplied error handler. """
-
+def error_handler(_: Any, event: Any) -> int:
+    """Specifies the program's supplied error handler."""
     evt = event.contents
     ERROR.details = {
         "type": evt.type,
@@ -179,16 +172,16 @@ def error_handler(_, event):
     return 0
 
 
-def validate(retval, func, args):
-    # type: (int, Any, Tuple[Any, Any]) -> Optional[Tuple[Any, Any]]
-    """ Validate the returned value of a Xlib or XRANDR function. """
+def validate(
+    retval: int, func: Any, args: Tuple[Any, Any]
+) -> Optional[Tuple[Any, Any]]:
+    """Validate the returned value of a Xlib or XRANDR function."""
 
     if retval != 0 and not ERROR.details:
         return args
 
-    err = "{}() failed".format(func.__name__)
     details = {"retval": retval, "args": args}
-    raise ScreenShotError(err, details=details)
+    raise ScreenShotError(f"{func.__name__}() failed", details=details)
 
 
 # C functions that will be initialised later.
@@ -200,7 +193,7 @@ def validate(retval, func, args):
 # Available attr: xlib, xrandr.
 #
 # Note: keep it sorted by cfunction.
-CFUNCTIONS = {
+CFUNCTIONS: CFunctions = {
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
     "XGetErrorText": ("xlib", [POINTER(Display), c_int, c_char_p, c_int], c_void_p),
@@ -265,11 +258,10 @@ class MSS(MSSBase):
     __slots__ = {"drawable", "root", "xlib", "xrandr"}
 
     # A dict to maintain *display* values created by multiple threads.
-    _display_dict = {}  # type: Dict[threading.Thread, int]
+    _display_dict: Dict[threading.Thread, int] = {}
 
-    def __init__(self, display=None):
-        # type: (Optional[Union[bytes, str]]) -> None
-        """ GNU/Linux initialisations. """
+    def __init__(self, display: Optional[Union[bytes, str]] = None) -> None:
+        """GNU/Linux initialisations."""
 
         super().__init__()
 
@@ -284,7 +276,7 @@ class MSS(MSSBase):
             display = display.encode("utf-8")
 
         if b":" not in display:
-            raise ScreenShotError("Bad display value: {!r}.".format(display))
+            raise ScreenShotError(f"Bad display value: {display!r}.")
 
         x11 = ctypes.util.find_library("X11")
         if not x11:
@@ -311,8 +303,7 @@ class MSS(MSSBase):
         #     expected LP_Display instance instead of LP_XWindowAttributes
         self.drawable = ctypes.cast(self.root, POINTER(Display))
 
-    def has_extension(self, extension):
-        # type: (str) -> bool
+    def has_extension(self, extension: str) -> bool:
         """Return True if the given *extension* is part of the extensions list of the server."""
         with lock:
             major_opcode_return = c_int()
@@ -332,7 +323,7 @@ class MSS(MSSBase):
             else:
                 return True
 
-    def _get_display(self, disp=None):
+    def _get_display(self, disp: Optional[bytes] = None) -> int:
         """
         Retrieve a thread-safe display from XOpenDisplay().
         In multithreading, if the thread that creates *display* is dead, *display* will
@@ -342,15 +333,18 @@ class MSS(MSSBase):
         *display* value first.
         """
         cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        display = MSS._display_dict.get(cur_thread) or MSS._display_dict.get(
+        current_display = MSS._display_dict.get(cur_thread) or MSS._display_dict.get(
             main_thread
         )
-        if not display:
-            display = MSS._display_dict[cur_thread] = self.xlib.XOpenDisplay(disp)
+        if current_display:
+            display = current_display
+        else:
+            display = self.xlib.XOpenDisplay(disp)
+            MSS._display_dict[cur_thread] = display
         return display
 
-    def _set_cfunctions(self):
-        """ Set all ctypes functions and attach them to attributes. """
+    def _set_cfunctions(self) -> None:
+        """Set all ctypes functions and attach them to attributes."""
 
         cfactory = self._cfactory
         attrs = {
@@ -358,22 +352,19 @@ class MSS(MSSBase):
             "xrandr": self.xrandr,
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
-            try:
+            with contextlib.suppress(AttributeError):
                 cfactory(
                     attr=attrs[attr],
                     errcheck=validate,
                     func=func,
                     argtypes=argtypes,
                     restype=restype,
-                )  # type: ignore
-            except AttributeError:
-                pass
+                )
 
-    def get_error_details(self):
-        # type: () -> Optional[Dict[str, Any]]
-        """ Get more information about the latest X server error. """
+    def get_error_details(self) -> Optional[Dict[str, Any]]:
+        """Get more information about the latest X server error."""
 
-        details = {}  # type: Dict[str, Any]
+        details: Dict[str, Any] = {}
 
         if ERROR.details:
             details = {"xerror_details": ERROR.details}
@@ -391,9 +382,8 @@ class MSS(MSSBase):
 
         return details
 
-    def _monitors_impl(self):
-        # type: () -> None
-        """ Get positions of monitors. It will populate self._monitors. """
+    def _monitors_impl(self) -> None:
+        """Get positions of monitors. It will populate self._monitors."""
 
         display = self._get_display()
         int_ = int
@@ -439,9 +429,8 @@ class MSS(MSSBase):
             xrandr.XRRFreeCrtcInfo(crtc)
         xrandr.XRRFreeScreenResources(mon)
 
-    def _grab_impl(self, monitor):
-        # type: (Monitor) -> ScreenShot
-        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
+    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+        """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         ximage = self.xlib.XGetImage(
             self._get_display(),
@@ -458,9 +447,7 @@ class MSS(MSSBase):
             bits_per_pixel = ximage.contents.bits_per_pixel
             if bits_per_pixel != 32:
                 raise ScreenShotError(
-                    "[XImage] bits per pixel value not (yet?) implemented: {}.".format(
-                        bits_per_pixel
-                    )
+                    f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}."
                 )
 
             raw_data = ctypes.cast(

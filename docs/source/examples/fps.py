@@ -5,15 +5,15 @@ Source: https://github.com/BoboTiG/python-mss
 Simple naive benchmark to compare with:
     https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/
 """
-
 import time
 
 import cv2
-import mss
 import numpy
 
+import mss
 
-def screen_record():
+
+def screen_record() -> int:
     try:
         from PIL import ImageGrab
     except ImportError:
@@ -38,7 +38,7 @@ def screen_record():
     return fps
 
 
-def screen_record_efficient():
+def screen_record_efficient() -> int:
     # 800x600 windowed mode
     mon = {"top": 40, "left": 0, "width": 800, "height": 640}
 

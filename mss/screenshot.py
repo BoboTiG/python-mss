@@ -3,15 +3,10 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 
-from typing import TYPE_CHECKING
+from typing import Any, Dict, Iterator, Optional, Type
 
-from .models import Size, Pos
 from .exception import ScreenShotError
-
-if TYPE_CHECKING:
-    from typing import Any, Dict, Iterator, Optional  # noqa
-
-    from .models import Monitor, Pixel, Pixels  # noqa
+from .models import Monitor, Pixel, Pixels, Pos, Size
 
 
 class ScreenShot:
@@ -26,11 +21,11 @@ class ScreenShot:
 
     __slots__ = {"__pixels", "__rgb", "pos", "raw", "size"}
 
-    def __init__(self, data, monitor, size=None):
-        # type: (bytearray, Monitor, Optional[Size]) -> None
-
-        self.__pixels = None  # type: Optional[Pixels]
-        self.__rgb = None  # type: Optional[bytes]
+    def __init__(
+        self, data: bytearray, monitor: Monitor, size: Optional[Size] = None
+    ) -> None:
+        self.__pixels: Optional[Pixels] = None
+        self.__rgb: Optional[bytes] = None
 
         #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
@@ -39,20 +34,14 @@ class ScreenShot:
         #: NamedTuple of the screen shot coordinates.
         self.pos = Pos(monitor["left"], monitor["top"])
 
-        if size is not None:
-            #: NamedTuple of the screen shot size.
-            self.size = size
-        else:
-            self.size = Size(monitor["width"], monitor["height"])
+        #: NamedTuple of the screen shot size.
+        self.size = Size(monitor["width"], monitor["height"]) if size is None else size
 
-    def __repr__(self):
-        return ("<{!s} pos={cls.left},{cls.top} size={cls.width}x{cls.height}>").format(
-            type(self).__name__, cls=self
-        )
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__} pos={self.left},{self.top} size={self.width}x{self.height}>"
 
     @property
-    def __array_interface__(self):
-        # type: () -> Dict[str, Any]
+    def __array_interface__(self) -> Dict[str, Any]:
         """
         Numpy array interface support.
         It uses raw data in BGRA form.
@@ -68,49 +57,44 @@ class ScreenShot:
         }
 
     @classmethod
-    def from_size(cls, data, width, height):
-        # type: (bytearray, int, int) -> ScreenShot
-        """ Instantiate a new class given only screen shot's data and size. """
-
+    def from_size(
+        cls: Type["ScreenShot"], data: bytearray, width: int, height: int
+    ) -> "ScreenShot":
+        """Instantiate a new class given only screen shot's data and size."""
         monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
 
     @property
-    def bgra(self):
-        # type: () -> bytes
-        """ BGRA values from the BGRA raw pixels. """
+    def bgra(self) -> bytes:
+        """BGRA values from the BGRA raw pixels."""
         return bytes(self.raw)
 
     @property
-    def height(self):
-        # type: () -> int
-        """ Convenient accessor to the height size. """
+    def height(self) -> int:
+        """Convenient accessor to the height size."""
         return self.size.height
 
     @property
-    def left(self):
-        # type: () -> int
-        """ Convenient accessor to the left position. """
+    def left(self) -> int:
+        """Convenient accessor to the left position."""
         return self.pos.left
 
     @property
-    def pixels(self):
-        # type: () -> Pixels
+    def pixels(self) -> Pixels:
         """
         :return list: RGB tuples.
         """
 
         if not self.__pixels:
-            rgb_tuples = zip(
-                self.raw[2::4], self.raw[1::4], self.raw[0::4]
-            )  # type: Iterator[Pixel]
+            rgb_tuples: Iterator[Pixel] = zip(
+                self.raw[2::4], self.raw[1::4], self.raw[::4]
+            )
             self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))  # type: ignore
 
         return self.__pixels
 
     @property
-    def rgb(self):
-        # type: () -> bytes
+    def rgb(self) -> bytes:
         """
         Compute RGB values from the BGRA raw pixels.
 
@@ -120,27 +104,24 @@ class ScreenShot:
         if not self.__rgb:
             rgb = bytearray(self.height * self.width * 3)
             raw = self.raw
-            rgb[0::3] = raw[2::4]
+            rgb[::3] = raw[2::4]
             rgb[1::3] = raw[1::4]
-            rgb[2::3] = raw[0::4]
+            rgb[2::3] = raw[::4]
             self.__rgb = bytes(rgb)
 
         return self.__rgb
 
     @property
-    def top(self):
-        # type: () -> int
-        """ Convenient accessor to the top position. """
+    def top(self) -> int:
+        """Convenient accessor to the top position."""
         return self.pos.top
 
     @property
-    def width(self):
-        # type: () -> int
-        """ Convenient accessor to the width size. """
+    def width(self) -> int:
+        """Convenient accessor to the width size."""
         return self.size.width
 
-    def pixel(self, coord_x, coord_y):
-        # type: (int, int) -> Pixel
+    def pixel(self, coord_x: int, coord_y: int) -> Pixel:
         """
         Returns the pixel value at a given position.
 
@@ -154,5 +135,5 @@ class ScreenShot:
         except IndexError:
             # pylint: disable=raise-missing-from
             raise ScreenShotError(
-                "Pixel location ({}, {}) is out of range.".format(coord_x, coord_y)
+                f"Pixel location ({coord_x}, {coord_y}) is out of range."
             )

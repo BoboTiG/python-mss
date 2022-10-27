@@ -2,21 +2,20 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import ctypes.util
 import platform
 
-import mss
 import pytest
-from mss.exception import ScreenShotError
 
+import mss
+from mss.exception import ScreenShotError
 
 if platform.system().lower() != "darwin":
     pytestmark = pytest.mark.skip
 
 
 def test_repr():
-    from mss.darwin import CGSize, CGPoint, CGRect
+    from mss.darwin import CGPoint, CGRect, CGSize
 
     # CGPoint
     point = CGPoint(2.0, 1.0)

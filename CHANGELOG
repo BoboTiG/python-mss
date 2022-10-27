@@ -2,6 +2,15 @@ History:
 
 <see Git checking messages for history>
 
+7.0.0   2022/10/27
+      - added support for Python 3.11
+      - added support for Python 3.10
+      - removed support for Python 3.5
+      - MSS: modernized the code base (types, f-string, ran isort & black)
+      - MSS: fixed several Sourcery issues
+      - MSS: fixed typos here, and there
+      - doc: fixed an error when building with shpinx
+
 6.1.0   2020/10/31
       - MSS: reworked how C functions are initialised
       - Mac: reduce the number of function calls
@@ -119,14 +128,14 @@ History:
 3.0.0   2017/07/06
       - big refactor, introducing the ScreenShot class
       - MSS: add Numpy array interface support to the Screenshot class
-      - docs: add OpenCV/Numpy, PIL pixels, FPS
+      - doc: add OpenCV/Numpy, PIL pixels, FPS
 
 2.0.22  2017/04/29
       - new contributors: David Becker, redodo
       - MSS: better use of exception mechanism
       - Linux: use of hasattr to prevent Exception on early exit
       - Mac: take into account extra black pixels added when screen with is not divisible by 16 (fix #14)
-      - docs: add an example to capture only a part of the screen
+      - doc: add an example to capture only a part of the screen
 
 2.0.18  2016/12/03
       - change license to MIT
@@ -138,7 +147,7 @@ History:
       - Linux: skip unused monitors
       - Linux: use errcheck instead of deprecated restype with callable (fix #11)
       - Linux: fix security issue (reported by Bandit)
-      - docs: add documentation (fix #10)
+      - doc: add documentation (fix #10)
       - tests: add tests and use Travis CI (fix #9)
 
 2.0.0   2016/06/04
@@ -175,14 +184,14 @@ History:
       - MSS: little code review
       - Linux: fix monitor count
       - tests: remove test-linux binary
-      - docs: add doc/TESTING
-      - docs: remove Bonus section from README.rst
+      - doc: add doc/TESTING
+      - doc: remove Bonus section from README.rst
 
 0.1.0   2015/04/10
       - MSS: fix code with YAPF tool
       - Linux: fully functional using Xrandr library
       - Linux: code purgation (no more XML files to parse)
-      - docs: better tests and examples
+      - doc: better tests and examples
 
 0.0.8   2015/02/04
       - new contributors: sergey-vin, Alexander 'thehesiod' Mohr
