@@ -47,3 +47,12 @@ You can install it with pip::
 Or you can install it with conda::
 
     conda install -c conda-forge python-mss
+
+Maintenance
+-----------
+
+For the maintainers, here are commands to upload a new release:
+
+    python -m build --sdist --wheel
+    twine check dist/*
+    twine upload dist/*
