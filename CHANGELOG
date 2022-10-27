@@ -9,7 +9,7 @@ History:
       - MSS: modernized the code base (types, f-string, ran isort & black)
       - MSS: fixed several Sourcery issues
       - MSS: fixed typos here, and there
-      - doc: fixed an error when building with shpinx
+      - doc: fixed an error when building the documentation
 
 6.1.0   2020/10/31
       - MSS: reworked how C functions are initialised
