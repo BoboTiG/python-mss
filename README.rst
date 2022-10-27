@@ -5,8 +5,6 @@ Python MSS
     :target: https://travis-ci.org/BoboTiG/python-mss
 .. image:: https://ci.appveyor.com/api/projects/status/72dik18r6b746mb0?svg=true
     :target: https://ci.appveyor.com/project/BoboTiG/python-mss
-.. image:: https://img.shields.io/badge/say-thanks-ff69b4.svg
-    :target: https://saythanks.io/to/BoboTiG
 .. image:: https://pepy.tech/badge/mss
     :target: https://pepy.tech/project/mss
 .. image:: https://anaconda.org/conda-forge/python-mss/badges/version.svg
