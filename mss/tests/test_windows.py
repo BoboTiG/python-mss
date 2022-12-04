@@ -48,6 +48,7 @@ def test_region_caching():
         sct.grab(region2)
         assert bmp2 == id(MSS.bmp)
 
+
 def test_region_not_caching():
     """The region to grab is not bad cached previous grab.
     """
@@ -75,7 +76,7 @@ def test_region_not_caching():
     assert bmp1 != bmp2
 
 
-def run_child_thread(loops):    
+def run_child_thread(loops):
     for _ in range(loops):
         with mss.mss() as sct:  # New sct for every loop
             sct.grab(sct.monitors[1])
