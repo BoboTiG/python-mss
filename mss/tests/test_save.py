@@ -2,7 +2,6 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import os.path
 from datetime import datetime
 
@@ -10,8 +9,7 @@ import pytest
 
 
 def test_at_least_2_monitors(sct):
-    shots = list(sct.save(mon=0))
-    assert len(shots) >= 1
+    assert list(sct.save(mon=0))
 
 
 def test_files_exist(sct):
@@ -27,7 +25,7 @@ def test_files_exist(sct):
 def test_callback(sct):
     def on_exists(fname):
         if os.path.isfile(fname):
-            new_file = fname + ".old"
+            new_file = f"{fname}.old"
             os.rename(fname, new_file)
 
     filename = sct.shot(mon=0, output="mon0.png", callback=on_exists)

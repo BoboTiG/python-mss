@@ -4,10 +4,8 @@ Source: https://github.com/BoboTiG/python-mss
 
 Example to capture part of the screen of the monitor 2.
 """
-
 import mss
 import mss.tools
-
 
 with mss.mss() as sct:
     # Get information of monitor 2

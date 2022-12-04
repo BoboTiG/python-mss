@@ -5,16 +5,13 @@ Source: https://github.com/BoboTiG/python-mss
 Example using the multiprocessing module to speed-up screen capture.
     https://github.com/pythonlessons/TensorFlow-object-detection-tutorial
 """
-
 from multiprocessing import Process, Queue
 
 import mss
 import mss.tools
 
 
-def grab(queue):
-    # type: (Queue) -> None
-
+def grab(queue: Queue) -> None:
     rect = {"top": 0, "left": 0, "width": 600, "height": 800}
 
     with mss.mss() as sct:
@@ -25,9 +22,7 @@ def grab(queue):
     queue.put(None)
 
 
-def save(queue):
-    # type: (Queue) -> None
-
+def save(queue: Queue) -> None:
     number = 0
     output = "screenshots/file_{}.png"
     to_png = mss.tools.to_png
@@ -43,7 +38,7 @@ def save(queue):
 
 if __name__ == "__main__":
     # The screenshots queue
-    queue = Queue()  # type: Queue
+    queue: Queue = Queue()
 
     # 2 processes: one for grabing and one for saving PNG files
     Process(target=grab, args=(queue,)).start()

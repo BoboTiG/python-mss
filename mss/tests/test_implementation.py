@@ -2,12 +2,12 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import os
 import os.path
 import platform
 
 import pytest
+
 import mss
 import mss.tools
 from mss.base import MSSBase
@@ -16,20 +16,20 @@ from mss.screenshot import ScreenShot
 
 
 class MSS0(MSSBase):
-    """ Nothing implemented. """
+    """Nothing implemented."""
 
     pass
 
 
 class MSS1(MSSBase):
-    """ Only `grab()` implemented. """
+    """Only `grab()` implemented."""
 
     def grab(self, monitor):
         pass
 
 
 class MSS2(MSSBase):
-    """ Only `monitor` implemented. """
+    """Only `monitor` implemented."""
 
     @property
     def monitors(self):
@@ -76,8 +76,9 @@ def test_factory(monkeypatch):
 
 
 def test_entry_point(capsys, sct):
-    from mss.__main__ import main
     from datetime import datetime
+
+    from mss.__main__ import main
 
     for opt in ("-m", "--monitor"):
         main([opt, "1"])
@@ -113,9 +114,9 @@ def test_entry_point(capsys, sct):
         os.remove(filename)
 
     coordinates = "2,12,40,67"
+    filename = "sct-2x12_40x67.png"
     for opt in ("-c", "--coordinates"):
         main([opt, coordinates])
-        filename = "sct-2x12_40x67.png"
         out, _ = capsys.readouterr()
         assert out.endswith(filename + "\n")
         assert os.path.isfile(filename)

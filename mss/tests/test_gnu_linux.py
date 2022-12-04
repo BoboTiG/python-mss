@@ -2,16 +2,15 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import ctypes.util
 import os
 import platform
 
-import mss
 import pytest
+
+import mss
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
-
 
 if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip
@@ -97,9 +96,7 @@ def test_no_xrandr_extension(monkeypatch):
         It is a naive approach, but works for now.
         """
 
-        if lib == "Xrandr":
-            return None
-        return x11
+        return None if lib == "Xrandr" else x11
 
     # No `Xrandr` library
     monkeypatch.setattr(ctypes.util, "find_library", find_lib_mocked)

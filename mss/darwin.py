@@ -2,7 +2,6 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import ctypes
 import ctypes.util
 import sys
@@ -12,61 +11,53 @@ from ctypes import (
     c_double,
     c_float,
     c_int32,
-    c_uint64,
     c_ubyte,
     c_uint32,
+    c_uint64,
     c_void_p,
 )
 from platform import mac_ver
-from typing import TYPE_CHECKING
+from typing import Any, Type, Union
 
 from .base import MSSBase
 from .exception import ScreenShotError
-from .screenshot import Size
-
-if TYPE_CHECKING:
-    from typing import Any, List, Type, Union  # noqa
-
-    from .models import Monitor, Monitors  # noqa
-    from .screenshot import ScreenShot  # noqa
+from .models import CFunctions, Monitor
+from .screenshot import ScreenShot, Size
 
 __all__ = ("MSS",)
 
 
-def cgfloat():
-    # type: () -> Union[Type[c_double], Type[c_float]]
-    """ Get the appropriate value for a float. """
+def cgfloat() -> Union[Type[c_double], Type[c_float]]:
+    """Get the appropriate value for a float."""
 
-    return c_double if sys.maxsize > 2 ** 32 else c_float
+    return c_double if sys.maxsize > 2**32 else c_float
 
 
 class CGPoint(Structure):
-    """ Structure that contains coordinates of a rectangle. """
+    """Structure that contains coordinates of a rectangle."""
 
     _fields_ = [("x", cgfloat()), ("y", cgfloat())]
 
-    def __repr__(self):
-        return "{}(left={} top={})".format(type(self).__name__, self.x, self.y)
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(left={self.x} top={self.y})"
 
 
 class CGSize(Structure):
-    """ Structure that contains dimensions of an rectangle. """
+    """Structure that contains dimensions of an rectangle."""
 
     _fields_ = [("width", cgfloat()), ("height", cgfloat())]
 
-    def __repr__(self):
-        return "{}(width={} height={})".format(
-            type(self).__name__, self.width, self.height
-        )
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(width={self.width} height={self.height})"
 
 
 class CGRect(Structure):
-    """ Structure that contains information about a rectangle. """
+    """Structure that contains information about a rectangle."""
 
     _fields_ = [("origin", CGPoint), ("size", CGSize)]
 
-    def __repr__(self):
-        return "{}<{} {}>".format(type(self).__name__, self.origin, self.size)
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}<{self.origin} {self.size}>"
 
 
 # C functions that will be initialised later.
@@ -77,7 +68,7 @@ class CGRect(Structure):
 # Available attr: core.
 #
 # Note: keep it sorted by cfunction.
-CFUNCTIONS = {
+CFUNCTIONS: CFunctions = {
     "CGDataProviderCopyData": ("core", [c_void_p], c_void_p),
     "CGDisplayBounds": ("core", [c_uint32], CGRect),
     "CGDisplayRotation": ("core", [c_uint32], c_float),
@@ -113,8 +104,8 @@ class MSS(MSSBase):
 
     __slots__ = {"core", "max_displays"}
 
-    def __init__(self, **_):
-        """ macOS initialisations. """
+    def __init__(self, **_: Any) -> None:
+        """macOS initialisations."""
 
         super().__init__()
 
@@ -123,8 +114,8 @@ class MSS(MSSBase):
         self._init_library()
         self._set_cfunctions()
 
-    def _init_library(self):
-        """ Load the CoreGraphics library. """
+    def _init_library(self) -> None:
+        """Load the CoreGraphics library."""
         version = float(".".join(mac_ver()[0].split(".")[:2]))
         if version < 10.16:
             coregraphics = ctypes.util.find_library("CoreGraphics")
@@ -137,9 +128,8 @@ class MSS(MSSBase):
             raise ScreenShotError("No CoreGraphics library found.")
         self.core = ctypes.cdll.LoadLibrary(coregraphics)
 
-    def _set_cfunctions(self):
-        # type: () -> None
-        """ Set all ctypes functions and attach them to attributes. """
+    def _set_cfunctions(self) -> None:
+        """Set all ctypes functions and attach them to attributes."""
 
         cfactory = self._cfactory
         attrs = {"core": self.core}
@@ -147,13 +137,12 @@ class MSS(MSSBase):
             cfactory(
                 attr=attrs[attr],
                 func=func,
-                argtypes=argtypes,  # type: ignore
+                argtypes=argtypes,
                 restype=restype,
             )
 
-    def _monitors_impl(self):
-        # type: () -> None
-        """ Get positions of monitors. It will populate self._monitors. """
+    def _monitors_impl(self) -> None:
+        """Get positions of monitors. It will populate self._monitors."""
 
         int_ = int
         core = self.core
@@ -199,9 +188,8 @@ class MSS(MSSBase):
             "height": int_(all_monitors.size.height),
         }
 
-    def _grab_impl(self, monitor):
-        # type: (Monitor) -> ScreenShot
-        """ Retrieve all pixels from a monitor. Pixels have to be RGB. """
+    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+        """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         # pylint: disable=too-many-locals
 

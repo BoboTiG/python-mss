@@ -4,8 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 
 import collections
-from typing import Dict, List, Tuple
-
+from typing import Any, Dict, List, Tuple
 
 Monitor = Dict[str, int]
 Monitors = List[Monitor]
@@ -15,3 +14,5 @@ Pixels = List[Pixel]
 
 Pos = collections.namedtuple("Pos", "left, top")
 Size = collections.namedtuple("Size", "width, height")
+
+CFunctions = Dict[str, Tuple[str, List[Any], Any]]

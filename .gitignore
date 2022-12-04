@@ -14,4 +14,5 @@ dist/
 .vscode
 docs/output/
 .mypy_cache/
+__pycache__/
 venv/

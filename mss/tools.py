@@ -6,14 +6,12 @@ Source: https://github.com/BoboTiG/python-mss
 import os
 import struct
 import zlib
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Optional, Tuple  # noqa
+from typing import Optional, Tuple
 
 
-def to_png(data, size, level=6, output=None):
-    # type: (bytes, Tuple[int, int], int, Optional[str]) -> Optional[bytes]
+def to_png(
+    data: bytes, size: Tuple[int, int], level: int = 6, output: Optional[str] = None
+) -> Optional[bytes]:
     """
     Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.

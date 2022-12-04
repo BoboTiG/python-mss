@@ -2,14 +2,13 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import platform
 import threading
 
-import mss
 import pytest
-from mss.exception import ScreenShotError
 
+import mss
+from mss.exception import ScreenShotError
 
 if platform.system().lower() != "windows":
     pytestmark = pytest.mark.skip

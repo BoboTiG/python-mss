@@ -28,12 +28,12 @@ Windows
   numpy_flip        25
   numpy_slice       22
 """
-
 import time
 
-import mss
 import numpy
 from PIL import Image
+
+import mss
 
 
 def mss_rgb(im):

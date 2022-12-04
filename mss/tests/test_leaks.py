@@ -2,24 +2,19 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-
 import os
 import platform
-from typing import TYPE_CHECKING
+from typing import Callable
 
 import pytest
+
 from mss import mss
-
-if TYPE_CHECKING:
-    from typing import Callable  # noqa
-
 
 OS = platform.system().lower()
 PID = os.getpid()
 
 
-def get_opened_socket():
-    # type: () -> int
+def get_opened_socket() -> int:
     """
     GNU/Linux: a way to get the opened sockets count.
     It will be used to check X server connections are well closed.
@@ -27,13 +22,12 @@ def get_opened_socket():
 
     import subprocess
 
-    cmd = "lsof -U | grep {}".format(PID)
+    cmd = f"lsof -U | grep {PID}"
     output = subprocess.check_output(cmd, shell=True)
     return len(output.splitlines())
 
 
-def get_handles():
-    # type: () -> int
+def get_handles() -> int:
     """
     Windows: a way to get the GDI handles count.
     It will be used to check the handles count is not growing, showing resource leaks.
@@ -48,14 +42,10 @@ def get_handles():
 
 
 @pytest.fixture
-def monitor_func():
-    # type: () -> Callable[[], int]
-    """ OS specific function to check resources in use. """
+def monitor_func() -> Callable[[], int]:
+    """OS specific function to check resources in use."""
 
-    if OS == "linux":
-        return get_opened_socket
-
-    return get_handles
+    return get_opened_socket if OS == "linux" else get_handles
 
 
 def bound_instance_without_cm():
@@ -113,7 +103,7 @@ def regression_issue_135():
     ),
 )
 def test_resource_leaks(func, monitor_func):
-    """ Check for resource leaks with different use cases. """
+    """Check for resource leaks with different use cases."""
 
     # Warm-up
     func()

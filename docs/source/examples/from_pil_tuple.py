@@ -4,10 +4,8 @@ Source: https://github.com/BoboTiG/python-mss
 
 Use PIL bbox style and percent values.
 """
-
 import mss
 import mss.tools
-
 
 with mss.mss() as sct:
     # Use the 1st monitor
@@ -23,7 +21,7 @@ with mss.mss() as sct:
     # Grab the picture
     # Using PIL would be something like:
     # im = ImageGrab(bbox=bbox)
-    im = sct.grab(bbox)  # type: ignore
+    im = sct.grab(bbox)
 
     # Save it!
     mss.tools.to_png(im.rgb, im.size, output="screenshot.png")
