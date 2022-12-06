@@ -5,7 +5,7 @@ Python MSS
     :target: https://pypi.org/project/mss/
 .. image:: https://anaconda.org/conda-forge/python-mss/badges/version.svg
     :target: https://anaconda.org/conda-forge/python-mss
-.. image:: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg
+.. image:: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg?branch=master
     :target: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml
 .. image:: https://static.pepy.tech/personalized-badge/mss?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads
     :target: https://pepy.tech/project/mss
