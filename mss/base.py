@@ -106,7 +106,7 @@ class MSSBase(metaclass=ABCMeta):
         self,
         mon: int = 0,
         output: str = "monitor-{mon}.png",
-        callback: Callable[[str], None] = None,
+        callback: Optional[Callable[[str], None]] = None,
     ) -> Iterator[str]:
         """
         Grab a screen shot and save it to a file.
