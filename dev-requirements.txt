@@ -7,7 +7,7 @@ pytest
 pytest-cov
 mypy
 numpy; platform_python_implementation != "pypy"
-numpy==1.15.4; platform_python_implementation == "pypy"
+numpy==1.24.2; platform_python_implementation == "pypy"
 pillow
 pylint
 sphinx
