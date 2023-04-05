@@ -5,10 +5,6 @@ on:
     branches:
       - master
   pull_request:
-    paths:
-      - ".github/workflows/tests.yml"
-      - "setup.cfg"
-      - "mss/**"
 
 jobs:
   quality:
