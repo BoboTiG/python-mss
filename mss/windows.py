@@ -22,7 +22,7 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .base import MSSBase
 from .exception import ScreenShotError
@@ -282,3 +282,7 @@ class MSS(MSSBase):
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
         return self.cls_image(bytearray(self._data), monitor)
+
+    def _cursor_impl(self) -> Optional[ScreenShot]:
+        """Retrieve all cursor data. Pixels have to be RGB."""
+        return None
