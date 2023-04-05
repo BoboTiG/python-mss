@@ -333,8 +333,7 @@ class MSS(MSSBase):
         self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
 
         if self.with_cursor:
-            xfixes = ctypes.util.find_library("Xfixes")
-            if xfixes:
+            if xfixes := ctypes.util.find_library("Xfixes"):
                 self.xfixes = ctypes.cdll.LoadLibrary(xfixes)
             else:
                 self.with_cursor = False
@@ -379,8 +378,7 @@ class MSS(MSSBase):
         *display* value first.
         """
         current_thread = threading.current_thread()
-        current_display = MSS._display_dict.get(current_thread)
-        if current_display:
+        if current_display := MSS._display_dict.get(current_thread):
             display = current_display
         else:
             display = self.xlib.XOpenDisplay(disp)

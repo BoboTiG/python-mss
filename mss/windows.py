@@ -170,10 +170,9 @@ class MSS(MSSBase):
         Since the current thread and main thread are always alive, reuse their *srcdc* value first.
         """
         cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        current_srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(
+        if current_srcdc := MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(
             main_thread
-        )
-        if current_srcdc:
+        ):
             srcdc = current_srcdc
         else:
             srcdc = self.user32.GetWindowDC(0)
