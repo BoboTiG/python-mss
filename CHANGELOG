@@ -4,7 +4,7 @@ History:
 
 7.0.1   2022/10/27
       - fixed the wheel package
-      - dropped support for Python 3.6
+      - removed support for Python 3.6
       - MSS: fixed PEP 484 prohibits implicit Optional
 
 7.0.0   2022/10/27
