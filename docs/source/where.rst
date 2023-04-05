@@ -24,6 +24,7 @@ AI, Computer Vison
 Games
 =====
 
+- `Airtest <https://github.com/AirtestProject/Airtest>`_, a cross-platform UI automation framework for aames and apps;
 - `Go Review Partner <https://github.com/pnprog/goreviewpartner>`_, a tool to help analyse and review your game of go (weiqi, baduk) using strong bots;
 - `Serpent.AI <https://github.com/SerpentAI/SerpentAI>`_, a Game Agent Framework;
 
