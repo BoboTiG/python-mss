@@ -5,10 +5,6 @@ on:
     branches:
       - master
   pull_request:
-    paths:
-      - ".github/workflows/tests.yml"
-      - "setup.cfg"
-      - "mss/**"
 
 jobs:
   quality:
@@ -87,7 +83,7 @@ jobs:
         if: matrix.os.emoji == '🐧'
         run: |
           export DISPLAY=:99
-          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+          sudo Xvfb -ac ${DISPLAY} -screen 0 1280x1024x24 > /dev/null 2>&1 &
           python -m pytest
       - name: Tests on other platforms
         if: matrix.os.emoji != '🐧'

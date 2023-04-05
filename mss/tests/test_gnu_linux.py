@@ -9,6 +9,7 @@ import platform
 import pytest
 
 import mss
+import mss.linux
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
@@ -107,18 +108,23 @@ def test_no_xrandr_extension(monkeypatch):
 
 def test_region_out_of_monitor_bounds():
     display = os.getenv("DISPLAY")
+    monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
+
+    assert not mss.linux._ERROR
+
     with mss.mss(display=display) as sct:
         with pytest.raises(ScreenShotError) as exc:
-            monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
-            assert sct.grab(monitor)
+            sct.grab(monitor)
 
         assert str(exc.value)
-        assert "retval" in exc.value.details
-        assert "args" in exc.value.details
 
-        details = sct.get_error_details()
-        assert details["xerror"]
-        assert isinstance(details["xerror_details"], dict)
+        details = exc.value.details
+        assert details
+        assert isinstance(details, dict)
+        assert isinstance(details["error"], str)
+        assert not mss.linux._ERROR
+
+    assert not mss.linux._ERROR
 
 
 def test_has_extension():
