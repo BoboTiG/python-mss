@@ -346,8 +346,7 @@ class MSS(MSSBase):
         *display* value first.
         """
         current_thread = threading.current_thread()
-        current_display = MSS._display_dict.get(current_thread)
-        if current_display:
+        if current_display := MSS._display_dict.get(current_thread):
             display = current_display
         else:
             display = self.xlib.XOpenDisplay(disp)
