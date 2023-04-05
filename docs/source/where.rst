@@ -12,9 +12,10 @@ AI, Computer Vison
 - `DeepEye <https://github.com/thayerAlshaabi/DeepEye>`_, a deep vision-based software library for autonomous and advanced driver-assistance systems;
 - `DoomPy <https://github.com/WNoxchi/DoomPy>`_ (Autonomous Anti-Demonic Combat Algorithms);
 - `Europilot <https://github.com/jsistla/eu-pilot>`_, a self-driving algorithm using Euro Truck Simulator (ETS2);
+- `Gradient Sampler <https://github.com/FrankFirsching/gradient_sampler>`_,  sample blender gradients from anything on the screen;
 - `gym-mupen64plus <https://github.com/bzier/gym-mupen64plus>`_, an OpenAI Gym environment wrapper for the Mupen64Plus N64 emulator;
-- `OSRS Bot COLOR (OSBC) <https://github.com/kelltom/OSRS-Bot-COLOR>`_, a lightweight desktop client for controlling and monitoring color-based automation scripts (bots) for OSRS and private server alternatives;
 - `Open Source Self Driving Car Initiative <https://github.com/OSSDC/OSSDC-VisionBasedACC>`_;
+- `OSRS Bot COLOR (OSBC) <https://github.com/kelltom/OSRS-Bot-COLOR>`_, a lightweight desktop client for controlling and monitoring color-based automation scripts (bots) for OSRS and private server alternatives;
 - `Python-ImageSearch <https://github.com/drov0/python-imagesearch>`_, a wrapper around OpenCV2 and PyAutoGUI to do image searching easily;
 - `PUBGIS <https://github.com/andrewzwicky/PUBGIS>`_, a map generator of your position throughout PUBG gameplay;
 - `Self-Driving-Car-3D-Simulator-With-CNN <https://github.com/sagar448/Self-Driving-Car-3D-Simulator-With-CNN>`_;
