@@ -19,14 +19,6 @@ GNU/Linux
 
 .. attribute:: CFUNCTIONS
 
-.. attribute:: ERROR
-
-    :type: types.SimpleNamspacedict
-
-    The `details` attribute contains the latest Xlib or XRANDR function. It is a dict.
-
-    .. versionadded:: 5.0.0
-
 .. attribute:: PLAINMASK
 
 .. attribute:: ZPIXMAP
@@ -39,33 +31,6 @@ GNU/Linux
         :param display: The display to use.
 
         GNU/Linux initializations.
-
-    .. method:: get_error_details()
-
-        :rtype: Optional[dict[str, Any]]
-
-        Get more information about the latest X server error. To use in such scenario::
-
-            with mss.mss() as sct:
-                # Take a screenshot of a region out of monitor bounds
-                rect = {"left": -30, "top": 0, "width": 100, "height": 100}
-
-                try:
-                    sct.grab(rect)
-                except ScreenShotError:
-                    details = sct.get_error_details()
-                    """
-                    >>> import pprint
-                    >>> pprint.pprint(details)
-                    {'xerror': 'BadFont (invalid Font parameter)',
-                     'xerror_details': {'error_code': 7,
-                                        'minor_code': 0,
-                                        'request_code': 0,
-                                        'serial': 422,
-                                        'type': 0}}
-                    """
-
-        .. versionadded:: 4.0.0
 
     .. method:: grab(monitor)
 
