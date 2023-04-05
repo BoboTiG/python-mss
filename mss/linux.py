@@ -320,8 +320,7 @@ class MSS(MSSBase):
                 )
             except ScreenShotError:
                 return False
-            else:
-                return True
+            return True
 
     def _get_display(self, disp: Optional[bytes] = None) -> int:
         """
