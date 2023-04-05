@@ -22,7 +22,6 @@ from ctypes import (
     c_ushort,
     c_void_p,
 )
-from types import SimpleNamespace
 from typing import Any, Dict, Optional, Tuple, Union
 
 from .base import MSSBase, lock
@@ -33,7 +32,6 @@ from .screenshot import ScreenShot
 __all__ = ("MSS",)
 
 
-ERROR = SimpleNamespace(details=None)
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 
@@ -158,29 +156,46 @@ class XRRCrtcInfo(Structure):
     ]
 
 
+_ERROR = {}
+
+
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
-def error_handler(_: Any, event: Any) -> int:
+def error_handler(display: Display, event: Event) -> int:
     """Specifies the program's supplied error handler."""
+    x11 = ctypes.util.find_library("X11")
+    if not x11:
+        return 0
+
+    xlib = ctypes.cdll.LoadLibrary(x11)
+
+    get_error = getattr(xlib, "XGetErrorText")
+    get_error.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
+    get_error.restype = c_void_p
+
     evt = event.contents
-    ERROR.details = {
-        "type": evt.type,
-        "serial": evt.serial,
+    error = ctypes.create_string_buffer(1024)
+    get_error(display, evt.error_code, error, len(error))
+
+    _ERROR[threading.current_thread()] = {
+        "error": error.value.decode("utf-8"),
         "error_code": evt.error_code,
-        "request_code": evt.request_code,
         "minor_code": evt.minor_code,
+        "request_code": evt.request_code,
+        "serial": evt.serial,
+        "type": evt.type,
     }
+
     return 0
 
 
-def validate(
-    retval: int, func: Any, args: Tuple[Any, Any]
-) -> Optional[Tuple[Any, Any]]:
+def validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
     """Validate the returned value of a Xlib or XRANDR function."""
 
-    if retval != 0 and not ERROR.details:
+    current_thread = threading.current_thread()
+    if retval != 0 and current_thread not in _ERROR:
         return args
 
-    details = {"retval": retval, "args": args}
+    details = _ERROR.pop(current_thread, {})
     raise ScreenShotError(f"{func.__name__}() failed", details=details)
 
 
@@ -196,7 +211,6 @@ def validate(
 CFUNCTIONS: CFunctions = {
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
-    "XGetErrorText": ("xlib", [POINTER(Display), c_int, c_char_p, c_int], c_void_p),
     "XGetImage": (
         "xlib",
         [
@@ -331,15 +345,13 @@ class MSS(MSSBase):
         Since the current thread and main thread are always alive, reuse their
         *display* value first.
         """
-        cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        current_display = MSS._display_dict.get(cur_thread) or MSS._display_dict.get(
-            main_thread
-        )
+        current_thread = threading.current_thread()
+        current_display = MSS._display_dict.get(current_thread)
         if current_display:
             display = current_display
         else:
             display = self.xlib.XOpenDisplay(disp)
-            MSS._display_dict[cur_thread] = display
+            MSS._display_dict[current_thread] = display
         return display
 
     def _set_cfunctions(self) -> None:
@@ -359,27 +371,6 @@ class MSS(MSSBase):
                     argtypes=argtypes,
                     restype=restype,
                 )
-
-    def get_error_details(self) -> Optional[Dict[str, Any]]:
-        """Get more information about the latest X server error."""
-
-        details: Dict[str, Any] = {}
-
-        if ERROR.details:
-            details = {"xerror_details": ERROR.details}
-            ERROR.details = None
-            xserver_error = ctypes.create_string_buffer(1024)
-            self.xlib.XGetErrorText(
-                self._get_display(),
-                details.get("xerror_details", {}).get("error_code", 0),
-                xserver_error,
-                len(xserver_error),
-            )
-            xerror = xserver_error.value.decode("utf-8")
-            if xerror != "0":
-                details["xerror"] = xerror
-
-        return details
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""

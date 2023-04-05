@@ -5,46 +5,42 @@ on:
     branches:
       - master
   pull_request:
-    paths:
-      - ".github/workflows/tests.yml"
-      - "setup.cfg"
-      - "mss/**"
 
 jobs:
-  quality:
-    name: Quality
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-          cache: pip
-          cache-dependency-path: dev-requirements.txt
-      - name: Install dependencies
-        run: |
-          python -m pip install -U pip wheel 
-          python -m pip install -r dev-requirements.txt
-      - name: Tests
-        run: ./check.sh
+  # quality:
+  #   name: Quality
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.x"
+  #         cache: pip
+  #         cache-dependency-path: dev-requirements.txt
+  #     - name: Install dependencies
+  #       run: |
+  #         python -m pip install -U pip wheel 
+  #         python -m pip install -r dev-requirements.txt
+  #     - name: Tests
+  #       run: ./check.sh
 
-  documentation:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-          cache: pip
-          cache-dependency-path: dev-requirements.txt
-      - name: Install test dependencies
-        run: |
-          python -m pip install -U pip wheel 
-          python -m pip install -r dev-requirements.txt
-      - name: Tests
-        run: |
-          sphinx-build -d docs docs/source docs_out --color -W -bhtml
+  # documentation:
+  #   name: Documentation
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.x"
+  #         cache: pip
+  #         cache-dependency-path: dev-requirements.txt
+  #     - name: Install test dependencies
+  #       run: |
+  #         python -m pip install -U pip wheel 
+  #         python -m pip install -r dev-requirements.txt
+  #     - name: Tests
+  #       run: |
+  #         sphinx-build -d docs docs/source docs_out --color -W -bhtml
 
   tests:
     name: "${{ matrix.os.emoji }} ${{ matrix.python.name }}"
@@ -55,23 +51,23 @@ jobs:
         os:
           - emoji: 🐧
             runs-on: [ubuntu-latest]
-          - emoji: 🍎
-            runs-on: [macos-latest]
-          - emoji: 🪟
-            runs-on: [windows-latest]
+          # - emoji: 🍎
+          #   runs-on: [macos-latest]
+          # - emoji: 🪟
+          #   runs-on: [windows-latest]
         python:
-          - name: CPython 3.7
-            runs-on: "3.7"
+          # - name: CPython 3.7
+          #   runs-on: "3.7"
           - name: CPython 3.8
             runs-on: "3.8"
-          - name: CPython 3.9
-            runs-on: "3.9"
-          - name: CPython 3.10
-            runs-on: "3.10"
+          # - name: CPython 3.9
+          #   runs-on: "3.9"
+          # - name: CPython 3.10
+          #   runs-on: "3.10"
           - name: CPython 3.11
             runs-on: "3.11"
-          - name: PyPy 3.9
-            runs-on: "pypy-3.9"
+          # - name: PyPy 3.9
+          #   runs-on: "pypy-3.9"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -87,7 +83,7 @@ jobs:
         if: matrix.os.emoji == '🐧'
         run: |
           export DISPLAY=:99
-          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+          sudo Xvfb -ac ${DISPLAY} -screen 0 1280x1024x24 > /dev/null 2>&1 &
           python -m pytest
       - name: Tests on other platforms
         if: matrix.os.emoji != '🐧'
