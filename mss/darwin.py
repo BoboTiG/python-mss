@@ -17,7 +17,7 @@ from ctypes import (
     c_void_p,
 )
 from platform import mac_ver
-from typing import Any, Type, Union
+from typing import Any, Optional, Type, Union
 
 from .base import MSSBase
 from .exception import ScreenShotError
@@ -232,3 +232,7 @@ class MSS(MSSBase):
                 core.CFRelease(copy_data)
 
         return self.cls_image(data, monitor, size=Size(width, height))
+
+    def _cursor_impl(self) -> Optional[ScreenShot]:
+        """Retrieve all cursor data. Pixels have to be RGB."""
+        return None

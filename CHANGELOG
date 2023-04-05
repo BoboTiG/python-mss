@@ -3,6 +3,7 @@ History:
 <see Git checking messages for history>
 
 8.0.0   2023/0x/xx
+      - Linux: added mouse support (partially fixes #55)
       - Linux: removed get_error_details(), use the ScreenShotError details attribute instead
       - dev: removed pre-commit
       - tests: removed tox
