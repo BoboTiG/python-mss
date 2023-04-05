@@ -11,74 +11,84 @@ on:
       - "mss/**"
 
 jobs:
-  lint:
-    name: Code quality checks
+  quality:
+    name: Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
-      - name: Install test dependencies
-        run: python -m pip install -U pip wheel tox
+          cache: pip
+          cache-dependency-path: dev-requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip wheel 
+          python -m pip install -r dev-requirements.txt
       - name: Tests
-        run: python -m tox -e lint
-
-  types:
-    name: Types checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.x"
-      - name: Install test dependencies
-        run: python -m pip install -U pip wheel tox
-      - name: Tests
-        run: python -m tox -e types
+        run: ./check.sh
 
   documentation:
-    name: Documentation build
+    name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
       - uses: actions/setup-python@v4
         with:
           python-version: "3.x"
+          cache: pip
+          cache-dependency-path: dev-requirements.txt
       - name: Install test dependencies
-        run: python -m pip install -U pip wheel tox
+        run: |
+          python -m pip install -U pip wheel 
+          python -m pip install -r dev-requirements.txt
       - name: Tests
-        run: python -m tox -e docs
+        run: |
+          sphinx-build -d docs docs/source docs_out --color -W -bhtml
 
   tests:
-    name: "${{ matrix.os }} for ${{ matrix.python }}"
-    runs-on: ${{ matrix.os }}
+    name: "${{ matrix.os.emoji }} ${{ matrix.python.name }}"
+    runs-on: ${{ matrix.os.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        os:
+          - emoji: 🐧
+            runs-on: [ubuntu-latest]
+          - emoji: 🍎
+            runs-on: [macos-latest]
+          - emoji: 🪟
+            runs-on: [windows-latest]
+        python:
+          - name: CPython 3.7
+            runs-on: "3.7"
+          - name: CPython 3.8
+            runs-on: "3.8"
+          - name: CPython 3.9
+            runs-on: "3.9"
+          - name: CPython 3.10
+            runs-on: "3.10"
+          - name: CPython 3.11
+            runs-on: "3.11"
+          - name: PyPy 3.9
+            runs-on: "pypy-3.9"
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.branch }}
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.python.runs-on }}
+          cache: pip
+          cache-dependency-path: dev-requirements.txt
       - name: Install test dependencies
-        run: python -m pip install -U pip wheel tox
+        run: |
+          python -m pip install -U pip wheel 
+          python -m pip install -r dev-requirements.txt
       - name: Tests on GNU/Linux
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os.emoji == '🐧'
         run: |
           export DISPLAY=:99
-          sudo Xvfb -ac ${DISPLAY} -screen 0 1280x1024x24 > /dev/null 2>&1 &
-          python -m tox -e py
+          sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 &
+          python -m pytest
       - name: Tests on other platforms
-        if: matrix.os != 'ubuntu-latest'
-        run: python -m tox -e py
+        if: matrix.os.emoji != '🐧'
+        run: python -m pytest

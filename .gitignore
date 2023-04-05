@@ -1,6 +1,8 @@
 build/
 .cache/
 dist/
+*.doctree
+docs_out/
 *.egg-info/
 .idea/
 .DS_Store
@@ -8,9 +10,9 @@ dist/
 *.jpg
 *.png
 *.png.old
+*.pickle
 *.pyc
 .pytest_cache
-.tox
 .vscode
 docs/output/
 .mypy_cache/

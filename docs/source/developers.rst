@@ -11,11 +11,6 @@ Setup
 2. Create you own branch.
 3. Be sure to add/update tests and documentation within your patch.
 
-Additionally, you can install `pre-commit <http://pre-commit.com/>`_ to ensure you are doing things well::
-
-    $ python -m pip install -U --user pre-commit
-    $ pre-commit install
-
 
 Testing
 =======
@@ -23,9 +18,10 @@ Testing
 Dependency
 ----------
 
-You will need `tox <https://pypi.org/project/tox/>`_::
+You will need `pytest <https://pypi.org/project/pytest/>`_::
 
-    $ python -m pip install -U --user tox
+    $ python -m pip install -U pip wheel
+    $ python -m pip install -r dev-requirements.txt
 
 
 How to Test?
@@ -33,10 +29,7 @@ How to Test?
 
 Launch the test suit::
 
-    $ tox
-
-    # or
-    $ TOXENV=py37 tox
+    $ python -m pytest
 
 This will test MSS and ensure a good code quality.
 
@@ -46,15 +39,7 @@ Code Quality
 
 To ensure the code is always well enough using `flake8 <https://pypi.org/project/flake8/>`_::
 
-    $ TOXENV=lint tox
-
-
-Static Type Checking
-====================
-
-To check type annotation using `mypy <http://mypy-lang.org/>`_::
-
-    $ TOXENV=types tox
+    $ ./check.sh
 
 
 Documentation
@@ -62,4 +47,4 @@ Documentation
 
 To build the documentation, simply type::
 
-    $ TOXENV=docs tox
+    $ sphinx-build -d docs docs/source docs_out --color -W -bhtml
