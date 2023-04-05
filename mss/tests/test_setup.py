@@ -12,8 +12,7 @@ from mss import __version__
 if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip
 
-# Note: using `--no-isolation` because it doesn't work with `tox`
-INSTALL = "python -m build --no-isolation --sdist --wheel".split()
+INSTALL = "python -m build --sdist --wheel".split()
 CHECK = "twine check dist/*".split()
 
 

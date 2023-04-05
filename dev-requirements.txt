@@ -1,0 +1,15 @@
+-e .
+black
+build
+flake8
+flaky
+pytest
+pytest-cov
+mypy
+numpy; platform_python_implementation != "pypy"
+numpy==1.15.4; platform_python_implementation == "pypy"
+pillow
+pylint
+sphinx
+twine
+wheel

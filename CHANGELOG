@@ -2,6 +2,11 @@ History:
 
 <see Git checking messages for history>
 
+7.0.2   2023/0x/xx
+      - dev: removed pre-commit
+      - tests: removed tox
+      - tests: added PyPy 3.9
+
 7.0.1   2022/10/27
       - fixed the wheel package
       - removed support for Python 3.6

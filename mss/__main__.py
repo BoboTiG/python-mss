@@ -81,7 +81,7 @@ def main(args: Optional[List[str]] = None) -> int:
         return 1
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: nocover
     import sys
 
     sys.exit(main(sys.argv[1:]))
