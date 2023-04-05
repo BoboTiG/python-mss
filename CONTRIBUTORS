@@ -12,6 +12,9 @@ Alexander 'thehesiod' Mohr [https://github.com/thehesiod]
 Andreas Buhr [https://www.andreasbuhr.de]
     - Bugfix for multi-monitor detection
 
+Boutallaka 'zorvios' Yassir [https://github.com/zorvios]
+    - GNU/Linux: Mouse support
+
 bubulle [http://indexerror.net/user/bubulle]
     - Windows: efficiency of MSS.get_pixels()
 

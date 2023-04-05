@@ -25,10 +25,11 @@ GNU/Linux
 
 .. class:: MSS
 
-    .. method:: __init__([display=None])
+    .. method:: __init__([display=None, with_cursor=False])
 
         :type display: str or None
         :param display: The display to use.
+        :param with_cursor: Include the mouse in screenshots.
 
         GNU/Linux initializations.
 
@@ -75,6 +76,12 @@ Methods
 .. class:: MSSBase
 
     The parent's class for every OS implementation.
+
+    .. attribute:: compression_level
+
+        PNG compression level used when saving the screenshot data into a file (see :py:func:`zlib.compress()` for details).
+
+        .. versionadded:: 3.2.0
 
     .. method:: close()
 

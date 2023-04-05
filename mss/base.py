@@ -18,11 +18,12 @@ lock = Lock()
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
-    __slots__ = {"_monitors", "cls_image", "compression_level"}
+    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(self) -> None:
         self.cls_image: Type[ScreenShot] = ScreenShot
         self.compression_level = 6
+        self.with_cursor = False
         self._monitors: Monitors = []
 
     def __enter__(self) -> "MSSBase":
@@ -34,6 +35,10 @@ class MSSBase(metaclass=ABCMeta):
         """For the cool call `with MSS() as mss:`."""
 
         self.close()
+
+    @abstractmethod
+    def _cursor_impl(self) -> Optional[ScreenShot]:
+        """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
     def _grab_impl(self, monitor: Monitor) -> ScreenShot:
@@ -73,7 +78,11 @@ class MSSBase(metaclass=ABCMeta):
             }
 
         with lock:
-            return self._grab_impl(monitor)
+            screenshot = self._grab_impl(monitor)
+            if self.with_cursor:
+                cursor = self._cursor_impl()
+                screenshot = self._merge(screenshot, cursor)  # type: ignore[arg-type]
+            return screenshot
 
     @property
     def monitors(self) -> Monitors:
@@ -173,6 +182,57 @@ class MSSBase(metaclass=ABCMeta):
 
         kwargs["mon"] = kwargs.get("mon", 1)
         return next(self.save(**kwargs))
+
+    @staticmethod
+    def _merge(screenshot: ScreenShot, cursor: ScreenShot) -> ScreenShot:
+        """Create composite image by blending screenshot and mouse cursor."""
+
+        # pylint: disable=too-many-locals,invalid-name
+
+        (cx, cy), (cw, ch) = cursor.pos, cursor.size
+        (x, y), (w, h) = screenshot.pos, screenshot.size
+
+        cx2, cy2 = cx + cw, cy + ch
+        x2, y2 = x + w, y + h
+
+        overlap = cx < x2 and cx2 > x and cy < y2 and cy2 > y
+        if not overlap:
+            return screenshot
+
+        screen_data = screenshot.raw
+        cursor_data = cursor.raw
+
+        cy, cy2 = (cy - y) * 4, (cy2 - y2) * 4
+        cx, cx2 = (cx - x) * 4, (cx2 - x2) * 4
+        start_count_y = -cy if cy < 0 else 0
+        start_count_x = -cx if cx < 0 else 0
+        stop_count_y = ch * 4 - max(cy2, 0)
+        stop_count_x = cw * 4 - max(cx2, 0)
+        rgb = range(3)
+
+        for count_y in range(start_count_y, stop_count_y, 4):
+            pos_s = (count_y + cy) * w + cx
+            pos_c = count_y * cw
+
+            for count_x in range(start_count_x, stop_count_x, 4):
+                spos = pos_s + count_x
+                cpos = pos_c + count_x
+                alpha = cursor_data[cpos + 3]
+
+                if not alpha:
+                    continue
+
+                if alpha == 255:
+                    screen_data[spos : spos + 3] = cursor_data[cpos : cpos + 3]
+                else:
+                    alpha = alpha / 255
+                    for i in rgb:
+                        screen_data[spos + i] = int(
+                            cursor_data[cpos + i] * alpha
+                            + screen_data[spos + i] * (1 - alpha)
+                        )
+
+        return screenshot
 
     @staticmethod
     def _cfactory(

@@ -15,12 +15,14 @@ from ctypes import (
     c_int,
     c_int32,
     c_long,
+    c_short,
     c_ubyte,
     c_uint,
     c_uint32,
     c_ulong,
     c_ushort,
     c_void_p,
+    cast,
 )
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -57,6 +59,26 @@ class Event(Structure):
         ("request_code", c_ubyte),
         ("minor_code", c_ubyte),
         ("resourceid", c_void_p),
+    ]
+
+
+class XFixesCursorImage(Structure):
+    """
+    XFixes is an X Window System extension.
+    See /usr/include/X11/extensions/Xfixes.h
+    """
+
+    _fields_ = [
+        ("x", c_short),
+        ("y", c_short),
+        ("width", c_ushort),
+        ("height", c_ushort),
+        ("xhot", c_ushort),
+        ("yhot", c_ushort),
+        ("cursor_serial", c_ulong),
+        ("pixels", POINTER(c_ulong)),
+        ("atom", c_ulong),
+        ("name", c_char_p),
     ]
 
 
@@ -211,6 +233,7 @@ def validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
 CFUNCTIONS: CFunctions = {
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
+    "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
     "XGetImage": (
         "xlib",
         [
@@ -269,15 +292,18 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"drawable", "root", "xlib", "xrandr"}
+    __slots__ = {"drawable", "root", "xlib", "xrandr", "xfixes", "__with_cursor"}
 
     # A dict to maintain *display* values created by multiple threads.
     _display_dict: Dict[threading.Thread, int] = {}
 
-    def __init__(self, display: Optional[Union[bytes, str]] = None) -> None:
+    def __init__(
+        self, display: Optional[Union[bytes, str]] = None, with_cursor: bool = False
+    ) -> None:
         """GNU/Linux initialisations."""
 
         super().__init__()
+        self.with_cursor = with_cursor
 
         if not display:
             try:
@@ -305,6 +331,13 @@ class MSS(MSSBase):
         if not xrandr:
             raise ScreenShotError("No Xrandr extension found.")
         self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
+
+        if self.with_cursor:
+            xfixes = ctypes.util.find_library("Xfixes")
+            if xfixes:
+                self.xfixes = ctypes.cdll.LoadLibrary(xfixes)
+            else:
+                self.with_cursor = False
 
         self._set_cfunctions()
 
@@ -361,6 +394,7 @@ class MSS(MSSBase):
         attrs = {
             "xlib": self.xlib,
             "xrandr": self.xrandr,
+            "xfixes": getattr(self, "xfixes", None),
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with contextlib.suppress(AttributeError):
@@ -448,5 +482,34 @@ class MSS(MSSBase):
         finally:
             # Free
             self.xlib.XDestroyImage(ximage)
+
+        return self.cls_image(data, monitor)
+
+    def _cursor_impl(self) -> ScreenShot:
+        """Retrieve all cursor data. Pixels have to be RGB."""
+
+        # Read data of cursor/mouse-pointer
+        cursor_data = self.xfixes.XFixesGetCursorImage(self._get_display())
+        if not (cursor_data and cursor_data.contents):
+            raise ScreenShotError("Cannot read XFixesGetCursorImage()")
+
+        ximage: XFixesCursorImage = cursor_data.contents
+        monitor = {
+            "left": ximage.x - ximage.xhot,
+            "top": ximage.y - ximage.yhot,
+            "width": ximage.width,
+            "height": ximage.height,
+        }
+
+        raw_data = cast(
+            ximage.pixels, POINTER(c_ulong * monitor["height"] * monitor["width"])
+        )
+        raw = bytearray(raw_data.contents)
+
+        data = bytearray(monitor["height"] * monitor["width"] * 4)
+        data[3::4] = raw[3::8]
+        data[2::4] = raw[2::8]
+        data[1::4] = raw[1::8]
+        data[::4] = raw[::8]
 
         return self.cls_image(data, monitor)

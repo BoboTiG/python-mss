@@ -132,3 +132,14 @@ def test_has_extension():
     with mss.mss(display=display) as sct:
         assert sct.has_extension("RANDR")
         assert not sct.has_extension("NOEXT")
+
+
+def test_with_cursor():
+    display = os.getenv("DISPLAY")
+    with mss.mss(display=display, with_cursor=True) as sct:
+        assert sct.xfixes
+        assert sct.with_cursor
+        sct.grab(sct.monitors[1])
+
+    # Not really sure how to test the cursor presence ...
+    # Also need to test when the cursor it outside of the screenshot
