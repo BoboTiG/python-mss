@@ -13,3 +13,4 @@ pylint
 sphinx
 twine
 wheel
+xvfbwrapper; sys_platform == "linux"

@@ -19,6 +19,22 @@ if platform.system().lower() != "linux":
 
 PYPY = platform.python_implementation() == "PyPy"
 
+WIDTH = 200
+HEIGHT = 200
+DEPTH = 24
+
+
+@pytest.fixture
+def display() -> str:
+    from xvfbwrapper import Xvfb
+
+    xvfb = Xvfb(width=WIDTH, height=HEIGHT, colordepth=DEPTH)
+    xvfb.start()
+    try:
+        yield os.environ["DISPLAY"]
+    finally:
+        xvfb.stop()
+
 
 @pytest.mark.skipif(PYPY, reason="Failure on PyPy")
 def test_factory_systems(monkeypatch):
@@ -106,9 +122,8 @@ def test_no_xrandr_extension(monkeypatch):
             pass
 
 
-def test_region_out_of_monitor_bounds():
-    display = os.getenv("DISPLAY")
-    monitor = {"left": -30, "top": 0, "width": 100, "height": 100}
+def test_region_out_of_monitor_bounds(display):
+    monitor = {"left": -30, "top": 0, "width": WIDTH, "height": HEIGHT}
 
     assert not mss.linux._ERROR
 
@@ -127,19 +142,25 @@ def test_region_out_of_monitor_bounds():
     assert not mss.linux._ERROR
 
 
-def test_has_extension():
-    display = os.getenv("DISPLAY")
+def test_has_extension(display):
     with mss.mss(display=display) as sct:
         assert sct.has_extension("RANDR")
         assert not sct.has_extension("NOEXT")
 
 
-def test_with_cursor():
-    display = os.getenv("DISPLAY")
-    with mss.mss(display=display, with_cursor=True) as sct:
-        assert sct.xfixes
-        assert sct.with_cursor
-        sct.grab(sct.monitors[1])
+def test_with_cursor(display):
+    with mss.mss(display=display) as sct:
+        assert not hasattr(sct, "xfixes")
+        assert not sct.with_cursor
+        screenshot_without_cursor = sct.grab(sct.monitors[1])
 
-    # Not really sure how to test the cursor presence ...
-    # Also need to test when the cursor it outside of the screenshot
+    # 1 color: black
+    assert set(screenshot_without_cursor.rgb) == {0}
+
+    with mss.mss(display=display, with_cursor=True) as sct:
+        assert hasattr(sct, "xfixes")
+        assert sct.with_cursor
+        screenshot_with_cursor = sct.grab(sct.monitors[1])
+
+    # 2 colors: black & white (default cursor is a white cross)
+    assert set(screenshot_with_cursor.rgb) == {0, 255}
