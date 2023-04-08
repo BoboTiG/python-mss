@@ -43,19 +43,33 @@ GNU/Linux
 
 .. class:: Display
 
+    Structure that serves as the connection to the X server, and that contains all the information about that X server.
+
 .. class:: Event
+
+    XErrorEvent to debug eventual errors.
 
 .. class:: XFixesCursorImage
 
-.. class:: XWindowAttributes
+    Cursor structure
 
 .. class:: XImage
+
+    Description of an image as it exists in the client's memory.
+
+.. class:: XRRCrtcInfo
+
+    Structure that contains CRTC information.
 
 .. class:: XRRModeInfo
 
 .. class:: XRRScreenResources
 
-.. class:: XRRCrtcInfo
+    Structure that contains arrays of XIDs that point to the available outputs and associated CRTCs.
+
+.. class:: XWindowAttributes
+
+    Attributes for the specified window.
 
 .. class:: MSS
 

@@ -66,8 +66,9 @@ class Event(Structure):
 
 class XFixesCursorImage(Structure):
     """
-    XFixes is an X Window System extension.
-    See /usr/include/X11/extensions/Xfixes.h
+    Cursor structure.
+    /usr/include/X11/extensions/Xfixes.h
+    https://github.com/freedesktop/xorg-libXfixes/blob/libXfixes-6.0.0/include/X11/extensions/Xfixes.h#L96
     """
 
     _fields_ = [
@@ -81,6 +82,72 @@ class XFixesCursorImage(Structure):
         ("pixels", POINTER(c_ulong)),
         ("atom", c_ulong),
         ("name", c_char_p),
+    ]
+
+
+class XImage(Structure):
+    """
+    Description of an image as it exists in the client's memory.
+    https://tronche.com/gui/x/xlib/graphics/images.html
+    """
+
+    _fields_ = [
+        ("width", c_int),
+        ("height", c_int),
+        ("xoffset", c_int),
+        ("format", c_int),
+        ("data", c_void_p),
+        ("byte_order", c_int),
+        ("bitmap_unit", c_int),
+        ("bitmap_bit_order", c_int),
+        ("bitmap_pad", c_int),
+        ("depth", c_int),
+        ("bytes_per_line", c_int),
+        ("bits_per_pixel", c_int),
+        ("red_mask", c_ulong),
+        ("green_mask", c_ulong),
+        ("blue_mask", c_ulong),
+    ]
+
+
+class XRRCrtcInfo(Structure):
+    """Structure that contains CRTC information."""
+
+    _fields_ = [
+        ("timestamp", c_ulong),
+        ("x", c_int),
+        ("y", c_int),
+        ("width", c_int),
+        ("height", c_int),
+        ("mode", c_long),
+        ("rotation", c_int),
+        ("noutput", c_int),
+        ("outputs", POINTER(c_long)),
+        ("rotations", c_ushort),
+        ("npossible", c_int),
+        ("possible", POINTER(c_long)),
+    ]
+
+
+class XRRModeInfo(Structure):
+    """Voilà, voilà."""
+
+
+class XRRScreenResources(Structure):
+    """
+    Structure that contains arrays of XIDs that point to the
+    available outputs and associated CRTCs.
+    """
+
+    _fields_ = [
+        ("timestamp", c_ulong),
+        ("configTimestamp", c_ulong),
+        ("ncrtc", c_int),
+        ("crtcs", POINTER(c_long)),
+        ("noutput", c_int),
+        ("outputs", POINTER(c_long)),
+        ("nmode", c_int),
+        ("modes", POINTER(XRRModeInfo)),
     ]
 
 
@@ -111,72 +178,6 @@ class XWindowAttributes(Structure):
         ("do_not_propagate_mask", c_ulong),
         ("override_redirect", c_int32),
         ("screen", c_ulong),
-    ]
-
-
-class XImage(Structure):
-    """
-    Description of an image as it exists in the client's memory.
-    https://tronche.com/gui/x/xlib/graphics/images.html
-    """
-
-    _fields_ = [
-        ("width", c_int),
-        ("height", c_int),
-        ("xoffset", c_int),
-        ("format", c_int),
-        ("data", c_void_p),
-        ("byte_order", c_int),
-        ("bitmap_unit", c_int),
-        ("bitmap_bit_order", c_int),
-        ("bitmap_pad", c_int),
-        ("depth", c_int),
-        ("bytes_per_line", c_int),
-        ("bits_per_pixel", c_int),
-        ("red_mask", c_ulong),
-        ("green_mask", c_ulong),
-        ("blue_mask", c_ulong),
-    ]
-
-
-class XRRModeInfo(Structure):
-    """Voilà, voilà."""
-
-
-class XRRScreenResources(Structure):
-    """
-    Structure that contains arrays of XIDs that point to the
-    available outputs and associated CRTCs.
-    """
-
-    _fields_ = [
-        ("timestamp", c_ulong),
-        ("configTimestamp", c_ulong),
-        ("ncrtc", c_int),
-        ("crtcs", POINTER(c_long)),
-        ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
-        ("nmode", c_int),
-        ("modes", POINTER(XRRModeInfo)),
-    ]
-
-
-class XRRCrtcInfo(Structure):
-    """Structure that contains CRTC information."""
-
-    _fields_ = [
-        ("timestamp", c_ulong),
-        ("x", c_int),
-        ("y", c_int),
-        ("width", c_int),
-        ("height", c_int),
-        ("mode", c_long),
-        ("rotation", c_int),
-        ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
-        ("rotations", c_ushort),
-        ("npossible", c_int),
-        ("possible", POINTER(c_long)),
     ]
 
 
@@ -226,7 +227,7 @@ def _validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
 # This is a dict:
 #    cfunction: (attr, argtypes, restype)
 #
-# Available attr: xlib, xrandr.
+# Available attr: xfixes, xlib, xrandr.
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
@@ -292,7 +293,7 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"xlib", "xrandr", "xfixes", "_handles"}
+    __slots__ = {"xfixes", "xlib", "xrandr", "_handles"}
 
     def __init__(self, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""
