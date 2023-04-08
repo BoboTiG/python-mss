@@ -2,7 +2,6 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-import ctypes.util
 import platform
 from unittest.mock import Mock, patch
 
@@ -88,30 +87,18 @@ def test_bad_display_structure(monkeypatch):
             pass
 
 
+@patch("mss.linux._X11", new=None)
 def test_no_xlib_library():
-    with patch("mss.linux.find_library", return_value=None):
-        with pytest.raises(ScreenShotError):
-            with mss.mss():
-                pass
+    with pytest.raises(ScreenShotError):
+        with mss.mss():
+            pass
 
 
+@patch("mss.linux._XRANDR", new=None)
 def test_no_xrandr_extension():
-    x11 = ctypes.util.find_library("X11")
-
-    def find_lib_mocked(lib):
-        """
-        Returns None to emulate no XRANDR library.
-        Returns the previous found X11 library else.
-
-        It is a naive approach, but works for now.
-        """
-
-        return None if lib == "Xrandr" else x11
-
-    # No `Xrandr` library
-    with patch("mss.linux.find_library", find_lib_mocked):
-        with pytest.raises(ScreenShotError):
-            mss.mss()
+    with pytest.raises(ScreenShotError):
+        with mss.mss():
+            pass
 
 
 @patch("mss.linux.MSS._is_extension_enabled", new=Mock(return_value=False))
@@ -190,23 +177,11 @@ def test_with_cursor(display: str):
     assert set(screenshot_with_cursor.rgb) == {0, 255}
 
 
+@patch("mss.linux._XFIXES", new=None)
 def test_with_cursor_but_not_xfixes_extension_found(display: str):
-    x11 = ctypes.util.find_library("X11")
-
-    def find_lib_mocked(lib):
-        """
-        Returns None to emulate no XRANDR library.
-        Returns the previous found X11 library else.
-
-        It is a naive approach, but works for now.
-        """
-
-        return None if lib == "Xfixes" else x11
-
-    with patch("mss.linux.find_library", find_lib_mocked):
-        with mss.mss(display=display, with_cursor=True) as sct:
-            assert not hasattr(sct, "xfixes")
-            assert not sct.with_cursor
+    with mss.mss(display=display, with_cursor=True) as sct:
+        assert not hasattr(sct, "xfixes")
+        assert not sct.with_cursor
 
 
 def test_with_cursor_failure(display: str):

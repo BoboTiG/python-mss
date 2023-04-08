@@ -182,6 +182,24 @@ class XWindowAttributes(Structure):
 
 
 _ERROR = {}
+_X11 = find_library("X11")
+_XFIXES = find_library("Xfixes")
+_XRANDR = find_library("Xrandr")
+
+
+@CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
+def _default_error_handler(display: Display, event: Event) -> int:
+    """
+    Specifies the default program's supplied error handler.
+    It's useful when exiting MSS to prevent letting `_error_handler()` as default handler.
+    Doing so would crash when using Tk/Tkinter, see issue #220.
+
+    Interesting technical stuff can be found here:
+        https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
+        https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
+    """
+    # pylint: disable=unused-argument
+    return 0  # pragma: nocover
 
 
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
@@ -189,7 +207,7 @@ def _error_handler(display: Display, event: Event) -> int:
     """Specifies the program's supplied error handler."""
 
     # Get the specific error message
-    xlib = cdll.LoadLibrary(find_library("X11"))  # type: ignore[arg-type]
+    xlib = cdll.LoadLibrary(_X11)  # type: ignore[arg-type]
     get_error = xlib.XGetErrorText
     get_error.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
     get_error.restype = c_void_p
@@ -278,24 +296,21 @@ class MSS(MSSBase):
         if b":" not in display:
             raise ScreenShotError(f"Bad display value: {display!r}.")
 
-        x11 = find_library("X11")
-        if not x11:
+        if not _X11:
             raise ScreenShotError("No X11 library found.")
-        self.xlib = cdll.LoadLibrary(x11)
+        self.xlib = cdll.LoadLibrary(_X11)
 
         # Install the error handler to prevent interpreter crashes:
         # any error will raise a ScreenShotError exception.
         self.xlib.XSetErrorHandler(_error_handler)
 
-        xrandr = find_library("Xrandr")
-        if not xrandr:
+        if not _XRANDR:
             raise ScreenShotError("No Xrandr extension found.")
-        self.xrandr = cdll.LoadLibrary(xrandr)
+        self.xrandr = cdll.LoadLibrary(_XRANDR)
 
         if self.with_cursor:
-            xfixes = find_library("Xfixes")
-            if xfixes:
-                self.xfixes = cdll.LoadLibrary(xfixes)
+            if _XFIXES:
+                self.xfixes = cdll.LoadLibrary(_XFIXES)
             else:
                 self.with_cursor = False
 
@@ -314,10 +329,15 @@ class MSS(MSSBase):
         self._handles.drawable = cast(self._handles.root, POINTER(Display))
 
     def close(self) -> None:
+        # Remove our error handler
+        self.xlib.XSetErrorHandler(_default_error_handler)
+
+        # Clean-up
         if self._handles.display is not None:
             self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
 
+        # Also empty the error dict
         _ERROR.clear()
 
     def _is_extension_enabled(self, name: str, /) -> bool:
@@ -350,7 +370,8 @@ class MSS(MSSBase):
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with suppress(AttributeError):
-                cfactory(attrs[attr], func, argtypes, restype, errcheck=_validate)
+                errcheck = None if func == "XSetErrorHandler" else _validate
+                cfactory(attrs[attr], func, argtypes, restype, errcheck=errcheck)
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
