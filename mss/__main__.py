@@ -31,12 +31,8 @@ def main(args: Optional[List[str]] = None) -> int:
         choices=list(range(10)),
         help="the PNG compression level",
     )
-    cli_args.add_argument(
-        "-m", "--monitor", default=0, type=int, help="the monitor to screen shot"
-    )
-    cli_args.add_argument(
-        "-o", "--output", default="monitor-{mon}.png", help="the output file name"
-    )
+    cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screen shot")
+    cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
     cli_args.add_argument(
         "-q",
         "--quiet",

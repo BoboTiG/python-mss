@@ -5,17 +5,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import sys
-from ctypes import (
-    POINTER,
-    Structure,
-    c_double,
-    c_float,
-    c_int32,
-    c_ubyte,
-    c_uint32,
-    c_uint64,
-    c_void_p,
-)
+from ctypes import POINTER, Structure, c_double, c_float, c_int32, c_ubyte, c_uint32, c_uint64, c_void_p
 from platform import mac_ver
 from typing import Any, Optional, Type, Union
 
@@ -104,12 +94,12 @@ class MSS(MSSBase):
 
     __slots__ = {"core", "max_displays"}
 
-    def __init__(self, **_: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """macOS initialisations."""
 
-        super().__init__()
+        super().__init__(**kwargs)
 
-        self.max_displays = 32
+        self.max_displays = kwargs.get("max_displays", 32)
 
         self._init_library()
         self._set_cfunctions()
@@ -156,9 +146,7 @@ class MSS(MSSBase):
         # Each monitor
         display_count = c_uint32(0)
         active_displays = (c_uint32 * self.max_displays)()
-        core.CGGetActiveDisplayList(
-            self.max_displays, active_displays, ctypes.byref(display_count)
-        )
+        core.CGGetActiveDisplayList(self.max_displays, active_displays, ctypes.byref(display_count))
         rotations = {0.0: "normal", 90.0: "right", -90.0: "left"}
         for idx in range(display_count.value):
             display = active_displays[idx]
@@ -194,9 +182,7 @@ class MSS(MSSBase):
         # pylint: disable=too-many-locals
 
         core = self.core
-        rect = CGRect(
-            (monitor["left"], monitor["top"]), (monitor["width"], monitor["height"])
-        )
+        rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
 
         image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
         if not image_ref:

@@ -20,10 +20,17 @@ class MSSBase(metaclass=ABCMeta):
 
     __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        compression_level: int = 6,
+        display: Optional[Union[bytes, str]] = None,  # Linux only
+        max_displays: int = 32,  # Mac only
+        with_cursor: bool = False,
+    ) -> None:
+        # pylint: disable=unused-argument
         self.cls_image: Type[ScreenShot] = ScreenShot
-        self.compression_level = 6
-        self.with_cursor = False
+        self.compression_level = compression_level
+        self.with_cursor = with_cursor
         self._monitors: Monitors = []
 
     def __enter__(self) -> "MSSBase":
@@ -227,10 +234,7 @@ class MSSBase(metaclass=ABCMeta):
                 else:
                     alpha = alpha / 255
                     for i in rgb:
-                        screen_data[spos + i] = int(
-                            cursor_data[cpos + i] * alpha
-                            + screen_data[spos + i] * (1 - alpha)
-                        )
+                        screen_data[spos + i] = int(cursor_data[cpos + i] * alpha + screen_data[spos + i] * (1 - alpha))
 
         return screenshot
 

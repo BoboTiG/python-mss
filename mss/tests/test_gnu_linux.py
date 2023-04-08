@@ -3,8 +3,8 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 import ctypes.util
-import os
 import platform
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -13,9 +13,7 @@ import mss.linux
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
-if platform.system().lower() != "linux":
-    pytestmark = pytest.mark.skip
-
+xvfbwrapper = pytest.importorskip("xvfbwrapper")
 
 PYPY = platform.python_implementation() == "PyPy"
 
@@ -26,14 +24,12 @@ DEPTH = 24
 
 @pytest.fixture
 def display() -> str:
-    from xvfbwrapper import Xvfb
-
-    xvfb = Xvfb(width=WIDTH, height=HEIGHT, colordepth=DEPTH)
-    xvfb.start()
+    vdisplay = xvfbwrapper.Xvfb(width=WIDTH, height=HEIGHT, colordepth=DEPTH)
+    vdisplay.start()
     try:
-        yield os.environ["DISPLAY"]
+        yield f":{vdisplay.new_display}"
     finally:
-        xvfb.stop()
+        vdisplay.stop()
 
 
 @pytest.mark.skipif(PYPY, reason="Failure on PyPy")
@@ -55,21 +51,20 @@ def test_factory_systems(monkeypatch):
     monkeypatch.setattr(platform, "system", lambda: "Darwin")
     with pytest.raises((ScreenShotError, ValueError)):
         # ValueError on macOS Big Sur
-        mss.mss()
+        with mss.mss():
+            pass
     monkeypatch.undo()
 
     # Windows
     monkeypatch.setattr(platform, "system", lambda: "wInDoWs")
     with pytest.raises(ImportError):
         # ImportError: cannot import name 'WINFUNCTYPE'
-        mss.mss()
+        with mss.mss():
+            pass
 
 
-def test_arg_display(monkeypatch):
-    import mss
-
+def test_arg_display(display: str, monkeypatch):
     # Good value
-    display = os.getenv("DISPLAY")
     with mss.mss(display=display):
         pass
 
@@ -87,22 +82,20 @@ def test_arg_display(monkeypatch):
 
 @pytest.mark.skipif(PYPY, reason="Failure on PyPy")
 def test_bad_display_structure(monkeypatch):
-    import mss.linux
-
     monkeypatch.setattr(mss.linux, "Display", lambda: None)
     with pytest.raises(TypeError):
         with mss.mss():
             pass
 
 
-def test_no_xlib_library(monkeypatch):
-    monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
-    with pytest.raises(ScreenShotError):
-        with mss.mss():
-            pass
+def test_no_xlib_library():
+    with patch("mss.linux.find_library", return_value=None):
+        with pytest.raises(ScreenShotError):
+            with mss.mss():
+                pass
 
 
-def test_no_xrandr_extension(monkeypatch):
+def test_no_xrandr_extension():
     x11 = ctypes.util.find_library("X11")
 
     def find_lib_mocked(lib):
@@ -116,13 +109,30 @@ def test_no_xrandr_extension(monkeypatch):
         return None if lib == "Xrandr" else x11
 
     # No `Xrandr` library
-    monkeypatch.setattr(ctypes.util, "find_library", find_lib_mocked)
+    with patch("mss.linux.find_library", find_lib_mocked):
+        with pytest.raises(ScreenShotError):
+            mss.mss()
+
+
+@patch("mss.linux.MSS._is_extension_enabled", new=Mock(return_value=False))
+def test_xrandr_extension_exists_but_is_not_enabled(display: str):
     with pytest.raises(ScreenShotError):
-        with mss.mss():
+        with mss.mss(display=display):
             pass
 
 
-def test_region_out_of_monitor_bounds(display):
+def test_unsupported_depth():
+    vdisplay = xvfbwrapper.Xvfb(width=WIDTH, height=HEIGHT, colordepth=8)
+    vdisplay.start()
+    try:
+        with pytest.raises(ScreenShotError):
+            with mss.mss(display=f":{vdisplay.new_display}") as sct:
+                sct.grab(sct.monitors[1])
+    finally:
+        vdisplay.stop()
+
+
+def test_region_out_of_monitor_bounds(display: str):
     monitor = {"left": -30, "top": 0, "width": WIDTH, "height": HEIGHT}
 
     assert not mss.linux._ERROR
@@ -142,13 +152,27 @@ def test_region_out_of_monitor_bounds(display):
     assert not mss.linux._ERROR
 
 
-def test_has_extension(display):
+def test__is_extension_enabled_unknown_name(display: str):
     with mss.mss(display=display) as sct:
-        assert sct.has_extension("RANDR")
-        assert not sct.has_extension("NOEXT")
+        assert not sct._is_extension_enabled("NOEXT")
 
 
-def test_with_cursor(display):
+def test_missing_fast_function_for_monitor_details_retrieval(display: str):
+    with mss.mss(display=display) as sct:
+        assert hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
+        screenshot_with_fast_fn = sct.grab(sct.monitors[1])
+
+    assert set(screenshot_with_fast_fn.rgb) == {0}
+
+    with mss.mss(display=display) as sct:
+        assert hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
+        del sct.xrandr.XRRGetScreenResourcesCurrent
+        screenshot_with_slow_fn = sct.grab(sct.monitors[1])
+
+    assert set(screenshot_with_slow_fn.rgb) == {0}
+
+
+def test_with_cursor(display: str):
     with mss.mss(display=display) as sct:
         assert not hasattr(sct, "xfixes")
         assert not sct.with_cursor
@@ -164,3 +188,29 @@ def test_with_cursor(display):
 
     # 2 colors: black & white (default cursor is a white cross)
     assert set(screenshot_with_cursor.rgb) == {0, 255}
+
+
+def test_with_cursor_but_not_xfixes_extension_found(display: str):
+    x11 = ctypes.util.find_library("X11")
+
+    def find_lib_mocked(lib):
+        """
+        Returns None to emulate no XRANDR library.
+        Returns the previous found X11 library else.
+
+        It is a naive approach, but works for now.
+        """
+
+        return None if lib == "Xfixes" else x11
+
+    with patch("mss.linux.find_library", find_lib_mocked):
+        with mss.mss(display=display, with_cursor=True) as sct:
+            assert not hasattr(sct, "xfixes")
+            assert not sct.with_cursor
+
+
+def test_with_cursor_failure(display: str):
+    with mss.mss(display=display, with_cursor=True) as sct:
+        with patch.object(sct.xfixes, "XFixesGetCursorImage", return_value=None):
+            with pytest.raises(ScreenShotError):
+                sct.grab(sct.monitors[1])

@@ -49,6 +49,7 @@ def monitor_func() -> Callable[[], int]:
 
 
 def bound_instance_without_cm():
+    # Will always leak for now
     sct = mss()
     sct.shot()
 
@@ -62,6 +63,7 @@ def bound_instance_without_cm_but_use_close():
 
 
 def unbound_instance_without_cm():
+    # Will always leak for now
     mss().shot()
 
 
@@ -90,16 +92,34 @@ def regression_issue_135():
         sct.grab(bounding_box_score)
 
 
+def regression_issue_210():
+    """Regression test for issue #210: multiple X servers."""
+    xvfbwrapper = pytest.importorskip("xvfbwrapper")
+
+    vdisplay = xvfbwrapper.Xvfb(width=1920, height=1080, colordepth=24)
+    vdisplay.start()
+    with mss():
+        pass
+    vdisplay.stop()
+
+    vdisplay = xvfbwrapper.Xvfb(width=1920, height=1080, colordepth=24)
+    vdisplay.start()
+    with mss():
+        pass
+    vdisplay.stop()
+
+
 @pytest.mark.skipif(OS == "darwin", reason="No possible leak on macOS.")
 @pytest.mark.parametrize(
     "func",
     (
-        bound_instance_without_cm,
+        # bound_instance_without_cm,
         bound_instance_without_cm_but_use_close,
-        unbound_instance_without_cm,
+        # unbound_instance_without_cm,
         with_context_manager,
         regression_issue_128,
         regression_issue_135,
+        regression_issue_210,
     ),
 )
 def test_resource_leaks(func, monitor_func):

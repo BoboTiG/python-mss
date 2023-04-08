@@ -9,9 +9,7 @@ import zlib
 from typing import Optional, Tuple
 
 
-def to_png(
-    data: bytes, size: Tuple[int, int], level: int = 6, output: Optional[str] = None
-) -> Optional[bytes]:
+def to_png(data: bytes, size: Tuple[int, int], level: int = 6, output: Optional[str] = None) -> Optional[bytes]:
     """
     Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.
@@ -29,9 +27,7 @@ def to_png(
     width, height = size
     line = width * 3
     png_filter = pack(">B", 0)
-    scanlines = b"".join(
-        [png_filter + data[y * line : y * line + line] for y in range(height)]
-    )
+    scanlines = b"".join([png_filter + data[y * line : y * line + line] for y in range(height)])
 
     magic = pack(">8B", 137, 80, 78, 71, 13, 10, 26, 10)
 

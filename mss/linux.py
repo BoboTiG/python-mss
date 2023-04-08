@@ -2,15 +2,13 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-import contextlib
-import ctypes
-import ctypes.util
 import os
-import threading
+from contextlib import suppress
 from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    byref,
     c_char_p,
     c_int,
     c_int32,
@@ -23,8 +21,12 @@ from ctypes import (
     c_ushort,
     c_void_p,
     cast,
+    cdll,
+    create_string_buffer,
 )
-from typing import Any, Dict, Optional, Tuple, Union
+from ctypes.util import find_library
+from threading import current_thread, local
+from typing import Any, Tuple
 
 from .base import MSSBase, lock
 from .exception import ScreenShotError
@@ -184,21 +186,18 @@ _ERROR = {}
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
 def error_handler(display: Display, event: Event) -> int:
     """Specifies the program's supplied error handler."""
-    x11 = ctypes.util.find_library("X11")
-    if not x11:
-        return 0
 
     # Get the specific error message
-    xlib = ctypes.cdll.LoadLibrary(x11)
-    get_error = getattr(xlib, "XGetErrorText")
+    xlib = cdll.LoadLibrary(find_library("X11"))  # type: ignore[arg-type]
+    get_error = xlib.XGetErrorText
     get_error.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
     get_error.restype = c_void_p
 
     evt = event.contents
-    error = ctypes.create_string_buffer(1024)
+    error = create_string_buffer(1024)
     get_error(display, evt.error_code, error, len(error))
 
-    _ERROR[threading.current_thread()] = {
+    _ERROR[current_thread()] = {
         "error": error.value.decode("utf-8"),
         "error_code": evt.error_code,
         "minor_code": evt.minor_code,
@@ -213,11 +212,11 @@ def error_handler(display: Display, event: Event) -> int:
 def validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
     """Validate the returned value of a Xlib or XRANDR function."""
 
-    current_thread = threading.current_thread()
-    if retval != 0 and current_thread not in _ERROR:
+    thread = current_thread()
+    if retval != 0 and thread not in _ERROR:
         return args
 
-    details = _ERROR.pop(current_thread, {})
+    details = _ERROR.pop(thread, {})
     raise ScreenShotError(f"{func.__name__}() failed", details=details)
 
 
@@ -231,6 +230,7 @@ def validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
+    "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
     "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
@@ -292,25 +292,19 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"drawable", "root", "xlib", "xrandr", "xfixes", "__with_cursor"}
+    __slots__ = {"xlib", "xrandr", "xfixes", "_handles"}
 
-    # A dict to maintain *display* values created by multiple threads.
-    _display_dict: Dict[threading.Thread, int] = {}
-
-    def __init__(
-        self, display: Optional[Union[bytes, str]] = None, with_cursor: bool = False
-    ) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""
 
-        super().__init__()
-        self.with_cursor = with_cursor
+        super().__init__(**kwargs)
 
+        display = kwargs.get("display", b"")
         if not display:
             try:
                 display = os.environ["DISPLAY"].encode("utf-8")
             except KeyError:
-                # pylint: disable=raise-missing-from
-                raise ScreenShotError("$DISPLAY not set.")
+                raise ScreenShotError("$DISPLAY not set.") from None
 
         if not isinstance(display, bytes):
             display = display.encode("utf-8")
@@ -318,40 +312,50 @@ class MSS(MSSBase):
         if b":" not in display:
             raise ScreenShotError(f"Bad display value: {display!r}.")
 
-        x11 = ctypes.util.find_library("X11")
+        x11 = find_library("X11")
         if not x11:
             raise ScreenShotError("No X11 library found.")
-        self.xlib = ctypes.cdll.LoadLibrary(x11)
+        self.xlib = cdll.LoadLibrary(x11)
 
         # Install the error handler to prevent interpreter crashes:
         # any error will raise a ScreenShotError exception.
         self.xlib.XSetErrorHandler(error_handler)
 
-        xrandr = ctypes.util.find_library("Xrandr")
+        xrandr = find_library("Xrandr")
         if not xrandr:
             raise ScreenShotError("No Xrandr extension found.")
-        self.xrandr = ctypes.cdll.LoadLibrary(xrandr)
+        self.xrandr = cdll.LoadLibrary(xrandr)
 
         if self.with_cursor:
-            xfixes = ctypes.util.find_library("Xfixes")
+            xfixes = find_library("Xfixes")
             if xfixes:
-                self.xfixes = ctypes.cdll.LoadLibrary(xfixes)
+                self.xfixes = cdll.LoadLibrary(xfixes)
             else:
                 self.with_cursor = False
 
         self._set_cfunctions()
 
-        self.root = self.xlib.XDefaultRootWindow(self._get_display(display))
+        self._handles = local()
+        self._handles.display = self.xlib.XOpenDisplay(display)
 
-        if not self.has_extension("RANDR"):
-            raise ScreenShotError("No Xrandr extension found.")
+        if not self._is_extension_enabled("RANDR"):
+            raise ScreenShotError("Xrandr not enabled.")
+
+        self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
         # Fix for XRRGetScreenResources and XGetImage:
         #     expected LP_Display instance instead of LP_XWindowAttributes
-        self.drawable = ctypes.cast(self.root, POINTER(Display))
+        self._handles.drawable = cast(self._handles.root, POINTER(Display))
 
-    def has_extension(self, extension: str) -> bool:
-        """Return True if the given *extension* is part of the extensions list of the server."""
+    def close(self) -> None:
+        if self._handles.display is not None:
+            self.xlib.XCloseDisplay(self._handles.display)
+            self._handles.display = None
+
+        _ERROR.clear()
+
+    def _is_extension_enabled(self, name: str) -> bool:
+        """Return True if the given *extension* is enabled on the server."""
         with lock:
             major_opcode_return = c_int()
             first_event_return = c_int()
@@ -359,33 +363,15 @@ class MSS(MSSBase):
 
             try:
                 self.xlib.XQueryExtension(
-                    self._get_display(),
-                    extension.encode("latin1"),
-                    ctypes.byref(major_opcode_return),
-                    ctypes.byref(first_event_return),
-                    ctypes.byref(first_error_return),
+                    self._handles.display,
+                    name.encode("latin1"),
+                    byref(major_opcode_return),
+                    byref(first_event_return),
+                    byref(first_error_return),
                 )
             except ScreenShotError:
                 return False
             return True
-
-    def _get_display(self, disp: Optional[bytes] = None) -> int:
-        """
-        Retrieve a thread-safe display from XOpenDisplay().
-        In multithreading, if the thread that creates *display* is dead, *display* will
-        no longer be valid to grab the screen. The *display* attribute is replaced
-        with *_display_dict* to maintain the *display* values in multithreading.
-        Since the current thread and main thread are always alive, reuse their
-        *display* value first.
-        """
-        current_thread = threading.current_thread()
-        current_display = MSS._display_dict.get(current_thread)
-        if current_display:
-            display = current_display
-        else:
-            display = self.xlib.XOpenDisplay(disp)
-            MSS._display_dict[current_thread] = display
-        return display
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -397,7 +383,7 @@ class MSS(MSSBase):
             "xfixes": getattr(self, "xfixes", None),
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
-            with contextlib.suppress(AttributeError):
+            with suppress(AttributeError):
                 cfactory(
                     attr=attrs[attr],
                     errcheck=validate,
@@ -409,20 +395,15 @@ class MSS(MSSBase):
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
 
-        display = self._get_display()
+        display = self._handles.display
         int_ = int
         xrandr = self.xrandr
 
         # All monitors
         gwa = XWindowAttributes()
-        self.xlib.XGetWindowAttributes(display, self.root, ctypes.byref(gwa))
+        self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
         self._monitors.append(
-            {
-                "left": int_(gwa.x),
-                "top": int_(gwa.y),
-                "width": int_(gwa.width),
-                "height": int_(gwa.height),
-            }
+            {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)}
         )
 
         # Each monitor
@@ -431,9 +412,9 @@ class MSS(MSSBase):
         # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
         # The second is faster by a factor of 44! So try to use it first.
         try:
-            mon = xrandr.XRRGetScreenResourcesCurrent(display, self.drawable).contents
+            mon = xrandr.XRRGetScreenResourcesCurrent(display, self._handles.drawable).contents
         except AttributeError:
-            mon = xrandr.XRRGetScreenResources(display, self.drawable).contents
+            mon = xrandr.XRRGetScreenResources(display, self._handles.drawable).contents
 
         crtcs = mon.crtcs
         for idx in range(mon.ncrtc):
@@ -457,8 +438,8 @@ class MSS(MSSBase):
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         ximage = self.xlib.XGetImage(
-            self._get_display(),
-            self.drawable,
+            self._handles.display,
+            self._handles.drawable,
             monitor["left"],
             monitor["top"],
             monitor["width"],
@@ -470,11 +451,9 @@ class MSS(MSSBase):
         try:
             bits_per_pixel = ximage.contents.bits_per_pixel
             if bits_per_pixel != 32:
-                raise ScreenShotError(
-                    f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}."
-                )
+                raise ScreenShotError(f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}.")
 
-            raw_data = ctypes.cast(
+            raw_data = cast(
                 ximage.contents.data,
                 POINTER(c_ubyte * monitor["height"] * monitor["width"] * 4),
             )
@@ -489,21 +468,19 @@ class MSS(MSSBase):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
         # Read data of cursor/mouse-pointer
-        cursor_data = self.xfixes.XFixesGetCursorImage(self._get_display())
-        if not (cursor_data and cursor_data.contents):
+        ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
+        if not (ximage and ximage.contents):
             raise ScreenShotError("Cannot read XFixesGetCursorImage()")
 
-        ximage: XFixesCursorImage = cursor_data.contents
+        cursor_img: XFixesCursorImage = ximage.contents
         monitor = {
-            "left": ximage.x - ximage.xhot,
-            "top": ximage.y - ximage.yhot,
-            "width": ximage.width,
-            "height": ximage.height,
+            "left": cursor_img.x - cursor_img.xhot,
+            "top": cursor_img.y - cursor_img.yhot,
+            "width": cursor_img.width,
+            "height": cursor_img.height,
         }
 
-        raw_data = cast(
-            ximage.pixels, POINTER(c_ulong * monitor["height"] * monitor["width"])
-        )
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * monitor["height"] * monitor["width"]))
         raw = bytearray(raw_data.contents)
 
         data = bytearray(monitor["height"] * monitor["width"] * 4)

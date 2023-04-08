@@ -1,3 +1,22 @@
+8.0.0 (2023-xx-xx)
+==================
+
+base.py
+-------
+ - Added ``compression_level=6`` keyword argument to ``MSS.__init__()``
+ - Added ``display=None`` keyword argument to ``MSS.__init__()``
+ - Added ``max_displays=32`` keyword argument to ``MSS.__init__()``
+ - Added ``with_cursor=False`` keyword argument to ``MSS.__init__()``
+ - Added ``MSS.with_cursor`` attribute
+
+linux.py
+--------
+ - Moved ``MSS.__init__()`` keyword arguments handling to the base class
+ - Renamed ``MSS.has_extension()`` method to ``_is_extension_enabled()``
+ - Removed ``ERROR`` namespace
+ - Removed ``MSS.get_error_details()`` method. Use ``ScreenShotError.details`` attribute instead.
+
+
 6.1.0 (2020-10-31)
 ==================
 
@@ -67,12 +86,12 @@ windows.py
 
 darwin.py
 ---------
-- Added `MSS.__slots__`
+- Added ``MSS.__slots__``
 
 linux.py
 --------
-- Added `MSS.__slots__`
-- Deleted `MSS.close()`
+- Added ``MSS.__slots__``
+- Deleted ``MSS.close()``
 - Deleted ``LAST_ERROR`` constant. Use ``ERROR`` namespace instead, specially the ``ERROR.details`` attribute.
 
 models.py
@@ -92,8 +111,8 @@ screenshot.py
 
 windows.py
 ----------
-- Added `MSS.__slots__`
-- Deleted `MSS.close()`
+- Added ``MSS.__slots__``
+- Deleted ``MSS.close()``
 
 
 4.0.1 (2019-01-26)

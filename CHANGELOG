@@ -3,11 +3,13 @@ History:
 <see Git checking messages for history>
 
 8.0.0   2023/0x/xx
-      - Linux: added mouse support (partially fixes #55)
-      - Linux: removed get_error_details(), use the ScreenShotError details attribute instead
-      - dev: removed pre-commit
-      - tests: removed tox
-      - tests: added PyPy 3.9
+      - Linux: added mouse support (#232)
+      - Linux: refactored how internal handles are stored to fix issues with multiple X servers, and TKinter.
+               No more side effects, and when leaving the context manager, resources are all freed (#224, #234)
+      - ci: added PyPy 3.9 (#226)
+      - dev: removed pre-commit (#226)
+      - tests: removed tox (#226)
+      - tests: improved coverage (#234)
 
 7.0.1   2022/10/27
       - fixed the wheel package

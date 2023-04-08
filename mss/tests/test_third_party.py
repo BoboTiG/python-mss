@@ -8,6 +8,8 @@ import os.path
 
 import pytest
 
+from mss import mss
+
 try:
     import numpy
 except (ImportError, RuntimeError):
@@ -21,17 +23,19 @@ except ImportError:
 
 
 @pytest.mark.skipif(numpy is None, reason="Numpy module not available.")
-def test_numpy(sct, pixel_ratio):
+def test_numpy(pixel_ratio):
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    img = numpy.array(sct.grab(box))
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        img = numpy.array(sct.grab(box))
     assert len(img) == 10 * pixel_ratio
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil(sct):
+def test_pil():
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    sct_img = sct.grab(box)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
     assert img.mode == "RGB"
@@ -45,10 +49,11 @@ def test_pil(sct):
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil_bgra(sct):
+def test_pil_bgra():
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    sct_img = sct.grab(box)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
     assert img.mode == "RGB"
@@ -62,10 +67,11 @@ def test_pil_bgra(sct):
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil_not_16_rounded(sct):
+def test_pil_not_16_rounded():
     width, height = 10, 10
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    sct_img = sct.grab(box)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
     assert img.mode == "RGB"

@@ -8,6 +8,7 @@ import zlib
 
 import pytest
 
+from mss import mss
 from mss.tools import to_png
 
 WIDTH = 10
@@ -15,20 +16,19 @@ HEIGHT = 10
 MD5SUM = "055e615b74167c9bdfea16a00539450c"
 
 
-def test_bad_compression_level(sct):
-    sct.compression_level = 42
-    try:
+def test_bad_compression_level():
+    with mss(compression_level=42, display=os.getenv("DISPLAY")) as sct:
         with pytest.raises(zlib.error):
             sct.shot()
-    finally:
-        sct.compression_level = 6
 
 
-def test_compression_level(sct):
+def test_compression_level():
     data = b"rgb" * WIDTH * HEIGHT
     output = f"{WIDTH}x{HEIGHT}.png"
 
-    to_png(data, (WIDTH, HEIGHT), level=sct.compression_level, output=output)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        to_png(data, (WIDTH, HEIGHT), level=sct.compression_level, output=output)
+
     with open(output, "rb") as png:
         assert hashlib.md5(png.read()).hexdigest() == MD5SUM
 
