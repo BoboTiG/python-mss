@@ -8,8 +8,8 @@ import platform
 
 import pytest
 
-import mss
 import mss.tools
+from mss import mss
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
@@ -42,12 +42,13 @@ def test_incomplete_class(cls):
         cls()
 
 
-def test_bad_monitor(sct):
-    with pytest.raises(ScreenShotError):
-        sct.grab(sct.shot(mon=222))
+def test_bad_monitor():
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        with pytest.raises(ScreenShotError):
+            sct.shot(mon=222)
 
 
-def test_repr(sct, pixel_ratio):
+def test_repr(pixel_ratio):
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     expected_box = {
         "top": 0,
@@ -55,27 +56,28 @@ def test_repr(sct, pixel_ratio):
         "width": 10 * pixel_ratio,
         "height": 10 * pixel_ratio,
     }
-    img = sct.grab(box)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        img = sct.grab(box)
     ref = ScreenShot(bytearray(b"42"), expected_box)
     assert repr(img) == repr(ref)
 
 
 def test_factory(monkeypatch):
     # Current system
-    with mss.mss() as sct:
+    with mss() as sct:
         assert isinstance(sct, MSSBase)
 
     # Unknown
     monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
     with pytest.raises(ScreenShotError) as exc:
-        mss.mss()
+        mss()
     monkeypatch.undo()
 
     error = exc.value.args[0]
     assert error == "System 'chuck norris' not (yet?) implemented."
 
 
-def test_entry_point(capsys, sct):
+def test_entry_point(capsys):
     from datetime import datetime
 
     from mss.__main__ import main
@@ -98,11 +100,12 @@ def test_entry_point(capsys, sct):
     for opt in ("-o", "--out"):
         main([opt, fmt])
         out, _ = capsys.readouterr()
-        for monitor, line in zip(sct.monitors[1:], out.splitlines()):
-            filename = fmt.format(**monitor)
-            assert line.endswith(filename)
-            assert os.path.isfile(filename)
-            os.remove(filename)
+        with mss(display=os.getenv("DISPLAY")) as sct:
+            for monitor, line in zip(sct.monitors[1:], out.splitlines()):
+                filename = fmt.format(**monitor)
+                assert line.endswith(filename)
+                assert os.path.isfile(filename)
+                os.remove(filename)
 
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):
@@ -129,7 +132,7 @@ def test_entry_point(capsys, sct):
         assert out == "Coordinates syntax: top, left, width, height\n"
 
 
-def test_grab_with_tuple(sct, pixel_ratio):
+def test_grab_with_tuple(pixel_ratio):
     left = 100
     top = 100
     right = 500
@@ -137,39 +140,41 @@ def test_grab_with_tuple(sct, pixel_ratio):
     width = right - left  # 400px width
     height = lower - top  # 400px height
 
-    # PIL like
-    box = (left, top, right, lower)
-    im = sct.grab(box)
-    assert im.size == (width * pixel_ratio, height * pixel_ratio)
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        # PIL like
+        box = (left, top, right, lower)
+        im = sct.grab(box)
+        assert im.size == (width * pixel_ratio, height * pixel_ratio)
 
-    # MSS like
-    box2 = {"left": left, "top": top, "width": width, "height": height}
-    im2 = sct.grab(box2)
-    assert im.size == im2.size
-    assert im.pos == im2.pos
-    assert im.rgb == im2.rgb
+        # MSS like
+        box2 = {"left": left, "top": top, "width": width, "height": height}
+        im2 = sct.grab(box2)
+        assert im.size == im2.size
+        assert im.pos == im2.pos
+        assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(sct, pixel_ratio):
-    monitor = sct.monitors[1]
-    left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
-    top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
-    right = left + 500  # 500px
-    lower = top + 500  # 500px
-    width = right - left
-    height = lower - top
+def test_grab_with_tuple_percents(pixel_ratio):
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        monitor = sct.monitors[1]
+        left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
+        top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
+        right = left + 500  # 500px
+        lower = top + 500  # 500px
+        width = right - left
+        height = lower - top
 
-    # PIL like
-    box = (left, top, right, lower)
-    im = sct.grab(box)
-    assert im.size == (width * pixel_ratio, height * pixel_ratio)
+        # PIL like
+        box = (left, top, right, lower)
+        im = sct.grab(box)
+        assert im.size == (width * pixel_ratio, height * pixel_ratio)
 
-    # MSS like
-    box2 = {"left": left, "top": top, "width": width, "height": height}
-    im2 = sct.grab(box2)
-    assert im.size == im2.size
-    assert im.pos == im2.pos
-    assert im.rgb == im2.rgb
+        # MSS like
+        box2 = {"left": left, "top": top, "width": width, "height": height}
+        im2 = sct.grab(box2)
+        assert im.size == im2.size
+        assert im.pos == im2.pos
+        assert im.rgb == im2.rgb
 
 
 def test_thread_safety():
@@ -182,7 +187,7 @@ def test_thread_safety():
 
         start_time = time.time()
         while time.time() - start_time < 1:
-            with mss.mss() as sct:
+            with mss() as sct:
                 sct.grab(sct.monitors[1])
 
         check[threading.current_thread()] = True

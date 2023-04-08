@@ -1,19 +1,43 @@
+8.0.0 (2023-xx-xx)
+==================
+
+base.py
+-------
+- Added ``compression_level=6`` keyword argument to ``MSS.__init__()``
+- Added ``display=None`` keyword argument to ``MSS.__init__()``
+- Added ``max_displays=32`` keyword argument to ``MSS.__init__()``
+- Added ``with_cursor=False`` keyword argument to ``MSS.__init__()``
+- Added ``MSS.with_cursor`` attribute
+
+linux.py
+--------
+- Added ``MSS.close()``
+- Moved ``MSS.__init__()`` keyword arguments handling to the base class
+- Renamed ``error_handler()`` function to ``__error_handler()``
+- Renamed ``_validate()`` function to ``___validate()``
+- Renamed ``MSS.has_extension()`` method to ``_is_extension_enabled()``
+- Removed ``ERROR`` namespace
+- Removed ``MSS.drawable`` attribute
+- Removed ``MSS.root`` attribute
+- Removed ``MSS.get_error_details()`` method. Use ``ScreenShotError.details`` attribute instead.
+
+
 6.1.0 (2020-10-31)
 ==================
 
 darwin.py
 ---------
- - Added ``CFUNCTIONS``
+- Added ``CFUNCTIONS``
 
 linux.py
 --------
- - Added ``CFUNCTIONS``
+- Added ``CFUNCTIONS``
 
 windows.py
 ----------
- - Added ``CFUNCTIONS``
- - Added ``MONITORNUMPROC``
- - Removed ``MSS.monitorenumproc``. Use ``MONITORNUMPROC`` instead.
+- Added ``CFUNCTIONS``
+- Added ``MONITORNUMPROC``
+- Removed ``MSS.monitorenumproc``. Use ``MONITORNUMPROC`` instead.
 
 
 6.0.0 (2020-06-30)
@@ -21,30 +45,30 @@ windows.py
 
 base.py
 -------
- - Added ``lock``
- - Added ``MSS._grab_impl()`` (abstract method)
- - Added ``MSS._monitors_impl()`` (abstract method)
- - ``MSS.grab()`` is no more an abstract method
- - ``MSS.monitors`` is no more an abstract property
+- Added ``lock``
+- Added ``MSS._grab_impl()`` (abstract method)
+- Added ``MSS._monitors_impl()`` (abstract method)
+- ``MSS.grab()`` is no more an abstract method
+- ``MSS.monitors`` is no more an abstract property
 
 darwin.py
 ---------
- - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
- - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
+- Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+- Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
 
 linux.py
 --------
- - Added ``MSS.has_extension()``
- - Removed ``MSS.display``
- - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
- - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
+- Added ``MSS.has_extension()``
+- Removed ``MSS.display``
+- Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+- Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
 
 windows.py
 ----------
- - Removed ``MSS._lock``
- - Renamed ``MSS.srcdc_dict`` to ``MSS._srcdc_dict``
- - Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
- - Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
+- Removed ``MSS._lock``
+- Renamed ``MSS.srcdc_dict`` to ``MSS._srcdc_dict``
+- Renamed ``MSS.grab()`` to ``MSS._grab_impl()``
+- Renamed ``MSS.monitors`` to ``MSS._monitors_impl()``
 
 
 5.1.0 (2020-04-30)
@@ -59,7 +83,7 @@ base.py
 
 windows.py
 ----------
- - Replaced ``MSS.srcdc`` with ``MSS.srcdc_dict``
+- Replaced ``MSS.srcdc`` with ``MSS.srcdc_dict``
 
 
 5.0.0 (2019-12-31)
@@ -67,12 +91,12 @@ windows.py
 
 darwin.py
 ---------
-- Added `MSS.__slots__`
+- Added ``MSS.__slots__``
 
 linux.py
 --------
-- Added `MSS.__slots__`
-- Deleted `MSS.close()`
+- Added ``MSS.__slots__``
+- Deleted ``MSS.close()``
 - Deleted ``LAST_ERROR`` constant. Use ``ERROR`` namespace instead, specially the ``ERROR.details`` attribute.
 
 models.py
@@ -92,8 +116,8 @@ screenshot.py
 
 windows.py
 ----------
-- Added `MSS.__slots__`
-- Deleted `MSS.close()`
+- Added ``MSS.__slots__``
+- Deleted ``MSS.close()``
 
 
 4.0.1 (2019-01-26)
@@ -149,15 +173,15 @@ windows.py
 
 base.py
 -------
-- Added ``MSSBase.compression_level`` to control the PNG compression level
+- Added ``MSSBase.compression_level`` attribute
 
 linux.py
 --------
-- Added ``MSS.drawable`` to speed-up grabbing.
+- Added ``MSS.drawable`` attribute
 
 screenshot.py
 -------------
-- Added ``Screenshot.bgra`` to get BGRA bytes.
+- Added ``Screenshot.bgra`` attribute
 
 tools.py
 --------
@@ -181,19 +205,19 @@ __main__.py
 
 base.py
 -------
-- Moved ``ScreenShot`` class to screenshot.py
+- Moved ``ScreenShot`` class to ``screenshot.py``
 
 darwin.py
 ---------
-- Added ``CGPoint.__repr__()``
-- Added ``CGRect.__repr__()``
-- Added ``CGSize.__repr__()``
+- Added ``CGPoint.__repr__()`` function
+- Added ``CGRect.__repr__()`` function
+- Added ``CGSize.__repr__()`` function
 - Removed ``get_infinity()`` function
 
 windows.py
 ----------
-- Added ``scale()`` method to ``MSS`` class
-- Added ``scale_factor`` property to ``MSS`` class
+- Added ``MSS.scale()`` method
+- Added ``MSS.scale_factor`` property
 
 
 3.0.0 (2017-07-06)

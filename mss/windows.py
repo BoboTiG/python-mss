@@ -104,10 +104,10 @@ class MSS(MSSBase):
     # A dict to maintain *srcdc* values created by multiple threads.
     _srcdc_dict: Dict[threading.Thread, int] = {}
 
-    def __init__(self, **_: Any) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         """Windows initialisations."""
 
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.user32 = ctypes.WinDLL("user32")
         self.gdi32 = ctypes.WinDLL("gdi32")
@@ -170,9 +170,7 @@ class MSS(MSSBase):
         Since the current thread and main thread are always alive, reuse their *srcdc* value first.
         """
         cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        current_srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(
-            main_thread
-        )
+        current_srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(main_thread)
         if current_srcdc:
             srcdc = current_srcdc
         else:
@@ -275,9 +273,7 @@ class MSS(MSSBase):
             monitor["top"],
             SRCCOPY | CAPTUREBLT,
         )
-        bits = self.gdi32.GetDIBits(
-            memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS
-        )
+        bits = self.gdi32.GetDIBits(memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS)
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
