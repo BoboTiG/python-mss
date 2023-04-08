@@ -9,7 +9,7 @@ import zlib
 from typing import Optional, Tuple
 
 
-def to_png(data: bytes, size: Tuple[int, int], level: int = 6, output: Optional[str] = None) -> Optional[bytes]:
+def to_png(data: bytes, size: Tuple[int, int], /, *, level: int = 6, output: Optional[str] = None) -> Optional[bytes]:
     """
     Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.

@@ -66,11 +66,7 @@ CFUNCTIONS: CFunctions = {
     "CFDataGetLength": ("core", [c_void_p], c_uint64),
     "CFRelease": ("core", [c_void_p], c_void_p),
     "CGDataProviderRelease": ("core", [c_void_p], c_void_p),
-    "CGGetActiveDisplayList": (
-        "core",
-        [c_uint32, POINTER(c_uint32), POINTER(c_uint32)],
-        c_int32,
-    ),
+    "CGGetActiveDisplayList": ("core", [c_uint32, POINTER(c_uint32), POINTER(c_uint32)], c_int32),
     "CGImageGetBitsPerPixel": ("core", [c_void_p], int),
     "CGImageGetBytesPerRow": ("core", [c_void_p], int),
     "CGImageGetDataProvider": ("core", [c_void_p], c_void_p),
@@ -78,11 +74,7 @@ CFUNCTIONS: CFunctions = {
     "CGImageGetWidth": ("core", [c_void_p], int),
     "CGRectStandardize": ("core", [CGRect], CGRect),
     "CGRectUnion": ("core", [CGRect, CGRect], CGRect),
-    "CGWindowListCreateImage": (
-        "core",
-        [CGRect, c_uint32, c_uint32, c_uint32],
-        c_void_p,
-    ),
+    "CGWindowListCreateImage": ("core", [CGRect, c_uint32, c_uint32, c_uint32], c_void_p),
 }
 
 
@@ -94,7 +86,7 @@ class MSS(MSSBase):
 
     __slots__ = {"core", "max_displays"}
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, /, **kwargs: Any) -> None:
         """macOS initialisations."""
 
         super().__init__(**kwargs)
@@ -124,12 +116,7 @@ class MSS(MSSBase):
         cfactory = self._cfactory
         attrs = {"core": self.core}
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
-            cfactory(
-                attr=attrs[attr],
-                func=func,
-                argtypes=argtypes,
-                restype=restype,
-            )
+            cfactory(attrs[attr], func, argtypes, restype)
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
@@ -176,7 +163,7 @@ class MSS(MSSBase):
             "height": int_(all_monitors.size.height),
         }
 
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         # pylint: disable=too-many-locals

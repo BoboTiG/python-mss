@@ -22,6 +22,8 @@ class MSSBase(metaclass=ABCMeta):
 
     def __init__(
         self,
+        /,
+        *,
         compression_level: int = 6,
         display: Optional[Union[bytes, str]] = None,  # Linux only
         max_displays: int = 32,  # Mac only
@@ -48,7 +50,7 @@ class MSSBase(metaclass=ABCMeta):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
         That method has to be run using a threading lock.
@@ -64,7 +66,7 @@ class MSSBase(metaclass=ABCMeta):
     def close(self) -> None:
         """Clean-up."""
 
-    def grab(self, monitor: Union[Monitor, Tuple[int, int, int, int]]) -> ScreenShot:
+    def grab(self, monitor: Union[Monitor, Tuple[int, int, int, int]], /) -> ScreenShot:
         """
         Retrieve screen pixels for a given monitor.
 
@@ -120,6 +122,8 @@ class MSSBase(metaclass=ABCMeta):
 
     def save(
         self,
+        /,
+        *,
         mon: int = 0,
         output: str = "monitor-{mon}.png",
         callback: Optional[Callable[[str], None]] = None,
@@ -170,9 +174,8 @@ class MSSBase(metaclass=ABCMeta):
             mon = 0 if mon == -1 else mon
             try:
                 monitor = monitors[mon]
-            except IndexError:
-                # pylint: disable=raise-missing-from
-                raise ScreenShotError(f"Monitor {mon!r} does not exist.")
+            except IndexError as exc:
+                raise ScreenShotError(f"Monitor {mon!r} does not exist.") from exc
 
             output = output.format(mon=mon, date=datetime.now(), **monitor)
             if callable(callback):
@@ -181,7 +184,7 @@ class MSSBase(metaclass=ABCMeta):
             to_png(sct.rgb, sct.size, level=self.compression_level, output=output)
             yield output
 
-    def shot(self, **kwargs: Any) -> str:
+    def shot(self, /, **kwargs: Any) -> str:
         """
         Helper to save the screen shot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
@@ -191,7 +194,7 @@ class MSSBase(metaclass=ABCMeta):
         return next(self.save(**kwargs))
 
     @staticmethod
-    def _merge(screenshot: ScreenShot, cursor: ScreenShot) -> ScreenShot:
+    def _merge(screenshot: ScreenShot, cursor: ScreenShot, /) -> ScreenShot:
         """Create composite image by blending screenshot and mouse cursor."""
 
         # pylint: disable=too-many-locals,invalid-name
@@ -244,6 +247,7 @@ class MSSBase(metaclass=ABCMeta):
         func: str,
         argtypes: List[Any],
         restype: Any,
+        /,
         errcheck: Optional[Callable] = None,
     ) -> None:
         """Factory to create a ctypes function and automatically manage errors."""

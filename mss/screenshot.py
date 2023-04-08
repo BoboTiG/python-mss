@@ -21,7 +21,7 @@ class ScreenShot:
 
     __slots__ = {"__pixels", "__rgb", "pos", "raw", "size"}
 
-    def __init__(self, data: bytearray, monitor: Monitor, size: Optional[Size] = None) -> None:
+    def __init__(self, data: bytearray, monitor: Monitor, /, *, size: Optional[Size] = None) -> None:
         self.__pixels: Optional[Pixels] = None
         self.__rgb: Optional[bytes] = None
 
@@ -55,7 +55,7 @@ class ScreenShot:
         }
 
     @classmethod
-    def from_size(cls: Type["ScreenShot"], data: bytearray, width: int, height: int) -> "ScreenShot":
+    def from_size(cls: Type["ScreenShot"], data: bytearray, width: int, height: int, /) -> "ScreenShot":
         """Instantiate a new class given only screen shot's data and size."""
         monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
@@ -126,6 +126,5 @@ class ScreenShot:
 
         try:
             return self.pixels[coord_y][coord_x]  # type: ignore
-        except IndexError:
-            # pylint: disable=raise-missing-from
-            raise ScreenShotError(f"Pixel location ({coord_x}, {coord_y}) is out of range.")
+        except IndexError as exc:
+            raise ScreenShotError(f"Pixel location ({coord_x}, {coord_y}) is out of range.") from exc
