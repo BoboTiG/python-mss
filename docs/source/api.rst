@@ -12,6 +12,8 @@ macOS
 
 .. attribute:: CFUNCTIONS
 
+    .. versionadded:: 6.1.0
+
 .. function:: cgfloat
 
 .. class:: CGPoint
@@ -32,6 +34,8 @@ GNU/Linux
 .. module:: mss.linux
 
 .. attribute:: CFUNCTIONS
+
+    .. versionadded:: 6.1.0
 
 .. attribute:: PLAINMASK
 
@@ -57,6 +61,12 @@ GNU/Linux
 
     .. attribute:: core
 
+    .. method:: close()
+
+        Clean-up method.
+
+        .. versionadded:: 8.0.0
+
 Windows
 -------
 
@@ -65,6 +75,8 @@ Windows
 .. attribute:: CAPTUREBLT
 
 .. attribute:: CFUNCTIONS
+
+    .. versionadded:: 6.1.0
 
 .. attribute:: DIB_RGB_COLORS
 
@@ -75,6 +87,8 @@ Windows
 .. class:: BITMAPINFO
 
 .. attribute:: MONITORNUMPROC
+
+    .. versionadded:: 6.1.0
 
 .. class:: MSS
 
@@ -88,6 +102,8 @@ Methods
 .. module:: mss.base
 
 .. attribute:: lock
+
+    .. versionadded:: 6.0.0
 
 .. class:: MSSBase
 
@@ -107,9 +123,7 @@ Methods
 
         .. versionadded:: 8.0.0
 
-    .. property:: monitors
-
-    .. method:: __init__([compression_level=6, display=None, max_displays=32, with_cursor=False])
+    .. method:: __init__(compression_level=6, display=None, max_displays=32, with_cursor=False)
 
         :type compression_level: int
         :param compression_level: PNG compression level.
