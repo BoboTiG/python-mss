@@ -3,6 +3,8 @@ History:
 <see Git checking messages for history>
 
 8.0.0   2023/0x/xx
+      - the whole source code was migrated to PEP 570 (Python Positional-Only Parameters)
+      - removed support for Python 3.7
       - Linux: added mouse support (#232)
       - Linux: refactored how internal handles are stored to fix issues with multiple X servers, and TKinter.
                No more side effects, and when leaving the context manager, resources are all freed (#224, #234)

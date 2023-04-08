@@ -210,7 +210,7 @@ def _error_handler(display: Display, event: Event) -> int:
     return 0
 
 
-def _validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
+def _validate(retval: int, func: Any, args: Tuple[Any, Any], /) -> Tuple[Any, Any]:
     """Validate the returned value of a Xlib or XRANDR function."""
 
     thread = current_thread()
@@ -237,52 +237,17 @@ CFUNCTIONS: CFunctions = {
     "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
     "XGetImage": (
         "xlib",
-        [
-            POINTER(Display),
-            POINTER(Display),
-            c_int,
-            c_int,
-            c_uint,
-            c_uint,
-            c_ulong,
-            c_int,
-        ],
+        [POINTER(Display), POINTER(Display), c_int, c_int, c_uint, c_uint, c_ulong, c_int],
         POINTER(XImage),
     ),
-    "XGetWindowAttributes": (
-        "xlib",
-        [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)],
-        c_int,
-    ),
+    "XGetWindowAttributes": ("xlib", [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)], c_int),
     "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
-    "XQueryExtension": (
-        "xlib",
-        [
-            POINTER(Display),
-            c_char_p,
-            POINTER(c_int),
-            POINTER(c_int),
-            POINTER(c_int),
-        ],
-        c_uint,
-    ),
+    "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], c_uint),
     "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
     "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
-    "XRRGetCrtcInfo": (
-        "xrandr",
-        [POINTER(Display), POINTER(XRRScreenResources), c_long],
-        POINTER(XRRCrtcInfo),
-    ),
-    "XRRGetScreenResources": (
-        "xrandr",
-        [POINTER(Display), POINTER(Display)],
-        POINTER(XRRScreenResources),
-    ),
-    "XRRGetScreenResourcesCurrent": (
-        "xrandr",
-        [POINTER(Display), POINTER(Display)],
-        POINTER(XRRScreenResources),
-    ),
+    "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
+    "XRRGetScreenResources": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
+    "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
     "XSetErrorHandler": ("xlib", [c_void_p], c_int),
 }
 
@@ -295,7 +260,7 @@ class MSS(MSSBase):
 
     __slots__ = {"xfixes", "xlib", "xrandr", "_handles"}
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, /, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""
 
         super().__init__(**kwargs)
@@ -355,7 +320,7 @@ class MSS(MSSBase):
 
         _ERROR.clear()
 
-    def _is_extension_enabled(self, name: str) -> bool:
+    def _is_extension_enabled(self, name: str, /) -> bool:
         """Return True if the given *extension* is enabled on the server."""
         with lock:
             major_opcode_return = c_int()
@@ -385,13 +350,7 @@ class MSS(MSSBase):
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with suppress(AttributeError):
-                cfactory(
-                    attr=attrs[attr],
-                    errcheck=_validate,
-                    func=func,
-                    argtypes=argtypes,
-                    restype=restype,
-                )
+                cfactory(attrs[attr], func, argtypes, restype, errcheck=_validate)
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
@@ -435,7 +394,7 @@ class MSS(MSSBase):
             xrandr.XRRFreeCrtcInfo(crtc)
         xrandr.XRRFreeScreenResources(mon)
 
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         ximage = self.xlib.XGetImage(

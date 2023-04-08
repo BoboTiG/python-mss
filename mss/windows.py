@@ -81,11 +81,7 @@ CFUNCTIONS: CFunctions = {
     "DeleteObject": ("gdi32", [HGDIOBJ], INT),
     "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
     "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
-    "GetDIBits": (
-        "gdi32",
-        [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT],
-        BOOL,
-    ),
+    "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT], BOOL),
     "GetSystemMetrics": ("user32", [INT], INT),
     "GetWindowDC": ("user32", [HWND], HDC),
     "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
@@ -104,7 +100,7 @@ class MSS(MSSBase):
     # A dict to maintain *srcdc* values created by multiple threads.
     _srcdc_dict: Dict[threading.Thread, int] = {}
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, /, **kwargs: Any) -> None:
         """Windows initialisations."""
 
         super().__init__(**kwargs)
@@ -139,12 +135,7 @@ class MSS(MSSBase):
             "user32": self.user32,
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
-            cfactory(
-                attr=attrs[attr],
-                func=func,
-                argtypes=argtypes,
-                restype=restype,
-            )
+            cfactory(attrs[attr], func, argtypes, restype)
 
     def _set_dpi_awareness(self) -> None:
         """Set DPI awareness to capture full screen on Hi-DPI monitors."""
@@ -217,7 +208,7 @@ class MSS(MSSBase):
         callback = MONITORNUMPROC(_callback)
         user32.EnumDisplayMonitors(0, 0, callback, 0)
 
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
 
