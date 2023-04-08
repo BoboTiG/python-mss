@@ -14,6 +14,8 @@ linux.py
  - Moved ``MSS.__init__()`` keyword arguments handling to the base class
  - Renamed ``MSS.has_extension()`` method to ``_is_extension_enabled()``
  - Removed ``ERROR`` namespace
+ - Removed ``MSS.drawable`` attribute
+ - Removed ``MSS.root`` attribute
  - Removed ``MSS.get_error_details()`` method. Use ``ScreenShotError.details`` attribute instead.
 
 

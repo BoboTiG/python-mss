@@ -184,7 +184,7 @@ _ERROR = {}
 
 
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
-def error_handler(display: Display, event: Event) -> int:
+def _error_handler(display: Display, event: Event) -> int:
     """Specifies the program's supplied error handler."""
 
     # Get the specific error message
@@ -209,7 +209,7 @@ def error_handler(display: Display, event: Event) -> int:
     return 0
 
 
-def validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
+def _validate(retval: int, func: Any, args: Tuple[Any, Any]) -> Tuple[Any, Any]:
     """Validate the returned value of a Xlib or XRANDR function."""
 
     thread = current_thread()
@@ -319,7 +319,7 @@ class MSS(MSSBase):
 
         # Install the error handler to prevent interpreter crashes:
         # any error will raise a ScreenShotError exception.
-        self.xlib.XSetErrorHandler(error_handler)
+        self.xlib.XSetErrorHandler(_error_handler)
 
         xrandr = find_library("Xrandr")
         if not xrandr:
@@ -386,7 +386,7 @@ class MSS(MSSBase):
             with suppress(AttributeError):
                 cfactory(
                     attr=attrs[attr],
-                    errcheck=validate,
+                    errcheck=_validate,
                     func=func,
                     argtypes=argtypes,
                     restype=restype,

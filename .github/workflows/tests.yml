@@ -81,6 +81,9 @@ jobs:
           python -m pip install -r dev-requirements.txt
       - name: Install Xvfb
         if: matrix.os.emoji == '🐧'
-        run: sudo apt install xvfb
+        run: |
+          sudo apt install xvfb
+          export DISPLAY=:99
+          sudo Xvfb -ac ${DISPLAY} -screen 0 1280x1024x24 > /dev/null 2>&1 &
       - name: Tests
         run: python -m pytest

@@ -12,6 +12,20 @@ macOS
 
 .. attribute:: CFUNCTIONS
 
+.. function:: cgfloat
+
+.. class:: CGPoint
+
+.. class:: CGSize
+
+.. class:: CGRect
+
+.. class:: MSS
+
+    .. attribute:: core
+
+    .. attribute:: max_displays
+
 GNU/Linux
 ---------
 
@@ -23,40 +37,25 @@ GNU/Linux
 
 .. attribute:: ZPIXMAP
 
+.. class:: Display
+
+.. class:: Event
+
+.. class:: XFixesCursorImage
+
+.. class:: XWindowAttributes
+
+.. class:: XImage
+
+.. class:: XRRModeInfo
+
+.. class:: XRRScreenResources
+
+.. class:: XRRCrtcInfo
+
 .. class:: MSS
 
-    .. method:: __init__([display=None, with_cursor=False])
-
-        :type display: str or None
-        :param display: The display to use.
-        :param with_cursor: Include the mouse cursor in screenshots.
-
-        GNU/Linux initializations.
-
-            .. versionadded:: 8.0.0
-                `with_cursor` keyword argument.
-
-    .. method:: grab(monitor)
-
-        :rtype: :class:`~mss.base.ScreenShot`
-        :raises ScreenShotError: When color depth is not 32 (rare).
-
-        See :meth:`~mss.base.MSSBase.grab()` for details.
-
-.. function:: error_handler(display, event)
-
-    :type display: ctypes.POINTER(Display)
-    :param display: The display impacted by the error.
-    :type event: ctypes.POINTER(Event)
-    :param event: XError details.
-    :return int: Always ``0``.
-
-    Error handler passed to `X11.XSetErrorHandler()` to catch any error that can happen when calling a X11 function.
-    This will prevent Python interpreter crashes.
-
-    When such an error happen, a :class:`~mss.exception.ScreenShotError` exception is raised and all `XError` information are added to the :attr:`~mss.exception.ScreenShotError.details` attribute.
-
-    .. versionadded:: 3.3.0
+    .. attribute:: core
 
 Windows
 -------
@@ -71,14 +70,30 @@ Windows
 
 .. attribute:: SRCCOPY
 
+.. class:: BITMAPINFOHEADER
+
+.. class:: BITMAPINFO
+
+.. attribute:: MONITORNUMPROC
+
+.. class:: MSS
+
+    .. attribute:: gdi32
+
+    .. attribute:: user32
+
 Methods
 =======
 
 .. module:: mss.base
 
+.. attribute:: lock
+
 .. class:: MSSBase
 
     The parent's class for every OS implementation.
+
+    .. attribute:: cls_image
 
     .. attribute:: compression_level
 
@@ -86,9 +101,31 @@ Methods
 
         .. versionadded:: 3.2.0
 
+    .. attribute:: with_cursor
+
+        Include the mouse cursor in screenshots.
+
+        .. versionadded:: 8.0.0
+
+    .. property:: monitors
+
+    .. method:: __init__([compression_level=6, display=None, max_displays=32, with_cursor=False])
+
+        :type compression_level: int
+        :param compression_level: PNG compression level.
+        :type display: bytes, str or None
+        :param display: The display to use. Only effective on GNU/Linux.
+        :type max_displays: int
+        :param max_displays: Maximum number of displays. Only effective on macOS.
+        :type with_cursor: bool
+        :param with_cursor: Include the mouse cursor in screenshots.
+
+        .. versionadded:: 8.0.0
+            ``compression_level``, ``display``, ``max_displays``, and ``with_cursor``, keyword arguments.
+
     .. method:: close()
 
-        Clean-up method. Does nothing by default.
+        Clean-up method.
 
         .. versionadded:: 4.0.0
 
