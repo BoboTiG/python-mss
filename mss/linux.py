@@ -327,8 +327,7 @@ class MSS(MSSBase):
         self.xrandr = cdll.LoadLibrary(xrandr)
 
         if self.with_cursor:
-            xfixes = find_library("Xfixes")
-            if xfixes:
+            if xfixes := find_library("Xfixes"):
                 self.xfixes = cdll.LoadLibrary(xfixes)
             else:
                 self.with_cursor = False
