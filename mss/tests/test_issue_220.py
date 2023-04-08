@@ -7,7 +7,15 @@ import pytest
 import mss
 
 tkinter = pytest.importorskip("tkinter")
-root = tkinter.Tk()
+
+
+@pytest.fixture
+def root() -> tkinter.Tk:
+    master = tkinter.Tk()
+    try:
+        yield master
+    finally:
+        master.destroy()
 
 
 def take_screenshot():
@@ -16,23 +24,23 @@ def take_screenshot():
         sct.grab(region)
 
 
-def create_top_level_win():
-    top_level_win = tkinter.Toplevel(root)
+def create_top_level_win(master: tkinter.Tk):
+    top_level_win = tkinter.Toplevel(master)
 
     take_screenshot_btn = tkinter.Button(top_level_win, text="Take screenshot", command=take_screenshot)
     take_screenshot_btn.pack()
 
     take_screenshot_btn.invoke()
-    root.update_idletasks()
-    root.update()
+    master.update_idletasks()
+    master.update()
 
     top_level_win.destroy()
-    root.update_idletasks()
-    root.update()
+    master.update_idletasks()
+    master.update()
 
 
-def test_regression(capsys):
-    btn = tkinter.Button(root, text="Open TopLevel", command=create_top_level_win)
+def test_regression(root: tkinter.Tk, capsys):
+    btn = tkinter.Button(root, text="Open TopLevel", command=lambda: create_top_level_win(root))
     btn.pack()
 
     # First screenshot: it works

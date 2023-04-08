@@ -364,9 +364,9 @@ class MSS(MSSBase):
 
         cfactory = self._cfactory
         attrs = {
+            "xfixes": getattr(self, "xfixes", None),
             "xlib": self.xlib,
             "xrandr": self.xrandr,
-            "xfixes": getattr(self, "xfixes", None),
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with suppress(AttributeError):
