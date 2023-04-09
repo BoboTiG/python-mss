@@ -96,13 +96,13 @@ def test_entry_point(capsys):
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
-    fmt = "sct-{width}x{height}.png"
+    fmt = "sct-{mon}-{width}x{height}.png"
     for opt in ("-o", "--out"):
         main([opt, fmt])
         out, _ = capsys.readouterr()
         with mss(display=os.getenv("DISPLAY")) as sct:
-            for monitor, line in zip(sct.monitors[1:], out.splitlines()):
-                filename = fmt.format(**monitor)
+            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], out.splitlines()), 1):
+                filename = fmt.format(mon=mon, **monitor)
                 assert line.endswith(filename)
                 assert os.path.isfile(filename)
                 os.remove(filename)

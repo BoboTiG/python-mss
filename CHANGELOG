@@ -3,7 +3,7 @@ History:
 <see Git checking messages for history>
 
 8.0.1   2023/xx/xx
-      - 
+      - tests: fix test_entry_point() with multiple monitors having the same resolution
 
 8.0.0   2023/04/09
       - removed support for Python 3.6
