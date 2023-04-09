@@ -75,7 +75,9 @@ def main(args: List[str], /) -> int:
                         print(os.path.realpath(file_name))
             return 0
     except ScreenShotError:
-        return 1
+        if options.quiet:
+            return 1
+        raise
 
 
 if __name__ == "__main__":  # pragma: nocover

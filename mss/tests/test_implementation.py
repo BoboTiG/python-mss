@@ -5,6 +5,7 @@ Source: https://github.com/BoboTiG/python-mss
 import os
 import os.path
 import platform
+from unittest.mock import patch
 
 import pytest
 
@@ -83,10 +84,10 @@ def test_entry_point(with_cursor: bool, capsys):
 
     from mss.__main__ import main as entry_point
 
-    def main(*args):
+    def main(*args: str, ret: int = 0) -> None:
         if with_cursor:
             args = args + ("--with-cursor",)
-        entry_point(args)
+        assert entry_point(args) == ret
 
     for opt in ("-m", "--monitor"):
         main(opt, "1")
@@ -133,9 +134,29 @@ def test_entry_point(with_cursor: bool, capsys):
 
     coordinates = "2,12,40"
     for opt in ("-c", "--coordinates"):
-        main(opt, coordinates)
+        main(opt, coordinates, ret=2)
         out, _ = capsys.readouterr()
         assert out == "Coordinates syntax: top, left, width, height\n"
+
+
+@patch("mss.base.MSSBase.monitors", new=[])
+@pytest.mark.parametrize("quiet", [False, True])
+def test_entry_point_error(quiet: bool, capsys):
+    from mss.__main__ import main as entry_point
+
+    def main(*args: str) -> int:
+        if quiet:
+            args = args + ("--quiet",)
+        return entry_point(args)
+
+    if quiet:
+        assert main() == 1
+        out, err = capsys.readouterr()
+        assert not out
+        assert not err
+    else:
+        with pytest.raises(ScreenShotError):
+            main()
 
 
 def test_grab_with_tuple(pixel_ratio):
