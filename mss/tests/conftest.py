@@ -4,7 +4,9 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import glob
 import os
+from hashlib import md5
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 
@@ -42,8 +44,12 @@ def before_tests(request):
 
 @pytest.fixture(scope="session")
 def raw() -> bytes:
-    file = Path(__file__).parent / "res" / "monitor-1024x768.raw"
-    return file.read_bytes()
+    file = Path(__file__).parent / "res" / "monitor-1024x768.raw.zip"
+    with ZipFile(file) as fh:
+        data = fh.read(file.with_suffix("").name)
+
+    assert md5(data).hexdigest() == "125696266e2a8f5240f6bc17e4df98c6"
+    return data
 
 
 @pytest.fixture(scope="session")
