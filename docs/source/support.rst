@@ -33,4 +33,4 @@ Abandoned
 - Python 3.4 (2018-03-19)
 - Python 3.5 (2022-10-27)
 - Python 3.6 (2022-10-27)
-- Python 3.7 (2023-xx-xx)
+- Python 3.7 (2023-04-09)
