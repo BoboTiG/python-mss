@@ -72,6 +72,25 @@ You can use ``mss`` via the CLI::
 
 Or via direct call from Python::
 
-    python -m mss --help
+    $ python -m mss --help
+    usage: __main__.py [-h] [-c COORDINATES] [-l {0,1,2,3,4,5,6,7,8,9}]
+                    [-m MONITOR] [-o OUTPUT] [-q] [-v] [--with-cursor]
+
+    options:
+    -h, --help            show this help message and exit
+    -c COORDINATES, --coordinates COORDINATES
+                          the part of the screen to capture: top, left, width, height
+    -l {0,1,2,3,4,5,6,7,8,9}, --level {0,1,2,3,4,5,6,7,8,9}
+                          the PNG compression level
+    -m MONITOR, --monitor MONITOR
+                          the monitor to screen shot
+    -o OUTPUT, --output OUTPUT
+                          the output file name
+    --with-cursor         include the cursor
+    -q, --quiet           do not print created files
+    -v, --version         show program's version number and exit
 
 .. versionadded:: 3.1.1
+
+.. versionadded:: 8.0.0
+    ``--with-cursor`` to include the cursor in screenshots.

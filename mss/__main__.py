@@ -33,6 +33,7 @@ def main(args: List[str], /) -> int:
     )
     cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screen shot")
     cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
+    cli_args.add_argument("--with-cursor", default=False, action="store_true", help="include the cursor")
     cli_args.add_argument(
         "-q",
         "--quiet",
@@ -61,7 +62,7 @@ def main(args: List[str], /) -> int:
             kwargs["output"] = "sct-{top}x{left}_{width}x{height}.png"
 
     try:
-        with mss() as sct:
+        with mss(with_cursor=options.with_cursor) as sct:
             if options.coordinates:
                 output = kwargs["output"].format(**kwargs["mon"])
                 sct_img = sct.grab(kwargs["mon"])

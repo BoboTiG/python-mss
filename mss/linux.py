@@ -454,20 +454,20 @@ class MSS(MSSBase):
             raise ScreenShotError("Cannot read XFixesGetCursorImage()")
 
         cursor_img: XFixesCursorImage = ximage.contents
-        monitor = {
+        region = {
             "left": cursor_img.x - cursor_img.xhot,
             "top": cursor_img.y - cursor_img.yhot,
             "width": cursor_img.width,
             "height": cursor_img.height,
         }
 
-        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * monitor["height"] * monitor["width"]))
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region["height"] * region["width"]))
         raw = bytearray(raw_data.contents)
 
-        data = bytearray(monitor["height"] * monitor["width"] * 4)
+        data = bytearray(region["height"] * region["width"] * 4)
         data[3::4] = raw[3::8]
         data[2::4] = raw[2::8]
         data[1::4] = raw[1::8]
         data[::4] = raw[::8]
 
-        return self.cls_image(data, monitor)
+        return self.cls_image(data, region)
