@@ -88,9 +88,8 @@ class MSSBase(metaclass=ABCMeta):
 
         with lock:
             screenshot = self._grab_impl(monitor)
-            if self.with_cursor:
-                cursor = self._cursor_impl()
-                screenshot = self._merge(screenshot, cursor)  # type: ignore[arg-type]
+            if self.with_cursor and (cursor := self._cursor_impl()):
+                return self._merge(screenshot, cursor)
             return screenshot
 
     @property
