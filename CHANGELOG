@@ -3,16 +3,14 @@ History:
 <see Git checking messages for history>
 
 8.0.0   2023/0x/xx
-      - the whole source code was migrated to PEP 570 (Python Positional-Only Parameters)
+      - the whole source code was migrated to PEP 570 (Python positional-only parameters)
       - removed support for Python 3.7
-      - Linux: reset X server error handler on exit to prevent issues with Tk/Tkinter (#235)
-      - Linux: added mouse support (#232)
-      - Linux: refactored how internal handles are stored to fix issues with multiple X servers, and TKinter.
-               No more side effects, and when leaving the context manager, resources are all freed (#224, #234)
-      - ci: added PyPy 3.9 (#226)
-      - dev: removed pre-commit (#226)
-      - tests: removed tox (#226)
-      - tests: improved coverage (#234)
+      - Linux: added mouse support (related to #55)
+      - Linux: reset the X server error handler on exit to prevent issues with Tk/Tkinter (fixes #220)
+      - Linux: added mouse support (related to #55)
+      - Linux: refactored how internal handles are stored to fix issues with multiple X servers (fixes #210)
+      - Linux: removed side effects when leaving the context manager, resources are all freed (fixes #210)
+      - tests: added PyPy 3.9, removed tox, and improved GNU/Linux coverage
 
 7.0.1   2022/10/27
       - fixed the wheel package
