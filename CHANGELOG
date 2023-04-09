@@ -3,7 +3,7 @@ History:
 <see Git checking messages for history>
 
 8.0.2   2023/xx/xx
-      - 
+      - CLI: fixed arguments handling
 
 8.0.1   2023/04/09
       - MSS: ensure --with-cursor, and with_cursor argument & attribute, are simple NOOP on platforms not supporting the feature

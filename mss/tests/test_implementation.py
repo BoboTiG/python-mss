@@ -87,7 +87,16 @@ def test_entry_point(with_cursor: bool, capsys):
     def main(*args: str, ret: int = 0) -> None:
         if with_cursor:
             args = args + ("--with-cursor",)
-        assert entry_point(args) == ret
+        assert entry_point(*args) == ret
+
+    # No arguments
+    main()
+    out, _ = capsys.readouterr()
+    for mon, line in enumerate(out.splitlines(), 1):
+        filename = f"monitor-{mon}.png"
+        assert line.endswith(filename)
+        assert os.path.isfile(filename)
+        os.remove(filename)
 
     for opt in ("-m", "--monitor"):
         main(opt, "1")
@@ -147,7 +156,7 @@ def test_entry_point_error(quiet: bool, capsys):
     def main(*args: str) -> int:
         if quiet:
             args = args + ("--quiet",)
-        return entry_point(args)
+        return entry_point(*args)
 
     if quiet:
         assert main() == 1

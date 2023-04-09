@@ -4,7 +4,6 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import os.path
 from argparse import ArgumentParser
-from typing import List
 
 from . import __version__
 from .exception import ScreenShotError
@@ -12,7 +11,7 @@ from .factory import mss
 from .tools import to_png
 
 
-def main(args: List[str], /) -> int:
+def main(*args: str) -> int:
     """Main logic."""
 
     cli_args = ArgumentParser()
@@ -83,4 +82,4 @@ def main(args: List[str], /) -> int:
 if __name__ == "__main__":  # pragma: nocover
     import sys
 
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main(*sys.argv[1:]))
