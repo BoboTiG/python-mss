@@ -77,20 +77,26 @@ def test_factory(monkeypatch):
     assert error == "System 'chuck norris' not (yet?) implemented."
 
 
-def test_entry_point(capsys):
+@pytest.mark.parametrize("with_cursor", [False, True])
+def test_entry_point(with_cursor: bool, capsys):
     from datetime import datetime
 
-    from mss.__main__ import main
+    from mss.__main__ import main as entry_point
+
+    def main(*args):
+        if with_cursor:
+            args = args + ("--with-cursor",)
+        entry_point(args)
 
     for opt in ("-m", "--monitor"):
-        main([opt, "1"])
+        main(opt, "1")
         out, _ = capsys.readouterr()
         assert out.endswith("monitor-1.png\n")
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
-    for opt in zip(("-m 1", "--monitor=1"), ("-q", "--quiet")):
-        main(opt)
+    for opt in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
+        main(*opt)
         out, _ = capsys.readouterr()
         assert not out
         assert os.path.isfile("monitor-1.png")
@@ -98,7 +104,7 @@ def test_entry_point(capsys):
 
     fmt = "sct-{mon}-{width}x{height}.png"
     for opt in ("-o", "--out"):
-        main([opt, fmt])
+        main(opt, fmt)
         out, _ = capsys.readouterr()
         with mss(display=os.getenv("DISPLAY")) as sct:
             for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], out.splitlines()), 1):
@@ -109,7 +115,7 @@ def test_entry_point(capsys):
 
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):
-        main(["-m 1", opt, fmt])
+        main("-m 1", opt, fmt)
         filename = fmt.format(mon=1, date=datetime.now())
         out, _ = capsys.readouterr()
         assert out.endswith(filename + "\n")
@@ -119,7 +125,7 @@ def test_entry_point(capsys):
     coordinates = "2,12,40,67"
     filename = "sct-2x12_40x67.png"
     for opt in ("-c", "--coordinates"):
-        main([opt, coordinates])
+        main(opt, coordinates)
         out, _ = capsys.readouterr()
         assert out.endswith(filename + "\n")
         assert os.path.isfile(filename)
@@ -127,7 +133,7 @@ def test_entry_point(capsys):
 
     coordinates = "2,12,40"
     for opt in ("-c", "--coordinates"):
-        main([opt, coordinates])
+        main(opt, coordinates)
         out, _ = capsys.readouterr()
         assert out == "Coordinates syntax: top, left, width, height\n"
 
