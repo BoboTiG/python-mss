@@ -5,7 +5,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import sys
 import threading
-from ctypes import POINTER, WINFUNCTYPE, Structure, c_void_p
+from ctypes import POINTER, WINFUNCTYPE, Structure, Array, WinDLL, c_char, c_void_p, create_string_buffer, sizeof
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -22,7 +22,7 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from .base import MSSBase
 from .exception import ScreenShotError
@@ -105,20 +105,20 @@ class MSS(MSSBase):
 
         super().__init__(**kwargs)
 
-        self.user32 = ctypes.WinDLL("user32")
-        self.gdi32 = ctypes.WinDLL("gdi32")
+        self.user32 = WinDLL("user32")
+        self.gdi32 = WinDLL("gdi32")
         self._set_cfunctions()
         self._set_dpi_awareness()
 
         self._bbox = {"height": 0, "width": 0}
-        self._data: ctypes.Array[ctypes.c_char] = ctypes.create_string_buffer(0)
+        self._data: Array[c_char] = create_string_buffer(0)
 
         srcdc = self._get_srcdc()
         if not MSS.memdc:
             MSS.memdc = self.gdi32.CreateCompatibleDC(srcdc)
 
         bmi = BITMAPINFO()
-        bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER)
         bmi.bmiHeader.biPlanes = 1  # Always 1
         bmi.bmiHeader.biBitCount = 32  # See grab.__doc__ [2]
         bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
@@ -247,7 +247,7 @@ class MSS(MSSBase):
             self._bbox = monitor
             self._bmi.bmiHeader.biWidth = width
             self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
-            self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
+            self._data = create_string_buffer(width * height * 4)  # [2]
             if MSS.bmp:
                 self.gdi32.DeleteObject(MSS.bmp)
             MSS.bmp = self.gdi32.CreateCompatibleBitmap(srcdc, width, height)
@@ -266,10 +266,57 @@ class MSS(MSSBase):
         )
         bits = self.gdi32.GetDIBits(memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS)
         if bits != height:
-            raise ScreenShotError("gdi32.GetDIBits() failed.")
+            raise ScreenShotError("gdi32.GetDIBits() failed.", details={"bits": bits, "height": height})
 
         return self.cls_image(bytearray(self._data), monitor)
 
-    def _cursor_impl(self) -> Optional[ScreenShot]:
+    def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGB."""
-        return None
+
+        """
+        info = win32gui.GetCursorInfo()
+        hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
+        hbmp = win32ui.CreateBitmap()
+        hbmp.CreateCompatibleBitmap(hdc, 36, 36)
+        hdc = hdc.CreateCompatibleDC()
+        hdc.SelectObject(hbmp)
+        hdc.DrawIcon((0,0), hcursor)
+        
+        bmpinfo = hbmp.GetInfo()
+        bmpbytes = hbmp.GetBitmapBits()
+        bmpstr = hbmp.GetBitmapBits(True)
+        im = np.array(Image.frombuffer(
+            'RGB',
+            (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+            bmpstr, 'raw', 'BGRX', 0, 1))
+        
+        win32gui.DestroyIcon(hcursor)    
+        win32gui.DeleteObject(hbmp.GetHandle())
+        hdc.DeleteDC()
+        return im
+        """
+
+        # Read data of cursor/mouse-pointer
+        ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
+        if not (ximage and ximage.contents):
+            raise ScreenShotError("Cannot read XFixesGetCursorImage()")
+
+        cursor_img: XFixesCursorImage = ximage.contents
+        region = {
+            "left": cursor_img.x - cursor_img.xhot,
+            "top": cursor_img.y - cursor_img.yhot,
+            "width": cursor_img.width,
+            "height": cursor_img.height,
+        }
+
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region["height"] * region["width"]))
+        raw = bytearray(raw_data.contents)
+
+        data = bytearray(region["height"] * region["width"] * 4)
+        data[3::4] = raw[3::8]
+        data[2::4] = raw[2::8]
+        data[1::4] = raw[1::8]
+        data[::4] = raw[::8]
+
+        return self.cls_image(data, region)
+

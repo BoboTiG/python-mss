@@ -236,7 +236,7 @@ def _validate(retval: int, func: Any, args: Tuple[Any, Any], /) -> Tuple[Any, An
         return args
 
     details = _ERROR.pop(thread, {})
-    raise ScreenShotError(f"{func.__name__}() failed", details=details)
+    raise ScreenShotError(f"{func.__name__}() failed.", details=details)
 
 
 # C functions that will be initialised later.
