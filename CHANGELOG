@@ -2,7 +2,7 @@ History:
 
 <see Git checking messages for history>
 
-8.0.2   2023/xx/xx
+8.0.2   2023/04/09
       - fixed SetuptoolsDeprecationWarning: Installing 'XXX' as data is deprecated, please list it in packages
       - CLI: fixed arguments handling
 
