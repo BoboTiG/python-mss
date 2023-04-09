@@ -2,11 +2,18 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
+import platform
+
 import pytest
 
 import mss
 
 tkinter = pytest.importorskip("tkinter")
+
+if platform.python_implementation() == "PyPy":
+    # PyPy 7.3.11 [Python 3.9.16] fails on GitHub:
+    #     RuntimeError: tk.h version (8.5) doesn't match libtk.a version (8.6)
+    pytestmark = pytest.mark.skip
 
 
 @pytest.fixture
