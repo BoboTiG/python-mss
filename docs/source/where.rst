@@ -29,5 +29,6 @@ Do not hesistate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_
 - `Star Wars - The Old Republic: Galactic StarFighter <https://github.com/RedFantom/gsf-parser>`_ parser;
 - `Stitch <https://nathanlopez.github.io/Stitch/>`_, a Python Remote Administration Tool (RAT);
 - `TensorKart <https://github.com/kevinhughes27/TensorKart>`_, a self-driving MarioKart with TensorFlow;
-- `wow-fishing-bot <https://github.com/rsamf/wow-fishing-bot/tree/master>`_, a fishing bot for World of Warcraft that uses template matching from OpenCV;
+- `videostream_censor <https://github.com/SergeyKalutsky/vsc>`_, a real time video recording censor ;
+- `wow-fishing-bot <https://github.com/rsamf/wow-fishing-bot>`_, a fishing bot for World of Warcraft that uses template matching from OpenCV;
 - `Zelda Bowling AI <https://github.com/Velidir/ZeldaBowlingAI>`_;
