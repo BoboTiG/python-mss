@@ -2,16 +2,18 @@ History:
 
 <see Git checking messages for history>
 
+8.0.1   2023/xx/xx
+      - 
+
 8.0.0   2023/04/09
       - removed support for Python 3.6
       - removed support for Python 3.7
       - MSS: fixed PEP 484 prohibits implicit Optional
       - MSS: the whole source code was migrated to PEP 570 (Python positional-only parameters)
-      - Linux: added mouse support (related to #55)
       - Linux: reset the X server error handler on exit to prevent issues with Tk/Tkinter (fixes #220)
-      - Linux: added mouse support (related to #55)
       - Linux: refactored how internal handles are stored to fix issues with multiple X servers (fixes #210)
       - Linux: removed side effects when leaving the context manager, resources are all freed (fixes #210)
+      - Linux: added mouse support (related to #55)
       - CLI: added --with-cursor argument
       - tests: added PyPy 3.9, removed tox, and improved GNU/Linux coverage
 
