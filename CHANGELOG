@@ -2,9 +2,11 @@ History:
 
 <see Git checking messages for history>
 
-8.0.0   2023/0x/xx
-      - the whole source code was migrated to PEP 570 (Python positional-only parameters)
+8.0.0   2023/04/09
+      - removed support for Python 3.6
       - removed support for Python 3.7
+      - MSS: fixed PEP 484 prohibits implicit Optional
+      - MSS: the whole source code was migrated to PEP 570 (Python positional-only parameters)
       - Linux: added mouse support (related to #55)
       - Linux: reset the X server error handler on exit to prevent issues with Tk/Tkinter (fixes #220)
       - Linux: added mouse support (related to #55)
@@ -15,8 +17,6 @@ History:
 
 7.0.1   2022/10/27
       - fixed the wheel package
-      - removed support for Python 3.6
-      - MSS: fixed PEP 484 prohibits implicit Optional
 
 7.0.0   2022/10/27
       - added support for Python 3.11

@@ -73,8 +73,6 @@ GNU/Linux
 
 .. class:: MSS
 
-    .. attribute:: core
-
     .. method:: close()
 
         Clean-up method.
