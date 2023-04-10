@@ -7,40 +7,40 @@ on:
   pull_request:
 
 jobs:
-  # quality:
-  #   name: Quality
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x"
-  #         cache: pip
-  #         cache-dependency-path: dev-requirements.txt
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install -U pip wheel 
-  #         python -m pip install -r dev-requirements.txt
-  #     - name: Tests
-  #       run: ./check.sh
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: dev-requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip wheel 
+          python -m pip install -r dev-requirements.txt
+      - name: Tests
+        run: ./check.sh
 
-  # documentation:
-  #   name: Documentation
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.x"
-  #         cache: pip
-  #         cache-dependency-path: dev-requirements.txt
-  #     - name: Install test dependencies
-  #       run: |
-  #         python -m pip install -U pip wheel 
-  #         python -m pip install -r dev-requirements.txt
-  #     - name: Tests
-  #       run: |
-  #         sphinx-build -d docs docs/source docs_out --color -W -bhtml
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: dev-requirements.txt
+      - name: Install test dependencies
+        run: |
+          python -m pip install -U pip wheel 
+          python -m pip install -r dev-requirements.txt
+      - name: Tests
+        run: |
+          sphinx-build -d docs docs/source docs_out --color -W -bhtml
 
   tests:
     name: "${{ matrix.os.emoji }} ${{ matrix.python.name }}"
@@ -56,18 +56,18 @@ jobs:
           - emoji: 🪟
             runs-on: [windows-latest]
         python:
-          # - name: CPython 3.8
-          #   runs-on: "3.8"
-          # - name: CPython 3.9
-          #   runs-on: "3.9"
-          # - name: CPython 3.10
-          #   runs-on: "3.10"
-          # - name: CPython 3.11
-          #   runs-on: "3.11"
+          - name: CPython 3.8
+            runs-on: "3.8"
+          - name: CPython 3.9
+            runs-on: "3.9"
+          - name: CPython 3.10
+            runs-on: "3.10"
+          - name: CPython 3.11
+            runs-on: "3.11"
           - name: CPython 3.12
             runs-on: "3.12-dev"
-          # - name: PyPy 3.9
-          #   runs-on: "pypy-3.9"
+          - name: PyPy 3.9
+            runs-on: "pypy-3.9"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
