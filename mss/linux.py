@@ -188,21 +188,6 @@ _XRANDR = find_library("Xrandr")
 
 
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
-def _default_error_handler(display: Display, event: Event) -> int:
-    """
-    Specifies the default program's supplied error handler.
-    It's useful when exiting MSS to prevent letting `_error_handler()` as default handler.
-    Doing so would crash when using Tk/Tkinter, see issue #220.
-
-    Interesting technical stuff can be found here:
-        https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
-        https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
-    """
-    # pylint: disable=unused-argument
-    return 0  # pragma: nocover
-
-
-@CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
 def _error_handler(display: Display, event: Event) -> int:
     """Specifies the program's supplied error handler."""
 
@@ -266,7 +251,7 @@ CFUNCTIONS: CFunctions = {
     "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
     "XRRGetScreenResources": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
     "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
-    "XSetErrorHandler": ("xlib", [c_void_p], c_int),
+    "XSetErrorHandler": ("xlib", [c_void_p], c_void_p),
 }
 
 
@@ -276,7 +261,7 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"xfixes", "xlib", "xrandr", "_handles"}
+    __slots__ = {"xfixes", "xlib", "xrandr", "_handles", "_old_error_handler"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""
@@ -300,10 +285,6 @@ class MSS(MSSBase):
             raise ScreenShotError("No X11 library found.")
         self.xlib = cdll.LoadLibrary(_X11)
 
-        # Install the error handler to prevent interpreter crashes:
-        # any error will raise a ScreenShotError exception.
-        self.xlib.XSetErrorHandler(_error_handler)
-
         if not _XRANDR:
             raise ScreenShotError("No Xrandr extension found.")
         self.xrandr = cdll.LoadLibrary(_XRANDR)
@@ -315,6 +296,10 @@ class MSS(MSSBase):
                 self.with_cursor = False
 
         self._set_cfunctions()
+
+        # Install the error handler to prevent interpreter crashes:
+        # any error will raise a ScreenShotError exception.
+        self._old_error_handler = self.xlib.XSetErrorHandler(_error_handler)
 
         self._handles = local()
         self._handles.display = self.xlib.XOpenDisplay(display)
@@ -330,7 +315,12 @@ class MSS(MSSBase):
 
     def close(self) -> None:
         # Remove our error handler
-        self.xlib.XSetErrorHandler(_default_error_handler)
+        # It's required when exiting MSS to prevent letting `_error_handler()` as default handler.
+        # Doing so would crash when using Tk/Tkinter, see issue #220.
+        # Interesting technical stuff can be found here:
+        #     https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
+        #     https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
+        self.xlib.XSetErrorHandler(self._old_error_handler)
 
         # Clean-up
         if self._handles.display is not None:
