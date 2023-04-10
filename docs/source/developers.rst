@@ -20,8 +20,10 @@ Dependency
 
 You will need `pytest <https://pypi.org/project/pytest/>`_::
 
-    $ python -m pip install -U pip wheel
-    $ python -m pip install -r dev-requirements.txt
+    $ python -m venv venv
+    $ . venv/bin/activate
+    $ python -m pip install -U pip
+    $ python -m pip install -r tests-requirements.txt
 
 
 How to Test?
@@ -31,14 +33,13 @@ Launch the test suit::
 
     $ python -m pytest
 
-This will test MSS and ensure a good code quality.
-
 
 Code Quality
 ============
 
-To ensure the code is always well enough using `flake8 <https://pypi.org/project/flake8/>`_::
+To ensure the code quality is correct enough::
 
+    $ python -m pip install -r dev-requirements.txt
     $ ./check.sh
 
 

@@ -1,16 +1,9 @@
--e .
+-r tests-requirements.txt
 black
 build
 flake8
-flaky
-pytest
-pytest-cov
 mypy
-numpy; platform_python_implementation != "pypy"
-numpy==1.24.2; platform_python_implementation == "pypy"
-pillow
 pylint
 sphinx
 twine
 wheel
-xvfbwrapper; sys_platform == "linux"

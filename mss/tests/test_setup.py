@@ -12,6 +12,9 @@ from mss import __version__
 if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip
 
+pytest.importorskip("build")
+pytest.importorskip("twine")
+
 SDIST = "python -m build --sdist".split()
 WHEEL = "python -m build --wheel".split()
 CHECK = "twine check dist/*".split()

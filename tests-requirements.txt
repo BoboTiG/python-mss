@@ -1,0 +1,6 @@
+-e .
+pytest
+pytest-cov
+numpy
+pillow
+xvfbwrapper; sys_platform == "linux"
