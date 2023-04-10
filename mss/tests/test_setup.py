@@ -17,7 +17,7 @@ WHEEL = "python -m build --wheel".split()
 CHECK = "twine check dist/*".split()
 
 
-@pytest.mark.xfail("Issue #243")
+@pytest.mark.xfail(True, "Issue #243")
 def test_sdist():
     output = check_output(SDIST, stderr=STDOUT, text=True)
     expected = f"""
@@ -111,7 +111,7 @@ Writing mss-{__version__}/setup.cfg
     check_call(CHECK)
 
 
-@pytest.mark.xfail("Issue #243")
+@pytest.mark.xfail(True, "Issue #243")
 def test_wheel():
     output = check_output(WHEEL, stderr=STDOUT, text=True)
     expected = f"""
