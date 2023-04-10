@@ -3,7 +3,7 @@
 ## 8.0.3 (2023-04-xx)
 
 ### linux.py
-- Added  to `XErrorEvent` class (`Event` will be removed in v9.0.0)
+- Added `XErrorEvent` class (old `Event` class is just an alias now, and will be removed in v9.0.0)
 
 ## 8.0.0 (2023-04-09)
 
