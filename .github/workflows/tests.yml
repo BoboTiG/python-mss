@@ -56,18 +56,18 @@ jobs:
           - emoji: 🪟
             runs-on: [windows-latest]
         python:
-          - name: CPython 3.8
-            runs-on: "3.8"
-          - name: CPython 3.9
-            runs-on: "3.9"
-          - name: CPython 3.10
-            runs-on: "3.10"
-          - name: CPython 3.11
-            runs-on: "3.11"
+          # - name: CPython 3.8
+          #   runs-on: "3.8"
+          # - name: CPython 3.9
+          #   runs-on: "3.9"
+          # - name: CPython 3.10
+          #   runs-on: "3.10"
+          # - name: CPython 3.11
+          #   runs-on: "3.11"
           - name: CPython 3.12
             runs-on: "3.12-dev"
-          - name: PyPy 3.9
-            runs-on: "pypy-3.9"
+          # - name: PyPy 3.9
+          #   runs-on: "pypy-3.9"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
