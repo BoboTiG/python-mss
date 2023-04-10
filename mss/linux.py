@@ -44,10 +44,11 @@ class Display(Structure):
     """
     Structure that serves as the connection to the X server
     and that contains all the information about that X server.
+    https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#L831
     """
 
 
-class Event(Structure):
+class XErrorEvent(Structure):
     """
     XErrorEvent to debug eventual errors.
     https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html
@@ -62,6 +63,9 @@ class Event(Structure):
         ("minor_code", c_ubyte),  # minor op-code of failed request
         ("resourceid", c_void_p),  # resource ID
     ]
+
+# TODO: remove in v9.0.0
+Event = XErrorEvent
 
 
 class XFixesCursorImage(Structure):
@@ -111,14 +115,17 @@ class XImage(Structure):
 
 
 class XRRCrtcInfo(Structure):
-    """Structure that contains CRTC information."""
+    """
+    Structure that contains CRTC information.
+    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L360
+    """
 
     _fields_ = [
         ("timestamp", c_ulong),
         ("x", c_int),
         ("y", c_int),
-        ("width", c_int),
-        ("height", c_int),
+        ("width", c_uint),
+        ("height", c_uint),
         ("mode", c_long),
         ("rotation", c_int),
         ("noutput", c_int),
@@ -130,13 +137,14 @@ class XRRCrtcInfo(Structure):
 
 
 class XRRModeInfo(Structure):
-    """Voilà, voilà."""
+    """https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L248"""
 
 
 class XRRScreenResources(Structure):
     """
     Structure that contains arrays of XIDs that point to the
     available outputs and associated CRTCs.
+    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L265
     """
 
     _fields_ = [
@@ -155,29 +163,29 @@ class XWindowAttributes(Structure):
     """Attributes for the specified window."""
 
     _fields_ = [
-        ("x", c_int32),
-        ("y", c_int32),
-        ("width", c_int32),
-        ("height", c_int32),
-        ("border_width", c_int32),
-        ("depth", c_int32),
-        ("visual", c_ulong),
-        ("root", c_ulong),
-        ("class", c_int32),
-        ("bit_gravity", c_int32),
-        ("win_gravity", c_int32),
-        ("backing_store", c_int32),
-        ("backing_planes", c_ulong),
-        ("backing_pixel", c_ulong),
-        ("save_under", c_int32),
-        ("colourmap", c_ulong),
-        ("mapinstalled", c_uint32),
-        ("map_state", c_uint32),
-        ("all_event_masks", c_ulong),
-        ("your_event_mask", c_ulong),
-        ("do_not_propagate_mask", c_ulong),
-        ("override_redirect", c_int32),
-        ("screen", c_ulong),
+        ("x", c_int32),  # location of window
+        ("y", c_int32),  # location of window
+        ("width", c_int32),  # width of window
+        ("height", c_int32),  # height of window
+        ("border_width", c_int32),  # border width of window
+        ("depth", c_int32),  # depth of window
+        ("visual", c_ulong),  # the associated visual structure
+        ("root", c_ulong),  # root of screen containing window
+        ("class", c_int32),  # InputOutput, InputOnly
+        ("bit_gravity", c_int32),  # one of bit gravity values
+        ("win_gravity", c_int32),  # one of the window gravity values
+        ("backing_store", c_int32),  # NotUseful, WhenMapped, Always
+        ("backing_planes", c_ulong),  # planes to be preserved if possible
+        ("backing_pixel", c_ulong),  # value to be used when restoring planes
+        ("save_under", c_int32),  # boolean, should bits under be saved?
+        ("colormap", c_ulong),  # color map to be associated with window
+        ("mapinstalled", c_uint32),  # boolean, is color map currently installed
+        ("map_state", c_uint32),  # IsUnmapped, IsUnviewable, IsViewable
+        ("all_event_masks", c_ulong),  # set of events all people have interest in
+        ("your_event_mask", c_ulong),  # my event mask
+        ("do_not_propagate_mask", c_ulong),  # set of events that should not propagate
+        ("override_redirect", c_int32),  # boolean value for override-redirect
+        ("screen", c_ulong),  # back pointer to correct screen
     ]
 
 
@@ -187,8 +195,8 @@ _XFIXES = find_library("Xfixes")
 _XRANDR = find_library("Xrandr")
 
 
-@CFUNCTYPE(c_int, POINTER(Display), POINTER(Event))
-def _error_handler(display: Display, event: Event) -> int:
+@CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent))
+def _error_handler(display: Display, event: XErrorEvent) -> int:
     """Specifies the program's supplied error handler."""
 
     # Get the specific error message

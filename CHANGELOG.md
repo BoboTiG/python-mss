@@ -8,6 +8,7 @@ See Git checking messages for full history.
 - remove `venv` files from sdist
 - use markdown for the README, and changelogs
 - Linux: restore the original X error handler in `.close()` (#241)
+- Linux: fixed `XRRCrtcInfo.width`, and `XRRCrtcInfo.height`, C types
 - :heart: contributors: @mgorny, @relent95
 
 ## 8.0.2 (2023/04/09)
