@@ -3,6 +3,7 @@
 See Git checking messages for full history.
 
 ## 8.0.3 (2023/xx/xx)
+- added support for Python 3.12
 - now PEP 561 compatible
 - include more files in sdist (#240)
 - remove `venv` files from sdist
