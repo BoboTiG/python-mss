@@ -4,10 +4,11 @@ See Git checking messages for full history.
 
 ## 8.0.3 (2023/xx/xx)
 - now PEP 561 compatible
-- include more files in sdist
+- include more files in sdist (#240)
 - remove `venv` files from sdist
 - use markdown for the README, and changelogs
-- :heart: contributors: @mgorny
+- Linux: restore the original X error handler in `.close()` (#241)
+- :heart: contributors: @mgorny, @relent95
 
 ## 8.0.2 (2023/04/09)
 - fixed `SetuptoolsDeprecationWarning`: Installing 'XXX' as data is deprecated, please list it in packages

@@ -55,12 +55,12 @@ class Event(Structure):
 
     _fields_ = [
         ("type", c_int),
-        ("display", POINTER(Display)),
-        ("serial", c_ulong),
-        ("error_code", c_ubyte),
-        ("request_code", c_ubyte),
-        ("minor_code", c_ubyte),
-        ("resourceid", c_void_p),
+        ("display", POINTER(Display)),  # Display the event was read from
+        ("serial", c_ulong),  # serial number of failed request
+        ("error_code", c_ubyte),  # error code of failed request
+        ("request_code", c_ubyte),  # major op-code of failed request
+        ("minor_code", c_ubyte),  # minor op-code of failed request
+        ("resourceid", c_void_p),  # resource ID
     ]
 
 
@@ -92,21 +92,21 @@ class XImage(Structure):
     """
 
     _fields_ = [
-        ("width", c_int),
-        ("height", c_int),
-        ("xoffset", c_int),
-        ("format", c_int),
-        ("data", c_void_p),
-        ("byte_order", c_int),
-        ("bitmap_unit", c_int),
-        ("bitmap_bit_order", c_int),
-        ("bitmap_pad", c_int),
-        ("depth", c_int),
-        ("bytes_per_line", c_int),
-        ("bits_per_pixel", c_int),
-        ("red_mask", c_ulong),
-        ("green_mask", c_ulong),
-        ("blue_mask", c_ulong),
+        ("width", c_int),  # size of image
+        ("height", c_int),  # size of image
+        ("xoffset", c_int),  # number of pixels offset in X direction
+        ("format", c_int),  # XYBitmap, XYPixmap, ZPixmap
+        ("data", c_void_p),  # pointer to image data
+        ("byte_order", c_int),  # data byte order, LSBFirst, MSBFirst
+        ("bitmap_unit", c_int),  # quant. of scanline 8, 16, 32
+        ("bitmap_bit_order", c_int),  # LSBFirst, MSBFirst
+        ("bitmap_pad", c_int),  # 8, 16, 32 either XY or ZPixmap
+        ("depth", c_int),  # depth of image
+        ("bytes_per_line", c_int),  # accelarator to next line
+        ("bits_per_pixel", c_int),  # bits per pixel (ZPixmap)
+        ("red_mask", c_ulong),  # bits in z arrangment
+        ("green_mask", c_ulong),  # bits in z arrangment
+        ("blue_mask", c_ulong),  # bits in z arrangment
     ]
 
 
@@ -268,6 +268,13 @@ class MSS(MSSBase):
 
         super().__init__(**kwargs)
 
+        # Available thread-specific variables
+        self._handles = local()
+        self._handles.display = None
+        self._handles.drawable = None
+        self._handles.original_error_handler = None
+        self._handles.root = None
+
         display = kwargs.get("display", b"")
         if not display:
             try:
@@ -297,11 +304,9 @@ class MSS(MSSBase):
 
         self._set_cfunctions()
 
-        # Install the error handler to prevent interpreter crashes:
-        # any error will raise a ScreenShotError exception.
-        self._old_error_handler = self.xlib.XSetErrorHandler(_error_handler)
+        # Install the error handler to prevent interpreter crashes: any error will raise a ScreenShotError exception
+        self._handles.original_error_handler = self.xlib.XSetErrorHandler(_error_handler)
 
-        self._handles = local()
         self._handles.display = self.xlib.XOpenDisplay(display)
 
         if not self._is_extension_enabled("RANDR"):
@@ -315,17 +320,21 @@ class MSS(MSSBase):
 
     def close(self) -> None:
         # Remove our error handler
-        # It's required when exiting MSS to prevent letting `_error_handler()` as default handler.
-        # Doing so would crash when using Tk/Tkinter, see issue #220.
-        # Interesting technical stuff can be found here:
-        #     https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
-        #     https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
-        self.xlib.XSetErrorHandler(self._old_error_handler)
+        if self._handles.original_error_handler is not None:
+            # It's required when exiting MSS to prevent letting `_error_handler()` as default handler.
+            # Doing so would crash when using Tk/Tkinter, see issue #220.
+            # Interesting technical stuff can be found here:
+            #     https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
+            #     https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
+            self.xlib.XSetErrorHandler(self._handles.original_error_handler)
+            self._handles.original_error_handler = None
 
         # Clean-up
         if self._handles.display is not None:
             self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
+            self._handles.drawable = None
+            self._handles.root = None
 
         # Also empty the error dict
         _ERROR.clear()

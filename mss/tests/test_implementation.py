@@ -168,7 +168,7 @@ def test_entry_point_error(quiet: bool, capsys):
             main()
 
 
-def test_grab_with_tuple(pixel_ratio):
+def test_grab_with_tuple(pixel_ratio: int):
     left = 100
     top = 100
     right = 500
@@ -190,7 +190,7 @@ def test_grab_with_tuple(pixel_ratio):
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(pixel_ratio):
+def test_grab_with_tuple_percents(pixel_ratio: int):
     with mss(display=os.getenv("DISPLAY")) as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
