@@ -1,9 +1,7 @@
--r tests-requirements.txt
 black
 build
 flake8
 mypy
 pylint
-sphinx
 twine
 wheel

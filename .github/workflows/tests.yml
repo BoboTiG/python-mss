@@ -19,7 +19,7 @@ jobs:
           cache-dependency-path: dev-requirements.txt
       - name: Install dependencies
         run: |
-          python -m pip install -U pip wheel 
+          python -m pip install -U pip 
           python -m pip install -r dev-requirements.txt
       - name: Tests
         run: ./check.sh
@@ -33,11 +33,11 @@ jobs:
         with:
           python-version: "3.x"
           cache: pip
-          cache-dependency-path: dev-requirements.txt
+          cache-dependency-path: tests-requirements.txt
       - name: Install test dependencies
         run: |
-          python -m pip install -U pip wheel 
-          python -m pip install -r dev-requirements.txt
+          python -m pip install -U pip 
+          python -m pip install -r tests-requirements.txt
       - name: Tests
         run: |
           sphinx-build -d docs docs/source docs_out --color -W -bhtml

@@ -1,6 +1,6 @@
--e .
 pytest
 pytest-cov
 numpy
 pillow
+sphinx
 xvfbwrapper; sys_platform == "linux"
