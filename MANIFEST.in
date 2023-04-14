@@ -5,7 +5,7 @@ include LICENSE.txt
 include README.md
 include dev-requirements.txt
 include tests-requirements.txt
-include mss/tests/*.py
-include mss/py.typed
+include src/tests/*.py
+include src/mss/py.typed
 recursive-include docs/source *
-recursive-include mss/tests/res *
+recursive-include src/tests/res *

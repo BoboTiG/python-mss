@@ -64,6 +64,7 @@ class XErrorEvent(Structure):
         ("resourceid", c_void_p),  # resource ID
     ]
 
+
 # TODO: remove in v9.0.0
 Event = XErrorEvent
 
