@@ -2,7 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/mss.svg)](https://badge.fury.io/py/mss)
 [![Anaconda version](https://anaconda.org/conda-forge/python-mss/badges/version.svg)](https://anaconda.org/conda-forge/python-mss)
-[![Tests workflow](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml)
+[![Tests workflow](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml)
 [![Downloads](https://static.pepy.tech/personalized-badge/mss?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/mss)
 
 ```python
