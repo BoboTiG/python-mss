@@ -4,10 +4,10 @@ See Git checking messages for full history.
 
 ## 8.0.3 (2023/xx/xx)
 - added support for Python 3.12
-- now PEP 561 compatible
-- include more files in sdist (#240)
-- remove `venv` files from sdist
-- use markdown for the README, and changelogs
+- MSS: added PEP 561 compatible
+- MSS: include more files in the sdist package (#240)
+- MSS: remove `venv` files from the sdist package
+- MSS: use markdown for the README, and changelogs
 - Linux: restore the original X error handler in `.close()` (#241)
 - Linux: fixed `XRRCrtcInfo.width`, and `XRRCrtcInfo.height`, C types
 - :heart: contributors: @mgorny, @relent95
@@ -124,7 +124,7 @@ See Git checking messages for full history.
 
 ## 3.2.1 (2018/05/21)
 - Windows: enable Hi-DPI awareness
-- :heart: contributors: @FoxRow
+- :heart: contributors: @ryanfox
 
 ## 3.2.0 (2018/03/22)
 - removed support for Python 3.4
