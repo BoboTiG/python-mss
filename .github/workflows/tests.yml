@@ -74,11 +74,14 @@ jobs:
         with:
           python-version: ${{ matrix.python.runs-on }}
           cache: pip
-          cache-dependency-path: dev-requirements.txt
+          cache-dependency-path: |
+            dev-requirements.txt
+            tests-requirements.txt
       - name: Install test dependencies
         run: |
           python -m pip install -U pip wheel 
           python -m pip install -r dev-requirements.txt
+          python -m pip install -r tests-requirements.txt
       - name: Install Xvfb
         if: matrix.os.emoji == '🐧'
         run: sudo apt install xvfb
