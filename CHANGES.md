@@ -1,6 +1,6 @@
 # Technical Changes
 
-## 8.0.3 (2023-04-xx)
+## 8.0.3 (2023-04-15)
 
 ### linux.py
 - Added `XErrorEvent` class (old `Event` class is just an alias now, and will be removed in v9.0.0)

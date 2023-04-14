@@ -2,16 +2,15 @@
 
 See Git checking messages for full history.
 
-## 8.0.3 (2023/xx/xx)
+## 8.0.3 (2023/04/15)
 - added support for Python 3.12
-- dev: renamed the `master` branch to `main`
-- dev: review the structure of the repository to fix packaging issues (#243)
-- MSS: added PEP 561 compatible
+- MSS: added PEP 561 compatibility
 - MSS: include more files in the sdist package (#240)
-- MSS: remove `venv` files from the sdist package
-- MSS: use markdown for the README, and changelogs
 - Linux: restore the original X error handler in `.close()` (#241)
 - Linux: fixed `XRRCrtcInfo.width`, and `XRRCrtcInfo.height`, C types
+- doc: use markdown for the README, and changelogs
+- dev: renamed the `master` branch to `main`
+- dev: review the structure of the repository to fix/improve packaging issues (#243)
 - :heart: contributors: @mgorny, @relent95
 
 ## 8.0.2 (2023/04/09)
