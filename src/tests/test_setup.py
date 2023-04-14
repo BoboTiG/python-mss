@@ -20,7 +20,6 @@ WHEEL = "python -m build --wheel".split()
 CHECK = "twine check dist/*".split()
 
 
-@pytest.mark.xfail(True, reason="Issue #243")
 def test_sdist():
     output = check_output(SDIST, stderr=STDOUT, text=True)
     expected = f"""
@@ -28,14 +27,14 @@ creating mss-{__version__}
 creating mss-{__version__}/docs
 creating mss-{__version__}/docs/source
 creating mss-{__version__}/docs/source/examples
-creating mss-{__version__}/mss
-creating mss-{__version__}/mss.egg-info
-creating mss-{__version__}/mss/tests
-creating mss-{__version__}/mss/tests/res
+creating mss-{__version__}/src
+creating mss-{__version__}/src/mss
+creating mss-{__version__}/src/mss.egg-info
+creating mss-{__version__}/src/tests
+creating mss-{__version__}/src/tests/res
 copying files to mss-{__version__}...
 copying CHANGELOG.md -> mss-{__version__}
 copying CHANGES.md -> mss-{__version__}
-copying CODE_OF_CONDUCT.md -> mss-{__version__}
 copying CONTRIBUTORS.md -> mss-{__version__}
 copying LICENSE.txt -> mss-{__version__}
 copying MANIFEST.in -> mss-{__version__}
@@ -43,6 +42,7 @@ copying README.md -> mss-{__version__}
 copying dev-requirements.txt -> mss-{__version__}
 copying setup.cfg -> mss-{__version__}
 copying setup.py -> mss-{__version__}
+copying tests-requirements.txt -> mss-{__version__}
 copying docs/source/api.rst -> mss-{__version__}/docs/source
 copying docs/source/conf.py -> mss-{__version__}/docs/source
 copying docs/source/developers.rst -> mss-{__version__}/docs/source
@@ -63,42 +63,41 @@ copying docs/source/examples/part_of_screen.py -> mss-{__version__}/docs/source/
 copying docs/source/examples/part_of_screen_monitor_2.py -> mss-{__version__}/docs/source/examples
 copying docs/source/examples/pil.py -> mss-{__version__}/docs/source/examples
 copying docs/source/examples/pil_pixels.py -> mss-{__version__}/docs/source/examples
-copying mss/__init__.py -> mss-{__version__}/mss
-copying mss/__main__.py -> mss-{__version__}/mss
-copying mss/base.py -> mss-{__version__}/mss
-copying mss/darwin.py -> mss-{__version__}/mss
-copying mss/exception.py -> mss-{__version__}/mss
-copying mss/factory.py -> mss-{__version__}/mss
-copying mss/linux.py -> mss-{__version__}/mss
-copying mss/models.py -> mss-{__version__}/mss
-copying mss/py.typed -> mss-{__version__}/mss
-copying mss/screenshot.py -> mss-{__version__}/mss
-copying mss/tools.py -> mss-{__version__}/mss
-copying mss/windows.py -> mss-{__version__}/mss
-copying mss.egg-info/PKG-INFO -> mss-{__version__}/mss.egg-info
-copying mss.egg-info/SOURCES.txt -> mss-{__version__}/mss.egg-info
-copying mss.egg-info/dependency_links.txt -> mss-{__version__}/mss.egg-info
-copying mss.egg-info/entry_points.txt -> mss-{__version__}/mss.egg-info
-copying mss.egg-info/not-zip-safe -> mss-{__version__}/mss.egg-info
-copying mss.egg-info/top_level.txt -> mss-{__version__}/mss.egg-info
-copying mss/tests/bench_bgra2rgb.py -> mss-{__version__}/mss/tests
-copying mss/tests/bench_general.py -> mss-{__version__}/mss/tests
-copying mss/tests/conftest.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_bgra_to_rgb.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_cls_image.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_find_monitors.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_get_pixels.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_gnu_linux.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_implementation.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_issue_220.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_leaks.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_macos.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_save.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_setup.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_third_party.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_tools.py -> mss-{__version__}/mss/tests
-copying mss/tests/test_windows.py -> mss-{__version__}/mss/tests
-copying mss/tests/res/monitor-1024x768.raw.zip -> mss-{__version__}/mss/tests/res
+copying src/mss/__init__.py -> mss-{__version__}/src/mss
+copying src/mss/__main__.py -> mss-{__version__}/src/mss
+copying src/mss/base.py -> mss-{__version__}/src/mss
+copying src/mss/darwin.py -> mss-{__version__}/src/mss
+copying src/mss/exception.py -> mss-{__version__}/src/mss
+copying src/mss/factory.py -> mss-{__version__}/src/mss
+copying src/mss/linux.py -> mss-{__version__}/src/mss
+copying src/mss/models.py -> mss-{__version__}/src/mss
+copying src/mss/py.typed -> mss-{__version__}/src/mss
+copying src/mss/screenshot.py -> mss-{__version__}/src/mss
+copying src/mss/tools.py -> mss-{__version__}/src/mss
+copying src/mss/windows.py -> mss-{__version__}/src/mss
+copying src/mss.egg-info/PKG-INFO -> mss-{__version__}/src/mss.egg-info
+copying src/mss.egg-info/SOURCES.txt -> mss-{__version__}/src/mss.egg-info
+copying src/mss.egg-info/dependency_links.txt -> mss-{__version__}/src/mss.egg-info
+copying src/mss.egg-info/entry_points.txt -> mss-{__version__}/src/mss.egg-info
+copying src/mss.egg-info/top_level.txt -> mss-{__version__}/src/mss.egg-info
+copying src/tests/bench_bgra2rgb.py -> mss-{__version__}/src/tests
+copying src/tests/bench_general.py -> mss-{__version__}/src/tests
+copying src/tests/conftest.py -> mss-{__version__}/src/tests
+copying src/tests/test_bgra_to_rgb.py -> mss-{__version__}/src/tests
+copying src/tests/test_cls_image.py -> mss-{__version__}/src/tests
+copying src/tests/test_find_monitors.py -> mss-{__version__}/src/tests
+copying src/tests/test_get_pixels.py -> mss-{__version__}/src/tests
+copying src/tests/test_gnu_linux.py -> mss-{__version__}/src/tests
+copying src/tests/test_implementation.py -> mss-{__version__}/src/tests
+copying src/tests/test_issue_220.py -> mss-{__version__}/src/tests
+copying src/tests/test_leaks.py -> mss-{__version__}/src/tests
+copying src/tests/test_macos.py -> mss-{__version__}/src/tests
+copying src/tests/test_save.py -> mss-{__version__}/src/tests
+copying src/tests/test_setup.py -> mss-{__version__}/src/tests
+copying src/tests/test_third_party.py -> mss-{__version__}/src/tests
+copying src/tests/test_tools.py -> mss-{__version__}/src/tests
+copying src/tests/test_windows.py -> mss-{__version__}/src/tests
+copying src/tests/res/monitor-1024x768.raw.zip -> mss-{__version__}/src/tests/res
 Writing mss-{__version__}/setup.cfg
     """
 
@@ -107,17 +106,18 @@ Writing mss-{__version__}/setup.cfg
         if not (line := line.strip()):
             continue
         assert line in output
-    assert output.count("copying ") == expected.count("copying ")
+    assert output.count("copying") == expected.count("copying")
     assert f"Successfully built mss-{__version__}.tar.gz" in output
     assert "warning" not in output.lower()
 
     check_call(CHECK)
 
 
-@pytest.mark.xfail(True, reason="Issue #243")
 def test_wheel():
     output = check_output(WHEEL, stderr=STDOUT, text=True)
     expected = f"""
+creating build/bdist.linux-x86_64/wheel/mss-{__version__}.dist-info/WHEEL
+ and adding 'build/bdist.linux-x86_64/wheel' to it
 adding 'mss/__init__.py'
 adding 'mss/__main__.py'
 adding 'mss/base.py'
@@ -142,7 +142,7 @@ adding 'mss-{__version__}.dist-info/RECORD'
         if not (line := line.strip()):
             continue
         assert line in output
-    assert output.count("adding ") == expected.count("adding ")
+    assert output.count("adding") == expected.count("adding")
     assert f"Successfully built mss-{__version__}-py3-none-any.whl" in output
     assert "warning" not in output.lower()
 

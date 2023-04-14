@@ -4,6 +4,7 @@ See Git checking messages for full history.
 
 ## 8.0.3 (2023/xx/xx)
 - added support for Python 3.12
+- dev: review the structure of the repository to fix packaging issues (#243)
 - MSS: added PEP 561 compatible
 - MSS: include more files in the sdist package (#240)
 - MSS: remove `venv` files from the sdist package
