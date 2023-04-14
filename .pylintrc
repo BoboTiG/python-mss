@@ -1,7 +1,0 @@
-[MESSAGES CONTROL]
-disable = locally-disabled, too-few-public-methods, too-many-instance-attributes, duplicate-code
-
-[REPORTS]
-max-line-length = 120
-output-format = colorized
-reports = no
