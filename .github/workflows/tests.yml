@@ -77,6 +77,7 @@ jobs:
           cache-dependency-path: |
             dev-requirements.txt
             tests-requirements.txt
+          check-latest: true
       - name: Install test dependencies
         run: |
           python -m pip install -U pip wheel 

@@ -2,23 +2,20 @@
 This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
-import platform
-
 import pytest
 
 import mss
 
 tkinter = pytest.importorskip("tkinter")
 
-if platform.system().lower() == "darwin" and platform.python_implementation() == "PyPy":
-    # [macOS] PyPy 7.3.11 [Python 3.9.16] fails on GitHub:
-    #     RuntimeError: tk.h version (8.5) doesn't match libtk.a version (8.6)
-    pytestmark = pytest.mark.skip
-
 
 @pytest.fixture
 def root() -> tkinter.Tk:
-    master = tkinter.Tk()
+    try:
+        master = tkinter.Tk()
+    except RuntimeError:
+        pytest.skip(reason="tk.h version (8.5) doesn't match libtk.a version (8.6)")
+
     try:
         yield master
     finally:
