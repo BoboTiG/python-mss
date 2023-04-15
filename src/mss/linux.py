@@ -317,6 +317,8 @@ class MSS(MSSBase):
         self._handles.original_error_handler = self.xlib.XSetErrorHandler(_error_handler)
 
         self._handles.display = self.xlib.XOpenDisplay(display)
+        if not self._handles.display:
+            raise ScreenShotError(f"Unable to open display: {display!r}.")
 
         if not self._is_extension_enabled("RANDR"):
             raise ScreenShotError("Xrandr not enabled.")
