@@ -63,6 +63,6 @@ def pixel_ratio() -> int:
     # Grab a 1x1 screenshot
     region = {"top": 0, "left": 0, "width": 1, "height": 1}
 
-    with mss(display=os.getenv("DISPLAY")) as sct:
-        # On macOS with Retina display, the width will be 2 instead of 1
+    with mss() as sct:
+        # On macOS with Retina display, the width can be 2 instead of 1
         return sct.grab(region).size[0]
