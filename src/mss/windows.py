@@ -4,8 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import ctypes
 import sys
-import threading
-from ctypes import POINTER, WINFUNCTYPE, Structure, c_void_p
+from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -22,7 +21,8 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-from typing import Any, Dict, Optional
+from threading import local
+from typing import Any, Optional
 
 from .base import MSSBase
 from .exception import ScreenShotError
@@ -78,12 +78,14 @@ CFUNCTIONS: CFunctions = {
     "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
     "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
+    "DeleteDC": ("gdi32", [HDC], HDC),
     "DeleteObject": ("gdi32", [HGDIOBJ], INT),
     "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
     "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
     "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT], BOOL),
     "GetSystemMetrics": ("user32", [INT], INT),
     "GetWindowDC": ("user32", [HWND], HDC),
+    "ReleaseDC": ("user32", [HWND, HDC], c_int),
     "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
 }
 
@@ -91,14 +93,7 @@ CFUNCTIONS: CFunctions = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for Microsoft Windows."""
 
-    __slots__ = {"_bbox", "_bmi", "_data", "gdi32", "user32"}
-
-    # Class attributes instanced one time to prevent resource leaks.
-    bmp = None
-    memdc = None
-
-    # A dict to maintain *srcdc* values created by multiple threads.
-    _srcdc_dict: Dict[threading.Thread, int] = {}
+    __slots__ = {"gdi32", "user32", "_handles"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """Windows initialisations."""
@@ -110,12 +105,12 @@ class MSS(MSSBase):
         self._set_cfunctions()
         self._set_dpi_awareness()
 
-        self._bbox = {"height": 0, "width": 0}
-        self._data: ctypes.Array[ctypes.c_char] = ctypes.create_string_buffer(0)
-
-        srcdc = self._get_srcdc()
-        if not MSS.memdc:
-            MSS.memdc = self.gdi32.CreateCompatibleDC(srcdc)
+        # Available thread-specific variables
+        self._handles = local()
+        self._handles.region_height_width = (0, 0)
+        self._handles.bmp = None
+        self._handles.srcdc = self.user32.GetWindowDC(0)
+        self._handles.memdc = self.gdi32.CreateCompatibleDC(self._handles.srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -124,7 +119,21 @@ class MSS(MSSBase):
         bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
         bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
-        self._bmi = bmi
+        self._handles.bmi = bmi
+
+    def close(self) -> None:
+        # Clean-up
+        if self._handles.bmp:
+            self.gdi32.DeleteObject(self._handles.bmp)
+            self._handles.bmp = None
+
+        if self._handles.memdc:
+            self.gdi32.DeleteDC(self._handles.memdc)
+            self._handles.memdc = None
+
+        if self._handles.srcdc:
+            self.user32.ReleaseDC(0, self._handles.srcdc)
+            self._handles.srcdc = None
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -149,25 +158,8 @@ class MSS(MSSBase):
             #     These applications are not automatically scaled by the system.
             ctypes.windll.shcore.SetProcessDpiAwareness(2)
         elif (6, 0) <= version < (6, 3):
-            # Windows Vista, 7, 8 and Server 2012
+            # Windows Vista, 7, 8, and Server 2012
             self.user32.SetProcessDPIAware()
-
-    def _get_srcdc(self) -> int:
-        """
-        Retrieve a thread-safe HDC from GetWindowDC().
-        In multithreading, if the thread that creates *srcdc* is dead, *srcdc* will
-        no longer be valid to grab the screen. The *srcdc* attribute is replaced
-        with *_srcdc_dict* to maintain the *srcdc* values in multithreading.
-        Since the current thread and main thread are always alive, reuse their *srcdc* value first.
-        """
-        cur_thread, main_thread = threading.current_thread(), threading.main_thread()
-        current_srcdc = MSS._srcdc_dict.get(cur_thread) or MSS._srcdc_dict.get(main_thread)
-        if current_srcdc:
-            srcdc = current_srcdc
-        else:
-            srcdc = self.user32.GetWindowDC(0)
-            MSS._srcdc_dict[cur_thread] = srcdc
-        return srcdc
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
@@ -240,35 +232,26 @@ class MSS(MSSBase):
         Thanks to http://stackoverflow.com/a/3688682
         """
 
-        srcdc, memdc = self._get_srcdc(), MSS.memdc
+        srcdc, memdc = self._handles.srcdc, self._handles.memdc
+        gdi = self.gdi32
         width, height = monitor["width"], monitor["height"]
 
-        if (self._bbox["height"], self._bbox["width"]) != (height, width):
-            self._bbox = monitor
-            self._bmi.bmiHeader.biWidth = width
-            self._bmi.bmiHeader.biHeight = -height  # Why minus? [1]
-            self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            if MSS.bmp:
-                self.gdi32.DeleteObject(MSS.bmp)
-            MSS.bmp = self.gdi32.CreateCompatibleBitmap(srcdc, width, height)
-            self.gdi32.SelectObject(memdc, MSS.bmp)
+        if self._handles.region_height_width != (height, width):
+            self._handles.region_height_width = (height, width)
+            self._handles.bmi.bmiHeader.biWidth = width
+            self._handles.bmi.bmiHeader.biHeight = -height  # Why minus? [1]
+            self._handles.data = ctypes.create_string_buffer(width * height * 4)  # [2]
+            if self._handles.bmp:
+                gdi.DeleteObject(self._handles.bmp)
+            self._handles.bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
+            gdi.SelectObject(memdc, self._handles.bmp)
 
-        self.gdi32.BitBlt(
-            memdc,
-            0,
-            0,
-            width,
-            height,
-            srcdc,
-            monitor["left"],
-            monitor["top"],
-            SRCCOPY | CAPTUREBLT,
-        )
-        bits = self.gdi32.GetDIBits(memdc, MSS.bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS)
+        gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
+        bits = gdi.GetDIBits(memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS)
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
-        return self.cls_image(bytearray(self._data), monitor)
+        return self.cls_image(bytearray(self._handles.data), monitor)
 
     def _cursor_impl(self) -> Optional[ScreenShot]:
         """Retrieve all cursor data. Pixels have to be RGB."""

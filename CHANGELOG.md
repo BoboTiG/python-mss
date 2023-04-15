@@ -4,9 +4,11 @@ See Git checking messages for full history.
 
 ## 8.0.4 (2023/xx/xx)
 - Linux: add failure handling to `XOpenDisplay()` call (#247)
+- Windows: refactored how internal handles are stored
+- Windows: removed side effects when leaving the context manager, resources are all freed
 - CI: run tests via xvfb-run on GitHub Actions (#248)
 - tests: Use `PyVirtualDisplay` instead of `xvfbwrapper` (#249)
-- :heart: contributors: @mgorny
+- :heart: contributors: @mgorny, @CTPaHHuK-HEbA
 
 ## 8.0.3 (2023/04/15)
 - added support for Python 3.12
