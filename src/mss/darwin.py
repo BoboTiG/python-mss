@@ -103,7 +103,6 @@ class MSS(MSSBase):
             coregraphics = ctypes.util.find_library("CoreGraphics")
         else:
             # macOS Big Sur and newer
-            # pylint: disable=line-too-long
             coregraphics = "/System/Library/Frameworks/CoreGraphics.framework/Versions/Current/CoreGraphics"
 
         if not coregraphics:
