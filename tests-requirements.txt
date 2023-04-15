@@ -1,6 +1,6 @@
-pytest
-pytest-cov
 numpy
 pillow
+pytest
+pytest-cov
+pyvirtualdisplay; sys_platform == "linux"
 sphinx
-PyVirtualDisplay; sys_platform == "linux"

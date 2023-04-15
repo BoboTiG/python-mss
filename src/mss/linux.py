@@ -223,7 +223,7 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
 
 
 def _validate(retval: int, func: Any, args: Tuple[Any, Any], /) -> Tuple[Any, Any]:
-    """Validate the returned value of a Xlib or XRANDR function."""
+    """Validate the returned value of a C function call."""
 
     thread = current_thread()
     if retval != 0 and thread not in _ERROR:
@@ -331,7 +331,7 @@ class MSS(MSSBase):
 
     def close(self) -> None:
         # Remove our error handler
-        if self._handles.original_error_handler is not None:
+        if self._handles.original_error_handler:
             # It's required when exiting MSS to prevent letting `_error_handler()` as default handler.
             # Doing so would crash when using Tk/Tkinter, see issue #220.
             # Interesting technical stuff can be found here:
@@ -341,7 +341,7 @@ class MSS(MSSBase):
             self._handles.original_error_handler = None
 
         # Clean-up
-        if self._handles.display is not None:
+        if self._handles.display:
             self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
             self._handles.drawable = None
