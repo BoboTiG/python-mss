@@ -72,6 +72,11 @@ def test_arg_display(display: str, monkeypatch):
         with mss.mss(display="0"):
             pass
 
+    # Invalid `display` that is not trivially distinguishable.
+    with pytest.raises(ScreenShotError):
+        with mss.mss(display=":INVALID"):
+            pass
+
     # No `DISPLAY` in envars
     monkeypatch.delenv("DISPLAY")
     with pytest.raises(ScreenShotError):
