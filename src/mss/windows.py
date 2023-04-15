@@ -107,7 +107,7 @@ class MSS(MSSBase):
 
         # Available thread-specific variables
         self._handles = local()
-        self._handles.region_height_width = (0, 0)
+        self._handles.region_width_height = (0, 0)
         self._handles.bmp = None
         self._handles.srcdc = self.user32.GetWindowDC(0)
         self._handles.memdc = self.gdi32.CreateCompatibleDC(self._handles.srcdc)
@@ -236,8 +236,8 @@ class MSS(MSSBase):
         gdi = self.gdi32
         width, height = monitor["width"], monitor["height"]
 
-        if self._handles.region_height_width != (height, width):
-            self._handles.region_height_width = (height, width)
+        if self._handles.region_width_height != (width, height):
+            self._handles.region_width_height = (width, height)
             self._handles.bmi.bmiHeader.biWidth = width
             self._handles.bmi.bmiHeader.biHeight = -height  # Why minus? [1]
             self._handles.data = ctypes.create_string_buffer(width * height * 4)  # [2]
