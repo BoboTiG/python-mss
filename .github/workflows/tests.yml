@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   quality:
@@ -83,9 +84,6 @@ jobs:
           python -m pip install -U pip wheel 
           python -m pip install -r dev-requirements.txt
           python -m pip install -r tests-requirements.txt
-      - name: Install Xvfb
-        if: matrix.os.emoji == '🐧'
-        run: sudo apt install xvfb
       - name: Tests (GNU/Linux)
         if: matrix.os.emoji == '🐧'
         run: xvfb-run python -m pytest
