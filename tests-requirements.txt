@@ -3,4 +3,4 @@ pytest-cov
 numpy
 pillow
 sphinx
-xvfbwrapper; sys_platform == "linux"
+PyVirtualDisplay; sys_platform == "linux"

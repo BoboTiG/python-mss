@@ -94,19 +94,15 @@ def regression_issue_135():
 
 def regression_issue_210():
     """Regression test for issue #210: multiple X servers."""
-    xvfbwrapper = pytest.importorskip("xvfbwrapper")
+    pyvirtualdisplay = pytest.importorskip("pyvirtualdisplay")
 
-    vdisplay = xvfbwrapper.Xvfb(width=1920, height=1080, colordepth=24)
-    vdisplay.start()
-    with mss():
-        pass
-    vdisplay.stop()
+    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24):
+        with mss():
+            pass
 
-    vdisplay = xvfbwrapper.Xvfb(width=1920, height=1080, colordepth=24)
-    vdisplay.start()
-    with mss():
-        pass
-    vdisplay.stop()
+    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24):
+        with mss():
+            pass
 
 
 @pytest.mark.skipif(OS == "darwin", reason="No possible leak on macOS.")

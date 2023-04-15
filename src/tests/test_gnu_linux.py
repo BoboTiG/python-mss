@@ -12,7 +12,7 @@ import mss.linux
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
-xvfbwrapper = pytest.importorskip("xvfbwrapper")
+pyvirtualdisplay = pytest.importorskip("pyvirtualdisplay")
 
 PYPY = platform.python_implementation() == "PyPy"
 
@@ -23,12 +23,8 @@ DEPTH = 24
 
 @pytest.fixture
 def display() -> str:
-    vdisplay = xvfbwrapper.Xvfb(width=WIDTH, height=HEIGHT, colordepth=DEPTH)
-    vdisplay.start()
-    try:
-        yield f":{vdisplay.new_display}"
-    finally:
-        vdisplay.stop()
+    with pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=DEPTH) as vdisplay:
+        yield vdisplay.new_display_var
 
 
 @pytest.mark.skipif(PYPY, reason="Failure on PyPy")
@@ -114,14 +110,10 @@ def test_xrandr_extension_exists_but_is_not_enabled(display: str):
 
 
 def test_unsupported_depth():
-    vdisplay = xvfbwrapper.Xvfb(width=WIDTH, height=HEIGHT, colordepth=8)
-    vdisplay.start()
-    try:
+    with pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=8) as vdisplay:
         with pytest.raises(ScreenShotError):
-            with mss.mss(display=f":{vdisplay.new_display}") as sct:
+            with mss.mss(display=vdisplay.new_display_var) as sct:
                 sct.grab(sct.monitors[1])
-    finally:
-        vdisplay.stop()
 
 
 def test_region_out_of_monitor_bounds(display: str):
