@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import glob
 import os
+import platform
 from hashlib import md5
 from pathlib import Path
 from zipfile import ZipFile
@@ -55,6 +56,10 @@ def raw() -> bytes:
 @pytest.fixture(scope="session")
 def pixel_ratio() -> int:
     """Get the pixel, used to adapt test checks."""
+
+    if platform.system().lower() != "darwin":
+        return 1
+
     # Grab a 1x1 screenshot
     region = {"top": 0, "left": 0, "width": 1, "height": 1}
 
