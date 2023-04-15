@@ -88,10 +88,7 @@ jobs:
         run: sudo apt install xvfb
       - name: Tests (GNU/Linux)
         if: matrix.os.emoji == '🐧'
-        run: |
-          export DISPLAY=:99
-          sudo Xvfb -ac ${DISPLAY} -screen 0 1280x1024x24 > /dev/null 2>&1 &
-          python -m pytest
+        run: xvfb-run python -m pytest
       - name: Tests (macOS, Windows)
         if: matrix.os.emoji != '🐧'
         run: python -m pytest
