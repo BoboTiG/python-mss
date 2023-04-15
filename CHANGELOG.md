@@ -2,8 +2,11 @@
 
 See Git checking messages for full history.
 
-## 8.0.4-dev (2023/xx/xx)
-- 
+## 8.0.4 (2023/xx/xx)
+- Linux: add failure handling to `XOpenDisplay()` call (#247)
+- CI: run tests via xvfb-run on GitHub Actions (#248)
+- tests: Use `PyVirtualDisplay` instead of `xvfbwrapper` (#249)
+- :heart: contributors: @mgorny
 
 ## 8.0.3 (2023/04/15)
 - added support for Python 3.12
