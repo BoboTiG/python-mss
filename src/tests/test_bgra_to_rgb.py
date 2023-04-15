@@ -14,7 +14,7 @@ def test_bad_length():
         image.rgb
 
 
-def test_good_types(raw):
+def test_good_types(raw: bytes):
     image = ScreenShot.from_size(bytearray(raw), 1024, 768)
     assert isinstance(image.raw, bytearray)
     assert isinstance(image.rgb, bytes)

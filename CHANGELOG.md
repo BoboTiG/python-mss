@@ -7,7 +7,8 @@ See Git checking messages for full history.
 - Windows: refactored how internal handles are stored (fixes #198)
 - Windows: removed side effects when leaving the context manager, resources are all freed
 - CI: run tests via xvfb-run on GitHub Actions (#248)
-- tests: Use `PyVirtualDisplay` instead of `xvfbwrapper` (#249)
+- tests: enhance ``test_get_pixels.py``, and try to fix a random failure at the same time (related to #251)
+- tests: use `PyVirtualDisplay` instead of `xvfbwrapper` (#249)
 - :heart: contributors: @mgorny, @CTPaHHuK-HEbA
 
 ## 8.0.3 (2023/04/15)
