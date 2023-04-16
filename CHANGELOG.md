@@ -9,6 +9,7 @@ See Git checking messages for full history.
 - CI: run tests via xvfb-run on GitHub Actions (#248)
 - tests: enhance ``test_get_pixels.py``, and try to fix a random failure at the same time (related to #251)
 - tests: use `PyVirtualDisplay` instead of `xvfbwrapper` (#249)
+- tests: automatic rerun in case of failure (related to #251)
 - :heart: contributors: @mgorny, @CTPaHHuK-HEbA
 
 ## 8.0.3 (2023/04/15)
