@@ -8,7 +8,7 @@ See Git checking messages for full history.
 
 ## 9.0.0 (2023/04/18)
 - Linux: add failure handling to `XOpenDisplay()` call (fixes #246)
-- Mac: tiny improvement in moniors finding
+- Mac: tiny improvement in monitors finding
 - Windows: refactored how internal handles are stored (fixes #198)
 - Windows: removed side effects when leaving the context manager, resources are all freed (fixes #209)
 - CI: run tests via `xvfb-run` on GitHub Actions (#248)
