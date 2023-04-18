@@ -133,14 +133,13 @@ class MSS(MSSBase):
         display_count = c_uint32(0)
         active_displays = (c_uint32 * self.max_displays)()
         core.CGGetActiveDisplayList(self.max_displays, active_displays, ctypes.byref(display_count))
-        rotations = {0.0: "normal", 90.0: "right", -90.0: "left"}
         for idx in range(display_count.value):
             display = active_displays[idx]
             rect = core.CGDisplayBounds(display)
             rect = core.CGRectStandardize(rect)
             width, height = rect.size.width, rect.size.height
-            rot = core.CGDisplayRotation(display)
-            if rotations[rot] in ["left", "right"]:
+            if core.CGDisplayRotation(display) in {90.0, -90.0}:
+                # {0.0: "normal", 90.0: "right", -90.0: "left"}
                 width, height = height, width
             self._monitors.append(
                 {
