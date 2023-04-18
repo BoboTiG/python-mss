@@ -4,6 +4,7 @@ See Git checking messages for full history.
 
 ## 8.0.4 (2023/xx/xx)
 - Linux: add failure handling to `XOpenDisplay()` call (fixes #246)
+- Mac: tiny improvement in moniors finding
 - Windows: refactored how internal handles are stored (fixes #198)
 - Windows: removed side effects when leaving the context manager, resources are all freed
 - CI: run tests via xvfb-run on GitHub Actions (#248)
