@@ -65,10 +65,6 @@ class XErrorEvent(Structure):
     ]
 
 
-# TODO: remove in v9.0.0
-Event = XErrorEvent
-
-
 class XFixesCursorImage(Structure):
     """
     Cursor structure.

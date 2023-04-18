@@ -1,5 +1,15 @@
 # Technical Changes
 
+## 9.0.0 (2023-04-18)
+
+### linux.py
+- Removed `XEvent` class. Use `XErrorEvent` instead.
+
+### windows.py
+- Added `MSS.close()` method
+- Removed `MSS.bmp` attribute
+- Removed `MSS.memdc` attribute
+
 ## 8.0.3 (2023-04-15)
 
 ### linux.py
@@ -17,8 +27,8 @@
 ### linux.py
 - Added `MSS.close()`
 - Moved `MSS.__init__()` keyword arguments handling to the base class
-- Renamed `error_handler()` function to `__error_handler()`
-- Renamed `_validate()` function to `___validate()`
+- Renamed `error_handler()` function to `_error_handler()`
+- Renamed `validate()` function to `__validate()`
 - Renamed `MSS.has_extension()` method to `_is_extension_enabled()`
 - Removed `ERROR` namespace
 - Removed `MSS.drawable` attribute

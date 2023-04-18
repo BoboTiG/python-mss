@@ -45,7 +45,7 @@ GNU/Linux
 
     Structure that serves as the connection to the X server, and that contains all the information about that X server.
 
-.. class:: Event
+.. class:: XErrorEvent
 
     XErrorEvent to debug eventual errors.
 
