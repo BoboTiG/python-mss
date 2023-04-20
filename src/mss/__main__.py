@@ -3,6 +3,7 @@ This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss
 """
 import os.path
+import sys
 from argparse import ArgumentParser
 
 from . import __version__
@@ -14,7 +15,7 @@ from .tools import to_png
 def main(*args: str) -> int:
     """Main logic."""
 
-    cli_args = ArgumentParser()
+    cli_args = ArgumentParser(prog="mss")
     cli_args.add_argument(
         "-c",
         "--coordinates",
@@ -42,7 +43,7 @@ def main(*args: str) -> int:
     )
     cli_args.add_argument("-v", "--version", action="version", version=__version__)
 
-    options = cli_args.parse_args(args)
+    options = cli_args.parse_args(args or None)
     kwargs = {"mon": options.monitor, "output": options.output}
     if options.coordinates:
         try:
@@ -80,6 +81,4 @@ def main(*args: str) -> int:
 
 
 if __name__ == "__main__":  # pragma: nocover
-    import sys
-
-    sys.exit(main(*sys.argv[1:]))
+    sys.exit(main())

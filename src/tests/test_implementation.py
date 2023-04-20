@@ -5,12 +5,15 @@ Source: https://github.com/BoboTiG/python-mss
 import os
 import os.path
 import platform
-from unittest.mock import patch
+import sys
+from datetime import datetime
+from unittest.mock import Mock, patch
 
 import pytest
 
 import mss.tools
 from mss import mss
+from mss.__main__ import main as entry_point
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
@@ -78,12 +81,9 @@ def test_factory(monkeypatch):
     assert error == "System 'chuck norris' not (yet?) implemented."
 
 
+@patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @pytest.mark.parametrize("with_cursor", [False, True])
 def test_entry_point(with_cursor: bool, capsys):
-    from datetime import datetime
-
-    from mss.__main__ import main as entry_point
-
     def main(*args: str, ret: int = 0) -> None:
         if with_cursor:
             args = args + ("--with-cursor",)
@@ -91,8 +91,8 @@ def test_entry_point(with_cursor: bool, capsys):
 
     # No arguments
     main()
-    out, _ = capsys.readouterr()
-    for mon, line in enumerate(out.splitlines(), 1):
+    captured = capsys.readouterr()
+    for mon, line in enumerate(captured.out.splitlines(), 1):
         filename = f"monitor-{mon}.png"
         assert line.endswith(filename)
         assert os.path.isfile(filename)
@@ -100,24 +100,24 @@ def test_entry_point(with_cursor: bool, capsys):
 
     for opt in ("-m", "--monitor"):
         main(opt, "1")
-        out, _ = capsys.readouterr()
-        assert out.endswith("monitor-1.png\n")
+        captured = capsys.readouterr()
+        assert captured.out.endswith("monitor-1.png\n")
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
     for opt in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
         main(*opt)
-        out, _ = capsys.readouterr()
-        assert not out
+        captured = capsys.readouterr()
+        assert not captured.out
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
     fmt = "sct-{mon}-{width}x{height}.png"
     for opt in ("-o", "--out"):
         main(opt, fmt)
-        out, _ = capsys.readouterr()
+        captured = capsys.readouterr()
         with mss(display=os.getenv("DISPLAY")) as sct:
-            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], out.splitlines()), 1):
+            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
                 filename = fmt.format(mon=mon, **monitor)
                 assert line.endswith(filename)
                 assert os.path.isfile(filename)
@@ -127,8 +127,8 @@ def test_entry_point(with_cursor: bool, capsys):
     for opt in ("-o", "--out"):
         main("-m 1", opt, fmt)
         filename = fmt.format(mon=1, date=datetime.now())
-        out, _ = capsys.readouterr()
-        assert out.endswith(filename + "\n")
+        captured = capsys.readouterr()
+        assert captured.out.endswith(filename + "\n")
         assert os.path.isfile(filename)
         os.remove(filename)
 
@@ -136,23 +136,22 @@ def test_entry_point(with_cursor: bool, capsys):
     filename = "sct-2x12_40x67.png"
     for opt in ("-c", "--coordinates"):
         main(opt, coordinates)
-        out, _ = capsys.readouterr()
-        assert out.endswith(filename + "\n")
+        captured = capsys.readouterr()
+        assert captured.out.endswith(filename + "\n")
         assert os.path.isfile(filename)
         os.remove(filename)
 
     coordinates = "2,12,40"
     for opt in ("-c", "--coordinates"):
         main(opt, coordinates, ret=2)
-        out, _ = capsys.readouterr()
-        assert out == "Coordinates syntax: top, left, width, height\n"
+        captured = capsys.readouterr()
+        assert captured.out == "Coordinates syntax: top, left, width, height\n"
 
 
+@patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @patch("mss.base.MSSBase.monitors", new=[])
 @pytest.mark.parametrize("quiet", [False, True])
 def test_entry_point_error(quiet: bool, capsys):
-    from mss.__main__ import main as entry_point
-
     def main(*args: str) -> int:
         if quiet:
             args = args + ("--quiet",)
@@ -160,12 +159,25 @@ def test_entry_point_error(quiet: bool, capsys):
 
     if quiet:
         assert main() == 1
-        out, err = capsys.readouterr()
-        assert not out
-        assert not err
+        captured = capsys.readouterr()
+        assert not captured.out
+        assert not captured.err
     else:
         with pytest.raises(ScreenShotError):
             main()
+
+
+def test_entry_point_with_no_argument(capsys):
+    # Make sure to fail if arguments are not handled
+    with patch("mss.factory.mss", new=Mock(side_effect=RuntimeError("Boom!"))):
+        with patch.object(sys, "argv", ["mss", "--help"]):
+            with pytest.raises(SystemExit) as exc:
+                entry_point()
+            assert exc.value.code == 0
+
+    captured = capsys.readouterr()
+    assert not captured.err
+    assert "usage: mss" in captured.out
 
 
 def test_grab_with_tuple(pixel_ratio: int):
