@@ -2,6 +2,10 @@
 
 See Git checking messages for full history.
 
+## 9.0.2 (2023/xx/xx)
+- 
+- :heart: contributors: @
+
 ## 9.0.1 (2023/04/20)
 - CLI: fixed entry point not taking into account arguments
 
