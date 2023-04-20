@@ -3,8 +3,7 @@
 See Git checking messages for full history.
 
 ## 9.0.1 (2023/xx/xx)
-- 
-- :heart: contributors: @
+- CLI: fixed entry point not taking into account arguments
 
 ## 9.0.0 (2023/04/18)
 - Linux: add failure handling to `XOpenDisplay()` call (fixes #246)
