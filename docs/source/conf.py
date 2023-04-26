@@ -1,3 +1,13 @@
+# Lets prevent misses, and import the module to get the proper version.
+# So that the version in only defined once across the whole code base:
+#   src/mss/__init__.py
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+
+from mss import __version__
+
 # -- General configuration ------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -27,7 +37,7 @@ author = "Tiger-222"
 # built documents.
 #
 # The short X.Y version.
-version = "9.0.2"
+version = __version__
 
 # The full version, including alpha/beta/rc tags.
 release = "latest"
