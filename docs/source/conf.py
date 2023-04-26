@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from mss import __version__
+from mss import __version__  # noqa
 
 # -- General configuration ------------------------------------------------
 
@@ -85,4 +85,4 @@ epub_exclude_files = ["search.html"]
 # ----------------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/3/": None}
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
