@@ -3,7 +3,7 @@
 See Git checking messages for full history.
 
 ## 9.0.2 (2023/xx/xx)
-- 
+- level up the packaging using `hatchling`
 - :heart: contributors: @
 
 ## 9.0.1 (2023/04/20)

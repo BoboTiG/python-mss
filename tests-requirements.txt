@@ -1,7 +1,0 @@
-numpy
-pillow
-pytest
-pytest-cov
-pytest-rerunfailures
-pyvirtualdisplay; sys_platform == "linux"
-sphinx

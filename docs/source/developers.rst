@@ -23,7 +23,7 @@ You will need `pytest <https://pypi.org/project/pytest/>`_::
     $ python -m venv venv
     $ . venv/bin/activate
     $ python -m pip install -U pip
-    $ python -m pip install -r tests-requirements.txt
+    $ python -m pip install -e '.[test]'
 
 
 How to Test?
@@ -39,7 +39,7 @@ Code Quality
 
 To ensure the code quality is correct enough::
 
-    $ python -m pip install -r dev-requirements.txt
+    $ python -m pip install -e '.[dev]'
     $ ./check.sh
 
 

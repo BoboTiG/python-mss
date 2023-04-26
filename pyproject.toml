@@ -1,0 +1,169 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mss"
+description = "An ultra fast cross-platform multiple screenshots module in pure python using ctypes."
+readme = "README.md"
+requires-python = ">= 3.8"
+authors = [
+  { name = "Mickaël 'Tiger-222' Schoentgen", email="contact@tiger-222.fr" },
+]
+maintainers = [
+  { name = "Mickaël 'Tiger-222' Schoentgen", email="contact@tiger-222.fr" },
+]
+license = { file = "LICENSE.txt" }
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: MacOS X",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: Unix",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
+  "Topic :: Software Development :: Libraries",
+]
+keywords = [
+    "BitBlt",
+    "ctypes",
+    "EnumDisplayMonitors",
+    "CGGetActiveDisplayList",
+    "CGImageGetBitsPerPixel",
+    "monitor",
+    "screen",
+    "screenshot",
+    "screencapture",
+    "screengrab",
+    "XGetImage",
+    "XGetWindowAttributes",
+    "XRRGetScreenResourcesCurrent",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/BoboTiG/python-mss"
+Documentation = "https://python-mss.readthedocs.io"
+Changelog = "https://github.com/BoboTiG/python-mss/blob/main/CHANGELOG.md"
+Source = "https://github.com/BoboTiG/python-mss"
+Sponsor = "https://github.com/sponsors/BoboTiG"
+Tracker = "https://github.com/BoboTiG/python-mss/issues"
+"Released Versions" = "https://github.com/BoboTiG/python-mss/releases"
+
+[project.scripts]
+mss = "mss.__main__:main"
+
+[project.optional-dependencies]
+test = [
+  "numpy",
+  "pillow",
+  "pytest",
+  "pytest-cov",
+  "pytest-rerunfailures",
+  "pyvirtualdisplay; sys_platform == 'linux'",
+  "sphinx",
+]
+dev = [
+  "black",
+  "build",
+  "flake8-pyproject",
+  "mypy",
+  "pylint",
+  "twine",
+  "wheel",
+]
+
+[tool.hatch.version]
+path = "src/mss/__init__.py"
+
+[tool.hatch.build]
+skip-excluded-dirs = true
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "CHANGELOG.md",
+  "CHANGES.md",
+  "CONTRIBUTORS.md",
+  "docs/source",
+  "src",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+  "src/mss",
+]
+
+[tool.black]
+target-version = ["py38"]
+line-length = 120
+safe = true
+
+[tool.flake8]
+max-line-length = 120
+ignore = [
+  "E203",  # Whitespace before ':', but it's not PEP 8 compliant
+  "W503",  # Line break before binary operator, but it's not PEP 8 compliant
+]
+
+[tool.isort]
+py_version = 38
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+
+[tool.mypy]
+# Ensure we know what we do
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+
+# Imports management
+ignore_missing_imports = true
+follow_imports = "skip"
+
+# Ensure full coverage
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+
+# Restrict dynamic typing (a little)
+# e.g. `x: List[Any]` or x: List`
+# disallow_any_generics = true
+
+strict_equality = true
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = "locally-disabled,too-few-public-methods,too-many-instance-attributes,duplicate-code"
+
+[tool.pylint.REPORTS]
+max-line-length = 120
+output-format = "colorized"
+reports = "no"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+addopts = """
+  --showlocals
+  --strict-markers
+  -r fE
+  -vvv
+  --cov=src/mss
+  --cov-report=term-missing
+"""

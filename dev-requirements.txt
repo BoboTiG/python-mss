@@ -1,7 +1,0 @@
-black
-build
-flake8
-mypy
-pylint
-twine
-wheel
