@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+          cache: pip
+      - name: Install build dependencies
+        run: |
+          python -m pip install -U pip 
+          python -m pip install -e '.[dev]'
+      - name: Build
+        run: python -m build
+      - name: Check
+        run: twine check --strict dist/*
+      - name: What will we publish?
+        run: ls -l dist
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip_existing: true
+          print_hash: true

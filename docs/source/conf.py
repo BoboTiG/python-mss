@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
-from mss import __version__  # noqa
+from mss import __author__, __date__, __version__  # noqa
 
 # -- General configuration ------------------------------------------------
 
@@ -29,7 +29,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Python MSS"
-copyright = "2013-2023, Mickaël 'Tiger-222' Schoentgen & contributors"
+copyright = f"{__date__}, {__author__} & contributors"
 author = "Tiger-222"
 
 # The version info for the project you're documenting, acts as replacement for

@@ -41,14 +41,3 @@ Or you can install it with conda:
 ```shell
 conda install -c conda-forge python-mss
 ```
-
-## Maintenance
-
-For the maintainers, here are commands to upload a new release:
-
-```shell
-rm -rf build dist
-python -m build
-twine check dist/*
-twine upload dist/*
-```
