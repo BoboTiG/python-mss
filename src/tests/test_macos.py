@@ -7,16 +7,15 @@ import platform
 
 import pytest
 
-import mss
-from mss.exception import ScreenShotError
-
 if platform.system().lower() != "darwin":
     pytestmark = pytest.mark.skip
 
+from mss import mss
+from mss.darwin import CGPoint, CGRect, CGSize
+from mss.exception import ScreenShotError
+
 
 def test_repr():
-    from mss.darwin import CGPoint, CGRect, CGSize
-
     # CGPoint
     point = CGPoint(2.0, 1.0)
     ref = CGPoint()
@@ -48,10 +47,10 @@ def test_implementation(monkeypatch):
     if version < 10.16:
         monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
         with pytest.raises(ScreenShotError):
-            mss.mss()
+            mss()
         monkeypatch.undo()
 
-    with mss.mss() as sct:
+    with mss() as sct:
         # Test monitor's rotation
         original = sct.monitors[1]
         monkeypatch.setattr(sct.core, "CGDisplayRotation", lambda x: -90.0)

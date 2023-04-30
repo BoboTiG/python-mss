@@ -16,6 +16,7 @@ from mss import mss
 from mss.__main__ import main as entry_point
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+from mss.models import Size
 from mss.screenshot import ScreenShot
 
 
@@ -52,13 +53,13 @@ def test_bad_monitor():
             sct.shot(mon=222)
 
 
-def test_repr(pixel_ratio):
+def test_repr():
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     expected_box = {
         "top": 0,
         "left": 0,
-        "width": 10 * pixel_ratio,
-        "height": 10 * pixel_ratio,
+        "width": 10,
+        "height": 10,
     }
     with mss(display=os.getenv("DISPLAY")) as sct:
         img = sct.grab(box)
@@ -180,7 +181,7 @@ def test_entry_point_with_no_argument(capsys):
     assert "usage: mss" in captured.out
 
 
-def test_grab_with_tuple(pixel_ratio: int):
+def test_grab_with_tuple():
     left = 100
     top = 100
     right = 500
@@ -192,7 +193,7 @@ def test_grab_with_tuple(pixel_ratio: int):
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
-        assert im.size == (width * pixel_ratio, height * pixel_ratio)
+        assert im.size == (width, height)
 
         # MSS like
         box2 = {"left": left, "top": top, "width": width, "height": height}
@@ -202,7 +203,7 @@ def test_grab_with_tuple(pixel_ratio: int):
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(pixel_ratio: int):
+def test_grab_with_tuple_percents():
     with mss(display=os.getenv("DISPLAY")) as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
@@ -215,7 +216,7 @@ def test_grab_with_tuple_percents(pixel_ratio: int):
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
-        assert im.size == (width * pixel_ratio, height * pixel_ratio)
+        assert im.size == (width, height)
 
         # MSS like
         box2 = {"left": left, "top": top, "width": width, "height": height}
@@ -252,3 +253,12 @@ def test_thread_safety():
     t2.join()
 
     assert len(checkpoint) == 2
+
+
+def test_no_auto_scaling():
+    # Grab a 1x1 screenshot
+    region = {"top": 0, "left": 0, "width": 1, "height": 1}
+
+    with mss() as sct:
+        # MSS < 10.0, the width/height used to be 2 instead of 1 on macOS Retina displays
+        assert sct.grab(region).size == Size(1, 1)
