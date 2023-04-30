@@ -5,7 +5,7 @@ Source: https://github.com/BoboTiG/python-mss
 import ctypes
 import ctypes.util
 import sys
-from ctypes import POINTER, Structure, c_double, c_float, c_int32, c_ubyte, c_uint32, c_uint64, c_void_p
+from ctypes import POINTER, Structure, c_bool, c_double, c_float, c_int32, c_ubyte, c_uint32, c_uint64, c_void_p
 from platform import mac_ver
 from typing import Any, Optional, Type, Union
 
@@ -21,6 +21,19 @@ def cgfloat() -> Union[Type[c_double], Type[c_float]]:
     """Get the appropriate value for a float."""
 
     return c_double if sys.maxsize > 2**32 else c_float
+
+
+class CGImage(Structure):
+    """Structure that contains information about a composite image."""
+
+    _fields_ = [
+        ("isMask", c_bool),
+        ("width", c_uint32),
+        ("height", c_uint32),
+        ("bitsPerComponent", c_uint32),
+        ("bitsPerPixel", c_uint32),
+        ("bytesPerRow", c_uint32),
+    ]
 
 
 class CGPoint(Structure):
@@ -64,18 +77,24 @@ CFUNCTIONS: CFunctions = {
     "CGDisplayRotation": ("core", [c_uint32], c_float),
     "CFDataGetBytePtr": ("core", [c_void_p], c_void_p),
     "CFDataGetLength": ("core", [c_void_p], c_uint64),
-    "CFRelease": ("core", [c_void_p], c_void_p),
-    "CGDataProviderRelease": ("core", [c_void_p], c_void_p),
+    "CFRelease": ("core", [CGImage], c_void_p),
+    "CGDataProviderRelease": ("core", [CGImage], c_void_p),
     "CGGetActiveDisplayList": ("core", [c_uint32, POINTER(c_uint32), POINTER(c_uint32)], c_int32),
-    "CGImageGetBitsPerPixel": ("core", [c_void_p], int),
-    "CGImageGetBytesPerRow": ("core", [c_void_p], int),
-    "CGImageGetDataProvider": ("core", [c_void_p], c_void_p),
-    "CGImageGetHeight": ("core", [c_void_p], int),
-    "CGImageGetWidth": ("core", [c_void_p], int),
+    # "CGImageGetBitsPerPixel": ("core", [c_void_p], int),
+    # "CGImageGetBytesPerRow": ("core", [c_void_p], int),
+    "CGImageGetDataProvider": ("core", [CGImage], c_void_p),
+    # "CGImageGetHeight": ("core", [c_void_p], int),
+    # "CGImageGetWidth": ("core", [c_void_p], int),
     "CGRectStandardize": ("core", [CGRect], CGRect),
     "CGRectUnion": ("core", [CGRect, CGRect], CGRect),
-    "CGWindowListCreateImage": ("core", [CGRect, c_uint32, c_uint32, c_uint32], c_void_p),
+    "CGWindowListCreateImage": ("core", [CGRect, c_uint32, c_uint32, c_uint32], CGImage),
 }
+
+_CORE = (
+    ctypes.util.find_library("CoreGraphics")
+    if float(".".join(mac_ver()[0].split(".")[:2])) < 10.16
+    else "/System/Library/Frameworks/CoreGraphics.framework/Versions/Current/CoreGraphics"
+)
 
 
 class MSS(MSSBase):
@@ -98,16 +117,9 @@ class MSS(MSSBase):
 
     def _init_library(self) -> None:
         """Load the CoreGraphics library."""
-        version = float(".".join(mac_ver()[0].split(".")[:2]))
-        if version < 10.16:
-            coregraphics = ctypes.util.find_library("CoreGraphics")
-        else:
-            # macOS Big Sur and newer
-            coregraphics = "/System/Library/Frameworks/CoreGraphics.framework/Versions/Current/CoreGraphics"
-
-        if not coregraphics:
+        if not _CORE:
             raise ScreenShotError("No CoreGraphics library found.")
-        self.core = ctypes.cdll.LoadLibrary(coregraphics)
+        self.core = ctypes.cdll.LoadLibrary(_CORE)
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -138,9 +150,11 @@ class MSS(MSSBase):
             rect = core.CGDisplayBounds(display)
             rect = core.CGRectStandardize(rect)
             width, height = rect.size.width, rect.size.height
+
+            # {0.0: "normal", 90.0: "right", -90.0: "left"}
             if core.CGDisplayRotation(display) in {90.0, -90.0}:
-                # {0.0: "normal", 90.0: "right", -90.0: "left"}
                 width, height = height, width
+
             self._monitors.append(
                 {
                     "left": int_(rect.origin.x),
@@ -169,15 +183,17 @@ class MSS(MSSBase):
         core = self.core
         rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
 
-        image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
-        if not image_ref:
+        cg_image = core.CGWindowListCreateImage(rect, 1, 0, 0)
+        if not cg_image:
             raise ScreenShotError("CoreGraphics.CGWindowListCreateImage() failed.")
 
-        width = core.CGImageGetWidth(image_ref)
-        height = core.CGImageGetHeight(image_ref)
+        # width = core.CGImageGetWidth(cg_image)
+        # height = core.CGImageGetHeight(cg_image)
+        width = cg_image.width
+        height = cg_image.height
         prov = copy_data = None
         try:
-            prov = core.CGImageGetDataProvider(image_ref)
+            prov = core.CGImageGetDataProvider(cg_image)
             copy_data = core.CGDataProviderCopyData(prov)
             data_ref = core.CFDataGetBytePtr(copy_data)
             buf_len = core.CFDataGetLength(copy_data)
@@ -185,8 +201,10 @@ class MSS(MSSBase):
             data = bytearray(raw.contents)
 
             # Remove padding per row
-            bytes_per_row = core.CGImageGetBytesPerRow(image_ref)
-            bytes_per_pixel = core.CGImageGetBitsPerPixel(image_ref)
+            # bytes_per_row = core.CGImageGetBytesPerRow(cg_image)
+            # bytes_per_pixel = core.CGImageGetBitsPerPixel(cg_image)
+            bytes_per_row = cg_image.bytesPerRow
+            bytes_per_pixel = cg_image.bitsPerPixel
             bytes_per_pixel = (bytes_per_pixel + 7) // 8
 
             if bytes_per_pixel * width != bytes_per_row:

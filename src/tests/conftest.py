@@ -4,14 +4,11 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import glob
 import os
-import platform
 from hashlib import md5
 from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-
-from mss import mss
 
 
 @pytest.fixture(autouse=True)
@@ -51,18 +48,3 @@ def raw() -> bytes:
 
     assert md5(data).hexdigest() == "125696266e2a8f5240f6bc17e4df98c6"
     return data
-
-
-@pytest.fixture(scope="session")
-def pixel_ratio() -> int:
-    """Get the pixel, used to adapt test checks."""
-
-    if platform.system().lower() != "darwin":
-        return 1
-
-    # Grab a 1x1 screenshot
-    region = {"top": 0, "left": 0, "width": 1, "height": 1}
-
-    with mss() as sct:
-        # On macOS with Retina display, the width can be 2 instead of 1
-        return sct.grab(region).size[0]
