@@ -107,7 +107,7 @@ class MSS(MSSBase):
 
         # Available thread-specific variables
         self._handles = local()
-        self._handles.region_width_height = (0, 0)
+        self._handles.region_width_height = None
         self._handles.bmp = None
         self._handles.srcdc = self.user32.GetWindowDC(0)
         self._handles.memdc = self.gdi32.CreateCompatibleDC(self._handles.srcdc)

@@ -96,3 +96,10 @@ def test_thread_safety_regions():
     thread2.start()
     thread1.join()
     thread2.join()
+
+
+def test_region_zero():
+    """The region grab size 0."""
+    with mss.mss() as sct:
+        region0 = {"top": 0, "left": 0, "width": 0, "height": 0}
+        sct.grab(region0)
