@@ -254,13 +254,13 @@ class MSS(MSSBase):
 
         return self.cls_image(bytearray(self._handles.data), monitor)
 
-    def _cursor_impl(self) -> Optional[ScreenShot]: # works for non monochrome cursors
+    def _cursor_impl(self) -> Optional[ScreenShot]:
         """Retrieve all cursor data. Pixels have to be RGB."""
         _, hcursor, pos_win = win32gui.GetCursorInfo()
         
         hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
         hbmp = win32ui.CreateBitmap()
-        hbmp.CreateCompatibleBitmap(hdc, 36, 36)
+        hbmp.CreateCompatibleBitmap(hdc, 32, 32)
         hdc = hdc.CreateCompatibleDC()
         hdc.SelectObject(hbmp)
         hdc.DrawIcon((0,0), hcursor)
@@ -268,14 +268,16 @@ class MSS(MSSBase):
         bmpinfo = hbmp.GetInfo()
         bmpstr = hbmp.GetBitmapBits(True)
         
-        hotspot = win32gui.GetIconInfo(hcursor)[1:3]
+        _, hotspotx, hotspoty, hbmpmask, _ = win32gui.GetIconInfo(hcursor)
         ratio = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
         region = {
-            "left": round(pos_win[0]*ratio - hotspot[0]),
-            "top": round(pos_win[1]*ratio - hotspot[1]),
+            "left": round(pos_win[0]*ratio - hotspotx),
+            "top": round(pos_win[1]*ratio - hotspoty),
             "width": bmpinfo["bmWidth"],
             "height": bmpinfo["bmHeight"]
         }
+        mask_info = win32ui.CreateBitmapFromHandle(hbmpmask).GetInfo()
+        is_monochrome = mask_info["bmHeight"] == mask_info["bmWidth"] * 2
 
         win32gui.DestroyIcon(hcursor)    
         win32gui.DeleteObject(hbmp.GetHandle())
@@ -286,5 +288,13 @@ class MSS(MSSBase):
         data[::4] = raw[2::4]
         data[1::4] = raw[1::4]
         data[2::4] = raw[::4]
-        data[3::4] = raw[3::4]
+        if is_monochrome:
+            for i in range(3, len(data), 4):
+                if data[i-3:i] == b"\x00\x00\x00":
+                    data[i] = 0
+                else:
+                    data[i] = 255
+        else:
+            data[3::4] = raw[3::4]
+
         return self.cls_image(data, region)
