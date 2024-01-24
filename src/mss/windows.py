@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import ctypes
 import sys
+import win32gui, win32ui
 from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
 from ctypes.wintypes import (
     BOOL,
@@ -253,6 +254,37 @@ class MSS(MSSBase):
 
         return self.cls_image(bytearray(self._handles.data), monitor)
 
-    def _cursor_impl(self) -> Optional[ScreenShot]:
+    def _cursor_impl(self) -> Optional[ScreenShot]: # works for non monochrome cursors
         """Retrieve all cursor data. Pixels have to be RGB."""
-        return None
+        _, hcursor, pos_win = win32gui.GetCursorInfo()
+        
+        hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
+        hbmp = win32ui.CreateBitmap()
+        hbmp.CreateCompatibleBitmap(hdc, 36, 36)
+        hdc = hdc.CreateCompatibleDC()
+        hdc.SelectObject(hbmp)
+        hdc.DrawIcon((0,0), hcursor)
+        
+        bmpinfo = hbmp.GetInfo()
+        bmpstr = hbmp.GetBitmapBits(True)
+        
+        hotspot = win32gui.GetIconInfo(hcursor)[1:3]
+        ratio = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
+        region = {
+            "left": round(pos_win[0]*ratio - hotspot[0]),
+            "top": round(pos_win[1]*ratio - hotspot[1]),
+            "width": bmpinfo["bmWidth"],
+            "height": bmpinfo["bmHeight"]
+        }
+
+        win32gui.DestroyIcon(hcursor)    
+        win32gui.DeleteObject(hbmp.GetHandle())
+        hdc.DeleteDC()
+
+        raw = bytearray(bmpstr)
+        data = bytearray(region["height"] * region["width"] * 4)
+        data[::4] = raw[2::4]
+        data[1::4] = raw[1::4]
+        data[2::4] = raw[::4]
+        data[3::4] = raw[3::4]
+        return self.cls_image(data, region)
