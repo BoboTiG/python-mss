@@ -21,7 +21,6 @@ from ctypes.wintypes import (
     UINT,
     WORD,
     POINT,
-    HBITMAP,
     HICON
 )
 from threading import local
@@ -160,7 +159,7 @@ class MSS(MSSBase):
         ci.cbSize = ctypes.sizeof(CURSORINFO)
         self._handles.ci = ci
 
-        iconinfo = ICONINFO() # 'ii' felt uncomfortable
+        iconinfo = ICONINFO()  # 'ii' felt uncomfortable
         self._handles.iconinfo = iconinfo
 
     def close(self) -> None:
@@ -297,17 +296,18 @@ class MSS(MSSBase):
 
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGB.
-        
+
         [1] user32.DrawIcon(HDC(memdc), 0, 0, hcursor)
         Sometimes the memdc value is greater than the 32 bit limit
-        and that results in 'ctypes.ArgumentError: argument 1: OverflowError: int too long to convert'
-        but wrapping it in an HDC type seems to fix the issue.
+        and that results in
+        'ctypes.ArgumentError: argument 1: OverflowError: int too long to convert'
+        but casting it to HDC type seems to fix the issue.
 
         [2] user32.GetIconInfo(hcursor, self._handles.iconinfo)
         GetIconInfo also returns the handle for mask bitmap and the handle for color bitmap
         but the color bitmap handle is null in case of monochrome cursors.
 
-        [3] is_monochrome = self._handles.iconinfo.hbmColor == None
+        [3] is_monochrome = self._handles.iconinfo.hbmColor is None
         The correct way to detect monochrome cursors seems to be a unique property of their
         mask bitmap. The height of the mask bitmap of a monochrome cursor is twice its width
         (https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-iconinfo)
@@ -336,13 +336,13 @@ class MSS(MSSBase):
             self._handles.bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
             gdi.SelectObject(memdc, self._handles.bmp)
 
-        user32.DrawIcon(HDC(memdc), 0, 0, hcursor) # Why HDC? [1]
+        user32.DrawIcon(HDC(memdc), 0, 0, hcursor)  # Why HDC? [1]
         bits = gdi.GetDIBits(memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS)
         if bits != height:
             raise ScreenShotError("gdi32.GetDIBits() failed.")
 
-        user32.GetIconInfo(hcursor, self._handles.iconinfo) # [2]
-        is_monochrome = self._handles.iconinfo.hbmColor == None # [3]
+        user32.GetIconInfo(hcursor, self._handles.iconinfo)  # [2]
+        is_monochrome = self._handles.iconinfo.hbmColor is None  # [3]
         ratio = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
         region = {
             "left": round(pos_screen.x * ratio - self._handles.iconinfo.xHotspot),
@@ -352,7 +352,7 @@ class MSS(MSSBase):
         }
         data = bytearray(self._handles.data)
         if is_monochrome:
-            for i in range(3, len(data), 4): # [4]
+            for i in range(3, len(data), 4):  # [4]
                 if data[i-3:i] == b"\x00\x00\x00":
                     data[i] = 0
                 else:
