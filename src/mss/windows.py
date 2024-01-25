@@ -4,7 +4,6 @@ Source: https://github.com/BoboTiG/python-mss
 """
 import ctypes
 import sys
-import win32gui, win32ui
 from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
 from ctypes.wintypes import (
     BOOL,
@@ -21,6 +20,9 @@ from ctypes.wintypes import (
     RECT,
     UINT,
     WORD,
+    POINT,
+    HBITMAP,
+    HICON
 )
 from threading import local
 from typing import Any, Optional
@@ -39,7 +41,9 @@ SRCCOPY = 0x00CC0020
 
 
 class BITMAPINFOHEADER(Structure):
-    """Information about the dimensions and color format of a DIB."""
+    """
+    Information about the dimensions and color format of a DIB.
+    """
 
     _fields_ = [
         ("biSize", DWORD),
@@ -52,7 +56,7 @@ class BITMAPINFOHEADER(Structure):
         ("biXPelsPerMeter", LONG),
         ("biYPelsPerMeter", LONG),
         ("biClrUsed", DWORD),
-        ("biClrImportant", DWORD),
+        ("biClrImportant", DWORD)
     ]
 
 
@@ -62,6 +66,33 @@ class BITMAPINFO(Structure):
     """
 
     _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3)]
+
+
+class CURSORINFO(Structure):
+    """
+    Information about the cursor.
+    """
+
+    _fields_ = [
+        ("cbSize", DWORD),
+        ("flags", DWORD),
+        ("hCursor", HDC),
+        ("ptScreenPos", POINT)
+    ]
+
+
+class ICONINFO(Structure):
+    """
+    Information about an icon or cursor.
+    """
+
+    _fields_ = [
+        ("fIcon", BOOL),
+        ("xHotspot", DWORD),
+        ("yHotspot", DWORD),
+        ("hbmMask", HBITMAP),
+        ("hbmColor", HBITMAP)
+    ]
 
 
 MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
@@ -81,9 +112,12 @@ CFUNCTIONS: CFunctions = {
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
     "DeleteDC": ("gdi32", [HDC], HDC),
     "DeleteObject": ("gdi32", [HGDIOBJ], INT),
+    "DrawIcon": ("user32", [HDC, INT, INT, HICON], BOOL),
     "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
+    "GetCursorInfo": ("user32", [POINTER(CURSORINFO)], BOOL),
     "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
     "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT], BOOL),
+    "GetIconInfo": ("user32", [HICON, POINTER(ICONINFO)], BOOL),
     "GetSystemMetrics": ("user32", [INT], INT),
     "GetWindowDC": ("user32", [HWND], HDC),
     "ReleaseDC": ("user32", [HWND, HDC], c_int),
@@ -121,6 +155,13 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._handles.bmi = bmi
+
+        ci = CURSORINFO()
+        ci.cbSize = ctypes.sizeof(CURSORINFO)
+        self._handles.ci = ci
+
+        iconinfo = ICONINFO() # 'ii' felt uncomfortable
+        self._handles.iconinfo = iconinfo
 
     def close(self) -> None:
         # Clean-up
@@ -201,7 +242,7 @@ class MSS(MSSBase):
         callback = MONITORNUMPROC(_callback)
         user32.EnumDisplayMonitors(0, 0, callback, 0)
 
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
+    def _grab_impl(self, monitor: Monitor, /) -> Optional[ScreenShot]:
         """
         Retrieve all pixels from a monitor. Pixels have to be RGB.
 
@@ -254,47 +295,66 @@ class MSS(MSSBase):
 
         return self.cls_image(bytearray(self._handles.data), monitor)
 
-    def _cursor_impl(self) -> Optional[ScreenShot]:
-        """Retrieve all cursor data. Pixels have to be RGB."""
-        _, hcursor, pos_win = win32gui.GetCursorInfo()
+    def _cursor_impl(self) -> ScreenShot:
+        """Retrieve all cursor data. Pixels have to be RGB.
         
-        hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
-        hbmp = win32ui.CreateBitmap()
-        hbmp.CreateCompatibleBitmap(hdc, 32, 32)
-        hdc = hdc.CreateCompatibleDC()
-        hdc.SelectObject(hbmp)
-        hdc.DrawIcon((0,0), hcursor)
-        
-        bmpinfo = hbmp.GetInfo()
-        bmpstr = hbmp.GetBitmapBits(True)
-        
-        _, hotspotx, hotspoty, hbmpmask, _ = win32gui.GetIconInfo(hcursor)
+        [1] user32.DrawIcon(HDC(memdc), 0, 0, hcursor)
+        Sometimes the memdc value is greater than the 32 bit limit
+        and that results in 'ctypes.ArgumentError: argument 1: OverflowError: int too long to convert'
+        but wrapping it in an HDC type seems to fix the issue.
+
+        [2] user32.GetIconInfo(hcursor, self._handles.iconinfo)
+        GetIconInfo also returns the handle for mask bitmap and the handle for color bitmap
+        but the color bitmap handle is null in case of monochrome cursors.
+
+        [3] is_monochrome = self._handles.iconinfo.hbmColor == None
+        The correct way to detect monochrome cursors seems to be a unique property of their
+        mask bitmap. The height of the mask bitmap of a monochrome cursor is twice its width
+        (https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-iconinfo)
+        But I cannot find the correct way of getting a bitmap's dimensions, therefore I
+        just eneded up checking if the color bitmap is null.
+
+        [4]
+        The data received using DrawIcon is in the format BGRA but in case of monochrome
+        cursors the alpha value of every pixel is 0 for some reason. Therefore, the alpha
+        value of every non black pixel has to be manually set to 255.
+        """
+        srcdc, memdc = self._handles.srcdc, self._handles.memdc
+        gdi, user32 = self.gdi32, self.user32
+        width, height = 32, 32
+        user32.GetCursorInfo(self._handles.ci)
+        hcursor = self._handles.ci.hCursor
+        pos_screen = self._handles.ci.ptScreenPos
+
+        if self._handles.region_width_height != (width, height):
+            self._handles.region_width_height = (width, height)
+            self._handles.bmi.bmiHeader.biWidth = width
+            self._handles.bmi.bmiHeader.biHeight = -height
+            self._handles.data = ctypes.create_string_buffer(width * height * 4)
+            if self._handles.bmp:
+                gdi.DeleteObject(self._handles.bmp)
+            self._handles.bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
+            gdi.SelectObject(memdc, self._handles.bmp)
+
+        user32.DrawIcon(HDC(memdc), 0, 0, hcursor) # Why HDC? [1]
+        bits = gdi.GetDIBits(memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS)
+        if bits != height:
+            raise ScreenShotError("gdi32.GetDIBits() failed.")
+
+        user32.GetIconInfo(hcursor, self._handles.iconinfo) # [2]
+        is_monochrome = self._handles.iconinfo.hbmColor == None # [3]
         ratio = ctypes.windll.shcore.GetScaleFactorForDevice(0) / 100
         region = {
-            "left": round(pos_win[0]*ratio - hotspotx),
-            "top": round(pos_win[1]*ratio - hotspoty),
-            "width": bmpinfo["bmWidth"],
-            "height": bmpinfo["bmHeight"]
+            "left": round(pos_screen.x * ratio - self._handles.iconinfo.xHotspot),
+            "top": round(pos_screen.y * ratio - self._handles.iconinfo.yHotspot),
+            "width": 32,
+            "height": 32
         }
-        mask_info = win32ui.CreateBitmapFromHandle(hbmpmask).GetInfo()
-        is_monochrome = mask_info["bmHeight"] == mask_info["bmWidth"] * 2
-
-        win32gui.DestroyIcon(hcursor)    
-        win32gui.DeleteObject(hbmp.GetHandle())
-        hdc.DeleteDC()
-
-        raw = bytearray(bmpstr)
-        data = bytearray(region["height"] * region["width"] * 4)
-        data[::4] = raw[2::4]
-        data[1::4] = raw[1::4]
-        data[2::4] = raw[::4]
+        data = bytearray(self._handles.data)
         if is_monochrome:
-            for i in range(3, len(data), 4):
+            for i in range(3, len(data), 4): # [4]
                 if data[i-3:i] == b"\x00\x00\x00":
                     data[i] = 0
                 else:
                     data[i] = 255
-        else:
-            data[3::4] = raw[3::4]
-
         return self.cls_image(data, region)
