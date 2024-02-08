@@ -312,9 +312,9 @@ Properties
 
     .. attribute:: pixels
 
-        List of RGB tuples.
+        List of row tuples that contain RGB tuples.
 
-        :rtype: list[tuple(int, int, int)]
+        :rtype: list[tuple(tuple(int, int, int), ...)]
 
     .. attribute:: pos
 
