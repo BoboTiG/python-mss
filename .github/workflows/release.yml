@@ -19,7 +19,7 @@ jobs:
           cache: pip
       - name: Install build dependencies
         run: |
-          python -m pip install -U pip 
+          python -m pip install -U pip
           python -m pip install -e '.[dev]'
       - name: Build
         run: python -m build
@@ -28,7 +28,7 @@ jobs:
       - name: What will we publish?
         run: ls -l dist
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
