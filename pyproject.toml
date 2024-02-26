@@ -8,10 +8,10 @@ description = "An ultra fast cross-platform multiple screenshots module in pure 
 readme = "README.md"
 requires-python = ">= 3.8"
 authors = [
-  { name = "Mickaël 'Tiger-222' Schoentgen", email="contact@tiger-222.fr" },
+  { name = "Mickaël Schoentgen", email="contact@tiger-222.fr" },
 ]
 maintainers = [
-  { name = "Mickaël 'Tiger-222' Schoentgen", email="contact@tiger-222.fr" },
+  { name = "Mickaël Schoentgen", email="contact@tiger-222.fr" },
 ]
 license = { file = "LICENSE.txt" }
 classifiers = [
