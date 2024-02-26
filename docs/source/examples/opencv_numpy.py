@@ -1,15 +1,13 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 OpenCV/Numpy example.
 """
 import time
 
 import cv2
-import numpy
-
 import mss
+import numpy as np
 
 with mss.mss() as sct:
     # Part of the screen to capture
@@ -19,7 +17,7 @@ with mss.mss() as sct:
         last_time = time.time()
 
         # Get raw pixels from the screen, save it to a Numpy array
-        img = numpy.array(sct.grab(monitor))
+        img = np.array(sct.grab(monitor))
 
         # Display the picture
         cv2.imshow("OpenCV/Numpy normal", img)

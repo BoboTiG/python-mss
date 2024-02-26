@@ -1,12 +1,10 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 PIL examples to play with pixels.
 """
-from PIL import Image
-
 import mss
+from PIL import Image
 
 with mss.mss() as sct:
     # Get a screenshot of the 1st monitor

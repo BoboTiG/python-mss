@@ -1,16 +1,29 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from threading import Lock
-from typing import Any, Callable, Iterator, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, List, Tuple
 
-from .exception import ScreenShotError
-from .models import Monitor, Monitors
-from .screenshot import ScreenShot
-from .tools import to_png
+from mss.exception import ScreenShotError
+from mss.screenshot import ScreenShot
+from mss.tools import to_png
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
+    from mss.models import Monitor, Monitors
+
+try:
+    from datetime import UTC
+except ImportError:
+    # Python < 3.11
+    from datetime import timezone
+
+    UTC = timezone.utc
 
 lock = Lock()
 
@@ -25,50 +38,44 @@ class MSSBase(metaclass=ABCMeta):
         /,
         *,
         compression_level: int = 6,
-        display: Optional[Union[bytes, str]] = None,  # Linux only
-        max_displays: int = 32,  # Mac only
+        display: bytes | str | None = None,  # noqa:ARG002 Linux only
+        max_displays: int = 32,  # noqa:ARG002 Mac only
         with_cursor: bool = False,
     ) -> None:
-        # pylint: disable=unused-argument
-        self.cls_image: Type[ScreenShot] = ScreenShot
+        self.cls_image: type[ScreenShot] = ScreenShot
         self.compression_level = compression_level
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
 
-    def __enter__(self) -> "MSSBase":
+    def __enter__(self) -> MSSBase:  # noqa:PYI034
         """For the cool call `with MSS() as mss:`."""
-
         return self
 
-    def __exit__(self, *_: Any) -> None:
+    def __exit__(self, *_: object) -> None:
         """For the cool call `with MSS() as mss:`."""
-
         self.close()
 
     @abstractmethod
-    def _cursor_impl(self) -> Optional[ScreenShot]:
+    def _cursor_impl(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
-        """
-        Retrieve all pixels from a monitor. Pixels have to be RGB.
+        """Retrieve all pixels from a monitor. Pixels have to be RGB.
         That method has to be run using a threading lock.
         """
 
     @abstractmethod
     def _monitors_impl(self) -> None:
-        """
-        Get positions of monitors (has to be run using a threading lock).
+        """Get positions of monitors (has to be run using a threading lock).
         It must populate self._monitors.
         """
 
-    def close(self) -> None:
+    def close(self) -> None:  # noqa:B027
         """Clean-up."""
 
-    def grab(self, monitor: Union[Monitor, Tuple[int, int, int, int]], /) -> ScreenShot:
-        """
-        Retrieve screen pixels for a given monitor.
+    def grab(self, monitor: Monitor | Tuple[int, int, int, int], /) -> ScreenShot:
+        """Retrieve screen pixels for a given monitor.
 
         Note: *monitor* can be a tuple like the one PIL.Image.grab() accepts.
 
@@ -76,7 +83,6 @@ class MSSBase(metaclass=ABCMeta):
                         See :meth:`monitors <monitors>` for object details.
         :return :class:`ScreenShot <ScreenShot>`.
         """
-
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
             monitor = {
@@ -94,8 +100,7 @@ class MSSBase(metaclass=ABCMeta):
 
     @property
     def monitors(self) -> Monitors:
-        """
-        Get positions of all monitors.
+        """Get positions of all monitors.
         If the monitor has rotation, you have to deal with it
         inside this method.
 
@@ -112,7 +117,6 @@ class MSSBase(metaclass=ABCMeta):
             'height': the height
         }
         """
-
         if not self._monitors:
             with lock:
                 self._monitors_impl()
@@ -125,10 +129,9 @@ class MSSBase(metaclass=ABCMeta):
         *,
         mon: int = 0,
         output: str = "monitor-{mon}.png",
-        callback: Optional[Callable[[str], None]] = None,
+        callback: Callable[[str], None] | None = None,
     ) -> Iterator[str]:
-        """
-        Grab a screen shot and save it to a file.
+        """Grab a screen shot and save it to a file.
 
         :param int mon: The monitor to screen shot (default=0).
                         -1: grab one screen shot of all monitors
@@ -153,15 +156,15 @@ class MSSBase(metaclass=ABCMeta):
 
         :return generator: Created file(s).
         """
-
         monitors = self.monitors
         if not monitors:
-            raise ScreenShotError("No monitor found.")
+            msg = "No monitor found."
+            raise ScreenShotError(msg)
 
         if mon == 0:
             # One screen shot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
-                fname = output.format(mon=idx, date=datetime.now(), **monitor)
+                fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
@@ -174,9 +177,10 @@ class MSSBase(metaclass=ABCMeta):
             try:
                 monitor = monitors[mon]
             except IndexError as exc:
-                raise ScreenShotError(f"Monitor {mon!r} does not exist.") from exc
+                msg = f"Monitor {mon!r} does not exist."
+                raise ScreenShotError(msg) from exc
 
-            output = output.format(mon=mon, date=datetime.now(), **monitor)
+            output = output.format(mon=mon, date=datetime.now(UTC) if "{date" in output else None, **monitor)
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)
@@ -184,19 +188,15 @@ class MSSBase(metaclass=ABCMeta):
             yield output
 
     def shot(self, /, **kwargs: Any) -> str:
-        """
-        Helper to save the screen shot of the 1st monitor, by default.
+        """Helper to save the screen shot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
         """
-
         kwargs["mon"] = kwargs.get("mon", 1)
         return next(self.save(**kwargs))
 
     @staticmethod
     def _merge(screenshot: ScreenShot, cursor: ScreenShot, /) -> ScreenShot:
         """Create composite image by blending screenshot and mouse cursor."""
-
-        # pylint: disable=too-many-locals,invalid-name
 
         (cx, cy), (cw, ch) = cursor.pos, cursor.size
         (x, y), (w, h) = screenshot.pos, screenshot.size
@@ -208,8 +208,8 @@ class MSSBase(metaclass=ABCMeta):
         if not overlap:
             return screenshot
 
-        screen_data = screenshot.raw
-        cursor_data = cursor.raw
+        screen_raw = screenshot.raw
+        cursor_raw = cursor.raw
 
         cy, cy2 = (cy - y) * 4, (cy2 - y2) * 4
         cx, cx2 = (cx - x) * 4, (cx2 - x2) * 4
@@ -226,17 +226,17 @@ class MSSBase(metaclass=ABCMeta):
             for count_x in range(start_count_x, stop_count_x, 4):
                 spos = pos_s + count_x
                 cpos = pos_c + count_x
-                alpha = cursor_data[cpos + 3]
+                alpha = cursor_raw[cpos + 3]
 
                 if not alpha:
                     continue
 
                 if alpha == 255:
-                    screen_data[spos : spos + 3] = cursor_data[cpos : cpos + 3]
+                    screen_raw[spos : spos + 3] = cursor_raw[cpos : cpos + 3]
                 else:
-                    alpha = alpha / 255
+                    alpha2 = alpha / 255
                     for i in rgb:
-                        screen_data[spos + i] = int(cursor_data[cpos + i] * alpha + screen_data[spos + i] * (1 - alpha))
+                        screen_raw[spos + i] = int(cursor_raw[cpos + i] * alpha2 + screen_raw[spos + i] * (1 - alpha2))
 
         return screenshot
 
@@ -247,10 +247,9 @@ class MSSBase(metaclass=ABCMeta):
         argtypes: List[Any],
         restype: Any,
         /,
-        errcheck: Optional[Callable] = None,
+        errcheck: Callable | None = None,
     ) -> None:
         """Factory to create a ctypes function and automatically manage errors."""
-
         meth = getattr(attr, func)
         meth.argtypes = argtypes
         meth.restype = restype

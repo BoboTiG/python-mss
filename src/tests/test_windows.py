@@ -1,30 +1,36 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
-import platform
-import threading
+from __future__ import annotations
 
-import pytest
+import threading
+from typing import Tuple
 
 import mss
+import pytest
 from mss.exception import ScreenShotError
 
-if platform.system().lower() != "windows":
+try:
+    import mss.windows
+except ImportError:
     pytestmark = pytest.mark.skip
 
 
-def test_implementation(monkeypatch):
+def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
     # Test bad data retrieval
     with mss.mss() as sct:
-        monkeypatch.setattr(sct.gdi32, "GetDIBits", lambda *args: 0)
+        assert isinstance(sct, mss.windows.MSS)  # For Mypy
+
+        monkeypatch.setattr(sct.gdi32, "GetDIBits", lambda *_: 0)
         with pytest.raises(ScreenShotError):
             sct.shot()
 
 
-def test_region_caching():
+def test_region_caching() -> None:
     """The region to grab is cached, ensure this is well-done."""
     with mss.mss() as sct:
+        assert isinstance(sct, mss.windows.MSS)  # For Mypy
+
         # Grab the area 1
         region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
         sct.grab(region1)
@@ -42,10 +48,13 @@ def test_region_caching():
         assert bmp2 == id(sct._handles.bmp)
 
 
-def test_region_not_caching():
+def test_region_not_caching() -> None:
     """The region to grab is not bad cached previous grab."""
     grab1 = mss.mss()
     grab2 = mss.mss()
+
+    assert isinstance(grab1, mss.windows.MSS)  # For Mypy
+    assert isinstance(grab2, mss.windows.MSS)  # For Mypy
 
     region1 = {"top": 0, "left": 0, "width": 100, "height": 100}
     region2 = {"top": 0, "left": 0, "width": 50, "height": 1}
@@ -61,14 +70,15 @@ def test_region_not_caching():
     assert bmp1 != bmp2
 
 
-def run_child_thread(loops):
+def run_child_thread(loops: int) -> None:
     for _ in range(loops):
         with mss.mss() as sct:  # New sct for every loop
             sct.grab(sct.monitors[1])
 
 
-def test_thread_safety():
+def test_thread_safety() -> None:
     """Thread safety test for issue #150.
+
     The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
     """
     # Let thread 1 finished ahead of thread 2
@@ -80,14 +90,15 @@ def test_thread_safety():
     thread2.join()
 
 
-def run_child_thread_bbox(loops, bbox):
+def run_child_thread_bbox(loops: int, bbox: Tuple[int, int, int, int]) -> None:
     with mss.mss() as sct:  # One sct for all loops
         for _ in range(loops):
             sct.grab(bbox)
 
 
-def test_thread_safety_regions():
-    """Thread safety test for different regions
+def test_thread_safety_regions() -> None:
+    """Thread safety test for different regions.
+
     The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
     """
     thread1 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 100, 100)))

@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 2018-03-19.
 
@@ -30,34 +29,34 @@ Windows
 """
 import time
 
-import numpy
+import mss
+import numpy as np
+from mss.screenshot import ScreenShot
 from PIL import Image
 
-import mss
 
-
-def mss_rgb(im):
+def mss_rgb(im: ScreenShot) -> bytes:
     return im.rgb
 
 
-def numpy_flip(im):
-    frame = numpy.array(im, dtype=numpy.uint8)
-    return numpy.flip(frame[:, :, :3], 2).tobytes()
+def numpy_flip(im: ScreenShot) -> bytes:
+    frame = np.array(im, dtype=np.uint8)
+    return np.flip(frame[:, :, :3], 2).tobytes()
 
 
-def numpy_slice(im):
-    return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
+def numpy_slice(im: ScreenShot) -> bytes:
+    return np.array(im, dtype=np.uint8)[..., [2, 1, 0]].tobytes()
 
 
-def pil_frombytes_rgb(im):
+def pil_frombytes_rgb(im: ScreenShot) -> bytes:
     return Image.frombytes("RGB", im.size, im.rgb).tobytes()
 
 
-def pil_frombytes(im):
+def pil_frombytes(im: ScreenShot) -> bytes:
     return Image.frombytes("RGB", im.size, im.bgra, "raw", "BGRX").tobytes()
 
 
-def benchmark():
+def benchmark() -> None:
     with mss.mss() as sct:
         im = sct.grab(sct.monitors[0])
         for func in (
@@ -71,7 +70,7 @@ def benchmark():
             start = time.time()
             while (time.time() - start) <= 1:
                 func(im)
-                im._ScreenShot__rgb = None
+                im._ScreenShot__rgb = None  # type: ignore[attr-defined]
                 count += 1
             print(func.__name__.ljust(17), count)
 

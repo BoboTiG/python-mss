@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 Screenshot of the monitor 1, using a custom class to handle the data.
 """
@@ -12,8 +11,7 @@ from mss.screenshot import ScreenShot
 
 
 class SimpleScreenShot(ScreenShot):
-    """
-    Define your own custom method to deal with screen shot raw data.
+    """Define your own custom method to deal with screen shot raw data.
     Of course, you can inherit from the ScreenShot class and change
     or add new methods.
     """

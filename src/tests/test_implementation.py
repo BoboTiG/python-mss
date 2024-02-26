@@ -1,34 +1,44 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
+from __future__ import annotations
+
 import os
 import os.path
 import platform
 import sys
 from datetime import datetime
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
-import pytest
-
+import mss
 import mss.tools
-from mss import mss
+import pytest
 from mss.__main__ import main as entry_point
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
+if TYPE_CHECKING:
+    from mss.models import Monitor
+
+try:
+    from datetime import UTC
+except ImportError:
+    # Python < 3.11
+    from datetime import timezone
+
+    UTC = timezone.utc
+
 
 class MSS0(MSSBase):
     """Nothing implemented."""
-
-    pass
 
 
 class MSS1(MSSBase):
     """Only `grab()` implemented."""
 
-    def grab(self, monitor):
+    def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
         pass
 
 
@@ -36,23 +46,22 @@ class MSS2(MSSBase):
     """Only `monitor` implemented."""
 
     @property
-    def monitors(self):
+    def monitors(self) -> list:
         return []
 
 
 @pytest.mark.parametrize("cls", [MSS0, MSS1, MSS2])
-def test_incomplete_class(cls):
+def test_incomplete_class(cls: type[MSSBase]) -> None:
     with pytest.raises(TypeError):
         cls()
 
 
-def test_bad_monitor():
-    with mss(display=os.getenv("DISPLAY")) as sct:
-        with pytest.raises(ScreenShotError):
-            sct.shot(mon=222)
+def test_bad_monitor() -> None:
+    with mss.mss(display=os.getenv("DISPLAY")) as sct, pytest.raises(ScreenShotError):
+        sct.shot(mon=222)
 
 
-def test_repr(pixel_ratio):
+def test_repr(pixel_ratio: int) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     expected_box = {
         "top": 0,
@@ -60,21 +69,21 @@ def test_repr(pixel_ratio):
         "width": 10 * pixel_ratio,
         "height": 10 * pixel_ratio,
     }
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss.mss(display=os.getenv("DISPLAY")) as sct:
         img = sct.grab(box)
     ref = ScreenShot(bytearray(b"42"), expected_box)
     assert repr(img) == repr(ref)
 
 
-def test_factory(monkeypatch):
+def test_factory(monkeypatch: pytest.MonkeyPatch) -> None:
     # Current system
-    with mss() as sct:
+    with mss.mss() as sct:
         assert isinstance(sct, MSSBase)
 
     # Unknown
     monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
     with pytest.raises(ScreenShotError) as exc:
-        mss()
+        mss.mss()
     monkeypatch.undo()
 
     error = exc.value.args[0]
@@ -83,10 +92,10 @@ def test_factory(monkeypatch):
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @pytest.mark.parametrize("with_cursor", [False, True])
-def test_entry_point(with_cursor: bool, capsys):
+def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
     def main(*args: str, ret: int = 0) -> None:
         if with_cursor:
-            args = args + ("--with-cursor",)
+            args = (*args, "--with-cursor")
         assert entry_point(*args) == ret
 
     # No arguments
@@ -105,8 +114,8 @@ def test_entry_point(with_cursor: bool, capsys):
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
-    for opt in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
-        main(*opt)
+    for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
+        main(*opts)
         captured = capsys.readouterr()
         assert not captured.out
         assert os.path.isfile("monitor-1.png")
@@ -116,7 +125,7 @@ def test_entry_point(with_cursor: bool, capsys):
     for opt in ("-o", "--out"):
         main(opt, fmt)
         captured = capsys.readouterr()
-        with mss(display=os.getenv("DISPLAY")) as sct:
+        with mss.mss(display=os.getenv("DISPLAY")) as sct:
             for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
                 filename = fmt.format(mon=mon, **monitor)
                 assert line.endswith(filename)
@@ -126,7 +135,7 @@ def test_entry_point(with_cursor: bool, capsys):
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):
         main("-m 1", opt, fmt)
-        filename = fmt.format(mon=1, date=datetime.now())
+        filename = fmt.format(mon=1, date=datetime.now(tz=UTC))
         captured = capsys.readouterr()
         assert captured.out.endswith(filename + "\n")
         assert os.path.isfile(filename)
@@ -151,10 +160,10 @@ def test_entry_point(with_cursor: bool, capsys):
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @patch("mss.base.MSSBase.monitors", new=[])
 @pytest.mark.parametrize("quiet", [False, True])
-def test_entry_point_error(quiet: bool, capsys):
+def test_entry_point_error(quiet: bool, capsys: pytest.CaptureFixture) -> None:
     def main(*args: str) -> int:
         if quiet:
-            args = args + ("--quiet",)
+            args = (*args, "--quiet")
         return entry_point(*args)
 
     if quiet:
@@ -167,7 +176,7 @@ def test_entry_point_error(quiet: bool, capsys):
             main()
 
 
-def test_entry_point_with_no_argument(capsys):
+def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     # Make sure to fail if arguments are not handled
     with patch("mss.factory.mss", new=Mock(side_effect=RuntimeError("Boom!"))):
         with patch.object(sys, "argv", ["mss", "--help"]):
@@ -180,7 +189,7 @@ def test_entry_point_with_no_argument(capsys):
     assert "usage: mss" in captured.out
 
 
-def test_grab_with_tuple(pixel_ratio: int):
+def test_grab_with_tuple(pixel_ratio: int) -> None:
     left = 100
     top = 100
     right = 500
@@ -188,7 +197,7 @@ def test_grab_with_tuple(pixel_ratio: int):
     width = right - left  # 400px width
     height = lower - top  # 400px height
 
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss.mss(display=os.getenv("DISPLAY")) as sct:
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
@@ -202,8 +211,8 @@ def test_grab_with_tuple(pixel_ratio: int):
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(pixel_ratio: int):
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_grab_with_tuple_percents(pixel_ratio: int) -> None:
+    with mss.mss(display=os.getenv("DISPLAY")) as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
         top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
@@ -225,22 +234,21 @@ def test_grab_with_tuple_percents(pixel_ratio: int):
         assert im.rgb == im2.rgb
 
 
-def test_thread_safety():
+def test_thread_safety() -> None:
     """Regression test for issue #169."""
     import threading
     import time
 
-    def record(check):
+    def record(check: dict) -> None:
         """Record for one second."""
-
         start_time = time.time()
         while time.time() - start_time < 1:
-            with mss() as sct:
+            with mss.mss() as sct:
                 sct.grab(sct.monitors[1])
 
         check[threading.current_thread()] = True
 
-    checkpoint = {}
+    checkpoint: dict = {}
     t1 = threading.Thread(target=record, args=(checkpoint,))
     t2 = threading.Thread(target=record, args=(checkpoint,))
 

@@ -1,19 +1,17 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 
 import itertools
 import os
 
 import pytest
-
 from mss import mss
 from mss.base import ScreenShot
 from mss.exception import ScreenShotError
 
 
-def test_grab_monitor():
+def test_grab_monitor() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         for mon in sct.monitors:
             image = sct.grab(mon)
@@ -22,7 +20,7 @@ def test_grab_monitor():
             assert isinstance(image.rgb, bytes)
 
 
-def test_grab_part_of_screen(pixel_ratio):
+def test_grab_part_of_screen(pixel_ratio: int) -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         for width, height in itertools.product(range(1, 42), range(1, 42)):
             monitor = {"top": 160, "left": 160, "width": width, "height": height}
@@ -34,7 +32,7 @@ def test_grab_part_of_screen(pixel_ratio):
             assert image.height == height * pixel_ratio
 
 
-def test_get_pixel(raw: bytes):
+def test_get_pixel(raw: bytes) -> None:
     image = ScreenShot.from_size(bytearray(raw), 1024, 768)
     assert image.width == 1024
     assert image.height == 768

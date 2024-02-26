@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import platform
 import tarfile
@@ -8,7 +7,6 @@ from subprocess import STDOUT, check_call, check_output
 from zipfile import ZipFile
 
 import pytest
-
 from mss import __version__
 
 if platform.system().lower() != "linux":
@@ -22,13 +20,13 @@ WHEEL = "python -m build --wheel".split()
 CHECK = "twine check --strict".split()
 
 
-def test_sdist():
+def test_sdist() -> None:
     output = check_output(SDIST, stderr=STDOUT, text=True)
     file = f"mss-{__version__}.tar.gz"
     assert f"Successfully built {file}" in output
     assert "warning" not in output.lower()
 
-    check_call(CHECK + [f"dist/{file}"])
+    check_call([*CHECK, f"dist/{file}"])
 
     with tarfile.open(f"dist/{file}", mode="r:gz") as fh:
         files = sorted(fh.getnames())
@@ -95,13 +93,13 @@ def test_sdist():
     ]
 
 
-def test_wheel():
+def test_wheel() -> None:
     output = check_output(WHEEL, stderr=STDOUT, text=True)
     file = f"mss-{__version__}-py3-none-any.whl"
     assert f"Successfully built {file}" in output
     assert "warning" not in output.lower()
 
-    check_call(CHECK + [f"dist/{file}"])
+    check_call([*CHECK, f"dist/{file}"])
 
     with ZipFile(f"dist/{file}") as fh:
         files = sorted(fh.namelist())

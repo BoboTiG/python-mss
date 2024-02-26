@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 2018-03-19.
 
@@ -25,32 +24,41 @@ Windows
   access_rgb      574     712   +24.04
   output          139     188   +35.25
 """
+from __future__ import annotations
+
 from time import time
+from typing import TYPE_CHECKING
 
 import mss
 import mss.tools
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
-def grab(sct):
+    from mss.base import MSSBase
+    from mss.screenshot import ScreenShot
+
+
+def grab(sct: MSSBase) -> ScreenShot:
     monitor = {"top": 144, "left": 80, "width": 1397, "height": 782}
     return sct.grab(monitor)
 
 
-def access_rgb(sct):
+def access_rgb(sct: MSSBase) -> bytes:
     im = grab(sct)
     return im.rgb
 
 
-def output(sct, filename=None):
+def output(sct: MSSBase, filename: str | None = None) -> None:
     rgb = access_rgb(sct)
     mss.tools.to_png(rgb, (1397, 782), output=filename)
 
 
-def save(sct):
+def save(sct: MSSBase) -> None:
     output(sct, filename="screenshot.png")
 
 
-def benchmark(func):
+def benchmark(func: Callable) -> None:
     count = 0
     start = time()
 

@@ -1,13 +1,11 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import hashlib
 import os.path
 import zlib
 
 import pytest
-
 from mss import mss
 from mss.tools import to_png
 
@@ -16,13 +14,12 @@ HEIGHT = 10
 MD5SUM = "055e615b74167c9bdfea16a00539450c"
 
 
-def test_bad_compression_level():
-    with mss(compression_level=42, display=os.getenv("DISPLAY")) as sct:
-        with pytest.raises(zlib.error):
-            sct.shot()
+def test_bad_compression_level() -> None:
+    with mss(compression_level=42, display=os.getenv("DISPLAY")) as sct, pytest.raises(zlib.error):
+        sct.shot()
 
 
-def test_compression_level():
+def test_compression_level() -> None:
     data = b"rgb" * WIDTH * HEIGHT
     output = f"{WIDTH}x{HEIGHT}.png"
 
@@ -34,7 +31,7 @@ def test_compression_level():
 
 
 @pytest.mark.parametrize(
-    "level, checksum",
+    ("level", "checksum"),
     [
         (0, "f37123dbc08ed7406d933af11c42563e"),
         (1, "7d5dcf2a2224445daf19d6d91cf31cb5"),
@@ -48,14 +45,15 @@ def test_compression_level():
         (9, "4d88d3f5923b6ef05b62031992294839"),
     ],
 )
-def test_compression_levels(level, checksum):
+def test_compression_levels(level: int, checksum: str) -> None:
     data = b"rgb" * WIDTH * HEIGHT
     raw = to_png(data, (WIDTH, HEIGHT), level=level)
+    assert isinstance(raw, bytes)
     md5 = hashlib.md5(raw).hexdigest()
     assert md5 == checksum
 
 
-def test_output_file():
+def test_output_file() -> None:
     data = b"rgb" * WIDTH * HEIGHT
     output = f"{WIDTH}x{HEIGHT}.png"
     to_png(data, (WIDTH, HEIGHT), output=output)
@@ -65,7 +63,8 @@ def test_output_file():
         assert hashlib.md5(png.read()).hexdigest() == MD5SUM
 
 
-def test_output_raw_bytes():
+def test_output_raw_bytes() -> None:
     data = b"rgb" * WIDTH * HEIGHT
     raw = to_png(data, (WIDTH, HEIGHT))
+    assert isinstance(raw, bytes)
     assert hashlib.md5(raw).hexdigest() == MD5SUM

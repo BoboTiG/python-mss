@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 Simple naive benchmark to compare with:
     https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/
@@ -8,9 +7,8 @@ Simple naive benchmark to compare with:
 import time
 
 import cv2
-import numpy
-
 import mss
+import numpy as np
 
 
 def screen_record() -> int:
@@ -27,7 +25,7 @@ def screen_record() -> int:
     last_time = time.time()
 
     while time.time() - last_time < 1:
-        img = numpy.asarray(ImageGrab.grab(bbox=mon))
+        img = np.asarray(ImageGrab.grab(bbox=mon))
         fps += 1
 
         cv2.imshow(title, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -48,7 +46,7 @@ def screen_record_efficient() -> int:
     last_time = time.time()
 
     while time.time() - last_time < 1:
-        img = numpy.asarray(sct.grab(mon))
+        img = np.asarray(sct.grab(mon))
         fps += 1
 
         cv2.imshow(title, img)

@@ -79,11 +79,9 @@ test = [
   "sphinx",
 ]
 dev = [
-  "black",
   "build",
-  "flake8-pyproject",
   "mypy",
-  "pylint",
+  "ruff",
   "twine",
   "wheel",
 ]
@@ -108,26 +106,6 @@ packages = [
   "src/mss",
 ]
 
-[tool.black]
-target-version = ["py38"]
-line-length = 120
-safe = true
-
-[tool.flake8]
-max-line-length = 120
-ignore = [
-  "E203",  # Whitespace before ':', but it's not PEP 8 compliant
-  "W503",  # Line break before binary operator, but it's not PEP 8 compliant
-]
-
-[tool.isort]
-py_version = 38
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-
 [tool.mypy]
 # Ensure we know what we do
 warn_redundant_casts = true
@@ -149,14 +127,6 @@ disallow_untyped_calls = true
 
 strict_equality = true
 
-[tool.pylint."MESSAGES CONTROL"]
-disable = "locally-disabled,too-few-public-methods,too-many-instance-attributes,duplicate-code"
-
-[tool.pylint.REPORTS]
-max-line-length = 120
-output-format = "colorized"
-reports = "no"
-
 [tool.pytest.ini_options]
 pythonpath = "src"
 addopts = """
@@ -167,3 +137,43 @@ addopts = """
   --cov=src/mss
   --cov-report=term-missing
 """
+
+[tool.ruff]
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    "venv",
+]
+line-length = 120
+indent-width = 4
+target-version = "py38"
+
+[tool.ruff.lint]
+extend-select = ["ALL"]
+ignore = [
+    "ANN101",
+    "ANN401",
+    "C90",
+    "COM812",
+    "D",  # TODO
+    "ERA",
+    "FBT",
+    "INP001",
+    "ISC001",
+    "PTH",
+    "PL",
+    "S",
+    "SIM117",  # TODO: remove wen dropping Python 3.8 support
+    "SLF",
+    "T201",
+    "UP006",  # TODO: remove wen dropping Python 3.8 support
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

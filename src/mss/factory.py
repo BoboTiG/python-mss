@@ -1,12 +1,11 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import platform
 from typing import Any
 
-from .base import MSSBase
-from .exception import ScreenShotError
+from mss.base import MSSBase
+from mss.exception import ScreenShotError
 
 
 def mss(**kwargs: Any) -> MSSBase:
@@ -19,23 +18,23 @@ def mss(**kwargs: Any) -> MSSBase:
     It then proxies its arguments to the class for
     instantiation.
     """
-    # pylint: disable=import-outside-toplevel
 
     os_ = platform.system().lower()
 
     if os_ == "darwin":
-        from . import darwin
+        from mss import darwin
 
         return darwin.MSS(**kwargs)
 
     if os_ == "linux":
-        from . import linux
+        from mss import linux
 
         return linux.MSS(**kwargs)
 
     if os_ == "windows":
-        from . import windows
+        from mss import windows
 
         return windows.MSS(**kwargs)
 
-    raise ScreenShotError(f"System {os_!r} not (yet?) implemented.")
+    msg = f"System {os_!r} not (yet?) implemented."
+    raise ScreenShotError(msg)
