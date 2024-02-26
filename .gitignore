@@ -1,11 +1,6 @@
-build/
-.cache/
+# Files
 .coverage
-dist/
 *.doctree
-docs_out/
-*.egg-info/
-.idea/
 .DS_Store
 *.orig
 *.jpg
@@ -13,9 +8,18 @@ docs_out/
 *.png.old
 *.pickle
 *.pyc
-.pytest_cache
-.vscode
+
+# Folders
+build/
+.cache/
+dist/
+docs_out/
+*.egg-info/
+.idea/
+.pytest_cache/
+.vscode/
 docs/output/
 .mypy_cache/
 __pycache__/
+ruff_cache/
 venv/
