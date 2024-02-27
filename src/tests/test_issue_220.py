@@ -1,16 +1,14 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
-import pytest
-
 import mss
+import pytest
 
 tkinter = pytest.importorskip("tkinter")
 
 
-@pytest.fixture
-def root() -> tkinter.Tk:
+@pytest.fixture()
+def root() -> tkinter.Tk:  # type: ignore[name-defined]
     try:
         master = tkinter.Tk()
     except RuntimeError:
@@ -22,13 +20,13 @@ def root() -> tkinter.Tk:
         master.destroy()
 
 
-def take_screenshot():
+def take_screenshot() -> None:
     region = {"top": 370, "left": 1090, "width": 80, "height": 390}
     with mss.mss() as sct:
         sct.grab(region)
 
 
-def create_top_level_win(master: tkinter.Tk):
+def create_top_level_win(master: tkinter.Tk) -> None:  # type: ignore[name-defined]
     top_level_win = tkinter.Toplevel(master)
 
     take_screenshot_btn = tkinter.Button(top_level_win, text="Take screenshot", command=take_screenshot)
@@ -43,7 +41,7 @@ def create_top_level_win(master: tkinter.Tk):
     master.update()
 
 
-def test_regression(root: tkinter.Tk, capsys):
+def test_regression(root: tkinter.Tk, capsys: pytest.CaptureFixture) -> None:  # type: ignore[name-defined]
     btn = tkinter.Button(root, text="Open TopLevel", command=lambda: create_top_level_win(root))
     btn.pack()
 

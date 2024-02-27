@@ -1,7 +1,8 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
+from __future__ import annotations
+
 import ctypes
 import sys
 from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
@@ -22,12 +23,14 @@ from ctypes.wintypes import (
     WORD,
 )
 from threading import local
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
-from .base import MSSBase
-from .exception import ScreenShotError
-from .models import CFunctions, Monitor
-from .screenshot import ScreenShot
+from mss.base import MSSBase
+from mss.exception import ScreenShotError
+
+if TYPE_CHECKING:
+    from mss.models import CFunctions, Monitor
+    from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
 
@@ -40,7 +43,7 @@ SRCCOPY = 0x00CC0020
 class BITMAPINFOHEADER(Structure):
     """Information about the dimensions and color format of a DIB."""
 
-    _fields_ = [
+    _fields_ = (
         ("biSize", DWORD),
         ("biWidth", LONG),
         ("biHeight", LONG),
@@ -52,15 +55,13 @@ class BITMAPINFOHEADER(Structure):
         ("biYPelsPerMeter", LONG),
         ("biClrUsed", DWORD),
         ("biClrImportant", DWORD),
-    ]
+    )
 
 
 class BITMAPINFO(Structure):
-    """
-    Structure that defines the dimensions and color information for a DIB.
-    """
+    """Structure that defines the dimensions and color information for a DIB."""
 
-    _fields_ = [("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3)]
+    _fields_ = (("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3))
 
 
 MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
@@ -68,13 +69,11 @@ MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
 
 # C functions that will be initialised later.
 #
-# This is a dict:
-#    cfunction: (attr, argtypes, restype)
-#
 # Available attr: gdi32, user32.
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
+    # cfunction: (attr, argtypes, restype)
     "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
     "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
@@ -97,7 +96,6 @@ class MSS(MSSBase):
 
     def __init__(self, /, **kwargs: Any) -> None:
         """Windows initialisations."""
-
         super().__init__(**kwargs)
 
         self.user32 = ctypes.WinDLL("user32")
@@ -137,7 +135,6 @@ class MSS(MSSBase):
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
-
         cfactory = self._cfactory
         attrs = {
             "gdi32": self.gdi32,
@@ -148,8 +145,7 @@ class MSS(MSSBase):
 
     def _set_dpi_awareness(self) -> None:
         """Set DPI awareness to capture full screen on Hi-DPI monitors."""
-
-        version = sys.getwindowsversion()[:2]  # pylint: disable=no-member
+        version = sys.getwindowsversion()[:2]
         if version >= (6, 3):
             # Windows 8.1+
             # Here 2 = PROCESS_PER_MONITOR_DPI_AWARE, which means:
@@ -163,7 +159,6 @@ class MSS(MSSBase):
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
-
         int_ = int
         user32 = self.user32
         get_system_metrics = user32.GetSystemMetrics
@@ -175,16 +170,14 @@ class MSS(MSSBase):
                 "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
                 "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
                 "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
-            }
+            },
         )
 
         # Each monitor
-        def _callback(monitor: int, data: HDC, rect: LPRECT, dc_: LPARAM) -> int:
-            """
-            Callback for monitorenumproc() function, it will return
+        def _callback(_monitor: int, _data: HDC, rect: LPRECT, _dc: LPARAM) -> int:
+            """Callback for monitorenumproc() function, it will return
             a RECT with appropriate values.
             """
-            # pylint: disable=unused-argument
 
             rct = rect.contents
             self._monitors.append(
@@ -193,7 +186,7 @@ class MSS(MSSBase):
                     "top": int_(rct.top),
                     "width": int_(rct.right) - int_(rct.left),
                     "height": int_(rct.bottom) - int_(rct.top),
-                }
+                },
             )
             return 1
 
@@ -201,8 +194,7 @@ class MSS(MSSBase):
         user32.EnumDisplayMonitors(0, 0, callback, 0)
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
-        """
-        Retrieve all pixels from a monitor. Pixels have to be RGB.
+        """Retrieve all pixels from a monitor. Pixels have to be RGB.
 
         In the code, there are a few interesting things:
 
@@ -231,7 +223,6 @@ class MSS(MSSBase):
         retrieved by gdi32.GetDIBits() as a sequence of RGB values.
         Thanks to http://stackoverflow.com/a/3688682
         """
-
         srcdc, memdc = self._handles.srcdc, self._handles.memdc
         gdi = self.gdi32
         width, height = monitor["width"], monitor["height"]
@@ -249,10 +240,11 @@ class MSS(MSSBase):
         gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
         bits = gdi.GetDIBits(memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS)
         if bits != height:
-            raise ScreenShotError("gdi32.GetDIBits() failed.")
+            msg = "gdi32.GetDIBits() failed."
+            raise ScreenShotError(msg)
 
         return self.cls_image(bytearray(self._handles.data), monitor)
 
-    def _cursor_impl(self) -> Optional[ScreenShot]:
+    def _cursor_impl(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""
         return None

@@ -1,7 +1,8 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
+from __future__ import annotations
+
 import os
 from contextlib import suppress
 from ctypes import (
@@ -26,12 +27,14 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from threading import current_thread, local
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
-from .base import MSSBase, lock
-from .exception import ScreenShotError
-from .models import CFunctions, Monitor
-from .screenshot import ScreenShot
+from mss.base import MSSBase, lock
+from mss.exception import ScreenShotError
+
+if TYPE_CHECKING:
+    from mss.models import CFunctions, Monitor
+    from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
 
@@ -41,20 +44,18 @@ ZPIXMAP = 2
 
 
 class Display(Structure):
-    """
-    Structure that serves as the connection to the X server
+    """Structure that serves as the connection to the X server
     and that contains all the information about that X server.
-    https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#L831
+    https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#L831.
     """
 
 
 class XErrorEvent(Structure):
-    """
-    XErrorEvent to debug eventual errors.
-    https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html
+    """XErrorEvent to debug eventual errors.
+    https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("type", c_int),
         ("display", POINTER(Display)),  # Display the event was read from
         ("serial", c_ulong),  # serial number of failed request
@@ -62,17 +63,16 @@ class XErrorEvent(Structure):
         ("request_code", c_ubyte),  # major op-code of failed request
         ("minor_code", c_ubyte),  # minor op-code of failed request
         ("resourceid", c_void_p),  # resource ID
-    ]
+    )
 
 
 class XFixesCursorImage(Structure):
-    """
-    Cursor structure.
+    """Cursor structure.
     /usr/include/X11/extensions/Xfixes.h
-    https://github.com/freedesktop/xorg-libXfixes/blob/libXfixes-6.0.0/include/X11/extensions/Xfixes.h#L96
+    https://github.com/freedesktop/xorg-libXfixes/blob/libXfixes-6.0.0/include/X11/extensions/Xfixes.h#L96.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("x", c_short),
         ("y", c_short),
         ("width", c_ushort),
@@ -83,16 +83,15 @@ class XFixesCursorImage(Structure):
         ("pixels", POINTER(c_ulong)),
         ("atom", c_ulong),
         ("name", c_char_p),
-    ]
+    )
 
 
 class XImage(Structure):
-    """
-    Description of an image as it exists in the client's memory.
-    https://tronche.com/gui/x/xlib/graphics/images.html
+    """Description of an image as it exists in the client's memory.
+    https://tronche.com/gui/x/xlib/graphics/images.html.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("width", c_int),  # size of image
         ("height", c_int),  # size of image
         ("xoffset", c_int),  # number of pixels offset in X direction
@@ -108,16 +107,15 @@ class XImage(Structure):
         ("red_mask", c_ulong),  # bits in z arrangment
         ("green_mask", c_ulong),  # bits in z arrangment
         ("blue_mask", c_ulong),  # bits in z arrangment
-    ]
+    )
 
 
 class XRRCrtcInfo(Structure):
-    """
-    Structure that contains CRTC information.
-    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L360
+    """Structure that contains CRTC information.
+    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L360.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("timestamp", c_ulong),
         ("x", c_int),
         ("y", c_int),
@@ -130,21 +128,20 @@ class XRRCrtcInfo(Structure):
         ("rotations", c_ushort),
         ("npossible", c_int),
         ("possible", POINTER(c_long)),
-    ]
+    )
 
 
 class XRRModeInfo(Structure):
-    """https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L248"""
+    """https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L248."""
 
 
 class XRRScreenResources(Structure):
-    """
-    Structure that contains arrays of XIDs that point to the
+    """Structure that contains arrays of XIDs that point to the
     available outputs and associated CRTCs.
-    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L265
+    https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L265.
     """
 
-    _fields_ = [
+    _fields_ = (
         ("timestamp", c_ulong),
         ("configTimestamp", c_ulong),
         ("ncrtc", c_int),
@@ -153,13 +150,13 @@ class XRRScreenResources(Structure):
         ("outputs", POINTER(c_long)),
         ("nmode", c_int),
         ("modes", POINTER(XRRModeInfo)),
-    ]
+    )
 
 
 class XWindowAttributes(Structure):
     """Attributes for the specified window."""
 
-    _fields_ = [
+    _fields_ = (
         ("x", c_int32),  # location of window
         ("y", c_int32),  # location of window
         ("width", c_int32),  # width of window
@@ -183,7 +180,7 @@ class XWindowAttributes(Structure):
         ("do_not_propagate_mask", c_ulong),  # set of events that should not propagate
         ("override_redirect", c_int32),  # boolean value for override-redirect
         ("screen", c_ulong),  # back pointer to correct screen
-    ]
+    )
 
 
 _ERROR = {}
@@ -195,7 +192,6 @@ _XRANDR = find_library("Xrandr")
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent))
 def _error_handler(display: Display, event: XErrorEvent) -> int:
     """Specifies the program's supplied error handler."""
-
     # Get the specific error message
     xlib = cdll.LoadLibrary(_X11)  # type: ignore[arg-type]
     get_error = xlib.XGetErrorText
@@ -220,25 +216,23 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
 
 def _validate(retval: int, func: Any, args: Tuple[Any, Any], /) -> Tuple[Any, Any]:
     """Validate the returned value of a C function call."""
-
     thread = current_thread()
     if retval != 0 and thread not in _ERROR:
         return args
 
     details = _ERROR.pop(thread, {})
-    raise ScreenShotError(f"{func.__name__}() failed", details=details)
+    msg = f"{func.__name__}() failed"
+    raise ScreenShotError(msg, details=details)
 
 
 # C functions that will be initialised later.
 # See https://tronche.com/gui/x/xlib/function-index.html for details.
 #
-# This is a dict:
-#    cfunction: (attr, argtypes, restype)
-#
 # Available attr: xfixes, xlib, xrandr.
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
+    # cfunction: (attr, argtypes, restype)
     "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
@@ -261,8 +255,7 @@ CFUNCTIONS: CFunctions = {
 
 
 class MSS(MSSBase):
-    """
-    Multiple ScreenShots implementation for GNU/Linux.
+    """Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.
     """
 
@@ -270,7 +263,6 @@ class MSS(MSSBase):
 
     def __init__(self, /, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""
-
         super().__init__(**kwargs)
 
         # Available thread-specific variables
@@ -285,20 +277,24 @@ class MSS(MSSBase):
             try:
                 display = os.environ["DISPLAY"].encode("utf-8")
             except KeyError:
-                raise ScreenShotError("$DISPLAY not set.") from None
+                msg = "$DISPLAY not set."
+                raise ScreenShotError(msg) from None
 
         if not isinstance(display, bytes):
             display = display.encode("utf-8")
 
         if b":" not in display:
-            raise ScreenShotError(f"Bad display value: {display!r}.")
+            msg = f"Bad display value: {display!r}."
+            raise ScreenShotError(msg)
 
         if not _X11:
-            raise ScreenShotError("No X11 library found.")
+            msg = "No X11 library found."
+            raise ScreenShotError(msg)
         self.xlib = cdll.LoadLibrary(_X11)
 
         if not _XRANDR:
-            raise ScreenShotError("No Xrandr extension found.")
+            msg = "No Xrandr extension found."
+            raise ScreenShotError(msg)
         self.xrandr = cdll.LoadLibrary(_XRANDR)
 
         if self.with_cursor:
@@ -314,10 +310,12 @@ class MSS(MSSBase):
 
         self._handles.display = self.xlib.XOpenDisplay(display)
         if not self._handles.display:
-            raise ScreenShotError(f"Unable to open display: {display!r}.")
+            msg = f"Unable to open display: {display!r}."
+            raise ScreenShotError(msg)
 
         if not self._is_extension_enabled("RANDR"):
-            raise ScreenShotError("Xrandr not enabled.")
+            msg = "Xrandr not enabled."
+            raise ScreenShotError(msg)
 
         self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
@@ -367,7 +365,6 @@ class MSS(MSSBase):
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
-
         cfactory = self._cfactory
         attrs = {
             "xfixes": getattr(self, "xfixes", None),
@@ -381,7 +378,6 @@ class MSS(MSSBase):
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
-
         display = self._handles.display
         int_ = int
         xrandr = self.xrandr
@@ -390,7 +386,7 @@ class MSS(MSSBase):
         gwa = XWindowAttributes()
         self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
         self._monitors.append(
-            {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)}
+            {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
         )
 
         # Each monitor
@@ -416,14 +412,13 @@ class MSS(MSSBase):
                     "top": int_(crtc.y),
                     "width": int_(crtc.width),
                     "height": int_(crtc.height),
-                }
+                },
             )
             xrandr.XRRFreeCrtcInfo(crtc)
         xrandr.XRRFreeScreenResources(mon)
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
-
         ximage = self.xlib.XGetImage(
             self._handles.display,
             self._handles.drawable,
@@ -438,7 +433,8 @@ class MSS(MSSBase):
         try:
             bits_per_pixel = ximage.contents.bits_per_pixel
             if bits_per_pixel != 32:
-                raise ScreenShotError(f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}.")
+                msg = f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}."
+                raise ScreenShotError(msg)
 
             raw_data = cast(
                 ximage.contents.data,
@@ -453,11 +449,11 @@ class MSS(MSSBase):
 
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGB."""
-
         # Read data of cursor/mouse-pointer
         ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
         if not (ximage and ximage.contents):
-            raise ScreenShotError("Cannot read XFixesGetCursorImage()")
+            msg = "Cannot read XFixesGetCursorImage()"
+            raise ScreenShotError(msg)
 
         cursor_img: XFixesCursorImage = ximage.contents
         region = {

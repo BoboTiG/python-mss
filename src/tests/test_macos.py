@@ -1,60 +1,60 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import ctypes.util
 import platform
 
-import pytest
-
 import mss
+import pytest
 from mss.exception import ScreenShotError
 
 if platform.system().lower() != "darwin":
     pytestmark = pytest.mark.skip
 
+import mss.darwin
 
-def test_repr():
-    from mss.darwin import CGPoint, CGRect, CGSize
 
+def test_repr() -> None:
     # CGPoint
-    point = CGPoint(2.0, 1.0)
-    ref = CGPoint()
-    ref.x = 2.0
-    ref.y = 1.0
-    assert repr(point) == repr(ref)
+    point = mss.darwin.CGPoint(2.0, 1.0)
+    ref1 = mss.darwin.CGPoint()
+    ref1.x = 2.0
+    ref1.y = 1.0
+    assert repr(point) == repr(ref1)
 
     # CGSize
-    size = CGSize(2.0, 1.0)
-    ref = CGSize()
-    ref.width = 2.0
-    ref.height = 1.0
-    assert repr(size) == repr(ref)
+    size = mss.darwin.CGSize(2.0, 1.0)
+    ref2 = mss.darwin.CGSize()
+    ref2.width = 2.0
+    ref2.height = 1.0
+    assert repr(size) == repr(ref2)
 
     # CGRect
-    rect = CGRect(point, size)
-    ref = CGRect()
-    ref.origin.x = 2.0
-    ref.origin.y = 1.0
-    ref.size.width = 2.0
-    ref.size.height = 1.0
-    assert repr(rect) == repr(ref)
+    rect = mss.darwin.CGRect(point, size)
+    ref3 = mss.darwin.CGRect()
+    ref3.origin.x = 2.0
+    ref3.origin.y = 1.0
+    ref3.size.width = 2.0
+    ref3.size.height = 1.0
+    assert repr(rect) == repr(ref3)
 
 
-def test_implementation(monkeypatch):
+def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
     # No `CoreGraphics` library
     version = float(".".join(platform.mac_ver()[0].split(".")[:2]))
 
     if version < 10.16:
-        monkeypatch.setattr(ctypes.util, "find_library", lambda x: None)
+        monkeypatch.setattr(ctypes.util, "find_library", lambda _: None)
         with pytest.raises(ScreenShotError):
             mss.mss()
         monkeypatch.undo()
 
     with mss.mss() as sct:
+        assert isinstance(sct, mss.darwin.MSS)  # For Mypy
+
         # Test monitor's rotation
         original = sct.monitors[1]
-        monkeypatch.setattr(sct.core, "CGDisplayRotation", lambda x: -90.0)
+        monkeypatch.setattr(sct.core, "CGDisplayRotation", lambda _: -90.0)
         sct._monitors = []
         modified = sct.monitors[1]
         assert original["width"] == modified["height"]
@@ -62,6 +62,6 @@ def test_implementation(monkeypatch):
         monkeypatch.undo()
 
         # Test bad data retrieval
-        monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *args: None)
+        monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *_: None)
         with pytest.raises(ScreenShotError):
             sct.grab(sct.monitors[1])

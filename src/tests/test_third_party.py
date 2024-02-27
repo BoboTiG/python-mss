@@ -1,20 +1,18 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import itertools
 import os
 import os.path
 
 import pytest
-
 from mss import mss
 
 try:
-    import numpy
+    import numpy as np
 except (ImportError, RuntimeError):
     # RuntimeError on Python 3.9 (macOS): Polyfit sanity test emitted a warning, ...
-    numpy = None
+    np = None
 
 try:
     from PIL import Image
@@ -22,16 +20,16 @@ except ImportError:
     Image = None
 
 
-@pytest.mark.skipif(numpy is None, reason="Numpy module not available.")
-def test_numpy(pixel_ratio):
+@pytest.mark.skipif(np is None, reason="Numpy module not available.")
+def test_numpy(pixel_ratio: int) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss(display=os.getenv("DISPLAY")) as sct:
-        img = numpy.array(sct.grab(box))
+        img = np.array(sct.grab(box))
     assert len(img) == 10 * pixel_ratio
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil():
+def test_pil() -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss(display=os.getenv("DISPLAY")) as sct:
@@ -49,7 +47,7 @@ def test_pil():
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil_bgra():
+def test_pil_bgra() -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss(display=os.getenv("DISPLAY")) as sct:
@@ -67,7 +65,7 @@ def test_pil_bgra():
 
 
 @pytest.mark.skipif(Image is None, reason="PIL module not available.")
-def test_pil_not_16_rounded():
+def test_pil_not_16_rounded() -> None:
     width, height = 10, 10
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss(display=os.getenv("DISPLAY")) as sct:

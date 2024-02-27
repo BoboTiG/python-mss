@@ -1,6 +1,5 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 
 Screenshot of the monitor 1, with callback.
 """
@@ -11,10 +10,7 @@ import mss
 
 
 def on_exists(fname: str) -> None:
-    """
-    Callback example when we try to overwrite an existing screenshot.
-    """
-
+    """Callback example when we try to overwrite an existing screenshot."""
     if os.path.isfile(fname):
         newfile = f"{fname}.old"
         print(f"{fname} -> {newfile}")

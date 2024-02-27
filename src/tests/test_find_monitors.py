@@ -1,18 +1,17 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import os
 
 from mss import mss
 
 
-def test_get_monitors():
+def test_get_monitors() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         assert sct.monitors
 
 
-def test_keys_aio():
+def test_keys_aio() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         all_monitors = sct.monitors[0]
     assert "top" in all_monitors
@@ -21,7 +20,7 @@ def test_keys_aio():
     assert "width" in all_monitors
 
 
-def test_keys_monitor_1():
+def test_keys_monitor_1() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         mon1 = sct.monitors[1]
     assert "top" in mon1
@@ -30,7 +29,7 @@ def test_keys_monitor_1():
     assert "width" in mon1
 
 
-def test_dimensions():
+def test_dimensions() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         mon = sct.monitors[1]
     assert mon["width"] > 0

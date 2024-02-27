@@ -1,17 +1,15 @@
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
-"""
+from __future__ import annotations
 
 import os
 import struct
 import zlib
-from typing import Optional, Tuple
 
 
-def to_png(data: bytes, size: Tuple[int, int], /, *, level: int = 6, output: Optional[str] = None) -> Optional[bytes]:
-    """
-    Dump data to a PNG file.  If `output` is `None`, create no file but return
+def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: str | None = None) -> bytes | None:
+    """Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.
 
     :param bytes data: RGBRGB...RGB data.
@@ -19,7 +17,6 @@ def to_png(data: bytes, size: Tuple[int, int], /, *, level: int = 6, output: Opt
     :param int level: PNG compression level.
     :param str output: Output file name.
     """
-    # pylint: disable=too-many-locals
 
     pack = struct.pack
     crc32 = zlib.crc32

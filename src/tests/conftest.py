@@ -1,46 +1,43 @@
-"""
-This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss
+"""This is part of the MSS Python's module.
+Source: https://github.com/BoboTiG/python-mss.
 """
 import glob
 import os
 import platform
 from hashlib import md5
 from pathlib import Path
+from typing import Generator
 from zipfile import ZipFile
 
 import pytest
-
 from mss import mss
 
 
 @pytest.fixture(autouse=True)
-def no_warnings(recwarn):
+def _no_warnings(recwarn: pytest.WarningsRecorder) -> Generator:
     """Fail on warning."""
-
     yield
 
-    warnings = ["{w.filename}:{w.lineno} {w.message}".format(w=warning) for warning in recwarn]
+    warnings = [f"{warning.filename}:{warning.lineno} {warning.message}" for warning in recwarn]
     for warning in warnings:
         print(warning)
     assert not warnings
 
 
-def purge_files():
+def purge_files() -> None:
     """Remove all generated files from previous runs."""
-
     for fname in glob.glob("*.png"):
-        print("Deleting {!r} ...".format(fname))
+        print(f"Deleting {fname!r} ...")
         os.unlink(fname)
 
     for fname in glob.glob("*.png.old"):
-        print("Deleting {!r} ...".format(fname))
+        print(f"Deleting {fname!r} ...")
         os.unlink(fname)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def before_tests(request):
-    request.addfinalizer(purge_files)
+def _before_tests() -> None:
+    purge_files()
 
 
 @pytest.fixture(scope="session")
@@ -56,7 +53,6 @@ def raw() -> bytes:
 @pytest.fixture(scope="session")
 def pixel_ratio() -> int:
     """Get the pixel, used to adapt test checks."""
-
     if platform.system().lower() != "darwin":
         return 1
 
