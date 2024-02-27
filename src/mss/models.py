@@ -8,7 +8,7 @@ Monitor = Dict[str, int]
 Monitors = List[Monitor]
 
 Pixel = Tuple[int, int, int]
-Pixels = List[Pixel]
+Pixels = List[Tuple[Pixel, ...]]
 
 CFunctions = Dict[str, Tuple[str, List[Any], Any]]
 
