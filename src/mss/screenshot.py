@@ -118,7 +118,7 @@ class ScreenShot:
         :return tuple: The pixel value as (R, G, B).
         """
         try:
-            return self.pixels[coord_y][coord_x]  # type: ignore[return-value]
+            return self.pixels[coord_y][coord_x]
         except IndexError as exc:
             msg = f"Pixel location ({coord_x}, {coord_y}) is out of range."
             raise ScreenShotError(msg) from exc
