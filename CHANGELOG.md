@@ -3,8 +3,8 @@
 See Git checking messages for full history.
 
 ## 9.0.2 (2023/xx/xx)
-- level up the packaging using `hatchling`
-- use `ruff` to lint th code base (#275)
+- leveled up the packaging using `hatchling`
+- used `ruff` to lint the code base (#275)
 - MSS: minor optimization when using an output file format without date (#275)
 - MSS: fixed `Pixel` model type (#274)
 - CI: automated release publishing on tag creation
