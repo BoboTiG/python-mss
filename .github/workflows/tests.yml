@@ -64,7 +64,9 @@ jobs:
           - name: CPython 3.11
             runs-on: "3.11"
           - name: CPython 3.12
-            runs-on: "3.12-dev"
+            runs-on: "3.12"
+          - name: CPython 3.13
+            runs-on: "3.13-dev"
           - name: PyPy 3.9
             runs-on: "pypy-3.9"
     steps:

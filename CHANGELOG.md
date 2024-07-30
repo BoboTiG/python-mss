@@ -3,6 +3,7 @@
 See Git checking messages for full history.
 
 ## 9.0.2 (2023/xx/xx)
+- added support for Python 3.13
 - leveled up the packaging using `hatchling`
 - used `ruff` to lint the code base (#275)
 - MSS: minor optimization when using an output file format without date (#275)
