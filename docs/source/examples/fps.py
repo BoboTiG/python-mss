@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 Simple naive benchmark to compare with:
     https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/
 """
+
 import time
 
 import cv2

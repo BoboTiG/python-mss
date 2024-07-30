@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 PIL example using frombytes().
 """
+
 import mss
 from PIL import Image
 

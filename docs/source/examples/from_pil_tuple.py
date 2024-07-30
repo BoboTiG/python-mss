@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 Use PIL bbox style and percent values.
 """
+
 import mss
 import mss.tools
 

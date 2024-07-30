@@ -24,6 +24,7 @@ Windows
   access_rgb      574     712   +24.04
   output          139     188   +35.25
 """
+
 from __future__ import annotations
 
 from time import time

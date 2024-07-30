@@ -7,6 +7,7 @@ You can always get the latest version of this module at:
     https://github.com/BoboTiG/python-mss
 If that URL should fail, try contacting the author.
 """
+
 from mss.exception import ScreenShotError
 from mss.factory import mss
 

@@ -36,6 +36,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
   "Topic :: Software Development :: Libraries",
 ]
@@ -71,7 +72,7 @@ mss = "mss.__main__:main"
 [project.optional-dependencies]
 test = [
   "freezegun",
-  "numpy",
+  "numpy ; sys_platform == 'windows' and python_version >= '3.13'",
   "pillow",
   "pytest",
   "pytest-cov",
@@ -136,7 +137,7 @@ addopts = """
   -r fE
   -vvv
   --cov=src/mss
-  --cov-report=term-missing
+  --cov-report=term-missing:skip-covered
 """
 
 [tool.ruff]

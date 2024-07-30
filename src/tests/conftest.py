@@ -1,6 +1,7 @@
 """This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss.
 """
+
 import glob
 import os
 import platform

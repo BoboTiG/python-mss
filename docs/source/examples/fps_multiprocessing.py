@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 Example using the multiprocessing module to speed-up screen capture.
     https://github.com/pythonlessons/TensorFlow-object-detection-tutorial
 """
+
 from multiprocessing import Process, Queue
 
 import mss
