@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 OpenCV/Numpy example.
 """
+
 import time
 
 import cv2

@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 Screenshot of the monitor 1, with callback.
 """
+
 import os
 import os.path
 

@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 Screenshot of the monitor 1, using a custom class to handle the data.
 """
+
 from typing import Any
 
 import mss

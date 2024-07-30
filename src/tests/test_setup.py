@@ -1,6 +1,7 @@
 """This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss.
 """
+
 import platform
 import tarfile
 from subprocess import STDOUT, check_call, check_output

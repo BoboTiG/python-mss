@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 PIL examples to play with pixels.
 """
+
 import mss
 from PIL import Image
 

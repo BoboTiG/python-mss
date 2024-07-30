@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 Usage example with a specific display.
 """
+
 import mss
 
 with mss.mss(display=":0.0") as sct:

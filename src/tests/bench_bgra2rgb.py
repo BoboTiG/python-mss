@@ -27,6 +27,7 @@ Windows
   numpy_flip        25
   numpy_slice       22
 """
+
 import time
 
 import mss
