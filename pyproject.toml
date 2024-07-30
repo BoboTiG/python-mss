@@ -135,7 +135,7 @@ addopts = """
   -r fE
   -vvv
   --cov=src/mss
-  --cov-report=term-missing
+  --cov-report=term-missing:skip-covered
 """
 
 [tool.ruff]
