@@ -2,9 +2,10 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 import os.path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
+from freezegun import freeze_time
 from mss import mss
 
 try:
@@ -14,6 +15,9 @@ except ImportError:
     from datetime import timezone
 
     UTC = timezone.utc
+
+
+FROZEN_TIME = "2024-02-21 16:35:20"
 
 
 def test_at_least_2_monitors() -> None:
@@ -77,4 +81,28 @@ def test_output_format_date_custom() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         filename = sct.shot(mon=1, output=fmt)
     assert filename == fmt.format(date=datetime.now(tz=UTC))
+    assert os.path.isfile(filename)
+
+
+@freeze_time(FROZEN_TIME)
+def test_output_format_custom_date_function() -> None:
+    def custom_date() -> datetime:
+        return datetime.now(tz=UTC) + timedelta(days=6)
+
+    fmt = "{date}.png"
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        filename = sct.shot(mon=1, output=fmt, date_fn=custom_date)
+    assert filename == "2024-02-27 16:35:20+00:00.png"
+    assert os.path.isfile(filename)
+
+
+@freeze_time(FROZEN_TIME)
+def test_output_format_date_custom_and_custom_date_function() -> None:
+    def custom_date() -> datetime:
+        return datetime.now(tz=UTC) + timedelta(days=6)
+
+    fmt = "{date:%Y-%m-%d}.png"
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        filename = sct.shot(mon=1, output=fmt, date_fn=custom_date)
+    assert filename == "2024-02-27.png"
     assert os.path.isfile(filename)

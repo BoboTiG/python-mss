@@ -28,6 +28,10 @@ except ImportError:
 lock = Lock()
 
 
+def date_function() -> datetime:
+    return datetime.now(UTC)
+
+
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
@@ -130,6 +134,7 @@ class MSSBase(metaclass=ABCMeta):
         mon: int = 0,
         output: str = "monitor-{mon}.png",
         callback: Callable[[str], None] | None = None,
+        date_fn: Callable[[], datetime] = date_function,
     ) -> Iterator[str]:
         """Grab a screen shot and save it to a file.
 
@@ -153,6 +158,8 @@ class MSSBase(metaclass=ABCMeta):
 
         :param callable callback: Callback called before saving the
             screen shot to a file.  Take the `output` argument as parameter.
+        :param callable date_fn: Function returning a `datetime` object,
+            used to format the date in output file names.
 
         :return generator: Created file(s).
         """
@@ -164,7 +171,7 @@ class MSSBase(metaclass=ABCMeta):
         if mon == 0:
             # One screen shot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
-                fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+                fname = output.format(mon=idx, date=date_fn() if "{date" in output else None, **monitor)
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
@@ -180,7 +187,7 @@ class MSSBase(metaclass=ABCMeta):
                 msg = f"Monitor {mon!r} does not exist."
                 raise ScreenShotError(msg) from exc
 
-            output = output.format(mon=mon, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+            output = output.format(mon=mon, date=date_fn() if "{date" in output else None, **monitor)
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)
