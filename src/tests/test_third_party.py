@@ -10,13 +10,19 @@ import pytest
 from mss import mss
 
 try:
+    import numpy as np
+except (ImportError, RuntimeError):
+    # RuntimeError on Python 3.9 (macOS): Polyfit sanity test emitted a warning, ...
+    np = None
+
+try:
     from PIL import Image
 except ImportError:
     Image = None
 
 
+@pytest.mark.skipif(np is None, reason="Numpy module not available.")
 def test_numpy(pixel_ratio: int) -> None:
-    np = pytest.importorskip("numpy")
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss(display=os.getenv("DISPLAY")) as sct:
         img = np.array(sct.grab(box))
