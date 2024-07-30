@@ -71,7 +71,7 @@ mss = "mss.__main__:main"
 
 [project.optional-dependencies]
 test = [
-  "numpy",
+  "numpy ; sys_platform == 'windows' and python_version == '3.13'",
   "pillow",
   "pytest",
   "pytest-cov",
