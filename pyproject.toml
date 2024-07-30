@@ -71,6 +71,7 @@ mss = "mss.__main__:main"
 
 [project.optional-dependencies]
 test = [
+  "freezegun",
   "numpy ; sys_platform == 'windows' and python_version >= '3.13'",
   "pillow",
   "pytest",

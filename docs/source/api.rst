@@ -168,12 +168,16 @@ Methods
             *monitor* can be a ``tuple`` like ``PIL.Image.grab()`` accepts,
             it will be converted to the appropriate ``dict``.
 
-    .. method:: save([mon=1], [output='mon-{mon}.png'], [callback=None])
+    .. method:: save([mon=1], [output='mon-{mon}.png'], [callback=None], [date_fn=None])
 
         :param int mon: the monitor's number.
         :param str output: the output's file name.
         :type callback: callable or None
         :param callback: callback called before saving the screen shot to a file. Takes the *output* argument as parameter.
+        :type callback: callable or None
+        :param callback: callback called before saving the screen shot to a file. Takes the *output* argument as parameter.
+        Function returning a `datetime` object,
+            used to format the date in output file names.
         :rtype: iterable
         :return: Created file(s).
 
