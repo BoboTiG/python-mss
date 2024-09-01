@@ -17,7 +17,7 @@ class SimpleScreenShot:
 
 def test_custom_cls_image() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
-        sct.cls_image = SimpleScreenShot
+        sct.cls_image = SimpleScreenShot  # type: ignore[assignment]
         mon1 = sct.monitors[1]
         image = sct.grab(mon1)
     assert isinstance(image, SimpleScreenShot)

@@ -40,7 +40,7 @@ class MSS0(MSSBase):
 class MSS1(MSSBase):
     """Only `grab()` implemented."""
 
-    def grab(self, monitor: Monitor) -> None:
+    def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
         pass
 
 
