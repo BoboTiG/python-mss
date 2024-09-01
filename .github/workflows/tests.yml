@@ -55,8 +55,6 @@ jobs:
           - emoji: 🪟
             runs-on: [windows-latest]
         python:
-          - name: CPython 3.8
-            runs-on: "3.8"
           - name: CPython 3.9
             runs-on: "3.9"
           - name: CPython 3.10
