@@ -2,6 +2,10 @@
 
 See Git checking messages for full history.
 
+## 10.0.0 (2024/xx/xx)
+- 
+- :heart: contributors: @
+
 ## 9.0.2 (2024/09/01)
 - added support for Python 3.13
 - leveled up the packaging using `hatchling`
