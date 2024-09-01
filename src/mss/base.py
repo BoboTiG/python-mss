@@ -13,14 +13,14 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Callable, Iterator
 
     from mss.models import Monitor, Monitors
 
 try:
     from datetime import UTC
-except ImportError:
+except ImportError:  # pragma: nocover
     # Python < 3.11
     from datetime import timezone
 

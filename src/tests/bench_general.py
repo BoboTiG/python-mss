@@ -33,7 +33,7 @@ from typing import TYPE_CHECKING
 import mss
 import mss.tools
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Callable
 
     from mss.base import MSSBase
