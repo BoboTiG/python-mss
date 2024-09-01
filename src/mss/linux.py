@@ -28,7 +28,7 @@ from ctypes import (
 )
 from ctypes.util import find_library
 from threading import current_thread, local
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSBase, lock
 from mss.exception import ScreenShotError
@@ -215,7 +215,7 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     return 0
 
 
-def _validate(retval: int, func: Any, args: Tuple[Any, Any], /) -> Tuple[Any, Any]:
+def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, Any]:
     """Validate the returned value of a C function call."""
     thread = current_thread()
     if retval != 0 and thread not in _ERROR:

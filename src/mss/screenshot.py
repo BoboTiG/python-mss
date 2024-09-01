@@ -4,7 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.models import Monitor, Pixel, Pixels, Pos, Size
@@ -42,7 +42,7 @@ class ScreenShot:
         return f"<{type(self).__name__} pos={self.left},{self.top} size={self.width}x{self.height}>"
 
     @property
-    def __array_interface__(self) -> Dict[str, Any]:
+    def __array_interface__(self) -> dict[str, Any]:
         """Numpy array interface support.
         It uses raw data in BGRA form.
 

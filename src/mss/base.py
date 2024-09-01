@@ -7,7 +7,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from threading import Lock
-from typing import TYPE_CHECKING, Any, List, Tuple
+from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
@@ -75,7 +75,7 @@ class MSSBase(metaclass=ABCMeta):
     def close(self) -> None:  # noqa:B027
         """Clean-up."""
 
-    def grab(self, monitor: Monitor | Tuple[int, int, int, int], /) -> ScreenShot:
+    def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
         Note: *monitor* can be a tuple like the one PIL.Image.grab() accepts.
@@ -245,7 +245,7 @@ class MSSBase(metaclass=ABCMeta):
     def _cfactory(
         attr: Any,
         func: str,
-        argtypes: List[Any],
+        argtypes: list[Any],
         restype: Any,
         /,
         errcheck: Callable | None = None,

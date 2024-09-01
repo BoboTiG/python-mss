@@ -165,10 +165,8 @@ ignore = [
     "PTH",
     "PL",
     "S",
-    "SIM117",  # TODO: remove wen dropping Python 3.8 support
     "SLF",
     "T201",
-    "UP006",  # TODO: remove wen dropping Python 3.8 support
 ]
 fixable = ["ALL"]
 

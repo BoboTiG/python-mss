@@ -99,10 +99,12 @@ def test_xrandr_extension_exists_but_is_not_enabled(display: str) -> None:
 
 
 def test_unsupported_depth() -> None:
-    with pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=8) as vdisplay:
-        with pytest.raises(ScreenShotError):
-            with mss.mss(display=vdisplay.new_display_var) as sct:
-                sct.grab(sct.monitors[1])
+    with (
+        pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=8) as vdisplay,
+        pytest.raises(ScreenShotError),
+        mss.mss(display=vdisplay.new_display_var) as sct,
+    ):
+        sct.grab(sct.monitors[1])
 
 
 def test_region_out_of_monitor_bounds(display: str) -> None:
@@ -176,6 +178,8 @@ def test_with_cursor_but_not_xfixes_extension_found(display: str) -> None:
 def test_with_cursor_failure(display: str) -> None:
     with mss.mss(display=display, with_cursor=True) as sct:
         assert isinstance(sct, mss.linux.MSS)  # For Mypy
-        with patch.object(sct.xfixes, "XFixesGetCursorImage", return_value=None):
-            with pytest.raises(ScreenShotError):
-                sct.grab(sct.monitors[1])
+        with (
+            patch.object(sct.xfixes, "XFixesGetCursorImage", return_value=None),
+            pytest.raises(ScreenShotError),
+        ):
+            sct.grab(sct.monitors[1])

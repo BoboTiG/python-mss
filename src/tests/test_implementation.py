@@ -180,11 +180,13 @@ def test_entry_point_error(quiet: bool, capsys: pytest.CaptureFixture) -> None:
 
 def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     # Make sure to fail if arguments are not handled
-    with patch("mss.factory.mss", new=Mock(side_effect=RuntimeError("Boom!"))):
-        with patch.object(sys, "argv", ["mss", "--help"]):
-            with pytest.raises(SystemExit) as exc:
-                entry_point()
-            assert exc.value.code == 0
+    with (
+        patch("mss.factory.mss", new=Mock(side_effect=RuntimeError("Boom!"))),
+        patch.object(sys, "argv", ["mss", "--help"]),
+        pytest.raises(SystemExit) as exc,
+    ):
+        entry_point()
+    assert exc.value.code == 0
 
     captured = capsys.readouterr()
     assert not captured.err

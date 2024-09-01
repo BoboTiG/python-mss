@@ -5,7 +5,6 @@ Source: https://github.com/BoboTiG/python-mss.
 from __future__ import annotations
 
 import threading
-from typing import Tuple
 
 import pytest
 
@@ -92,7 +91,7 @@ def test_thread_safety() -> None:
     thread2.join()
 
 
-def run_child_thread_bbox(loops: int, bbox: Tuple[int, int, int, int]) -> None:
+def run_child_thread_bbox(loops: int, bbox: tuple[int, int, int, int]) -> None:
     with mss.mss() as sct:  # One sct for all loops
         for _ in range(loops):
             sct.grab(bbox)
