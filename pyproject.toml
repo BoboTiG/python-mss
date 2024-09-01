@@ -70,21 +70,21 @@ Tracker = "https://github.com/BoboTiG/python-mss/issues"
 mss = "mss.__main__:main"
 
 [project.optional-dependencies]
-test = [
-  "numpy ; sys_platform == 'windows' and python_version >= '3.13'",
-  "pillow",
-  "pytest",
-  "pytest-cov",
-  "pytest-rerunfailures",
-  "pyvirtualdisplay; sys_platform == 'linux'",
-  "sphinx",
-]
 dev = [
-  "build",
-  "mypy",
-  "ruff",
-  "twine",
-  "wheel",
+  "build==1.2.1",
+  "mypy==1.11.2",
+  "ruff==0.6.3",
+  "twine==5.1.1",
+  "wheel==0.44.0",
+]
+test = [
+  "numpy==2.1.0 ; sys_platform == 'windows' and python_version >= '3.13'",
+  "pillow==10.4.0",
+  "pytest==8.3.2",
+  "pytest-cov==5.0.0",
+  "pytest-rerunfailures==14.0.0",
+  "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
+  "sphinx==8.0.2",
 ]
 
 [tool.hatch.version]
