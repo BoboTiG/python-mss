@@ -23,7 +23,7 @@ You will need `pytest <https://pypi.org/project/pytest/>`_::
     $ python -m venv venv
     $ . venv/bin/activate
     $ python -m pip install -U pip
-    $ python -m pip install -e '.[test]'
+    $ python -m pip install -e '.[tests]'
 
 
 How to Test?

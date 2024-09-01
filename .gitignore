@@ -17,7 +17,6 @@ docs_out/
 *.egg-info/
 .idea/
 .pytest_cache/
-.vscode/
 docs/output/
 .mypy_cache/
 __pycache__/

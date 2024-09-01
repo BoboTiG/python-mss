@@ -132,28 +132,28 @@ class MSSBase(metaclass=ABCMeta):
         output: str = "monitor-{mon}.png",
         callback: Callable[[str], None] | None = None,
     ) -> Iterator[str]:
-        """Grab a screen shot and save it to a file.
+        """Grab a screenshot and save it to a file.
 
-        :param int mon: The monitor to screen shot (default=0).
-                        -1: grab one screen shot of all monitors
-                         0: grab one screen shot by monitor
-                        N: grab the screen shot of the monitor N
+        :param int mon: The monitor to screenshot (default=0).
+                        -1: grab one screenshot of all monitors
+                         0: grab one screenshot by monitor
+                        N: grab the screenshot of the monitor N
 
         :param str output: The output filename.
 
             It can take several keywords to customize the filename:
             - `{mon}`: the monitor number
-            - `{top}`: the screen shot y-coordinate of the upper-left corner
-            - `{left}`: the screen shot x-coordinate of the upper-left corner
-            - `{width}`: the screen shot's width
-            - `{height}`: the screen shot's height
+            - `{top}`: the screenshot y-coordinate of the upper-left corner
+            - `{left}`: the screenshot x-coordinate of the upper-left corner
+            - `{width}`: the screenshot's width
+            - `{height}`: the screenshot's height
             - `{date}`: the current date using the default formatter
 
             As it is using the `format()` function, you can specify
             formatting options like `{date:%Y-%m-%s}`.
 
         :param callable callback: Callback called before saving the
-            screen shot to a file.  Take the `output` argument as parameter.
+            screenshot to a file.  Take the `output` argument as parameter.
 
         :return generator: Created file(s).
         """
@@ -163,7 +163,7 @@ class MSSBase(metaclass=ABCMeta):
             raise ScreenShotError(msg)
 
         if mon == 0:
-            # One screen shot by monitor
+            # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
                 fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
                 if callable(callback):
@@ -172,8 +172,8 @@ class MSSBase(metaclass=ABCMeta):
                 to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
                 yield fname
         else:
-            # A screen shot of all monitors together or
-            # a screen shot of the monitor N.
+            # A screenshot of all monitors together or
+            # a screenshot of the monitor N.
             mon = 0 if mon == -1 else mon
             try:
                 monitor = monitors[mon]
@@ -189,7 +189,7 @@ class MSSBase(metaclass=ABCMeta):
             yield output
 
     def shot(self, /, **kwargs: Any) -> str:
-        """Helper to save the screen shot of the 1st monitor, by default.
+        """Helper to save the screenshot of the 1st monitor, by default.
         You can pass the same arguments as for ``save``.
         """
         kwargs["mon"] = kwargs.get("mon", 1)

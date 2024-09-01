@@ -30,7 +30,7 @@ def main(*args: str) -> int:
         choices=list(range(10)),
         help="the PNG compression level",
     )
-    cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screen shot")
+    cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screenshot")
     cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
     cli_args.add_argument("--with-cursor", default=False, action="store_true", help="include the cursor")
     cli_args.add_argument(

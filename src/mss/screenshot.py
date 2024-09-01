@@ -14,7 +14,7 @@ if TYPE_CHECKING:  # pragma: nocover
 
 
 class ScreenShot:
-    """Screen shot object.
+    """Screenshot object.
 
     .. note::
 
@@ -32,10 +32,10 @@ class ScreenShot:
         #: OS independent implementations.
         self.raw = data
 
-        #: NamedTuple of the screen shot coordinates.
+        #: NamedTuple of the screenshot coordinates.
         self.pos = Pos(monitor["left"], monitor["top"])
 
-        #: NamedTuple of the screen shot size.
+        #: NamedTuple of the screenshot size.
         self.size = Size(monitor["width"], monitor["height"]) if size is None else size
 
     def __repr__(self) -> str:
@@ -57,7 +57,7 @@ class ScreenShot:
 
     @classmethod
     def from_size(cls: type[ScreenShot], data: bytearray, width: int, height: int, /) -> ScreenShot:
-        """Instantiate a new class given only screen shot's data and size."""
+        """Instantiate a new class given only screenshot's data and size."""
         monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
 

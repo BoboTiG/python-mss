@@ -12,7 +12,7 @@ from mss.screenshot import ScreenShot
 
 
 class SimpleScreenShot(ScreenShot):
-    """Define your own custom method to deal with screen shot raw data.
+    """Define your own custom method to deal with screenshot raw data.
     Of course, you can inherit from the ScreenShot class and change
     or add new methods.
     """

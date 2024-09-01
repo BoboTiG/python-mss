@@ -14,7 +14,7 @@ Quite simple::
 Conda Package
 -------------
 
-The module is also available from conda::
+The module is also available from Conda::
 
     $ conda install -c conda-forge python-mss
 

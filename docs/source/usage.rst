@@ -11,7 +11,7 @@ So MSS can be used as simply as::
 
 Or import the good one based on your operating system::
 
-    # MacOS X
+    # macOS
     from mss.darwin import MSS as mss
 
     # GNU/Linux
@@ -83,7 +83,7 @@ Or via direct call from Python::
     -l {0,1,2,3,4,5,6,7,8,9}, --level {0,1,2,3,4,5,6,7,8,9}
                           the PNG compression level
     -m MONITOR, --monitor MONITOR
-                          the monitor to screen shot
+                          the monitor to screenshot
     -o OUTPUT, --output OUTPUT
                           the output file name
     --with-cursor         include the cursor

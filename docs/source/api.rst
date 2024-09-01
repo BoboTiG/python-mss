@@ -173,18 +173,18 @@ Methods
         :param int mon: the monitor's number.
         :param str output: the output's file name.
         :type callback: callable or None
-        :param callback: callback called before saving the screen shot to a file. Takes the *output* argument as parameter.
+        :param callback: callback called before saving the screenshot to a file. Takes the *output* argument as parameter.
         :rtype: iterable
         :return: Created file(s).
 
-        Grab a screen shot and save it to a file.
+        Grab a screenshot and save it to a file.
         The *output* parameter can take several keywords to customize the filename:
 
             - ``{mon}``: the monitor number
-            - ``{top}``: the screen shot y-coordinate of the upper-left corner
-            - ``{left}``: the screen shot x-coordinate of the upper-left corner
-            - ``{width}``: the screen shot's width
-            - ``{height}``: the screen shot's height
+            - ``{top}``: the screenshot y-coordinate of the upper-left corner
+            - ``{left}``: the screenshot x-coordinate of the upper-left corner
+            - ``{width}``: the screenshot's width
+            - ``{height}``: the screenshot's height
             - ``{date}``: the current date using the default formatter
 
         As it is using the :py:func:`format()` function, you can specify formatting options like ``{date:%Y-%m-%s}``.
@@ -199,14 +199,14 @@ Methods
 
         :return str: The created file.
 
-        Helper to save the screen shot of the first monitor, by default.
+        Helper to save the screenshot of the first monitor, by default.
         You can pass the same arguments as for :meth:`save()`.
 
         .. versionadded:: 3.0.0
 
 .. class:: ScreenShot
 
-    Screen shot object.
+    Screenshot object.
 
     .. note::
 
@@ -221,7 +221,7 @@ Methods
         :param int height: the monitor's height.
         :rtype: :class:`ScreenShot`
 
-        Instantiate a new class given only screen shot's data and size.
+        Instantiate a new class given only screenshot's data and size.
 
     .. method:: pixel(coord_x, coord_y)
 
@@ -300,13 +300,13 @@ Properties
 
     .. attribute:: height
 
-        The screen shot's height.
+        The screenshot's height.
 
         :rtype: int
 
     .. attribute:: left
 
-        The screen shot's left coordinate.
+        The screenshot's left coordinate.
 
         :rtype: int
 
@@ -318,7 +318,7 @@ Properties
 
     .. attribute:: pos
 
-        The screen shot's coordinates.
+        The screenshot's coordinates.
 
         :rtype: :py:func:`collections.namedtuple()`
 
@@ -332,19 +332,19 @@ Properties
 
     .. attribute:: size
 
-        The screen shot's size.
+        The screenshot's size.
 
         :rtype: :py:func:`collections.namedtuple()`
 
     .. attribute:: top
 
-        The screen shot's top coordinate.
+        The screenshot's top coordinate.
 
         :rtype: int
 
     .. attribute:: width
 
-        The screen shot's width.
+        The screenshot's width.
 
         :rtype: int
 

@@ -1,0 +1,23 @@
+{
+    "languageToolLinter.languageTool.ignoredWordsInWorkspace": [
+        "bgra",
+        "ctypes",
+        "eownis",
+        "memoization",
+        "noop",
+        "numpy",
+        "oros",
+        "pylint",
+        "pypy",
+        "python-mss",
+        "pythonista",
+        "sdist",
+        "sourcery",
+        "tk",
+        "tkinter",
+        "xlib",
+        "xrandr",
+        "xserver",
+        "zlib"
+    ]
+}

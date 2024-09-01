@@ -8,24 +8,24 @@
 ```python
 from mss import mss
 
-# The simplest use, save a screen shot of the 1st monitor
+# The simplest use, save a screenshot of the 1st monitor
 with mss() as sct:
     sct.shot()
 ```
 
-An ultra fast cross-platform multiple screenshots module in pure python using ctypes.
+An ultra-fast cross-platform multiple screenshots module in pure python using ctypes.
 
 - **Python 3.10+**, PEP8 compliant, no dependency, thread-safe;
-- very basic, it will grab one screen shot by monitor or a screen shot of all monitors and save it to a PNG file;
+- very basic, it will grab one screenshot by monitor or a screenshot of all monitors and save it to a PNG file;
 - but you can use PIL and benefit from all its formats (or add yours directly);
 - integrate well with Numpy and OpenCV;
-- it could be easily embedded into games and other software which require fast and platform optimized methods to grab screen shots (like AI, Computer Vision);
+- it could be easily embedded into games and other software which require fast and platform optimized methods to grab screenshots (like AI, Computer Vision);
 - get the [source code on GitHub](https://github.com/BoboTiG/python-mss);
 - learn with a [bunch of examples](https://python-mss.readthedocs.io/examples.html);
 - you can [report a bug](https://github.com/BoboTiG/python-mss/issues);
-- need some help? Use the tag *python-mss* on [StackOverflow](https://stackoverflow.com/questions/tagged/python-mss);
+- need some help? Use the tag *python-mss* on [Stack Overflow](https://stackoverflow.com/questions/tagged/python-mss);
 - and there is a [complete, and beautiful, documentation](https://python-mss.readthedocs.io) :)
-- **MSS** stands for Multiple Screen Shots;
+- **MSS** stands for Multiple ScreenShots;
 
 
 ## Installation
@@ -36,7 +36,7 @@ You can install it with pip:
 python -m pip install -U --user mss
 ```
 
-Or you can install it with conda:
+Or you can install it with Conda:
 
 ```shell
 conda install -c conda-forge python-mss

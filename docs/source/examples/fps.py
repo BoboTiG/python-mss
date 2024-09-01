@@ -9,16 +9,12 @@ import time
 
 import cv2
 import numpy as np
+from PIL import ImageGrab
 
 import mss
 
 
 def screen_record() -> int:
-    try:
-        from PIL import ImageGrab
-    except ImportError:
-        return 0
-
     # 800x600 windowed mode
     mon = (0, 40, 800, 640)
 

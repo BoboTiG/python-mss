@@ -183,7 +183,7 @@
 ## 3.0.0 (2017-07-06)
 
 ### base.py
-- Added the `ScreenShot` class containing data for a given screen shot (support the Numpy array interface [`ScreenShot.__array_interface__`])
+- Added the `ScreenShot` class containing data for a given screenshot (support the Numpy array interface [`ScreenShot.__array_interface__`])
 - Added `shot()` method to `MSSBase`. It takes the same arguments as the `save()` method.
 - Renamed `get_pixels` to `grab`. It now returns a `ScreenShot` object.
 - Moved `to_png` method to `tools.py`. It is now a simple function.
@@ -195,7 +195,7 @@
 - Removed `bgra_to_rgb()` method. Use `ScreenShot.rgb` property instead.
 
 ### darwin.py
-- Removed `_crop_width()` method. Screen shots are now using the width set by the OS (rounded to 16).
+- Removed `_crop_width()` method. Screenshots are now using the width set by the OS (rounded to 16).
 
 ### exception.py
 - Renamed `ScreenshotError` class to `ScreenShotError`
