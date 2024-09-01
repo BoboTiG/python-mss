@@ -21,7 +21,7 @@ jobs:
         run: |
           python -m pip install -U pip 
           python -m pip install -e '.[dev]'
-      - name: Tests
+      - name: Check
         run: ./check.sh
 
   documentation:
@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m pip install -U pip 
           python -m pip install -e '.[docs]'
-      - name: Tests
+      - name: Build
         run: |
           sphinx-build -d docs docs/source docs_out --color -W -bhtml
 
@@ -75,7 +75,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -U pip
-          python -m pip install -e '.[dev,test]'
+          python -m pip install -e '.[dev,tests]'
       - name: Tests (GNU/Linux)
         if: matrix.os.emoji == '🐧'
         run: xvfb-run python -m pytest
