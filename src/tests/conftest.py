@@ -5,9 +5,9 @@ Source: https://github.com/BoboTiG/python-mss.
 import glob
 import os
 import platform
+from collections.abc import Generator
 from hashlib import md5
 from pathlib import Path
-from typing import Generator
 from zipfile import ZipFile
 
 import pytest

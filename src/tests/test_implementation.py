@@ -116,7 +116,7 @@ def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
         assert os.path.isfile("monitor-1.png")
         os.remove("monitor-1.png")
 
-    for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
+    for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"], strict=False):
         main(*opts)
         captured = capsys.readouterr()
         assert not captured.out
@@ -128,7 +128,7 @@ def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
         main(opt, fmt)
         captured = capsys.readouterr()
         with mss.mss(display=os.getenv("DISPLAY")) as sct:
-            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
+            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines(), strict=False), 1):
                 filename = fmt.format(mon=mon, **monitor)
                 assert line.endswith(filename)
                 assert os.path.isfile(filename)

@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "mss"
 description = "An ultra fast cross-platform multiple screenshots module in pure python using ctypes."
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 authors = [
   { name = "Mickaël Schoentgen", email="contact@tiger-222.fr" },
 ]
@@ -31,7 +31,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -83,8 +82,7 @@ test = [
   "pytest-cov==5.0.0",
   "pytest-rerunfailures==14.0.0",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
-  "sphinx==8.0.2 ; python_version >= '3.10'",
-  "sphinx<=8 ; python_version == '3.9'",
+  "sphinx==8.0.2",
 ]
 
 [tool.hatch.version]
@@ -149,7 +147,7 @@ exclude = [
 ]
 line-length = 120
 indent-width = 4
-target-version = "py38"
+target-version = "py310"
 
 [tool.ruff.lint]
 extend-select = ["ALL"]

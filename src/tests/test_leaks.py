@@ -4,7 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 import os
 import platform
-from typing import Callable
+from collections.abc import Callable
 
 import pytest
 
