@@ -8,6 +8,7 @@ from subprocess import STDOUT, check_call, check_output
 from zipfile import ZipFile
 
 import pytest
+
 from mss import __version__
 
 if platform.system().lower() != "linux":

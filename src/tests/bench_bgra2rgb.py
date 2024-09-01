@@ -30,10 +30,11 @@ Windows
 
 import time
 
-import mss
 import numpy as np
-from mss.screenshot import ScreenShot
 from PIL import Image
+
+import mss
+from mss.screenshot import ScreenShot
 
 
 def mss_rgb(im: ScreenShot) -> bytes:

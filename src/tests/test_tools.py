@@ -7,6 +7,7 @@ import os.path
 import zlib
 
 import pytest
+
 from mss import mss
 from mss.tools import to_png
 

@@ -7,8 +7,9 @@ OpenCV/Numpy example.
 import time
 
 import cv2
-import mss
 import numpy as np
+
+import mss
 
 with mss.mss() as sct:
     # Part of the screen to capture

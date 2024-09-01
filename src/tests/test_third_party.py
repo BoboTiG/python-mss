@@ -7,6 +7,7 @@ import os
 import os.path
 
 import pytest
+
 from mss import mss
 
 try:

@@ -11,6 +11,7 @@ from typing import Generator
 from zipfile import ZipFile
 
 import pytest
+
 from mss import mss
 
 

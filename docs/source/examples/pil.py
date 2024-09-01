@@ -4,8 +4,9 @@ Source: https://github.com/BoboTiG/python-mss.
 PIL example using frombytes().
 """
 
-import mss
 from PIL import Image
+
+import mss
 
 with mss.mss() as sct:
     # Get rid of the first, as it represents the "All in One" monitor:

@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import pytest
+
 from mss.base import ScreenShot
 
 

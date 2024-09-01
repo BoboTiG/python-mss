@@ -2,13 +2,14 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-import mss
 import pytest
+
+import mss
 
 tkinter = pytest.importorskip("tkinter")
 
 
-@pytest.fixture()
+@pytest.fixture
 def root() -> tkinter.Tk:  # type: ignore[name-defined]
     try:
         master = tkinter.Tk()

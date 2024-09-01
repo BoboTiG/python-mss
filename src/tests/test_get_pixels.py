@@ -6,6 +6,7 @@ import itertools
 import os
 
 import pytest
+
 from mss import mss
 from mss.base import ScreenShot
 from mss.exception import ScreenShotError

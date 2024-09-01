@@ -6,9 +6,10 @@ import platform
 from collections.abc import Generator
 from unittest.mock import Mock, patch
 
+import pytest
+
 import mss
 import mss.linux
-import pytest
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
@@ -21,7 +22,7 @@ HEIGHT = 200
 DEPTH = 24
 
 
-@pytest.fixture()
+@pytest.fixture
 def display() -> Generator:
     with pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=DEPTH) as vdisplay:
         yield vdisplay.new_display_var

@@ -6,8 +6,9 @@ import os
 import platform
 from typing import Callable
 
-import mss
 import pytest
+
+import mss
 
 OS = platform.system().lower()
 PID = os.getpid()
@@ -36,7 +37,7 @@ def get_handles() -> int:
     return ctypes.windll.user32.GetGuiResources(h, GR_GDIOBJECTS)
 
 
-@pytest.fixture()
+@pytest.fixture
 def monitor_func() -> Callable[[], int]:
     """OS specific function to check resources in use."""
     return get_opened_socket if OS == "linux" else get_handles

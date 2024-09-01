@@ -6,6 +6,7 @@ import os.path
 from datetime import datetime
 
 import pytest
+
 from mss import mss
 
 try:

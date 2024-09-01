@@ -12,9 +12,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
+import pytest
+
 import mss
 import mss.tools
-import pytest
 from mss.__main__ import main as entry_point
 from mss.base import MSSBase
 from mss.exception import ScreenShotError

@@ -5,8 +5,9 @@ Source: https://github.com/BoboTiG/python-mss.
 import ctypes.util
 import platform
 
-import mss
 import pytest
+
+import mss
 from mss.exception import ScreenShotError
 
 if platform.system().lower() != "darwin":

@@ -7,8 +7,9 @@ from __future__ import annotations
 import threading
 from typing import Tuple
 
-import mss
 import pytest
+
+import mss
 from mss.exception import ScreenShotError
 
 try:
