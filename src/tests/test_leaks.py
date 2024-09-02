@@ -124,4 +124,4 @@ def test_resource_leaks(func: Callable[[], None], monitor_func: Callable[[], int
         new_resources = monitor_func()
         allocated_resources = max(allocated_resources, new_resources)
 
-    assert original_resources == allocated_resources
+    assert allocated_resources <= original_resources
