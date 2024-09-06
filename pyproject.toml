@@ -71,7 +71,7 @@ mss = "mss.__main__:main"
 dev = [
   "build==1.2.1",
   "mypy==1.11.2",
-  "ruff==0.6.3",
+  "ruff==0.6.4",
   "twine==5.1.1",
   "wheel==0.44.0",
 ]
