@@ -80,7 +80,7 @@ def run_child_thread(loops: int) -> None:
 def test_thread_safety() -> None:
     """Thread safety test for issue #150.
 
-    The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
+    The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
     # Let thread 1 finished ahead of thread 2
     thread1 = threading.Thread(target=run_child_thread, args=(30,))
@@ -100,7 +100,7 @@ def run_child_thread_bbox(loops: int, bbox: tuple[int, int, int, int]) -> None:
 def test_thread_safety_regions() -> None:
     """Thread safety test for different regions.
 
-    The following code will throw a ScreenShotError exception if thread-safety is not guaranted.
+    The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
     thread1 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 100, 100)))
     thread2 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 50, 1)))

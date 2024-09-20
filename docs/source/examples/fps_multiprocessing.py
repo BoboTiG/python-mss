@@ -40,6 +40,6 @@ if __name__ == "__main__":
     # The screenshots queue
     queue: Queue = Queue()
 
-    # 2 processes: one for grabing and one for saving PNG files
+    # 2 processes: one for grabbing and one for saving PNG files
     Process(target=grab, args=(queue,)).start()
     Process(target=save, args=(queue,)).start()
