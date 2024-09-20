@@ -103,11 +103,11 @@ class XImage(Structure):
         ("bitmap_bit_order", c_int),  # LSBFirst, MSBFirst
         ("bitmap_pad", c_int),  # 8, 16, 32 either XY or ZPixmap
         ("depth", c_int),  # depth of image
-        ("bytes_per_line", c_int),  # accelarator to next line
+        ("bytes_per_line", c_int),  # accelerator to next line
         ("bits_per_pixel", c_int),  # bits per pixel (ZPixmap)
-        ("red_mask", c_ulong),  # bits in z arrangment
-        ("green_mask", c_ulong),  # bits in z arrangment
-        ("blue_mask", c_ulong),  # bits in z arrangment
+        ("red_mask", c_ulong),  # bits in z arrangement
+        ("green_mask", c_ulong),  # bits in z arrangement
+        ("blue_mask", c_ulong),  # bits in z arrangement
     )
 
 
