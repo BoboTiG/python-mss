@@ -76,7 +76,7 @@ dev = [
   "wheel==0.44.0",
 ]
 docs = [
-  "sphinx==8.0.2",
+  "sphinx==8.1.0",
 ]
 tests = [
   "numpy==2.1.2 ; sys_platform == 'windows' and python_version >= '3.13'",
