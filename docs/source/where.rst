@@ -24,6 +24,7 @@ Do not hesitate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_ 
 - `Python-ImageSearch <https://github.com/drov0/python-imagesearch>`_, a wrapper around OpenCV2 and PyAutoGUI to do image searching easily;
 - `PUBGIS <https://github.com/andrewzwicky/PUBGIS>`_, a map generator of your position throughout PUBG gameplay;
 - `ScreenCapLibrary <https://github.com/mihaiparvu/ScreenCapLibrary>`_, a Robot Framework test library for capturing screenshots and video recording;
+- `ScreenVivid <https://www.screenvivid.com/>`_,  an open source cross-platform screen recorder for everyone ;
 - `Self-Driving-Car-3D-Simulator-With-CNN <https://github.com/sagar448/Self-Driving-Car-3D-Simulator-With-CNN>`_;
 - `Serpent.AI <https://github.com/SerpentAI/SerpentAI>`_, a Game Agent Framework;
 - `Star Wars - The Old Republic: Galactic StarFighter <https://github.com/RedFantom/gsf-parser>`_ parser;
