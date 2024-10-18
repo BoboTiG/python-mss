@@ -7,6 +7,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   quality:
     name: Quality
@@ -82,3 +86,15 @@ jobs:
       - name: Tests (macOS, Windows)
         if: matrix.os.emoji != '🐧'
         run: python -m pytest
+
+  automerge:
+    name: Automerge
+    runs-on: ubuntu-latest
+    needs: [documentation, quality, tests]
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Automerge
+        run: gh pr merge --auto --rebase "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
