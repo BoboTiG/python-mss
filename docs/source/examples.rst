@@ -32,7 +32,7 @@ Callback
 Screenshot of the monitor 1 with a callback:
 
 .. literalinclude:: examples/callback.py
-    :lines: 8-
+    :lines: 7-
 
 
 Part of the screen
@@ -41,7 +41,7 @@ Part of the screen
 You can capture only a part of the screen:
 
 .. literalinclude:: examples/part_of_screen.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.0.0
 
@@ -52,7 +52,7 @@ Part of the screen of the 2nd monitor
 This is an example of capturing some part of the screen of the monitor 2:
 
 .. literalinclude:: examples/part_of_screen_monitor_2.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.0.0
 
@@ -64,7 +64,7 @@ You can use the same value as you would do with ``PIL.ImageGrab(bbox=tuple(...))
 This is an example that uses it, but also using percentage values:
 
 .. literalinclude:: examples/from_pil_tuple.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.1.0
 
@@ -99,7 +99,7 @@ Advanced
 You can handle data using a custom class:
 
 .. literalinclude:: examples/custom_cls_image.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.1.0
 
@@ -110,7 +110,7 @@ You can use the Python Image Library (aka Pillow) to do whatever you want with r
 This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.frombytes>`_:
 
 .. literalinclude:: examples/pil.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.0.0
 
@@ -120,7 +120,7 @@ Playing with pixels
 This is an example using `putdata() <https://github.com/python-pillow/Pillow/blob/b9b5d39f2b32cec75b9cf96b882acb7a77a4ed4b/PIL/Image.py#L1523>`_:
 
 .. literalinclude:: examples/pil_pixels.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.0.0
 
@@ -132,7 +132,7 @@ You can easily view a HD movie with VLC and see it too in the OpenCV window.
 And with __no__ lag please.
 
 .. literalinclude:: examples/opencv_numpy.py
-    :lines: 8-
+    :lines: 7-
 
 .. versionadded:: 3.0.0
 
@@ -145,7 +145,7 @@ Benchmark
 Simple naive benchmark to compare with `Reading game frames in Python with OpenCV - Python Plays GTA V <https://pythonprogramming.net/game-frames-open-cv-python-plays-gta-v/>`_:
 
 .. literalinclude:: examples/fps.py
-    :lines: 9-
+    :lines: 8-
 
 .. versionadded:: 3.0.0
 
@@ -156,7 +156,7 @@ Performances can be improved by delegating the PNG file creation to a specific w
 This is a simple example using the :py:mod:`multiprocessing` inspired by the `TensorFlow Object Detection Introduction <https://github.com/pythonlessons/TensorFlow-object-detection-tutorial>`_ project:
 
 .. literalinclude:: examples/fps_multiprocessing.py
-    :lines: 9-
+    :lines: 8-
 
 .. versionadded:: 5.0.0
 
