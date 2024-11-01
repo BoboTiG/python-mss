@@ -81,7 +81,7 @@ docs = [
 ]
 tests = [
   "numpy==2.1.2 ; sys_platform == 'windows' and python_version >= '3.13'",
-  "pillow==11.0.0",
+  "pillow==11.0.0 ; sys_platform != 'windows'",
   "pytest==8.3.3",
   "pytest-cov==6.0.0",
   "pytest-rerunfailures==14.0.0",
