@@ -9,9 +9,7 @@ import pytest
 
 from mss import mss
 
-pytest.importorskip("numpy", reason="Numpy module not available.")
-
-import numpy as np  # noqa: E402
+np = pytest.importorskip("numpy", reason="Numpy module not available.")
 
 
 def test_numpy(pixel_ratio: int) -> None:
