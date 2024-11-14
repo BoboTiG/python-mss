@@ -329,6 +329,14 @@ class MSS(MSSBase):
         self._handles.drawable = cast(self._handles.root, POINTER(Display))
 
     def close(self) -> None:
+        # Clean-up
+        if self._handles.display:
+            with lock:
+                self.xlib.XCloseDisplay(self._handles.display)
+            self._handles.display = None
+            self._handles.drawable = None
+            self._handles.root = None
+
         # Remove our error handler
         if self._handles.original_error_handler:
             # It's required when exiting MSS to prevent letting `_error_handler()` as default handler.
@@ -338,13 +346,6 @@ class MSS(MSSBase):
             #     https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
             self.xlib.XSetErrorHandler(self._handles.original_error_handler)
             self._handles.original_error_handler = None
-
-        # Clean-up
-        if self._handles.display:
-            self.xlib.XCloseDisplay(self._handles.display)
-            self._handles.display = None
-            self._handles.drawable = None
-            self._handles.root = None
 
         # Also empty the error dict
         _ERROR.clear()
