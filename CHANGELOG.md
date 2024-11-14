@@ -5,6 +5,7 @@ See Git checking messages for full history.
 ## 10.0.0 (2024-xx-xx)
 - removed support for Python 3.8
 - added support for Python 3.14
+- Linux: fixed a threadding issue in `.close()` when calling `XCloseDisplay()` (#251)
 - :heart: contributors: @
 
 ## 9.0.2 (2024-09-01)
