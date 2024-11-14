@@ -1,6 +1,6 @@
 # Technical Changes
 
-## 10.0.0 (2024-11-xx)
+## 10.0.0 (2024-11-14)
 
 ### base.py
 - Added `OPAQUE`
