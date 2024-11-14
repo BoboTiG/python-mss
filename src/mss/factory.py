@@ -19,7 +19,6 @@ def mss(**kwargs: Any) -> MSSBase:
     It then proxies its arguments to the class for
     instantiation.
     """
-
     os_ = platform.system().lower()
 
     if os_ == "darwin":

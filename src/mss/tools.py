@@ -7,9 +7,13 @@ from __future__ import annotations
 import os
 import struct
 import zlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
-def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: str | None = None) -> bytes | None:
+def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: Path | str | None = None) -> bytes | None:
     """Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.
 
@@ -18,7 +22,6 @@ def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: str
     :param int level: PNG compression level.
     :param str output: Output file name.
     """
-
     pack = struct.pack
     crc32 = zlib.crc32
 
@@ -49,7 +52,7 @@ def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: str
         # Returns raw bytes of the whole PNG data
         return magic + b"".join(ihdr + idat + iend)
 
-    with open(output, "wb") as fileh:
+    with open(output, "wb") as fileh:  # noqa: PTH123
         fileh.write(magic)
         fileh.write(b"".join(ihdr))
         fileh.write(b"".join(idat))

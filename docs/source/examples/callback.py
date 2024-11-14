@@ -4,18 +4,18 @@ Source: https://github.com/BoboTiG/python-mss.
 Screenshot of the monitor 1, with callback.
 """
 
-import os
-import os.path
+from pathlib import Path
 
 import mss
 
 
 def on_exists(fname: str) -> None:
     """Callback example when we try to overwrite an existing screenshot."""
-    if os.path.isfile(fname):
-        newfile = f"{fname}.old"
-        print(f"{fname} -> {newfile}")
-        os.rename(fname, newfile)
+    file = Path(fname)
+    if file.is_file():
+        newfile = file.with_name(f"{file.name}.old")
+        print(f"{fname} → {newfile}")
+        file.rename(newfile)
 
 
 with mss.mss() as sct:

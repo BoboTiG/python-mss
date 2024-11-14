@@ -9,6 +9,7 @@ import os.path
 import platform
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
@@ -104,24 +105,25 @@ def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
     main()
     captured = capsys.readouterr()
     for mon, line in enumerate(captured.out.splitlines(), 1):
-        filename = f"monitor-{mon}.png"
-        assert line.endswith(filename)
-        assert os.path.isfile(filename)
-        os.remove(filename)
+        filename = Path(f"monitor-{mon}.png")
+        assert line.endswith(filename.name)
+        assert filename.is_file()
+        filename.unlink()
 
+    file = Path("monitor-1.png")
     for opt in ("-m", "--monitor"):
         main(opt, "1")
         captured = capsys.readouterr()
-        assert captured.out.endswith("monitor-1.png\n")
-        assert os.path.isfile("monitor-1.png")
-        os.remove("monitor-1.png")
+        assert captured.out.endswith(f"{file.name}\n")
+        assert filename.is_file()
+        filename.unlink()
 
     for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
         main(*opts)
         captured = capsys.readouterr()
         assert not captured.out
-        assert os.path.isfile("monitor-1.png")
-        os.remove("monitor-1.png")
+        assert filename.is_file()
+        filename.unlink()
 
     fmt = "sct-{mon}-{width}x{height}.png"
     for opt in ("-o", "--out"):
@@ -129,28 +131,28 @@ def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
         captured = capsys.readouterr()
         with mss.mss(display=os.getenv("DISPLAY")) as sct:
             for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
-                filename = fmt.format(mon=mon, **monitor)
-                assert line.endswith(filename)
-                assert os.path.isfile(filename)
-                os.remove(filename)
+                filename = Path(fmt.format(mon=mon, **monitor))
+                assert line.endswith(filename.name)
+                assert filename.is_file()
+                filename.unlink()
 
     fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
     for opt in ("-o", "--out"):
         main("-m 1", opt, fmt)
-        filename = fmt.format(mon=1, date=datetime.now(tz=UTC))
+        filename = Path(fmt.format(mon=1, date=datetime.now(tz=UTC)))
         captured = capsys.readouterr()
-        assert captured.out.endswith(filename + "\n")
-        assert os.path.isfile(filename)
-        os.remove(filename)
+        assert captured.out.endswith(f"{filename}\n")
+        assert filename.is_file()
+        filename.unlink()
 
     coordinates = "2,12,40,67"
-    filename = "sct-2x12_40x67.png"
+    filename = Path("sct-2x12_40x67.png")
     for opt in ("-c", "--coordinates"):
         main(opt, coordinates)
         captured = capsys.readouterr()
-        assert captured.out.endswith(filename + "\n")
-        assert os.path.isfile(filename)
-        os.remove(filename)
+        assert captured.out.endswith(f"{filename}\n")
+        assert filename.is_file()
+        filename.unlink()
 
     coordinates = "2,12,40"
     for opt in ("-c", "--coordinates"):

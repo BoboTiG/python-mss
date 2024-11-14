@@ -20,6 +20,8 @@ if TYPE_CHECKING:  # pragma: nocover
 
 __all__ = ("MSS",)
 
+MAC_VERSION_CATALINA = 10.16
+
 
 def cgfloat() -> type[c_double | c_float]:
     """Get the appropriate value for a float."""
@@ -59,7 +61,7 @@ class CGRect(Structure):
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
-    # cfunction: (attr, argtypes, restype)
+    # Syntax: cfunction: (attr, argtypes, restype)
     "CGDataProviderCopyData": ("core", [c_void_p], c_void_p),
     "CGDisplayBounds": ("core", [c_uint32], CGRect),
     "CGDisplayRotation": ("core", [c_uint32], c_float),
@@ -98,7 +100,7 @@ class MSS(MSSBase):
     def _init_library(self) -> None:
         """Load the CoreGraphics library."""
         version = float(".".join(mac_ver()[0].split(".")[:2]))
-        if version < 10.16:
+        if version < MAC_VERSION_CATALINA:
             coregraphics = ctypes.util.find_library("CoreGraphics")
         else:
             # macOS Big Sur and newer
@@ -136,9 +138,13 @@ class MSS(MSSBase):
             rect = core.CGDisplayBounds(display)
             rect = core.CGRectStandardize(rect)
             width, height = rect.size.width, rect.size.height
+
+            # 0.0: normal
+            # 90.0: right
+            # -90.0: left
             if core.CGDisplayRotation(display) in {90.0, -90.0}:
-                # {0.0: "normal", 90.0: "right", -90.0: "left"}
                 width, height = height, width
+
             self._monitors.append(
                 {
                     "left": int_(rect.origin.x),
@@ -161,7 +167,6 @@ class MSS(MSSBase):
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
-
         core = self.core
         rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
 
