@@ -2,12 +2,16 @@
 
 See Git checking messages for full history.
 
+## 10.0.1 (202x-xx-xx)
+-
+- :heart: contributors: @
+
 ## 10.0.0 (2024-11-14)
 - removed support for Python 3.8
 - added support for Python 3.14
 - Linux: fixed a threadding issue in `.close()` when calling `XCloseDisplay()` (#251)
 - Linux: minor optimization when checking for a X extension status (#251)
-- :heart: contributors: @
+- :heart: contributors: @kianmeng, @shravanasati, @mgorny
 
 ## 9.0.2 (2024-09-01)
 - added support for Python 3.13
