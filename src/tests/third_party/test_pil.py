@@ -5,6 +5,7 @@ Source: https://github.com/BoboTiG/python-mss.
 import itertools
 import os
 import os.path
+from pathlib import Path
 
 import pytest
 
@@ -26,8 +27,9 @@ def test_pil() -> None:
     for x, y in itertools.product(range(width), range(height)):
         assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save("box.png")
-    assert os.path.isfile("box.png")
+    output = Path("box.png")
+    img.save(output)
+    assert output.is_file()
 
 
 def test_pil_bgra() -> None:
@@ -43,8 +45,9 @@ def test_pil_bgra() -> None:
     for x, y in itertools.product(range(width), range(height)):
         assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save("box-bgra.png")
-    assert os.path.isfile("box-bgra.png")
+    output = Path("box-bgra.png")
+    img.save(output)
+    assert output.is_file()
 
 
 def test_pil_not_16_rounded() -> None:
@@ -60,5 +63,6 @@ def test_pil_not_16_rounded() -> None:
     for x, y in itertools.product(range(width), range(height)):
         assert img.getpixel((x, y)) == sct_img.pixel(x, y)
 
-    img.save("box.png")
-    assert os.path.isfile("box.png")
+    output = Path("box.png")
+    img.save(output)
+    assert output.is_file()

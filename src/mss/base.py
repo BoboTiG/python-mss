@@ -28,6 +28,8 @@ except ImportError:  # pragma: nocover
 
 lock = Lock()
 
+OPAQUE = 255
+
 
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
@@ -200,7 +202,6 @@ class MSSBase(metaclass=ABCMeta):
     @staticmethod
     def _merge(screenshot: ScreenShot, cursor: ScreenShot, /) -> ScreenShot:
         """Create composite image by blending screenshot and mouse cursor."""
-
         (cx, cy), (cw, ch) = cursor.pos, cursor.size
         (x, y), (w, h) = screenshot.pos, screenshot.size
 
@@ -234,7 +235,7 @@ class MSSBase(metaclass=ABCMeta):
                 if not alpha:
                     continue
 
-                if alpha == 255:
+                if alpha == OPAQUE:
                     screen_raw[spos : spos + 3] = cursor_raw[cpos : cpos + 3]
                 else:
                     alpha2 = alpha / 255

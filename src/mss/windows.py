@@ -74,7 +74,7 @@ MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
-    # cfunction: (attr, argtypes, restype)
+    # Syntax: cfunction: (attr, argtypes, restype)
     "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
     "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC),
@@ -179,7 +179,6 @@ class MSS(MSSBase):
             """Callback for monitorenumproc() function, it will return
             a RECT with appropriate values.
             """
-
             rct = rect.contents
             self._monitors.append(
                 {

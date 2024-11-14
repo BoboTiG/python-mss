@@ -42,6 +42,8 @@ __all__ = ("MSS",)
 
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
+BITS_PER_PIXELS_32 = 32
+SUPPORTED_BITS_PER_PIXELS = (BITS_PER_PIXELS_32,)
 
 
 class Display(Structure):
@@ -233,7 +235,7 @@ def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, An
 #
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
-    # cfunction: (attr, argtypes, restype)
+    # Syntax: cfunction: (attr, argtypes, restype)
     "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
@@ -433,7 +435,7 @@ class MSS(MSSBase):
 
         try:
             bits_per_pixel = ximage.contents.bits_per_pixel
-            if bits_per_pixel != 32:
+            if bits_per_pixel not in SUPPORTED_BITS_PER_PIXELS:
                 msg = f"[XImage] bits per pixel value not (yet?) implemented: {bits_per_pixel}."
                 raise ScreenShotError(msg)
 

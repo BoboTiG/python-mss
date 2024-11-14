@@ -2,11 +2,9 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-import glob
-import os
 import platform
 from collections.abc import Generator
-from hashlib import md5
+from hashlib import sha256
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -28,13 +26,13 @@ def _no_warnings(recwarn: pytest.WarningsRecorder) -> Generator:
 
 def purge_files() -> None:
     """Remove all generated files from previous runs."""
-    for fname in glob.glob("*.png"):
-        print(f"Deleting {fname!r} ...")
-        os.unlink(fname)
+    for file in Path.glob("*.png"):
+        print(f"Deleting {file} ...")
+        file.unlink()
 
-    for fname in glob.glob("*.png.old"):
-        print(f"Deleting {fname!r} ...")
-        os.unlink(fname)
+    for file in Path.glob("*.png.old"):
+        print(f"Deleting {file} ...")
+        file.unlink()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -48,7 +46,7 @@ def raw() -> bytes:
     with ZipFile(file) as fh:
         data = fh.read(file.with_suffix("").name)
 
-    assert md5(data).hexdigest() == "125696266e2a8f5240f6bc17e4df98c6"
+    assert sha256(data).hexdigest() == "d86ed4366d5a882cfe1345de82c87b81aef9f9bf085f4c42acb6f63f3967eccd"
     return data
 
 
