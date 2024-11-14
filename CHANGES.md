@@ -1,5 +1,17 @@
 # Technical Changes
 
+## 10.0.0 (2024-11-xx)
+
+### base.py
+- Added `OPAQUE`
+
+### darwin.py
+- Added `MAC_VERSION_CATALINA`
+
+### linux.py
+- Added `BITS_PER_PIXELS_32`
+- Added `SUPPORTED_BITS_PER_PIXELS`
+
 ## 9.0.0 (2023-04-18)
 
 ### linux.py
