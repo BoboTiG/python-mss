@@ -352,12 +352,12 @@ class MSS(MSSBase):
 
     def _is_extension_enabled(self, name: str, /) -> bool:
         """Return True if the given *extension* is enabled on the server."""
-        with lock:
-            major_opcode_return = c_int()
-            first_event_return = c_int()
-            first_error_return = c_int()
+        major_opcode_return = c_int()
+        first_event_return = c_int()
+        first_error_return = c_int()
 
-            try:
+        try:
+            with lock:
                 self.xlib.XQueryExtension(
                     self._handles.display,
                     name.encode("latin1"),
@@ -365,9 +365,9 @@ class MSS(MSSBase):
                     byref(first_event_return),
                     byref(first_error_return),
                 )
-            except ScreenShotError:
-                return False
-            return True
+        except ScreenShotError:
+            return False
+        return True
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
