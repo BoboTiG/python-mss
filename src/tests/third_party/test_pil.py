@@ -10,9 +10,7 @@ import pytest
 
 from mss import mss
 
-pytest.importorskip("PIL", reason="PIL module not available.")
-
-from PIL import Image  # noqa: E402
+Image = pytest.importorskip("PIL.Image", reason="PIL module not available.")
 
 
 def test_pil() -> None:
