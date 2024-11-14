@@ -26,11 +26,11 @@ def _no_warnings(recwarn: pytest.WarningsRecorder) -> Generator:
 
 def purge_files() -> None:
     """Remove all generated files from previous runs."""
-    for file in Path.glob("*.png"):
+    for file in Path().glob("*.png"):
         print(f"Deleting {file} ...")
         file.unlink()
 
-    for file in Path.glob("*.png.old"):
+    for file in Path().glob("*.png.old"):
         print(f"Deleting {file} ...")
         file.unlink()
 
