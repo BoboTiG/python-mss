@@ -172,7 +172,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "docs/source/*" = [
-  "ERA001",   # private member accessed
+  "ERA001",   # commented code
   "INP001",   # file `xxx` is part of an implicit namespace package
 ]
 "src/tests/*" = [

@@ -74,6 +74,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/mss/screenshot.py",
         f"mss-{__version__}/src/mss/tools.py",
         f"mss-{__version__}/src/mss/windows.py",
+        f"mss-{__version__}/src/tests/__init__.py",
         f"mss-{__version__}/src/tests/bench_bgra2rgb.py",
         f"mss-{__version__}/src/tests/bench_general.py",
         f"mss-{__version__}/src/tests/conftest.py",
