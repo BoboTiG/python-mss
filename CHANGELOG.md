@@ -4,7 +4,6 @@ See Git checking messages for full history.
 
 ## 10.0.0 (2024-xx-xx)
 - removed support for Python 3.8
-- removed support for Python 3.9
 - added support for Python 3.14
 - :heart: contributors: @
 

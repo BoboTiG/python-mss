@@ -39,9 +39,11 @@ class MSSBase(metaclass=ABCMeta):
         /,
         *,
         compression_level: int = 6,
-        display: bytes | str | None = None,  # noqa:ARG002 Linux only
-        max_displays: int = 32,  # noqa:ARG002 Mac only
         with_cursor: bool = False,
+        # Linux only
+        display: bytes | str | None = None,  # noqa: ARG002
+        # Mac only
+        max_displays: int = 32,  # noqa: ARG002
     ) -> None:
         self.cls_image: type[ScreenShot] = ScreenShot
         self.compression_level = compression_level

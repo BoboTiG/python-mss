@@ -5,7 +5,7 @@ Support
 Feel free to try MSS on a system we had not tested, and let us know by creating an `issue <https://github.com/BoboTiG/python-mss/issues>`_.
 
     - OS: GNU/Linux, macOS and Windows
-    - Python: 3.10 and newer
+    - Python: 3.9 and newer
 
 
 Future
@@ -35,4 +35,3 @@ Abandoned
 - Python 3.6 (2022-10-27)
 - Python 3.7 (2023-04-09)
 - Python 3.8 (2024-09-01)
-- Python 3.9 (2024-09-01)

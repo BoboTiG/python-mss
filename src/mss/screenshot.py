@@ -80,8 +80,8 @@ class ScreenShot:
     def pixels(self) -> Pixels:
         """:return list: RGB tuples."""
         if not self.__pixels:
-            rgb_tuples: Iterator[Pixel] = zip(self.raw[2::4], self.raw[1::4], self.raw[::4], strict=False)
-            self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width, strict=False))
+            rgb_tuples: Iterator[Pixel] = zip(self.raw[2::4], self.raw[1::4], self.raw[::4])
+            self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
 
         return self.__pixels
 
