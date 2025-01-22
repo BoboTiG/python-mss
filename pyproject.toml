@@ -74,7 +74,7 @@ dev = [
   "build==1.2.2.post1",
   "mypy==1.14.1",
   "ruff==0.9.2",
-  "twine==6.0.1",
+  "twine==6.1.0",
 ]
 docs = [
   "sphinx==8.1.3",
