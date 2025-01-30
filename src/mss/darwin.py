@@ -7,7 +7,7 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import sys
-from ctypes import POINTER, Structure, c_double, c_float, c_int32, c_ubyte, c_uint32, c_uint64, c_void_p
+from ctypes import POINTER, Structure, c_bool, c_char_p, c_double, c_float, c_int32, c_long, c_ubyte, c_uint32, c_uint64, c_void_p
 from platform import mac_ver
 from typing import TYPE_CHECKING, Any
 
@@ -16,7 +16,7 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot, Size
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctions, Monitor
+    from mss.models import CFunctions, CConstants, Monitor
 
 __all__ = ("MSS",)
 
@@ -78,6 +78,25 @@ CFUNCTIONS: CFunctions = {
     "CGRectStandardize": ("core", [CGRect], CGRect),
     "CGRectUnion": ("core", [CGRect, CGRect], CGRect),
     "CGWindowListCreateImage": ("core", [CGRect, c_uint32, c_uint32, c_uint32], c_void_p),
+    "CGWindowListCopyWindowInfo": ("core", [c_uint32, c_uint32], c_void_p),
+    "CFArrayGetCount": ("core", [c_void_p], c_uint64),
+    "CFArrayGetValueAtIndex": ("core", [c_void_p, c_uint64], c_void_p),
+    "CFNumberGetValue": ("core", [c_void_p, c_int32, c_void_p], c_bool),
+    "CFStringGetCString": ("core", [c_void_p, c_char_p, c_long, c_uint32], c_bool),
+    "CFDictionaryGetValue": ("core", [c_void_p, c_void_p], c_void_p),
+}
+
+CCONSTANTS: CConstants = {
+    # Syntax: cconstant: type or value
+    "kCGWindowNumber": c_void_p,
+    "kCGWindowName": c_void_p,
+    "kCGWindowOwnerName": c_void_p,
+    "kCGWindowBounds": c_void_p,
+    "kCGWindowListOptionOnScreenOnly": 0b0001,
+    "kCGWindowListOptionIncludingWindow": 0b1000,
+    "kCFStringEncodingUTF8": 0x08000100,
+    "kCGNullWindowID": 0,
+    "kCFNumberSInt32Type": 3,
 }
 
 
@@ -86,7 +105,7 @@ class MSS(MSSBase):
     It uses intensively the CoreGraphics library.
     """
 
-    __slots__ = {"core", "max_displays"}
+    __slots__ = {"core", "max_displays", "constants"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """MacOS initialisations."""
@@ -96,6 +115,7 @@ class MSS(MSSBase):
 
         self._init_library()
         self._set_cfunctions()
+        self._set_cconstants()
 
     def _init_library(self) -> None:
         """Load the CoreGraphics library."""
@@ -117,6 +137,16 @@ class MSS(MSSBase):
         attrs = {"core": self.core}
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             cfactory(attrs[attr], func, argtypes, restype)
+
+    def _set_cconstants(self) -> None:
+        """Set all ctypes constants and attach them to attributes."""
+        self.constants = {}
+        for name, value in CCONSTANTS.items():
+            if isinstance(value, type) and issubclass(value, ctypes._SimpleCData):
+                self.constants[name] = value.in_dll(self.core, name)
+            else:
+                self.constants[name] = value
+
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
@@ -164,6 +194,51 @@ class MSS(MSSBase):
             "width": int_(all_monitors.size.width),
             "height": int_(all_monitors.size.height),
         }
+
+    def _windows_impl(self) -> None:
+        core = self.core
+        constants = self.constants
+        kCGWindowListOptionOnScreenOnly = constants["kCGWindowListOptionOnScreenOnly"]
+        kCFNumberSInt32Type = constants["kCFNumberSInt32Type"]
+        kCGWindowNumber = constants["kCGWindowNumber"]
+        kCGWindowName = constants["kCGWindowName"]
+        kCGWindowOwnerName = constants["kCGWindowOwnerName"]
+        kCGWindowBounds = constants["kCGWindowBounds"]
+        kCFStringEncodingUTF8 = constants["kCFStringEncodingUTF8"]
+        
+        window_list = core.CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, 0)
+        
+        window_count = core.CFArrayGetCount(window_list)
+
+        str_buf = ctypes.create_string_buffer(256)
+        self._windows = []
+        for i in range(window_count):
+            window_info = core.CFArrayGetValueAtIndex(window_list, i)
+            window_id = c_int32()
+            core.CFNumberGetValue(core.CFDictionaryGetValue(window_info, kCGWindowNumber), kCFNumberSInt32Type, ctypes.byref(window_id))
+
+            core.CFStringGetCString(core.CFDictionaryGetValue(window_info, kCGWindowName), str_buf, 256, kCFStringEncodingUTF8)
+            window_name = str_buf.value.decode('utf-8')
+
+            core.CFStringGetCString(core.CFDictionaryGetValue(window_info, kCGWindowOwnerName), str_buf, 256, kCFStringEncodingUTF8)
+            process_name = str_buf.value.decode('utf-8')
+
+            window_bound_ref = core.CFDictionaryGetValue(window_info, kCGWindowBounds)
+            window_bounds = CGRect()
+            core.CGRectMakeWithDictionaryRepresentation(window_bound_ref, ctypes.byref(window_bounds))
+
+            self._windows.append({
+                "id": window_id.value,
+                "name": window_name,
+                "process": process_name,
+                "bounds": {
+                    "left": int(window_bounds.origin.x),
+                    "top": int(window_bounds.origin.y),
+                    "width": int(window_bounds.size.width),
+                    "height": int(window_bounds.size.height),
+                }
+            })
+            
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""

@@ -16,7 +16,7 @@ from mss.tools import to_png
 if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Callable, Iterator
 
-    from mss.models import Monitor, Monitors
+    from mss.models import Monitor, Monitors, Window, Windows
 
 try:
     from datetime import UTC
@@ -34,7 +34,7 @@ OPAQUE = 255
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
-    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
+    __slots__ = {"_monitors", "_windows", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,
@@ -51,6 +51,7 @@ class MSSBase(metaclass=ABCMeta):
         self.compression_level = compression_level
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
+        self._windows: Windows = []
 
     def __enter__(self) -> MSSBase:  # noqa:PYI034
         """For the cool call `with MSS() as mss:`."""
@@ -74,6 +75,12 @@ class MSSBase(metaclass=ABCMeta):
     def _monitors_impl(self) -> None:
         """Get positions of monitors (has to be run using a threading lock).
         It must populate self._monitors.
+        """
+
+    @abstractmethod
+    def _windows_impl(self) -> None:
+        """Get ids of windows (has to be run using a threading lock).
+        It must populate self._windows.
         """
 
     def close(self) -> None:  # noqa:B027
@@ -127,6 +134,31 @@ class MSSBase(metaclass=ABCMeta):
                 self._monitors_impl()
 
         return self._monitors
+    
+    @property
+    def windows(self) -> Windows:
+        """Get ids, names, and proceesses of all windows.
+        Unlike monitors, this method does not use a cache, as the list of
+        windows can change at any time.
+
+        Each window is a dict with:
+        {
+            'id':      the window id or handle,
+            'name':    the window name,
+            'process': the window process name,
+            'bounds': the window bounds as a dict with:
+            {
+                'left':   the x-coordinate of the upper-left corner,
+                'top':    the y-coordinate of the upper-left corner,
+                'width':  the width,
+                'height': the height
+            }
+        }
+        """
+        with lock:
+            self._windows_impl()
+        
+        return self._windows
 
     def save(
         self,
