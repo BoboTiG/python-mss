@@ -214,12 +214,12 @@ class MSS(MSSBase):
         core = self.core
         constants = self.constants
         kCGWindowListOptionOnScreenOnly = constants["kCGWindowListOptionOnScreenOnly"]  # noqa: N806
-        kCFNumberSInt32Type = constants["kCFNumberSInt32Type"] # noqa: N806
-        kCGWindowNumber = constants["kCGWindowNumber"] # noqa: N806
-        kCGWindowName = constants["kCGWindowName"] # noqa: N806
-        kCGWindowOwnerName = constants["kCGWindowOwnerName"] # noqa: N806
-        kCGWindowBounds = constants["kCGWindowBounds"] # noqa: N806
-        kCFStringEncodingUTF8 = constants["kCFStringEncodingUTF8"] # noqa: N806
+        kCFNumberSInt32Type = constants["kCFNumberSInt32Type"]  # noqa: N806
+        kCGWindowNumber = constants["kCGWindowNumber"]  # noqa: N806
+        kCGWindowName = constants["kCGWindowName"]  # noqa: N806
+        kCGWindowOwnerName = constants["kCGWindowOwnerName"]  # noqa: N806
+        kCGWindowBounds = constants["kCGWindowBounds"]  # noqa: N806
+        kCFStringEncodingUTF8 = constants["kCFStringEncodingUTF8"]  # noqa: N806
 
         window_list = core.CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, 0)
 
