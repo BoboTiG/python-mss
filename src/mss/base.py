@@ -212,6 +212,8 @@ class MSSBase(metaclass=ABCMeta):
         /,
         *,
         mon: int = 0,
+        win: str | None = None,
+        proc: str | None = None,
         output: str = "monitor-{mon}.png",
         callback: Callable[[str], None] | None = None,
     ) -> Iterator[str]:
@@ -245,7 +247,21 @@ class MSSBase(metaclass=ABCMeta):
             msg = "No monitor found."
             raise ScreenShotError(msg)
 
-        if mon == 0:
+        if win or proc:
+            windows = self.find_windows(win, proc)
+            if not windows:
+                msg = f"Window {(win or proc)!r} not found."
+                raise ScreenShotError(msg)
+            window = windows[0]
+
+            fname = output.format(win=win or proc, date=datetime.now(UTC) if "{date" in output else None)
+            if callable(callback):
+                callback(fname)
+
+            sct = self.grab_window(window)
+            to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
+            yield fname
+        elif mon == 0:
             # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
                 fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
