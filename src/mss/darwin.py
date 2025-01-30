@@ -7,7 +7,20 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import sys
-from ctypes import POINTER, Structure, c_bool, c_char_p, c_double, c_float, c_int32, c_long, c_ubyte, c_uint32, c_uint64, c_void_p
+from ctypes import (
+    POINTER,
+    Structure,
+    c_bool,
+    c_char_p,
+    c_double,
+    c_float,
+    c_int32,
+    c_long,
+    c_ubyte,
+    c_uint32,
+    c_uint64,
+    c_void_p,
+)
 from platform import mac_ver
 from typing import TYPE_CHECKING, Any
 
@@ -16,7 +29,7 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot, Size
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctions, CConstants, Monitor
+    from mss.models import CConstants, CFunctions, Monitor, Window
 
 __all__ = ("MSS",)
 
@@ -84,6 +97,7 @@ CFUNCTIONS: CFunctions = {
     "CFNumberGetValue": ("core", [c_void_p, c_int32, c_void_p], c_bool),
     "CFStringGetCString": ("core", [c_void_p, c_char_p, c_long, c_uint32], c_bool),
     "CFDictionaryGetValue": ("core", [c_void_p, c_void_p], c_void_p),
+    "CGRectMakeWithDictionaryRepresentation": ("core", [c_void_p, POINTER(CGRect)], c_bool),
 }
 
 CCONSTANTS: CConstants = {
@@ -97,6 +111,8 @@ CCONSTANTS: CConstants = {
     "kCFStringEncodingUTF8": 0x08000100,
     "kCGNullWindowID": 0,
     "kCFNumberSInt32Type": 3,
+    "kCGWindowImageBoundsIgnoreFraming": 0b0001,
+    "CGRectNull": CGRect,
 }
 
 
@@ -105,7 +121,7 @@ class MSS(MSSBase):
     It uses intensively the CoreGraphics library.
     """
 
-    __slots__ = {"core", "max_displays", "constants"}
+    __slots__ = {"constants", "core", "max_displays"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """MacOS initialisations."""
@@ -142,11 +158,10 @@ class MSS(MSSBase):
         """Set all ctypes constants and attach them to attributes."""
         self.constants = {}
         for name, value in CCONSTANTS.items():
-            if isinstance(value, type) and issubclass(value, ctypes._SimpleCData):
+            if isinstance(value, type) and hasattr(value, "in_dll"):
                 self.constants[name] = value.in_dll(self.core, name)
             else:
                 self.constants[name] = value
-
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
@@ -198,16 +213,16 @@ class MSS(MSSBase):
     def _windows_impl(self) -> None:
         core = self.core
         constants = self.constants
-        kCGWindowListOptionOnScreenOnly = constants["kCGWindowListOptionOnScreenOnly"]
-        kCFNumberSInt32Type = constants["kCFNumberSInt32Type"]
-        kCGWindowNumber = constants["kCGWindowNumber"]
-        kCGWindowName = constants["kCGWindowName"]
-        kCGWindowOwnerName = constants["kCGWindowOwnerName"]
-        kCGWindowBounds = constants["kCGWindowBounds"]
-        kCFStringEncodingUTF8 = constants["kCFStringEncodingUTF8"]
-        
+        kCGWindowListOptionOnScreenOnly = constants["kCGWindowListOptionOnScreenOnly"]  # noqa: N806
+        kCFNumberSInt32Type = constants["kCFNumberSInt32Type"] # noqa: N806
+        kCGWindowNumber = constants["kCGWindowNumber"] # noqa: N806
+        kCGWindowName = constants["kCGWindowName"] # noqa: N806
+        kCGWindowOwnerName = constants["kCGWindowOwnerName"] # noqa: N806
+        kCGWindowBounds = constants["kCGWindowBounds"] # noqa: N806
+        kCFStringEncodingUTF8 = constants["kCFStringEncodingUTF8"] # noqa: N806
+
         window_list = core.CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, 0)
-        
+
         window_count = core.CFArrayGetCount(window_list)
 
         str_buf = ctypes.create_string_buffer(256)
@@ -215,41 +230,41 @@ class MSS(MSSBase):
         for i in range(window_count):
             window_info = core.CFArrayGetValueAtIndex(window_list, i)
             window_id = c_int32()
-            core.CFNumberGetValue(core.CFDictionaryGetValue(window_info, kCGWindowNumber), kCFNumberSInt32Type, ctypes.byref(window_id))
+            core.CFNumberGetValue(
+                core.CFDictionaryGetValue(window_info, kCGWindowNumber), kCFNumberSInt32Type, ctypes.byref(window_id)
+            )
 
-            core.CFStringGetCString(core.CFDictionaryGetValue(window_info, kCGWindowName), str_buf, 256, kCFStringEncodingUTF8)
-            window_name = str_buf.value.decode('utf-8')
+            core.CFStringGetCString(
+                core.CFDictionaryGetValue(window_info, kCGWindowName), str_buf, 256, kCFStringEncodingUTF8
+            )
+            window_name = str_buf.value.decode("utf-8")
 
-            core.CFStringGetCString(core.CFDictionaryGetValue(window_info, kCGWindowOwnerName), str_buf, 256, kCFStringEncodingUTF8)
-            process_name = str_buf.value.decode('utf-8')
+            core.CFStringGetCString(
+                core.CFDictionaryGetValue(window_info, kCGWindowOwnerName), str_buf, 256, kCFStringEncodingUTF8
+            )
+            process_name = str_buf.value.decode("utf-8")
 
             window_bound_ref = core.CFDictionaryGetValue(window_info, kCGWindowBounds)
             window_bounds = CGRect()
             core.CGRectMakeWithDictionaryRepresentation(window_bound_ref, ctypes.byref(window_bounds))
 
-            self._windows.append({
-                "id": window_id.value,
-                "name": window_name,
-                "process": process_name,
-                "bounds": {
-                    "left": int(window_bounds.origin.x),
-                    "top": int(window_bounds.origin.y),
-                    "width": int(window_bounds.size.width),
-                    "height": int(window_bounds.size.height),
+            self._windows.append(
+                {
+                    "id": window_id.value,
+                    "name": window_name,
+                    "process": process_name,
+                    "bounds": {
+                        "left": int(window_bounds.origin.x),
+                        "top": int(window_bounds.origin.y),
+                        "width": int(window_bounds.size.width),
+                        "height": int(window_bounds.size.height),
+                    },
                 }
-            })
-            
+            )
 
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB."""
+    def _image_to_data(self, image_ref: c_void_p, /) -> bytearray:
+        """Convert a CGImageRef to a bytearray."""
         core = self.core
-        rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
-
-        image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
-        if not image_ref:
-            msg = "CoreGraphics.CGWindowListCreateImage() failed."
-            raise ScreenShotError(msg)
-
         width = core.CGImageGetWidth(image_ref)
         height = core.CGImageGetHeight(image_ref)
         prov = copy_data = None
@@ -273,13 +288,52 @@ class MSS(MSSBase):
                     end = start + width * bytes_per_pixel
                     cropped.extend(data[start:end])
                 data = cropped
+
+            return data
         finally:
             if prov:
                 core.CGDataProviderRelease(prov)
             if copy_data:
                 core.CFRelease(copy_data)
 
+    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
+        """Retrieve all pixels from a monitor. Pixels have to be RGB."""
+        core = self.core
+        rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
+
+        image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
+        if not image_ref:
+            msg = "CoreGraphics.CGWindowListCreateImage() failed."
+            raise ScreenShotError(msg)
+
+        width = core.CGImageGetWidth(image_ref)
+        height = core.CGImageGetHeight(image_ref)
+        data = self._image_to_data(image_ref)
+
         return self.cls_image(data, monitor, size=Size(width, height))
+
+    def _grab_window_impl(self, window: Window, /) -> ScreenShot:
+        """Retrieve all pixels from a window. Pixels have to be RGB."""
+        core = self.core
+        constants = self.constants
+        bounds = window["bounds"]
+
+        rect = constants["CGRectNull"]
+        list_option = constants["kCGWindowListOptionIncludingWindow"]
+        window_id = window["id"]
+        image_option = constants["kCGWindowImageBoundsIgnoreFraming"]
+
+        image_ref = core.CGWindowListCreateImage(rect, list_option, window_id, image_option)
+
+        if not image_ref:
+            msg = "CoreGraphics.CGWindowListCreateImage() failed."
+            raise ScreenShotError(msg)
+
+        width = core.CGImageGetWidth(image_ref)
+        height = core.CGImageGetHeight(image_ref)
+        data = self._image_to_data(image_ref)
+
+        return self.cls_image(data, bounds, size=Size(width, height))
 
     def _cursor_impl(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""

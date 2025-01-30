@@ -72,6 +72,12 @@ class MSSBase(metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def _grab_window_impl(self, window: Window, /) -> ScreenShot:
+        """Retrieve all pixels from a window. Pixels have to be RGB.
+        That method has to be run using a threading lock.
+        """
+
+    @abstractmethod
     def _monitors_impl(self) -> None:
         """Get positions of monitors (has to be run using a threading lock).
         It must populate self._monitors.
@@ -110,6 +116,31 @@ class MSSBase(metaclass=ABCMeta):
                 return self._merge(screenshot, cursor)
             return screenshot
 
+    def grab_window(
+        self, window: Window | str | None = None, /, *, name: str | None = None, process: str | None = None
+    ) -> ScreenShot:
+        """Retrieve screen pixels for a given window.
+
+        :param window: The window to capture or its name.
+                       See :meth:`windows <windows>` for object details.
+        :param str name: The window name.
+        :param str process: The window process name.
+        :return :class:`ScreenShot <ScreenShot>`.
+        """
+        if isinstance(window, str):
+            name = window
+            window = None
+
+        if window is None:
+            windows = self.find_windows(name, process)
+            if not windows:
+                msg = f"Window {window!r} not found."
+                raise ScreenShotError(msg)
+            window = windows[0]
+
+        with lock:
+            return self._grab_window_impl(window)
+
     @property
     def monitors(self) -> Monitors:
         """Get positions of all monitors.
@@ -134,7 +165,7 @@ class MSSBase(metaclass=ABCMeta):
                 self._monitors_impl()
 
         return self._monitors
-    
+
     @property
     def windows(self) -> Windows:
         """Get ids, names, and proceesses of all windows.
@@ -157,8 +188,24 @@ class MSSBase(metaclass=ABCMeta):
         """
         with lock:
             self._windows_impl()
-        
+
         return self._windows
+
+    def find_windows(self, name: str | None = None, process: str | None = None) -> Windows:
+        """Find windows by name and/or process name.
+
+        :param str name: The window name.
+        :param str process: The window process name.
+        :return list: List of windows.
+        """
+        windows = self.windows
+        if name is None and process is None:
+            return windows
+        if name is None:
+            return [window for window in windows if window["process"] == process]
+        if process is None:
+            return [window for window in windows if window["name"] == name]
+        return [window for window in windows if window["name"] == name and window["process"] == process]
 
     def save(
         self,
