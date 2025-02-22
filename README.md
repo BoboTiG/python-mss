@@ -16,17 +16,16 @@ with mss() as sct:
 An ultra-fast cross-platform multiple screenshots module in pure python using ctypes.
 
 - **Python 3.9+**, PEP8 compliant, no dependency, thread-safe;
-- very basic, it will grab one screenshot by monitor or a screenshot of all monitors and save it to a PNG file;
+- very basic, it will grab one screenshot by monitor or window, or a screenshot of all monitors and save it to a PNG file;
 - but you can use PIL and benefit from all its formats (or add yours directly);
 - integrate well with Numpy and OpenCV;
 - it could be easily embedded into games and other software which require fast and platform optimized methods to grab screenshots (like AI, Computer Vision);
 - get the [source code on GitHub](https://github.com/BoboTiG/python-mss);
 - learn with a [bunch of examples](https://python-mss.readthedocs.io/examples.html);
 - you can [report a bug](https://github.com/BoboTiG/python-mss/issues);
-- need some help? Use the tag *python-mss* on [Stack Overflow](https://stackoverflow.com/questions/tagged/python-mss);
+- need some help? Use the tag _python-mss_ on [Stack Overflow](https://stackoverflow.com/questions/tagged/python-mss);
 - and there is a [complete, and beautiful, documentation](https://python-mss.readthedocs.io) :)
 - **MSS** stands for Multiple ScreenShots;
-
 
 ## Installation
 
