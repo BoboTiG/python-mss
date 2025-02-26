@@ -31,7 +31,9 @@ def main(*args: str) -> int:
         help="the PNG compression level",
     )
     cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screenshot")
-    cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
+    cli_args.add_argument("-w", "--window", default=None, help="the window to screenshot")
+    cli_args.add_argument("-p", "--process", default=None, help="the process to screenshot")
+    cli_args.add_argument("-o", "--output", default=None, help="the output file name")
     cli_args.add_argument("--with-cursor", default=False, action="store_true", help="include the cursor")
     cli_args.add_argument(
         "-q",
@@ -43,7 +45,8 @@ def main(*args: str) -> int:
     cli_args.add_argument("-v", "--version", action="version", version=__version__)
 
     options = cli_args.parse_args(args or None)
-    kwargs = {"mon": options.monitor, "output": options.output}
+    output = options.output or ("window-{win}.png" if options.window or options.process else "monitor-{mon}.png")
+    kwargs = {"mon": options.monitor, "output": output, "win": options.window, "proc": options.process}
     if options.coordinates:
         try:
             top, left, width, height = options.coordinates.split(",")
