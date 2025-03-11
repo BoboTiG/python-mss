@@ -12,8 +12,8 @@ from mss import mss
 np = pytest.importorskip("numpy", reason="Numpy module not available.")
 
 
-def test_numpy(pixel_ratio: int) -> None:
+def test_numpy() -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss(display=os.getenv("DISPLAY")) as sct:
         img = np.array(sct.grab(box))
-    assert len(img) == 10 * pixel_ratio
+    assert len(img) == 10

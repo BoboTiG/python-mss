@@ -22,6 +22,12 @@ __all__ = ("MSS",)
 
 MAC_VERSION_CATALINA = 10.16
 
+kCGWindowImageBoundsIgnoreFraming = 1 << 0  # noqa: N816
+kCGWindowImageNominalResolution = 1 << 4  # noqa: N816
+kCGWindowImageShouldBeOpaque = 1 << 1  # noqa: N816
+# Note: set `IMAGE_OPTIONS = 0` to turn on scaling (see issue #257 for more information)
+IMAGE_OPTIONS = kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque | kCGWindowImageNominalResolution
+
 
 def cgfloat() -> type[c_double | c_float]:
     """Get the appropriate value for a float."""
@@ -170,7 +176,7 @@ class MSS(MSSBase):
         core = self.core
         rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
 
-        image_ref = core.CGWindowListCreateImage(rect, 1, 0, 0)
+        image_ref = core.CGWindowListCreateImage(rect, 1, 0, IMAGE_OPTIONS)
         if not image_ref:
             msg = "CoreGraphics.CGWindowListCreateImage() failed."
             raise ScreenShotError(msg)
