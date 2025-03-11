@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 import ctypes.util
 import platform
+from unittest.mock import patch
 
 import pytest
 
@@ -67,3 +68,17 @@ def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *_: None)
         with pytest.raises(ScreenShotError):
             sct.grab(sct.monitors[1])
+
+
+def test_scaling_on() -> None:
+    """Screnshots are taken at the nominal resolution by default, but scaling can be turned on manually."""
+    # Grab a 1x1 screenshot
+    region = {"top": 0, "left": 0, "width": 1, "height": 1}
+
+    with mss.mss() as sct:
+        # Nominal resolution, i.e.: scaling is off
+        assert sct.grab(region).size[0] == 1
+
+        # Retina resolution, i.e.: scaling is on
+        with patch.object(mss.darwin, "IMAGE_OPTIONS", 0):
+            assert sct.grab(region).size[0] in {1, 2}  # 1 on the CI, 2 for all other the world
