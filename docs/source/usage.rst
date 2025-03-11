@@ -11,11 +11,11 @@ So MSS can be used as simply as::
 
 Or import the good one based on your operating system::
 
-    # macOS
-    from mss.darwin import MSS as mss
-
     # GNU/Linux
     from mss.linux import MSS as mss
+
+    # macOS
+    from mss.darwin import MSS as mss
 
     # Microsoft Windows
     from mss.windows import MSS as mss
@@ -60,7 +60,7 @@ On GNU/Linux, you can specify which display to use (useful for distant screensho
 A more specific example (only valid on GNU/Linux):
 
 .. literalinclude:: examples/linux_display_keyword.py
-    :lines: 8-
+    :lines: 9-
 
 
 Command Line

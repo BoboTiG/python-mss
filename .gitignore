@@ -4,7 +4,7 @@
 .DS_Store
 *.orig
 *.jpg
-*.png
+/*.png
 *.png.old
 *.pickle
 *.pyc

@@ -77,7 +77,10 @@ dev = [
   "twine==6.1.0",
 ]
 docs = [
+  "shibuya==2025.2.28",
   "sphinx==8.2.3",
+  "sphinx-copybutton==0.5.2",
+  "sphinx-new-tab-link==0.7.0",
 ]
 tests = [
   "numpy==2.2.3 ; sys_platform == 'linux' and python_version == '3.13'",

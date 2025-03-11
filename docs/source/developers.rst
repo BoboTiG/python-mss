@@ -48,4 +48,5 @@ Documentation
 
 To build the documentation, simply type::
 
+    $ python -m pip install -e '.[docs]'
     $ sphinx-build -d docs docs/source docs_out --color -W -bhtml
