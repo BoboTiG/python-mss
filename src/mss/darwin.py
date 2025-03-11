@@ -176,6 +176,7 @@ class MSS(MSSBase):
         core = self.core
         rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
 
+        print(f"{IMAGE_OPTIONS = }")
         image_ref = core.CGWindowListCreateImage(rect, 1, 0, IMAGE_OPTIONS)
         if not image_ref:
             msg = "CoreGraphics.CGWindowListCreateImage() failed."
