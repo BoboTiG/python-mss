@@ -3,7 +3,7 @@
 See Git checking messages for full history.
 
 ## 10.1.0.dev0 (2025-xx-xx)
-- Mac: better performances (up to -60%) by taking screenshots at nominal resolution (e.g. scaling is off by default). To enable back scaling, set `mss.darwin.IMAGE_OPTIONS = 0`. (#257)
+- Mac: up to 60% performances improvement by taking screenshots at nominal resolution (e.g. scaling is off by default). To enable back scaling, set `mss.darwin.IMAGE_OPTIONS = 0`. (#257)
 - :heart: contributors: @brycedrennan
 
 ## 10.0.0 (2024-11-14)
