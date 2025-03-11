@@ -1,5 +1,22 @@
-# http://read-the-docs.readthedocs.io/en/latest/yaml-config.html
+version: 2
 
-# Use that Python version to build the documentation
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.13"
+
+sphinx:
+  configuration: docs/source/conf.py
+  fail_on_warning: true
+
+formats:
+  - htmlzip
+  - epub
+  - pdf
+
 python:
-   version: 3
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
