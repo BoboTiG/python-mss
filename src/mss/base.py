@@ -16,7 +16,7 @@ from mss.tools import to_png
 if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Callable, Iterator
 
-    from mss.models import Monitor, Monitors
+    from mss.models import Monitor, Monitors, Window, Windows
 
 try:
     from datetime import UTC
@@ -34,7 +34,7 @@ OPAQUE = 255
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
-    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
+    __slots__ = {"_monitors", "_windows", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,
@@ -51,6 +51,7 @@ class MSSBase(metaclass=ABCMeta):
         self.compression_level = compression_level
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
+        self._windows: Windows = []
 
     def __enter__(self) -> MSSBase:  # noqa:PYI034
         """For the cool call `with MSS() as mss:`."""
@@ -71,9 +72,21 @@ class MSSBase(metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def _grab_window_impl(self, window: Window, /) -> ScreenShot:
+        """Retrieve all pixels from a window. Pixels have to be RGB.
+        That method has to be run using a threading lock.
+        """
+
+    @abstractmethod
     def _monitors_impl(self) -> None:
         """Get positions of monitors (has to be run using a threading lock).
         It must populate self._monitors.
+        """
+
+    @abstractmethod
+    def _windows_impl(self) -> None:
+        """Get ids of windows (has to be run using a threading lock).
+        It must populate self._windows.
         """
 
     def close(self) -> None:  # noqa:B027
@@ -103,6 +116,31 @@ class MSSBase(metaclass=ABCMeta):
                 return self._merge(screenshot, cursor)
             return screenshot
 
+    def grab_window(
+        self, window: Window | str | None = None, /, *, name: str | None = None, process: str | None = None
+    ) -> ScreenShot:
+        """Retrieve screen pixels for a given window.
+
+        :param window: The window to capture or its name.
+                       See :meth:`windows <windows>` for object details.
+        :param str name: The window name.
+        :param str process: The window process name.
+        :return :class:`ScreenShot <ScreenShot>`.
+        """
+        if isinstance(window, str):
+            name = window
+            window = None
+
+        if window is None:
+            windows = self.find_windows(name, process)
+            if not windows:
+                msg = f"Window {window!r} not found."
+                raise ScreenShotError(msg)
+            window = windows[0]
+
+        with lock:
+            return self._grab_window_impl(window)
+
     @property
     def monitors(self) -> Monitors:
         """Get positions of all monitors.
@@ -128,11 +166,54 @@ class MSSBase(metaclass=ABCMeta):
 
         return self._monitors
 
+    @property
+    def windows(self) -> Windows:
+        """Get ids, names, and proceesses of all windows.
+        Unlike monitors, this method does not use a cache, as the list of
+        windows can change at any time.
+
+        Each window is a dict with:
+        {
+            'id':      the window id or handle,
+            'name':    the window name,
+            'process': the window process name,
+            'bounds': the window bounds as a dict with:
+            {
+                'left':   the x-coordinate of the upper-left corner,
+                'top':    the y-coordinate of the upper-left corner,
+                'width':  the width,
+                'height': the height
+            }
+        }
+        """
+        with lock:
+            self._windows_impl()
+
+        return self._windows
+
+    def find_windows(self, name: str | None = None, process: str | None = None) -> Windows:
+        """Find windows by name and/or process name.
+
+        :param str name: The window name.
+        :param str process: The window process name.
+        :return list: List of windows.
+        """
+        windows = self.windows
+        if name is None and process is None:
+            return windows
+        if name is None:
+            return [window for window in windows if window["process"] == process]
+        if process is None:
+            return [window for window in windows if window["name"] == name]
+        return [window for window in windows if window["name"] == name and window["process"] == process]
+
     def save(
         self,
         /,
         *,
         mon: int = 0,
+        win: str | None = None,
+        proc: str | None = None,
         output: str = "monitor-{mon}.png",
         callback: Callable[[str], None] | None = None,
     ) -> Iterator[str]:
@@ -166,7 +247,21 @@ class MSSBase(metaclass=ABCMeta):
             msg = "No monitor found."
             raise ScreenShotError(msg)
 
-        if mon == 0:
+        if win or proc:
+            windows = self.find_windows(win, proc)
+            if not windows:
+                msg = f"Window {(win or proc)!r} not found."
+                raise ScreenShotError(msg)
+            window = windows[0]
+
+            fname = output.format(win=win or proc, date=datetime.now(UTC) if "{date" in output else None)
+            if callable(callback):
+                callback(fname)
+
+            sct = self.grab_window(window)
+            to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
+            yield fname
+        elif mon == 0:
             # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
                 fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)

@@ -81,3 +81,17 @@ def test_output_format_date_custom() -> None:
         filename = sct.shot(mon=1, output=fmt)
     assert filename == fmt.format(date=datetime.now(tz=UTC))
     assert Path(filename).is_file()
+
+def test_output_format_window_name() -> None:
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        window = sct.windows[0]
+        filename = next(sct.save(win=window["name"], output="window-{win}.png"))
+        assert filename == f"window-{window["name"]}.png"
+        assert Path(filename).is_file()
+
+def test_output_format_window_process() -> None:
+    with mss(display=os.getenv("DISPLAY")) as sct:
+        window = sct.windows[0]
+        filename = next(sct.save(proc=window["process"], output="process-{win}.png"))
+        assert filename == f"process-{window["process"]}.png"
+        assert Path(filename).is_file()
