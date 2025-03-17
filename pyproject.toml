@@ -83,7 +83,7 @@ docs = [
   "sphinx-new-tab-link==0.7.0",
 ]
 tests = [
-  "numpy==2.2.3 ; sys_platform == 'linux' and python_version == '3.13'",
+  "numpy==2.2.4 ; sys_platform == 'linux' and python_version == '3.13'",
   "pillow==11.1.0 ; sys_platform == 'linux' and python_version == '3.13'",
   "pytest==8.3.5",
   "pytest-cov==6.0.0",
