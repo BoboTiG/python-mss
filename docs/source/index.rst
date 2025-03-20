@@ -1,6 +1,14 @@
 Welcome to Python MSS's documentation!
 ======================================
 
+|PyPI Version|
+|PyPI Status|
+|PyPI Python Versions|
+|GitHub Build Status|
+|GitHub License|
+
+|Patreon|
+
 .. code-block:: python
 
     from mss import mss
@@ -43,3 +51,16 @@ Indices and tables
 
 * :ref:`genindex`
 * :ref:`search`
+
+.. |PyPI Version| image:: https://img.shields.io/pypi/v/mss.svg
+   :target: https://pypi.python.org/pypi/mss/
+.. |PyPI Status| image:: https://img.shields.io/pypi/status/mss.svg
+   :target: https://pypi.python.org/pypi/mss/
+.. |PyPI Python Versions| image:: https://img.shields.io/pypi/pyversions/mss.svg
+   :target: https://pypi.python.org/pypi/mss/
+.. |Github Build Status| image:: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg?branch=main
+   :target: https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml
+.. |GitHub License| image:: https://img.shields.io/github/license/BoboTiG/python-mss.svg
+   :target: https://github.com/BoboTiG/python-mss/blob/main/LICENSE.txt
+.. |Patreon| image:: https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white
+   :target: https://www.patreon.com/mschoentgen
