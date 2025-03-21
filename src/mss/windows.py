@@ -93,7 +93,7 @@ CFUNCTIONS: CFunctions = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for Microsoft Windows."""
 
-    __slots__ = {"gdi32", "user32", "_handles"}
+    __slots__ = {"_handles", "gdi32", "user32"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """Windows initialisations."""

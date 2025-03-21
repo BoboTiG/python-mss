@@ -264,7 +264,7 @@ class MSS(MSSBase):
     It uses intensively the Xlib and its Xrandr extension.
     """
 
-    __slots__ = {"xfixes", "xlib", "xrandr", "_handles"}
+    __slots__ = {"_handles", "xfixes", "xlib", "xrandr"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         """GNU/Linux initialisations."""

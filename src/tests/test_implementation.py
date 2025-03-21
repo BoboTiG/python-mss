@@ -64,14 +64,9 @@ def test_bad_monitor() -> None:
         sct.shot(mon=222)
 
 
-def test_repr(pixel_ratio: int) -> None:
+def test_repr() -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box = {
-        "top": 0,
-        "left": 0,
-        "width": 10 * pixel_ratio,
-        "height": 10 * pixel_ratio,
-    }
+    expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss.mss(display=os.getenv("DISPLAY")) as sct:
         img = sct.grab(box)
     ref = ScreenShot(bytearray(b"42"), expected_box)
@@ -195,7 +190,7 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     assert "usage: mss" in captured.out
 
 
-def test_grab_with_tuple(pixel_ratio: int) -> None:
+def test_grab_with_tuple() -> None:
     left = 100
     top = 100
     right = 500
@@ -207,7 +202,7 @@ def test_grab_with_tuple(pixel_ratio: int) -> None:
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
-        assert im.size == (width * pixel_ratio, height * pixel_ratio)
+        assert im.size == (width, height)
 
         # MSS like
         box2 = {"left": left, "top": top, "width": width, "height": height}
@@ -217,7 +212,7 @@ def test_grab_with_tuple(pixel_ratio: int) -> None:
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents(pixel_ratio: int) -> None:
+def test_grab_with_tuple_percents() -> None:
     with mss.mss(display=os.getenv("DISPLAY")) as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
@@ -230,7 +225,7 @@ def test_grab_with_tuple_percents(pixel_ratio: int) -> None:
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
-        assert im.size == (width * pixel_ratio, height * pixel_ratio)
+        assert im.size == (width, height)
 
         # MSS like
         box2 = {"left": left, "top": top, "width": width, "height": height}

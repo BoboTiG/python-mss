@@ -21,7 +21,7 @@ def test_grab_monitor() -> None:
             assert isinstance(image.rgb, bytes)
 
 
-def test_grab_part_of_screen(pixel_ratio: int) -> None:
+def test_grab_part_of_screen() -> None:
     with mss(display=os.getenv("DISPLAY")) as sct:
         for width, height in itertools.product(range(1, 42), range(1, 42)):
             monitor = {"top": 160, "left": 160, "width": width, "height": height}
@@ -29,8 +29,8 @@ def test_grab_part_of_screen(pixel_ratio: int) -> None:
 
             assert image.top == 160
             assert image.left == 160
-            assert image.width == width * pixel_ratio
-            assert image.height == height * pixel_ratio
+            assert image.width == width
+            assert image.height == height
 
 
 def test_get_pixel(raw: bytes) -> None:
