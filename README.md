@@ -5,7 +5,10 @@
 [![Tests workflow](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/BoboTiG/python-mss/actions/workflows/tests.yml)
 [![Downloads](https://static.pepy.tech/personalized-badge/mss?period=total&units=international_system&left_color=black&right_color=orange&left_text=Downloads)](https://pepy.tech/project/mss)
 
-[![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/mschoentgen)
+> [!TIP]
+> Become **my boss** to help me work on this awesome software, and make the world better:
+> 
+> [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/mschoentgen)
 
 ```python
 from mss import mss
