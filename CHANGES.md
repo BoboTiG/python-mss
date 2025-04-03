@@ -1,5 +1,13 @@
 # Technical Changes
 
+## 10.1.0 (2025-xx-xx)
+
+### darwin.py
+- Added `IMAGE_OPTIONS`
+- Added `kCGWindowImageBoundsIgnoreFraming`
+- Added `kCGWindowImageNominalResolution`
+- Added `kCGWindowImageShouldBeOpaque`
+
 ## 10.0.0 (2024-11-14)
 
 ### base.py

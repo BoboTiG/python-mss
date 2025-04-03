@@ -11,7 +11,7 @@ If that URL should fail, try contacting the author.
 from mss.exception import ScreenShotError
 from mss.factory import mss
 
-__version__ = "10.0.1"
+__version__ = "10.1.0.dev0"
 __author__ = "Mickaël Schoentgen"
 __date__ = "2013-2025"
 __copyright__ = f"""
