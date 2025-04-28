@@ -73,7 +73,7 @@ mss = "mss.__main__:main"
 dev = [
   "build==1.2.2.post1",
   "mypy==1.15.0",
-  "ruff==0.11.6",
+  "ruff==0.11.7",
   "twine==6.1.0",
 ]
 docs = [
