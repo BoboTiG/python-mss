@@ -46,3 +46,5 @@ Or you can install it with Conda:
 ```shell
 conda install -c conda-forge python-mss
 ```
+
+In case of scaling and high DPI issues for external monitors: some packages (e.g. `mouseinfo` / `pyautogui` / `pyscreeze`) incorrectly call `SetProcessDpiAware()` during import process. To prevent that, import `mss` first.
