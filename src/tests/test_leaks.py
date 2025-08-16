@@ -2,8 +2,10 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+import ctypes
 import os
 import platform
+import subprocess
 from collections.abc import Callable
 
 import pytest
@@ -18,8 +20,6 @@ def get_opened_socket() -> int:
     """GNU/Linux: a way to get the opened sockets count.
     It will be used to check X server connections are well closed.
     """
-    import subprocess
-
     cmd = f"lsof -U | grep {PID}"
     output = subprocess.check_output(cmd, shell=True)
     return len(output.splitlines())
@@ -29,8 +29,6 @@ def get_handles() -> int:
     """Windows: a way to get the GDI handles count.
     It will be used to check the handles count is not growing, showing resource leaks.
     """
-    import ctypes
-
     PROCESS_QUERY_INFORMATION = 0x400  # noqa:N806
     GR_GDIOBJECTS = 0  # noqa:N806
     h = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, 0, PID)

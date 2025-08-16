@@ -17,9 +17,9 @@ if platform.system().lower() != "linux":
 pytest.importorskip("build")
 pytest.importorskip("twine")
 
-SDIST = "python -m build --sdist".split()
-WHEEL = "python -m build --wheel".split()
-CHECK = "twine check --strict".split()
+SDIST = ["python", "-m", "build", "--sdist"]
+WHEEL = ["python", "-m", "build", "--wheel"]
+CHECK = ["twine", "check", "--strict"]
 
 
 def test_sdist() -> None:
