@@ -5,9 +5,10 @@ Source: https://github.com/BoboTiG/python-mss.
 from __future__ import annotations
 
 import os
-import os.path
 import platform
 import sys
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -16,7 +17,6 @@ from unittest.mock import Mock, patch
 import pytest
 
 import mss
-import mss.tools
 from mss.__main__ import main as entry_point
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
@@ -237,8 +237,6 @@ def test_grab_with_tuple_percents() -> None:
 
 def test_thread_safety() -> None:
     """Regression test for issue #169."""
-    import threading
-    import time
 
     def record(check: dict) -> None:
         """Record for one second."""
