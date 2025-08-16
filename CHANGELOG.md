@@ -2,6 +2,10 @@
 
 See Git checking messages for full history.
 
+## 10.1.1.dev0 (2025-xx-xx)
+- 
+- :heart: contributors: @
+
 ## 10.1.0 (2025-08-16)
 - Mac: up to 60% performances improvement by taking screenshots at nominal resolution (e.g. scaling is off by default). To enable back scaling, set `mss.darwin.IMAGE_OPTIONS = 0`. (#257)
 - docs: use the [shibuya](https://shibuya.lepture.com) theme
