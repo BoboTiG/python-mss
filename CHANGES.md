@@ -1,6 +1,6 @@
 # Technical Changes
 
-## 10.1.0 (2025-xx-xx)
+## 10.1.0 (2025-08-16)
 
 ### darwin.py
 - Added `IMAGE_OPTIONS`
