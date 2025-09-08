@@ -85,7 +85,7 @@ docs = [
 tests = [
   "numpy==2.2.4 ; sys_platform == 'linux' and python_version == '3.13'",
   "pillow==11.3.0 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pytest==8.4.1",
+  "pytest==8.4.2",
   "pytest-cov==6.3.0",
   "pytest-rerunfailures==15.1",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
