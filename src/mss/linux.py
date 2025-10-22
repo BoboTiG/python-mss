@@ -40,6 +40,7 @@ if TYPE_CHECKING:  # pragma: nocover
 __all__ = ("MSS",)
 
 
+XID = c_ulong
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 BITS_PER_PIXELS_32 = 32
@@ -55,6 +56,12 @@ class Display(Structure):
     """
 
 
+class Visual(Structure):
+    """Visual structure; contains information about colormapping possible.
+    https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#302.
+    """
+
+
 class XErrorEvent(Structure):
     """XErrorEvent to debug eventual errors.
     https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html.
@@ -63,11 +70,11 @@ class XErrorEvent(Structure):
     _fields_ = (
         ("type", c_int),
         ("display", POINTER(Display)),  # Display the event was read from
+        ("resourceid", XID),  # resource ID
         ("serial", c_ulong),  # serial number of failed request
         ("error_code", c_ubyte),  # error code of failed request
         ("request_code", c_ubyte),  # major op-code of failed request
         ("minor_code", c_ubyte),  # minor op-code of failed request
-        ("resourceid", c_void_p),  # resource ID
     )
 
 
@@ -168,7 +175,7 @@ class XWindowAttributes(Structure):
         ("height", c_int32),  # height of window
         ("border_width", c_int32),  # border width of window
         ("depth", c_int32),  # depth of window
-        ("visual", c_ulong),  # the associated visual structure
+        ("visual", POINTER(Visual)),  # the associated visual structure
         ("root", c_ulong),  # root of screen containing window
         ("class", c_int32),  # InputOutput, InputOnly
         ("bit_gravity", c_int32),  # one of bit gravity values
@@ -239,22 +246,22 @@ def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, An
 CFUNCTIONS: CFunctions = {
     # Syntax: cfunction: (attr, argtypes, restype)
     "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
-    "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
+    "XDefaultRootWindow": ("xlib", [POINTER(Display)], XID),
     "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
     "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
     "XGetImage": (
         "xlib",
-        [POINTER(Display), POINTER(Display), c_int, c_int, c_uint, c_uint, c_ulong, c_int],
+        [POINTER(Display), XID, c_int, c_int, c_uint, c_uint, c_ulong, c_int],
         POINTER(XImage),
     ),
-    "XGetWindowAttributes": ("xlib", [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)], c_int),
+    "XGetWindowAttributes": ("xlib", [POINTER(Display), XID, POINTER(XWindowAttributes)], c_int),
     "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
     "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], c_uint),
     "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
     "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
     "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
-    "XRRGetScreenResources": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
-    "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
+    "XRRGetScreenResources": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
+    "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
     "XSetErrorHandler": ("xlib", [c_void_p], c_void_p),
 }
 
@@ -322,11 +329,7 @@ class MSS(MSSBase):
             msg = "Xrandr not enabled."
             raise ScreenShotError(msg)
 
-        self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
-
-        # Fix for XRRGetScreenResources and XGetImage:
-        #     expected LP_Display instance instead of LP_XWindowAttributes
-        self._handles.drawable = cast(self._handles.root, POINTER(Display))
+        self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
     def close(self) -> None:
         # Clean-up
