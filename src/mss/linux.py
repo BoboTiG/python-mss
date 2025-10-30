@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
+import locale
 import os
 from contextlib import suppress
 from ctypes import (
@@ -215,7 +216,7 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     get_error(display, evt.error_code, error, len(error))
 
     _ERROR[current_thread()] = {
-        "error": error.value.decode("utf-8"),
+        "error": error.value.decode(locale.getencoding(), errors="replace"),
         "error_code": evt.error_code,
         "minor_code": evt.minor_code,
         "request_code": evt.request_code,
