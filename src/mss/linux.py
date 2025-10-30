@@ -250,6 +250,7 @@ CFUNCTIONS: CFunctions = {
     "XGetWindowAttributes": ("xlib", [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)], c_int),
     "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
     "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], c_uint),
+    "XRRQueryVersion": ("xrandr", [POINTER(Display), POINTER(c_int), POINTER(c_int)], c_int),
     "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
     "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
     "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
@@ -388,6 +389,10 @@ class MSS(MSSBase):
         int_ = int
         xrandr = self.xrandr
 
+        xrandr_major = c_int(0)
+        xrandr_minor = c_int(0)
+        xrandr.XRRQueryVersion(display, xrandr_major, xrandr_minor)
+
         # All monitors
         gwa = XWindowAttributes()
         self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
@@ -400,9 +405,11 @@ class MSS(MSSBase):
         # XRRGetScreenResources():        0.1755971429956844 s
         # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
         # The second is faster by a factor of 44! So try to use it first.
-        try:
+        # It doesn't query the monitors for updated information, but it does require the server to support
+        # RANDR 1.3.  We also make sure the client supports 1.3, by checking for the presence of the function.
+        if hasattr(xrandr, "XRRGetScreenResourcesCurrent") and (xrandr_major.value, xrandr_minor.value) >= (1, 3):
             mon = xrandr.XRRGetScreenResourcesCurrent(display, self._handles.drawable).contents
-        except AttributeError:
+        else:
             mon = xrandr.XRRGetScreenResources(display, self._handles.drawable).contents
 
         crtcs = mon.crtcs
