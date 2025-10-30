@@ -202,6 +202,25 @@ _XFIXES = find_library("Xfixes")
 _XRANDR = find_library("Xrandr")
 
 
+class XError(ScreenShotError):
+    def __str__(self):
+        msg = super().__str__()
+        # We use something similar to the default Xlib error handler's format, since that's quite
+        # well-understood.  The original code is in
+        # https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/src/XlibInt.c?ref_type=heads#L1313
+        # but we don't try to implement most of it.
+        msg += (
+            f"\nX Error of failed request:  {self.details["error"]}"
+            f"\n  Major opcode of failed request:  {self.details["request_code"]} ({self.details["request"]})")
+        if self.details["request_code"] >= 128:
+            msg += (
+                f"\n  Minor opcode of failed request:  {self.details["minor_code"]}")
+        msg += (
+            f"\n  Resource id in failed request:  {self.details["resourceid"]}"
+            f"\n  Serial number of failed request:  {self.details["serial"]}")
+        return msg
+
+
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent))
 def _error_handler(display: Display, event: XErrorEvent) -> int:
     """Specifies the program's supplied error handler."""
@@ -210,32 +229,43 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     get_error = xlib.XGetErrorText
     get_error.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
     get_error.restype = c_void_p
+    get_error_database = xlib.XGetErrorDatabaseText
+    get_error_database.argtypes = [POINTER(Display), c_char_p, c_char_p, c_char_p, c_char_p, c_int]
+    get_error_database.restype = c_int
 
     evt = event.contents
     error = create_string_buffer(1024)
     get_error(display, evt.error_code, error, len(error))
+    request = create_string_buffer(1024)
+    get_error_database(display, b"XRequest", b"%i" % evt.request_code, b"Extension-specific", request, len(request))
+    # We don't try to get the string forms of the extension name or minor code currently.  Those are important
+    # fields for debugging, but getting the strings is difficult.  The call stack of the exception gives pretty
+    # useful similar information, though; most of the requests we use are synchronous, so the failing request is
+    # usually the function being called.
 
     _ERROR[current_thread()] = {
         "error": error.value.decode(locale.getencoding(), errors="replace"),
         "error_code": evt.error_code,
         "minor_code": evt.minor_code,
+        "request": request.value.decode(locale.getencoding(), errors="replace"),
         "request_code": evt.request_code,
         "serial": evt.serial,
+        "resourceid": evt.resourceid,
         "type": evt.type,
     }
 
     return 0
 
 
-def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, Any]:
-    """Validate the returned value of a C function call."""
+def _validate_x11(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, Any]:
+    """Validate the returned value of an X11 function call."""
     thread = current_thread()
     if retval != 0 and thread not in _ERROR:
         return args
 
     details = _ERROR.pop(thread, {})
     msg = f"{func.__name__}() failed"
-    raise ScreenShotError(msg, details=details)
+    raise XError(msg, details=details)
 
 
 # C functions that will be initialised later.
@@ -383,7 +413,7 @@ class MSS(MSSBase):
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with suppress(AttributeError):
-                errcheck = None if func == "XSetErrorHandler" else _validate
+                errcheck = None if func == "XSetErrorHandler" else _validate_x11
                 cfactory(attrs[attr], func, argtypes, restype, errcheck=errcheck)
 
     def _monitors_impl(self) -> None:
