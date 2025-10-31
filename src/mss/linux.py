@@ -14,12 +14,10 @@ from ctypes import (
     byref,
     c_char_p,
     c_int,
-    c_int32,
     c_long,
     c_short,
     c_ubyte,
     c_uint,
-    c_uint32,
     c_ulong,
     c_ushort,
     c_void_p,
@@ -54,19 +52,41 @@ SUPPORTED_BITS_PER_PIXELS = {
 class Display(Structure):
     """Structure that serves as the connection to the X server
     and that contains all the information about that X server.
+    The contents of this structure are implementation dependent.
+    A Display should be treated as opaque by application code.
+    https://tronche.com/gui/x/xlib/display/display-macros.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L477
     https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#L831.
     """
+
+    # Opaque data
 
 
 class Visual(Structure):
     """Visual structure; contains information about colormapping possible.
+    https://tronche.com/gui/x/xlib/window/visual-types.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.hheads#L220
     https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#302.
     """
+
+    # Opaque data (per Tronche)
+
+
+class Screen(Structure):
+    """Information about the screen.
+    The contents of this structure are implementation dependent.  A
+    Screen should be treated as opaque by application code.
+    https://tronche.com/gui/x/xlib/display/screen-information.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L253
+    """
+
+    # Opaque data
 
 
 class XErrorEvent(Structure):
     """XErrorEvent to debug eventual errors.
     https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html.
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L920
     """
 
     _fields_ = (
@@ -102,7 +122,8 @@ class XFixesCursorImage(Structure):
 
 class XImage(Structure):
     """Description of an image as it exists in the client's memory.
-    https://tronche.com/gui/x/xlib/graphics/images.html.
+    https://tronche.com/gui/x/xlib/graphics/images.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L353
     """
 
     _fields_ = (
@@ -122,6 +143,7 @@ class XImage(Structure):
         ("green_mask", c_ulong),  # bits in z arrangement
         ("blue_mask", c_ulong),  # bits in z arrangement
     )
+    # Other opaque fields follow for Xlib's internal use.
 
 
 class XRRCrtcInfo(Structure):
@@ -135,18 +157,20 @@ class XRRCrtcInfo(Structure):
         ("y", c_int),
         ("width", c_uint),
         ("height", c_uint),
-        ("mode", c_long),
-        ("rotation", c_int),
+        ("mode", XID),
+        ("rotation", c_ushort),
         ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
+        ("outputs", POINTER(XID)),
         ("rotations", c_ushort),
         ("npossible", c_int),
-        ("possible", POINTER(c_long)),
+        ("possible", POINTER(XID)),
     )
 
 
 class XRRModeInfo(Structure):
     """https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L248."""
+
+    # The fields aren't needed
 
 
 class XRRScreenResources(Structure):
@@ -159,41 +183,44 @@ class XRRScreenResources(Structure):
         ("timestamp", c_ulong),
         ("configTimestamp", c_ulong),
         ("ncrtc", c_int),
-        ("crtcs", POINTER(c_long)),
+        ("crtcs", POINTER(XID)),
         ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
+        ("outputs", POINTER(XID)),
         ("nmode", c_int),
         ("modes", POINTER(XRRModeInfo)),
     )
 
 
 class XWindowAttributes(Structure):
-    """Attributes for the specified window."""
+    """Attributes for the specified window.
+    https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L304
+    """
 
     _fields_ = (
-        ("x", c_int32),  # location of window
-        ("y", c_int32),  # location of window
-        ("width", c_int32),  # width of window
-        ("height", c_int32),  # height of window
-        ("border_width", c_int32),  # border width of window
-        ("depth", c_int32),  # depth of window
+        ("x", c_int),  # location of window
+        ("y", c_int),  # location of window
+        ("width", c_int),  # width of window
+        ("height", c_int),  # height of window
+        ("border_width", c_int),  # border width of window
+        ("depth", c_int),  # depth of window
         ("visual", POINTER(Visual)),  # the associated visual structure
-        ("root", c_ulong),  # root of screen containing window
-        ("class", c_int32),  # InputOutput, InputOnly
-        ("bit_gravity", c_int32),  # one of bit gravity values
-        ("win_gravity", c_int32),  # one of the window gravity values
-        ("backing_store", c_int32),  # NotUseful, WhenMapped, Always
+        ("root", XID),  # root of screen containing window
+        ("class", c_int),  # InputOutput, InputOnly
+        ("bit_gravity", c_int),  # one of bit gravity values
+        ("win_gravity", c_int),  # one of the window gravity values
+        ("backing_store", c_int),  # NotUseful, WhenMapped, Always
         ("backing_planes", c_ulong),  # planes to be preserved if possible
         ("backing_pixel", c_ulong),  # value to be used when restoring planes
-        ("save_under", c_int32),  # boolean, should bits under be saved?
-        ("colormap", c_ulong),  # color map to be associated with window
-        ("mapinstalled", c_uint32),  # boolean, is color map currently installed
-        ("map_state", c_uint32),  # IsUnmapped, IsUnviewable, IsViewable
+        ("save_under", c_int),  # boolean, should bits under be saved?
+        ("colormap", XID),  # color map to be associated with window
+        ("mapinstalled", c_int),  # boolean, is color map currently installed
+        ("map_state", c_uint),  # IsUnmapped, IsUnviewable, IsViewable
         ("all_event_masks", c_ulong),  # set of events all people have interest in
         ("your_event_mask", c_ulong),  # my event mask
         ("do_not_propagate_mask", c_ulong),  # set of events that should not propagate
-        ("override_redirect", c_int32),  # boolean value for override-redirect
-        ("screen", c_ulong),  # back pointer to correct screen
+        ("override_redirect", c_int),  # boolean value for override-redirect
+        ("screen", POINTER(Screen)),  # back pointer to correct screen
     )
 
 
