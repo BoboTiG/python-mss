@@ -11,5 +11,4 @@ It is **very** important to keep up to date tests and documentation.
 
 Is your code right?
 
-- [ ] PEP8 compliant
-- [ ] `flake8` passed
+- [ ] `./check.sh` passed

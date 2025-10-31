@@ -4,7 +4,9 @@ Source: https://github.com/BoboTiG/python-mss.
 
 import platform
 from collections.abc import Generator
-from unittest.mock import Mock, patch
+from ctypes import CFUNCTYPE, POINTER, _Pointer, c_int
+from typing import Any
+from unittest.mock import Mock, NonCallableMock, patch
 
 import pytest
 
@@ -20,6 +22,14 @@ PYPY = platform.python_implementation() == "PyPy"
 WIDTH = 200
 HEIGHT = 200
 DEPTH = 24
+
+
+def spy_and_patch(monkeypatch: pytest.MonkeyPatch, obj: Any, name: str) -> Mock:
+    """Replace obj.name with a call-through mock and return the mock."""
+    real = getattr(obj, name)
+    spy = Mock(wraps=real)
+    monkeypatch.setattr(obj, name, spy, raising=False)
+    return spy
 
 
 @pytest.fixture
@@ -133,19 +143,69 @@ def test__is_extension_enabled_unknown_name(display: str) -> None:
         assert not sct._is_extension_enabled("NOEXT")
 
 
-def test_missing_fast_function_for_monitor_details_retrieval(display: str) -> None:
+def test_fast_function_for_monitor_details_retrieval(display: str, monkeypatch: pytest.MonkeyPatch) -> None:
     with mss.mss(display=display) as sct:
         assert isinstance(sct, mss.linux.MSS)  # For Mypy
         assert hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
+        fast_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResourcesCurrent")
+        slow_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResources")
         screenshot_with_fast_fn = sct.grab(sct.monitors[1])
+
+    fast_spy.assert_called()
+    slow_spy.assert_not_called()
 
     assert set(screenshot_with_fast_fn.rgb) == {0}
 
+
+def test_client_missing_fast_function_for_monitor_details_retrieval(
+    display: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     with mss.mss(display=display) as sct:
         assert isinstance(sct, mss.linux.MSS)  # For Mypy
         assert hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
-        del sct.xrandr.XRRGetScreenResourcesCurrent
+        # Even though we're going to delete it, we'll still create a fast spy, to make sure that it isn't somehow
+        # getting accessed through a path we hadn't considered.
+        fast_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResourcesCurrent")
+        slow_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResources")
+        # If we just delete sct.xrandr.XRRGetScreenResourcesCurrent, it will get recreated automatically by ctypes
+        # the next time it's accessed.  A Mock will remember that the attribute was explicitly deleted and hide it.
+        mock_xrandr = NonCallableMock(wraps=sct.xrandr)
+        del mock_xrandr.XRRGetScreenResourcesCurrent
+        monkeypatch.setattr(sct, "xrandr", mock_xrandr)
+        assert not hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
         screenshot_with_slow_fn = sct.grab(sct.monitors[1])
+
+    fast_spy.assert_not_called()
+    slow_spy.assert_called()
+
+    assert set(screenshot_with_slow_fn.rgb) == {0}
+
+
+def test_server_missing_fast_function_for_monitor_details_retrieval(
+    display: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_xrrqueryversion_type = CFUNCTYPE(
+        c_int,  # Status
+        POINTER(mss.linux.Display),  # Display*
+        POINTER(c_int),  # int* major
+        POINTER(c_int),  # int* minor
+    )
+
+    @fake_xrrqueryversion_type
+    def fake_xrrqueryversion(_dpy: _Pointer, major_p: _Pointer, minor_p: _Pointer) -> int:
+        major_p[0] = 1
+        minor_p[0] = 2
+        return 1
+
+    with mss.mss(display=display) as sct:
+        assert isinstance(sct, mss.linux.MSS)  # For Mypy
+        monkeypatch.setattr(sct.xrandr, "XRRQueryVersion", fake_xrrqueryversion)
+        fast_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResourcesCurrent")
+        slow_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResources")
+        screenshot_with_slow_fn = sct.grab(sct.monitors[1])
+
+    fast_spy.assert_not_called()
+    slow_spy.assert_called()
 
     assert set(screenshot_with_slow_fn.rgb) == {0}
 
