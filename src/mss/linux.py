@@ -42,6 +42,7 @@ __all__ = ("MSS",)
 
 
 XID = c_ulong
+X_FIRST_EXTENSION_OPCODE = 128
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 BITS_PER_PIXELS_32 = 32
@@ -203,21 +204,22 @@ _XRANDR = find_library("Xrandr")
 
 
 class XError(ScreenShotError):
-    def __str__(self):
+    def __str__(self) -> str:
         msg = super().__str__()
-        # We use something similar to the default Xlib error handler's format, since that's quite
-        # well-understood.  The original code is in
+        # We use something similar to the default Xlib error handler's format, since that's quite well-understood.
+        # The original code is in
         # https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/src/XlibInt.c?ref_type=heads#L1313
         # but we don't try to implement most of it.
         msg += (
             f"\nX Error of failed request:  {self.details['error']}"
-            f"\n  Major opcode of failed request:  {self.details['request_code']} ({self.details['request']})")
-        if self.details["request_code"] >= 128:
-            msg += (
-                f"\n  Minor opcode of failed request:  {self.details['minor_code']}")
+            f"\n  Major opcode of failed request:  {self.details['request_code']} ({self.details['request']})"
+        )
+        if self.details["request_code"] >= X_FIRST_EXTENSION_OPCODE:
+            msg += f"\n  Minor opcode of failed request:  {self.details['minor_code']}"
         msg += (
             f"\n  Resource id in failed request:  {self.details['resourceid']}"
-            f"\n  Serial number of failed request:  {self.details['serial']}")
+            f"\n  Serial number of failed request:  {self.details['serial']}"
+        )
         return msg
 
 
