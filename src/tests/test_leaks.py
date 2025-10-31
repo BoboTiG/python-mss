@@ -20,9 +20,9 @@ def get_opened_socket() -> int:
     """GNU/Linux: a way to get the opened sockets count.
     It will be used to check X server connections are well closed.
     """
-    cmd = f"lsof -U | grep {PID}"
-    output = subprocess.check_output(cmd, shell=True)
-    return len(output.splitlines())
+    output = subprocess.check_output(["lsof", "-a", "-U", "-Ff", f"-p{PID}"])
+    # The first line will be "p{PID}".  The remaining lines start with "f", one per open socket.
+    return len([line for line in output.splitlines() if line.startswith(b"f")])
 
 
 def get_handles() -> int:
