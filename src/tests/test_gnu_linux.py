@@ -151,7 +151,7 @@ def test_fast_function_for_monitor_details_retrieval(display: str, monkeypatch: 
         slow_spy = spy_and_patch(monkeypatch, sct.xrandr, "XRRGetScreenResources")
         screenshot_with_fast_fn = sct.grab(sct.monitors[1])
 
-    fast_spy.assert_called()  # fast path used
+    fast_spy.assert_called()
     slow_spy.assert_not_called()  # slow path not used
 
     assert set(screenshot_with_fast_fn.rgb) == {0}
