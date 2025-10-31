@@ -175,7 +175,7 @@ def test_client_missing_fast_function_for_monitor_details_retrieval(
         assert not hasattr(sct.xrandr, "XRRGetScreenResourcesCurrent")
         screenshot_with_slow_fn = sct.grab(sct.monitors[1])
 
-    fast_spy.assert_not_called()  # fast path used
+    fast_spy.assert_not_called()
     slow_spy.assert_called()  # slow path not used
 
     assert set(screenshot_with_slow_fn.rgb) == {0}
