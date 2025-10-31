@@ -152,7 +152,7 @@ def test_fast_function_for_monitor_details_retrieval(display: str, monkeypatch: 
         screenshot_with_fast_fn = sct.grab(sct.monitors[1])
 
     fast_spy.assert_called()
-    slow_spy.assert_not_called()  # slow path not used
+    slow_spy.assert_not_called()
 
     assert set(screenshot_with_fast_fn.rgb) == {0}
 
