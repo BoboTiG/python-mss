@@ -210,14 +210,14 @@ class XError(ScreenShotError):
         # https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/src/XlibInt.c?ref_type=heads#L1313
         # but we don't try to implement most of it.
         msg += (
-            f"\nX Error of failed request:  {self.details["error"]}"
-            f"\n  Major opcode of failed request:  {self.details["request_code"]} ({self.details["request"]})")
+            f"\nX Error of failed request:  {self.details['error']}"
+            f"\n  Major opcode of failed request:  {self.details['request_code']} ({self.details['request']})")
         if self.details["request_code"] >= 128:
             msg += (
-                f"\n  Minor opcode of failed request:  {self.details["minor_code"]}")
+                f"\n  Minor opcode of failed request:  {self.details['minor_code']}")
         msg += (
-            f"\n  Resource id in failed request:  {self.details["resourceid"]}"
-            f"\n  Serial number of failed request:  {self.details["serial"]}")
+            f"\n  Resource id in failed request:  {self.details['resourceid']}"
+            f"\n  Serial number of failed request:  {self.details['serial']}")
         return msg
 
 
