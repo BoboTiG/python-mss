@@ -83,6 +83,19 @@ def test_arg_display(display: str, monkeypatch: pytest.MonkeyPatch) -> None:
         pass
 
 
+def test_xerror_without_details() -> None:
+    # Opening an invalid display will create an XError instance, but since there was no XErrorEvent, then the
+    # details won't be filled in.  Generate one.
+    with pytest.raises(mss.linux.XError) as excinfo, mss.mss(display=":INVALID"):
+        pass
+
+    exc = excinfo.value
+    # Ensure it has no details.
+    assert not exc.details
+    # Ensure it can be stringified.
+    str(exc)
+
+
 @patch("mss.linux._X11", new=None)
 def test_no_xlib_library() -> None:
     with pytest.raises(ScreenShotError), mss.mss():
