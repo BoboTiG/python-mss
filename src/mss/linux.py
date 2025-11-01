@@ -275,11 +275,14 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     # useful similar information, though; most of the requests we use are synchronous, so the failing request is
     # usually the function being called.
 
+    encoding = (
+        locale.getencoding() if hasattr(locale, "getencoding") else locale.getpreferredencoding(do_setlocale=False)
+    )
     _ERROR[current_thread()] = {
-        "error": error.value.decode(locale.getencoding(), errors="replace"),
+        "error": error.value.decode(encoding, errors="replace"),
         "error_code": evt.error_code,
         "minor_code": evt.minor_code,
-        "request": request.value.decode(locale.getencoding(), errors="replace"),
+        "request": request.value.decode(encoding, errors="replace"),
         "request_code": evt.request_code,
         "serial": evt.serial,
         "resourceid": evt.resourceid,
