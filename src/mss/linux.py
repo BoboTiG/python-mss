@@ -4,21 +4,20 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
+import locale
 import os
 from contextlib import suppress
 from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    _Pointer,
     byref,
     c_char_p,
     c_int,
-    c_int32,
-    c_long,
     c_short,
     c_ubyte,
     c_uint,
-    c_uint32,
     c_ulong,
     c_ushort,
     c_void_p,
@@ -40,6 +39,7 @@ if TYPE_CHECKING:  # pragma: nocover
 __all__ = ("MSS",)
 
 
+X_FIRST_EXTENSION_OPCODE = 128
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
 BITS_PER_PIXELS_32 = 32
@@ -48,26 +48,79 @@ SUPPORTED_BITS_PER_PIXELS = {
 }
 
 
+class XID(c_ulong):
+    """X11 generic resource ID
+    https://tronche.com/gui/x/xlib/introduction/generic.html
+    https://gitlab.freedesktop.org/xorg/proto/xorgproto/-/blob/master/include/X11/X.h#L66
+    """
+
+
+class XStatus(c_int):
+    """Xlib common return code type
+    This is Status in Xlib, but XStatus here to prevent ambiguity.
+    Zero is an error, non-zero is success.
+    https://tronche.com/gui/x/xlib/introduction/errors.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L79
+    """
+
+
+class XBool(c_int):
+    """Xlib boolean type
+    This is Bool in Xlib, but XBool here to prevent ambiguity.
+    0 is False, 1 is True.
+    https://tronche.com/gui/x/xlib/introduction/generic.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L78
+    """
+
+
 class Display(Structure):
     """Structure that serves as the connection to the X server
     and that contains all the information about that X server.
+    The contents of this structure are implementation dependent.
+    A Display should be treated as opaque by application code.
+    https://tronche.com/gui/x/xlib/display/display-macros.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L477
     https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#L831.
     """
+
+    # Opaque data
+
+
+class Visual(Structure):
+    """Visual structure; contains information about colormapping possible.
+    https://tronche.com/gui/x/xlib/window/visual-types.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.hheads#L220
+    https://github.com/garrybodsworth/pyxlib-ctypes/blob/master/pyxlib/xlib.py#302.
+    """
+
+    # Opaque data (per Tronche)
+
+
+class Screen(Structure):
+    """Information about the screen.
+    The contents of this structure are implementation dependent.  A
+    Screen should be treated as opaque by application code.
+    https://tronche.com/gui/x/xlib/display/screen-information.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L253
+    """
+
+    # Opaque data
 
 
 class XErrorEvent(Structure):
     """XErrorEvent to debug eventual errors.
     https://tronche.com/gui/x/xlib/event-handling/protocol-errors/default-handlers.html.
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L920
     """
 
     _fields_ = (
         ("type", c_int),
         ("display", POINTER(Display)),  # Display the event was read from
+        ("resourceid", XID),  # resource ID
         ("serial", c_ulong),  # serial number of failed request
         ("error_code", c_ubyte),  # error code of failed request
         ("request_code", c_ubyte),  # major op-code of failed request
         ("minor_code", c_ubyte),  # minor op-code of failed request
-        ("resourceid", c_void_p),  # resource ID
     )
 
 
@@ -93,7 +146,8 @@ class XFixesCursorImage(Structure):
 
 class XImage(Structure):
     """Description of an image as it exists in the client's memory.
-    https://tronche.com/gui/x/xlib/graphics/images.html.
+    https://tronche.com/gui/x/xlib/graphics/images.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L353
     """
 
     _fields_ = (
@@ -113,6 +167,7 @@ class XImage(Structure):
         ("green_mask", c_ulong),  # bits in z arrangement
         ("blue_mask", c_ulong),  # bits in z arrangement
     )
+    # Other opaque fields follow for Xlib's internal use.
 
 
 class XRRCrtcInfo(Structure):
@@ -126,18 +181,20 @@ class XRRCrtcInfo(Structure):
         ("y", c_int),
         ("width", c_uint),
         ("height", c_uint),
-        ("mode", c_long),
-        ("rotation", c_int),
+        ("mode", XID),
+        ("rotation", c_ushort),
         ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
+        ("outputs", POINTER(XID)),
         ("rotations", c_ushort),
         ("npossible", c_int),
-        ("possible", POINTER(c_long)),
+        ("possible", POINTER(XID)),
     )
 
 
 class XRRModeInfo(Structure):
     """https://gitlab.freedesktop.org/xorg/lib/libxrandr/-/blob/master/include/X11/extensions/Xrandr.h#L248."""
+
+    # The fields aren't needed
 
 
 class XRRScreenResources(Structure):
@@ -150,41 +207,44 @@ class XRRScreenResources(Structure):
         ("timestamp", c_ulong),
         ("configTimestamp", c_ulong),
         ("ncrtc", c_int),
-        ("crtcs", POINTER(c_long)),
+        ("crtcs", POINTER(XID)),
         ("noutput", c_int),
-        ("outputs", POINTER(c_long)),
+        ("outputs", POINTER(XID)),
         ("nmode", c_int),
         ("modes", POINTER(XRRModeInfo)),
     )
 
 
 class XWindowAttributes(Structure):
-    """Attributes for the specified window."""
+    """Attributes for the specified window.
+    https://tronche.com/gui/x/xlib/window-information/XGetWindowAttributes.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L304
+    """
 
     _fields_ = (
-        ("x", c_int32),  # location of window
-        ("y", c_int32),  # location of window
-        ("width", c_int32),  # width of window
-        ("height", c_int32),  # height of window
-        ("border_width", c_int32),  # border width of window
-        ("depth", c_int32),  # depth of window
-        ("visual", c_ulong),  # the associated visual structure
-        ("root", c_ulong),  # root of screen containing window
-        ("class", c_int32),  # InputOutput, InputOnly
-        ("bit_gravity", c_int32),  # one of bit gravity values
-        ("win_gravity", c_int32),  # one of the window gravity values
-        ("backing_store", c_int32),  # NotUseful, WhenMapped, Always
+        ("x", c_int),  # location of window
+        ("y", c_int),  # location of window
+        ("width", c_int),  # width of window
+        ("height", c_int),  # height of window
+        ("border_width", c_int),  # border width of window
+        ("depth", c_int),  # depth of window
+        ("visual", POINTER(Visual)),  # the associated visual structure
+        ("root", XID),  # root of screen containing window
+        ("class", c_int),  # InputOutput, InputOnly
+        ("bit_gravity", c_int),  # one of bit gravity values
+        ("win_gravity", c_int),  # one of the window gravity values
+        ("backing_store", c_int),  # NotUseful, WhenMapped, Always
         ("backing_planes", c_ulong),  # planes to be preserved if possible
         ("backing_pixel", c_ulong),  # value to be used when restoring planes
-        ("save_under", c_int32),  # boolean, should bits under be saved?
-        ("colormap", c_ulong),  # color map to be associated with window
-        ("mapinstalled", c_uint32),  # boolean, is color map currently installed
-        ("map_state", c_uint32),  # IsUnmapped, IsUnviewable, IsViewable
+        ("save_under", XBool),  # boolean, should bits under be saved?
+        ("colormap", XID),  # color map to be associated with window
+        ("mapinstalled", XBool),  # boolean, is color map currently installed
+        ("map_state", c_uint),  # IsUnmapped, IsUnviewable, IsViewable
         ("all_event_masks", c_ulong),  # set of events all people have interest in
         ("your_event_mask", c_ulong),  # my event mask
         ("do_not_propagate_mask", c_ulong),  # set of events that should not propagate
-        ("override_redirect", c_int32),  # boolean value for override-redirect
-        ("screen", c_ulong),  # back pointer to correct screen
+        ("override_redirect", XBool),  # boolean value for override-redirect
+        ("screen", POINTER(Screen)),  # back pointer to correct screen
     )
 
 
@@ -192,6 +252,29 @@ _ERROR = {}
 _X11 = find_library("X11")
 _XFIXES = find_library("Xfixes")
 _XRANDR = find_library("Xrandr")
+
+
+class XError(ScreenShotError):
+    def __str__(self) -> str:
+        msg = super().__str__()
+        # The details only get populated if the X11 error handler is invoked, but not if a function simply returns
+        # a failure status.
+        if self.details:
+            # We use something similar to the default Xlib error handler's format, since that's quite well-understood.
+            # The original code is in
+            # https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/src/XlibInt.c?ref_type=heads#L1313
+            # but we don't try to implement most of it.
+            msg += (
+                f"\nX Error of failed request:  {self.details['error']}"
+                f"\n  Major opcode of failed request:  {self.details['request_code']} ({self.details['request']})"
+            )
+            if self.details["request_code"] >= X_FIRST_EXTENSION_OPCODE:
+                msg += f"\n  Minor opcode of failed request:  {self.details['minor_code']}"
+            msg += (
+                f"\n  Resource id in failed request:  {self.details['resourceid']}"
+                f"\n  Serial number of failed request:  {self.details['serial']}"
+            )
+        return msg
 
 
 @CFUNCTYPE(c_int, POINTER(Display), POINTER(XErrorEvent))
@@ -202,32 +285,65 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     get_error = xlib.XGetErrorText
     get_error.argtypes = [POINTER(Display), c_int, c_char_p, c_int]
     get_error.restype = c_void_p
+    get_error_database = xlib.XGetErrorDatabaseText
+    get_error_database.argtypes = [POINTER(Display), c_char_p, c_char_p, c_char_p, c_char_p, c_int]
+    get_error_database.restype = c_int
 
     evt = event.contents
     error = create_string_buffer(1024)
     get_error(display, evt.error_code, error, len(error))
+    request = create_string_buffer(1024)
+    get_error_database(display, b"XRequest", b"%i" % evt.request_code, b"Extension-specific", request, len(request))
+    # We don't try to get the string forms of the extension name or minor code currently.  Those are important
+    # fields for debugging, but getting the strings is difficult.  The call stack of the exception gives pretty
+    # useful similar information, though; most of the requests we use are synchronous, so the failing request is
+    # usually the function being called.
 
+    encoding = (
+        locale.getencoding() if hasattr(locale, "getencoding") else locale.getpreferredencoding(do_setlocale=False)
+    )
     _ERROR[current_thread()] = {
-        "error": error.value.decode("utf-8"),
+        "error": error.value.decode(encoding, errors="replace"),
         "error_code": evt.error_code,
         "minor_code": evt.minor_code,
+        "request": request.value.decode(encoding, errors="replace"),
         "request_code": evt.request_code,
         "serial": evt.serial,
+        "resourceid": evt.resourceid,
         "type": evt.type,
     }
 
     return 0
 
 
-def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, Any]:
-    """Validate the returned value of a C function call."""
+def _validate_x11(
+    retval: _Pointer | None | XBool | XStatus | XID | int, func: Any, args: tuple[Any, Any], /
+) -> tuple[Any, Any]:
     thread = current_thread()
-    if retval != 0 and thread not in _ERROR:
+
+    if retval is None:
+        # A void return is always ok.
+        is_ok = True
+    elif isinstance(retval, (_Pointer, XBool, XStatus, XID)):
+        # A pointer should be non-NULL.  A boolean should be true.  An Xlib Status should be non-zero.
+        # An XID should not be None, which is a reserved ID used for certain APIs.
+        is_ok = bool(retval)
+    elif isinstance(retval, int):
+        # There are currently two functions we call that return ints.  XDestroyImage returns 1 always, and
+        # XCloseDisplay returns 0 always.  Neither can fail.  Other Xlib functions might return ints with other
+        # interpretations.  If we didn't get an X error from the server, then we'll assume that they worked.
+        is_ok = True
+    else:
+        msg = f"Internal error: cannot check return type {type(retval)}"
+        raise AssertionError(msg)
+
+    # Regardless of the return value, raise an error if the thread got an Xlib error (possibly from an earlier call).
+    if is_ok and thread not in _ERROR:
         return args
 
     details = _ERROR.pop(thread, {})
     msg = f"{func.__name__}() failed"
-    raise ScreenShotError(msg, details=details)
+    raise XError(msg, details=details)
 
 
 # C functions that will be initialised later.
@@ -238,24 +354,24 @@ def _validate(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, An
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
     # Syntax: cfunction: (attr, argtypes, restype)
-    "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
-    "XDefaultRootWindow": ("xlib", [POINTER(Display)], POINTER(XWindowAttributes)),
-    "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
+    "XCloseDisplay": ("xlib", [POINTER(Display)], c_int),
+    "XDefaultRootWindow": ("xlib", [POINTER(Display)], XID),
+    "XDestroyImage": ("xlib", [POINTER(XImage)], c_int),
     "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
     "XGetImage": (
         "xlib",
-        [POINTER(Display), POINTER(Display), c_int, c_int, c_uint, c_uint, c_ulong, c_int],
+        [POINTER(Display), XID, c_int, c_int, c_uint, c_uint, c_ulong, c_int],
         POINTER(XImage),
     ),
-    "XGetWindowAttributes": ("xlib", [POINTER(Display), POINTER(XWindowAttributes), POINTER(XWindowAttributes)], c_int),
+    "XGetWindowAttributes": ("xlib", [POINTER(Display), XID, POINTER(XWindowAttributes)], XStatus),
     "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
-    "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], c_uint),
-    "XRRQueryVersion": ("xrandr", [POINTER(Display), POINTER(c_int), POINTER(c_int)], c_int),
-    "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
-    "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
-    "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
-    "XRRGetScreenResources": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
-    "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), POINTER(Display)], POINTER(XRRScreenResources)),
+    "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], XBool),
+    "XRRQueryVersion": ("xrandr", [POINTER(Display), POINTER(c_int), POINTER(c_int)], XStatus),
+    "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], None),
+    "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], None),
+    "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), XID], POINTER(XRRCrtcInfo)),
+    "XRRGetScreenResources": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
+    "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
     "XSetErrorHandler": ("xlib", [c_void_p], c_void_p),
 }
 
@@ -323,11 +439,7 @@ class MSS(MSSBase):
             msg = "Xrandr not enabled."
             raise ScreenShotError(msg)
 
-        self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
-
-        # Fix for XRRGetScreenResources and XGetImage:
-        #     expected LP_Display instance instead of LP_XWindowAttributes
-        self._handles.drawable = cast(self._handles.root, POINTER(Display))
+        self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
     def close(self) -> None:
         # Clean-up
@@ -380,7 +492,7 @@ class MSS(MSSBase):
         }
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             with suppress(AttributeError):
-                errcheck = None if func == "XSetErrorHandler" else _validate
+                errcheck = None if func == "XSetErrorHandler" else _validate_x11
                 cfactory(attrs[attr], func, argtypes, restype, errcheck=errcheck)
 
     def _monitors_impl(self) -> None:

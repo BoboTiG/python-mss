@@ -83,11 +83,17 @@ def test_arg_display(display: str, monkeypatch: pytest.MonkeyPatch) -> None:
         pass
 
 
-@pytest.mark.skipif(PYPY, reason="Failure on PyPy")
-def test_bad_display_structure(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(mss.linux, "Display", lambda: None)
-    with pytest.raises(TypeError), mss.mss():
+def test_xerror_without_details() -> None:
+    # Opening an invalid display will create an XError instance, but since there was no XErrorEvent, then the
+    # details won't be filled in.  Generate one.
+    with pytest.raises(mss.linux.XError) as excinfo, mss.mss(display=":INVALID"):
         pass
+
+    exc = excinfo.value
+    # Ensure it has no details.
+    assert not exc.details
+    # Ensure it can be stringified.
+    str(exc)
 
 
 @patch("mss.linux._X11", new=None)
