@@ -11,10 +11,10 @@ from ctypes import (
     CFUNCTYPE,
     POINTER,
     Structure,
+    _Pointer,
     byref,
     c_char_p,
     c_int,
-    c_long,
     c_short,
     c_ubyte,
     c_uint,
@@ -39,7 +39,6 @@ if TYPE_CHECKING:  # pragma: nocover
 __all__ = ("MSS",)
 
 
-XID = c_ulong
 X_FIRST_EXTENSION_OPCODE = 128
 PLAINMASK = 0x00FFFFFF
 ZPIXMAP = 2
@@ -47,6 +46,31 @@ BITS_PER_PIXELS_32 = 32
 SUPPORTED_BITS_PER_PIXELS = {
     BITS_PER_PIXELS_32,
 }
+
+
+class XID(c_ulong):
+    """X11 generic resource ID
+    https://tronche.com/gui/x/xlib/introduction/generic.html
+    https://gitlab.freedesktop.org/xorg/proto/xorgproto/-/blob/master/include/X11/X.h#L66
+    """
+
+
+class XStatus(c_int):
+    """Xlib common return code type
+    This is Status in Xlib, but XStatus here to prevent ambiguity.
+    Zero is an error, non-zero is success.
+    https://tronche.com/gui/x/xlib/introduction/errors.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L79
+    """
+
+
+class XBool(c_int):
+    """Xlib boolean type
+    This is Bool in Xlib, but XBool here to prevent ambiguity.
+    0 is False, 1 is True.
+    https://tronche.com/gui/x/xlib/introduction/generic.html
+    https://gitlab.freedesktop.org/xorg/lib/libx11/-/blob/master/include/X11/Xlib.h#L78
+    """
 
 
 class Display(Structure):
@@ -212,14 +236,14 @@ class XWindowAttributes(Structure):
         ("backing_store", c_int),  # NotUseful, WhenMapped, Always
         ("backing_planes", c_ulong),  # planes to be preserved if possible
         ("backing_pixel", c_ulong),  # value to be used when restoring planes
-        ("save_under", c_int),  # boolean, should bits under be saved?
+        ("save_under", XBool),  # boolean, should bits under be saved?
         ("colormap", XID),  # color map to be associated with window
-        ("mapinstalled", c_int),  # boolean, is color map currently installed
+        ("mapinstalled", XBool),  # boolean, is color map currently installed
         ("map_state", c_uint),  # IsUnmapped, IsUnviewable, IsViewable
         ("all_event_masks", c_ulong),  # set of events all people have interest in
         ("your_event_mask", c_ulong),  # my event mask
         ("do_not_propagate_mask", c_ulong),  # set of events that should not propagate
-        ("override_redirect", c_int),  # boolean value for override-redirect
+        ("override_redirect", XBool),  # boolean value for override-redirect
         ("screen", POINTER(Screen)),  # back pointer to correct screen
     )
 
@@ -292,10 +316,29 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
     return 0
 
 
-def _validate_x11(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any, Any]:
-    """Validate the returned value of an X11 function call."""
+def _validate_x11(
+    retval: _Pointer | None | XBool | XStatus | XID | int, func: Any, args: tuple[Any, Any], /
+) -> tuple[Any, Any]:
     thread = current_thread()
-    if retval != 0 and thread not in _ERROR:
+
+    if retval is None:
+        # A void return is always ok.
+        is_ok = True
+    elif isinstance(retval, (_Pointer, XBool, XStatus, XID)):
+        # A pointer should be non-NULL.  A boolean should be true.  An Xlib Status should be non-zero.
+        # An XID should not be None, which is a reserved ID used for certain APIs.
+        is_ok = bool(retval)
+    elif isinstance(retval, int):
+        # There are currently two functions we call that return ints.  XDestroyImage returns 1 always, and
+        # XCloseDisplay returns 0 always.  Neither can fail.  Other Xlib functions might return ints with other
+        # interpretations.  If we didn't get an X error from the server, then we'll assume that they worked.
+        is_ok = True
+    else:
+        msg = f"Internal error: cannot check return type {type(retval)}"
+        raise AssertionError(msg)
+
+    # Regardless of the return value, raise an error if the thread got an Xlib error (possibly from an earlier call).
+    if is_ok and thread not in _ERROR:
         return args
 
     details = _ERROR.pop(thread, {})
@@ -311,22 +354,22 @@ def _validate_x11(retval: int, func: Any, args: tuple[Any, Any], /) -> tuple[Any
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctions = {
     # Syntax: cfunction: (attr, argtypes, restype)
-    "XCloseDisplay": ("xlib", [POINTER(Display)], c_void_p),
+    "XCloseDisplay": ("xlib", [POINTER(Display)], c_int),
     "XDefaultRootWindow": ("xlib", [POINTER(Display)], XID),
-    "XDestroyImage": ("xlib", [POINTER(XImage)], c_void_p),
+    "XDestroyImage": ("xlib", [POINTER(XImage)], c_int),
     "XFixesGetCursorImage": ("xfixes", [POINTER(Display)], POINTER(XFixesCursorImage)),
     "XGetImage": (
         "xlib",
         [POINTER(Display), XID, c_int, c_int, c_uint, c_uint, c_ulong, c_int],
         POINTER(XImage),
     ),
-    "XGetWindowAttributes": ("xlib", [POINTER(Display), XID, POINTER(XWindowAttributes)], c_int),
+    "XGetWindowAttributes": ("xlib", [POINTER(Display), XID, POINTER(XWindowAttributes)], XStatus),
     "XOpenDisplay": ("xlib", [c_char_p], POINTER(Display)),
-    "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], c_uint),
-    "XRRQueryVersion": ("xrandr", [POINTER(Display), POINTER(c_int), POINTER(c_int)], c_int),
-    "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], c_void_p),
-    "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], c_void_p),
-    "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), c_long], POINTER(XRRCrtcInfo)),
+    "XQueryExtension": ("xlib", [POINTER(Display), c_char_p, POINTER(c_int), POINTER(c_int), POINTER(c_int)], XBool),
+    "XRRQueryVersion": ("xrandr", [POINTER(Display), POINTER(c_int), POINTER(c_int)], XStatus),
+    "XRRFreeCrtcInfo": ("xrandr", [POINTER(XRRCrtcInfo)], None),
+    "XRRFreeScreenResources": ("xrandr", [POINTER(XRRScreenResources)], None),
+    "XRRGetCrtcInfo": ("xrandr", [POINTER(Display), POINTER(XRRScreenResources), XID], POINTER(XRRCrtcInfo)),
     "XRRGetScreenResources": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
     "XRRGetScreenResourcesCurrent": ("xrandr", [POINTER(Display), XID], POINTER(XRRScreenResources)),
     "XSetErrorHandler": ("xlib", [c_void_p], c_void_p),
