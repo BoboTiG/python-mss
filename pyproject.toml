@@ -182,7 +182,7 @@ ignore = [
   "FBT001",   # boolean-typed positional argument in function definition
   "PLR2004",  # magic value used in comparison
   "S101",     # use of `assert` detected
-  #"S602",     # `subprocess` call with `shell=True`
+  "S602",     # `subprocess` call with `shell=True`
   "S603",     # `subprocess` call: check for execution of untrusted input
   "S607",     # `subprocess` call without explicit paths
   "SLF001",   # private member accessed
