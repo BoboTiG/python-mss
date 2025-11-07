@@ -135,18 +135,32 @@ def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
     if backend == "xlib":
         assert not mss.linux.xlib._ERROR
 
-    with mss.mss(display=display, backend=backend) as sct:
-        with pytest.raises(ScreenShotError) as exc:
-            sct.grab(monitor)
+    with mss.mss(display=display, backend=backend, with_cursor=True) as sct:
+        # At one point, I had accidentally been reporting the resource ID as a CData object instead of the contained
+        # int.  This is to make sure I don't repeat that mistake.  That said, change this error regex if needed to keep
+        # up with formatting changes.
+        expected_err_re = (
+            r"(?is)"
+            r"Error of failed request:\s+(8|BadMatch)\b"
+            r".*Major opcode of failed request:\s+73\b"
+            r".*Resource id in failed request:\s+[0-9]"
+            r".*Serial number of failed request:\s+[0-9]"
+        )
 
-        assert str(exc.value)
+        with pytest.raises(ScreenShotError, match=expected_err_re) as exc:
+            sct.grab(monitor)
 
         details = exc.value.details
         assert details
         assert isinstance(details, dict)
-        if backend == "xgetimage":
-            pytest.xfail("Error strings are not yet implemented in XCB backends")
+        if backend == "xgetimage" and mss.linux.xcb.xcb_errors is None:
+            pytest.xfail("Error strings in XCB backends are only available with the xcb-util-errors library.")
         assert isinstance(details["error"], str)
+
+        errstr = str(exc.value)
+        assert "Match" in errstr  # Xlib: "BadMatch"; XCB: "Match"
+        assert "GetImage" in errstr  # Xlib: "X_GetImage"; XCB: "GetImage"
+
         if backend == "xlib":
             assert not mss.linux.xlib._ERROR
 

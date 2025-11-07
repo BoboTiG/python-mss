@@ -171,36 +171,65 @@ class XError(ScreenShotError):
 class XProtoError(XError):
     """Exception indicating server-reported errors."""
 
-    def __init__(self, _xcb_conn: XcbConnection, xcb_err: XcbGenericErrorStructure) -> None:
+    def __init__(self, xcb_conn: XcbConnection, xcb_err: XcbGenericErrorStructure) -> None:
         if isinstance(xcb_err, _Pointer):
             xcb_err = xcb_err.contents
-        # I would verify isinstance(xcb_err,
-        # XcbGenericErrorStructure), but ruff doesn't really give me a
-        # great way to throw an appropriate exception here.
-        # FIXME Get the text descriptions, if possible.  That's why we
-        # got the connection handle: that can be necessary to get error
-        # descriptions for extensions.
-        super().__init__(
-            "X11 Protocol Error",
-            details={
-                "error_code": xcb_err.error_code,
-                "sequence": xcb_err.sequence,
-                "resource_id": xcb_err.resource_id,
-                "minor_code": xcb_err.minor_code,
-                "major_code": xcb_err.major_code,
-                "full_sequence": xcb_err.full_sequence,
-            },
-        )
+        assert isinstance(xcb_err, XcbGenericErrorStructure)  # noqa: S101
+
+        details = {
+            "error_code": xcb_err.error_code,
+            "sequence": xcb_err.sequence,
+            "resource_id": xcb_err.resource_id,
+            "minor_code": xcb_err.minor_code,
+            "major_code": xcb_err.major_code,
+            "full_sequence": xcb_err.full_sequence,
+        }
+
+        # xcb-errors is a library to get descriptive error strings, instead of reporting the raw codes.  This is not
+        # installed by default on most systems, but is quite helpful for developers.  We use it if it exists, but don't
+        # force the matter.  We can't do this when we format the error message, since the XCB connection may be gone.
+        if xcb_errors:
+            # We don't try to reuse the error context, since it's per-connection, and probably will only be used once.
+            ctx = POINTER(XcbErrorsContext)()
+            ctx_new_setup = xcb_errors.xcb_errors_context_new(xcb_conn, ctx)
+            if ctx_new_setup == 0:
+                try:
+                    # Some of these may return NULL, but some are guaranteed.
+                    ext_name = POINTER(c_char_p)()
+                    error_name = xcb_errors.xcb_errors_get_name_for_error(ctx, xcb_err.error_code, ext_name)
+                    details["error"] = error_name.decode("ascii", errors="replace")
+                    if ext_name:
+                        details["extension"] = ext_name.decode("ascii", errors="replace")
+                    major_name = xcb_errors.xcb_errors_get_name_for_major_code(ctx, xcb_err.major_code)
+                    details["major_name"] = major_name.decode("ascii", errors="replace")
+                    minor_name = xcb_errors.xcb_errors_get_name_for_minor_code(
+                        ctx, xcb_err.major_code, xcb_err.minor_code
+                    )
+                    if minor_name:
+                        details["minor_name"] = minor_name.decode("ascii", errors="replace")
+                finally:
+                    xcb_errors.xcb_errors_context_free(ctx)
+
+        super().__init__("X11 Protocol Error", details=details)
 
     def __str__(self) -> str:
         msg = super().__str__()
-        err = self.details
+        details = self.details
+        error_desc = f"{details['error_code']} ({details['error']})" if "error" in details else details["error_code"]
+        major_desc = (
+            f"{details['major_code']} ({details['major_name']})" if "major_name" in details else details["major_code"]
+        )
+        minor_desc = (
+            f"{details['minor_code']} ({details['minor_name']})" if "minor_name" in details else details["minor_code"]
+        )
+        ext_desc = f"\n  Extension:  {details['ext_name']}" if "ext_desc" in details else ""
         msg += (
-            f"\nX Error of failed request:  {err['error_code']}"
-            f"\n  Major opcode of failed request:  {err['major_code']}"
-            f"\n  Minor opcode of failed request:  {err['minor_code']}"
-            f"\n  Resource id in failed request:  {err['resource_id']}"
-            f"\n  Serial number of failed request:  {err['full_sequence']}"
+            f"\nX Error of failed request:  {error_desc}"
+            f"\n  Major opcode of failed request:  {major_desc}"
+            f"{ext_desc}"
+            f"\n  Minor opcode of failed request:  {minor_desc}"
+            f"\n  Resource id in failed request:  {details['resource_id']}"
+            f"\n  Serial number of failed request:  {details['full_sequence']}"
         )
         return msg
 
@@ -234,7 +263,6 @@ class XcbVoidCookie(CookieBase):
 
         This will raise an exception if there is an error.
         """
-        self._xcb_handled_ = True
         err_p = libxcb.xcb_request_check(xcb_conn, self)
         if not err_p:
             return
@@ -555,10 +583,29 @@ class XcbQueryExtensionReply(Structure):
 # for many core X requests.
 XCB_NONE = XID(0)
 XCB_ATOM_WINDOW = XcbAtom(33)
+XCB_CONN_ERROR = 1
+XCB_CONN_CLOSED_EXT_NOTSUPPORTED = 2
+XCB_CONN_CLOSED_MEM_INSUFFICIENT = 3
+XCB_CONN_CLOSED_REQ_LEN_EXCEED = 4
+XCB_CONN_CLOSED_PARSE_ERR = 5
+XCB_CONN_CLOSED_INVALID_SCREEN = 6
+XCB_CONN_CLOSED_FDPASSING_FAILED = 7
 XCB_IMAGE_FORMAT_Z_PIXMAP = 2
 XCB_IMAGE_ORDER_LSB_FIRST = 0
 XCB_VISUAL_CLASS_TRUE_COLOR = 4
 XCB_VISUAL_CLASS_DIRECT_COLOR = 5
+
+# I don't know of error descriptions for the XCB connection errors being accessible through a library (a la strerror),
+# and the ones in xcb.h's comments aren't too great, so I wrote these.
+XCB_CONN_ERRMSG = {
+    XCB_CONN_ERROR: "connection lost or could not be established",
+    XCB_CONN_CLOSED_EXT_NOTSUPPORTED: "extension not supported",
+    XCB_CONN_CLOSED_MEM_INSUFFICIENT: "memory exhausted",
+    XCB_CONN_CLOSED_REQ_LEN_EXCEED: "request length longer than server accepts",
+    XCB_CONN_CLOSED_PARSE_ERR: "display is unset or invalid (check $DISPLAY)",
+    XCB_CONN_CLOSED_INVALID_SCREEN: "server does not have a screen matching the requested display",
+    XCB_CONN_CLOSED_FDPASSING_FAILED: "could not pass file descriptor",
+}
 
 # randr
 
@@ -769,6 +816,19 @@ class XcbXfixesGetCursorImageReply(Structure):
 XCB_XFIXES_MAJOR_VERSION = 6
 XCB_XFIXES_MINOR_VERSION = 0
 
+# xcb-errors
+
+
+class XcbErrorsContext(Structure):
+    """A context for using this library.
+
+    Create a context with xcb_errors_context_new() and destroy it with xcb_errors_context_free(). Except for
+    xcb_errors_context_free(), all functions in this library are thread-safe and can be called from multiple threads at
+    the same time, even on the same context.
+    """
+
+    # Opaque
+
 
 #### ctypes initialization
 
@@ -784,7 +844,7 @@ def initialize() -> None:
         if _INITIALIZE_DONE:
             return
 
-        global libc, libxcb, randr, xcb_randr_id, render, xcb_render_id, xfixes, xcb_xfixes_id
+        global libc, libxcb, randr, xcb_randr_id, render, xcb_render_id, xfixes, xcb_xfixes_id, xcb_errors
 
         # We don't use the cached versions that ctypes.cdll exposes as
         # attributes, since other libraries may be doing their own
@@ -957,6 +1017,24 @@ def initialize() -> None:
         xfixes.xcb_xfixes_get_cursor_image_cursor_image.restype = POINTER(c_uint32)
         xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.argtypes = [POINTER(XcbXfixesGetCursorImageReply)]
         xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.restype = c_int
+
+        # xcb_errors is an optional library, mostly only useful to developers.
+        # We use the qualified .so name, since it's subject to change.
+        try:
+            xcb_errors = cdll.LoadLibrary("libxcb-errors.so.0")
+        except Exception:  # noqa: BLE001
+            xcb_errors = None
+        else:
+            xcb_errors.xcb_errors_context_new.argtypes = [POINTER(XcbConnection), POINTER(POINTER(XcbErrorsContext))]
+            xcb_errors.xcb_errors_context_new.restype = c_int
+            xcb_errors.xcb_errors_context_free.argtypes = [POINTER(XcbErrorsContext)]
+            xcb_errors.xcb_errors_context_free.restype = None
+            xcb_errors.xcb_errors_get_name_for_major_code.argtypes = [POINTER(XcbErrorsContext), c_uint8]
+            xcb_errors.xcb_errors_get_name_for_major_code.restype = c_char_p
+            xcb_errors.xcb_errors_get_name_for_minor_code.argtypes = [POINTER(XcbErrorsContext), c_uint8, c_uint16]
+            xcb_errors.xcb_errors_get_name_for_minor_code.restype = c_char_p
+            xcb_errors.xcb_errors_get_name_for_error.argtypes = [POINTER(XcbErrorsContext), c_uint8, POINTER(c_char_p)]
+            xcb_errors.xcb_errors_get_name_for_error.restype = c_char_p
 
         _INITIALIZE_DONE = True
 
@@ -1290,22 +1368,32 @@ def connect(display: str | bytes | None = None) -> tuple[XcbConnection, int]:
 
     pref_screen_num = c_int()
     conn_p = libxcb.xcb_connect(display, pref_screen_num)
-    if libxcb.xcb_connection_has_error(conn_p) != 0:
-        # FIXME Get the error information
-        msg = "Cannot connect to display"
+
+    # We still get a connection object even if the connection fails.
+    conn_err = libxcb.xcb_connection_has_error(conn_p)
+    if conn_err != 0:
+        msg = "Cannot connect to display: "
+        conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
+        if conn_errmsg:
+            msg += conn_errmsg
+        else:
+            msg += f"error code {conn_err}"
         raise XError(msg)
 
     return conn_p.contents, pref_screen_num.value
 
 
 def disconnect(conn: XcbConnection) -> None:
-    error_status = libxcb.xcb_connection_has_error(conn)
-    # XCB won't free its connection structures until we disconnect,
-    # even in the event of an error.
+    conn_err = libxcb.xcb_connection_has_error(conn)
+    # XCB won't free its connection structures until we disconnect, even in the event of an error.
     libxcb.xcb_disconnect(conn)
-    if error_status != 0:
-        # FIXME Get the error information
-        msg = "Connection closed due to errors"
+    if conn_err != 0:
+        msg = "Connection to X server closed: "
+        conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
+        if conn_errmsg:
+            msg += conn_errmsg
+        else:
+            msg += f"error code {conn_err}"
         raise XError(msg)
 
 

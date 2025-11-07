@@ -11,13 +11,17 @@ from mss.screenshot import ScreenShot
 from . import xcb
 from .xcb import (
     XCB_IMAGE_FORMAT_Z_PIXMAP,
+    XCB_IMAGE_ORDER_LSB_FIRST,
     XCB_RANDR_MAJOR_VERSION,
     XCB_RANDR_MINOR_VERSION,
+    XCB_VISUAL_CLASS_DIRECT_COLOR,
+    XCB_VISUAL_CLASS_TRUE_COLOR,
     XCB_XFIXES_MAJOR_VERSION,
     XCB_XFIXES_MINOR_VERSION,
     connect,
     disconnect,
     initialize,
+    xcb_depth_visuals,
     xcb_get_geometry,
     xcb_get_image,
     xcb_get_image_data,
@@ -27,6 +31,8 @@ from .xcb import (
     xcb_randr_get_screen_resources_current,
     xcb_randr_get_screen_resources_current_crtcs,
     xcb_randr_query_version,
+    xcb_screen_allowed_depths,
+    xcb_setup_pixmap_formats,
     xcb_setup_roots,
     xcb_xfixes_get_cursor_image,
     xcb_xfixes_get_cursor_image_cursor_image,
@@ -34,7 +40,10 @@ from .xcb import (
 )
 
 SUPPORTED_DEPTHS = {24, 32}
-SUPPORTED_BYTES_PER_PIXEL = 32
+SUPPORTED_BITS_PER_PIXEL = 32
+SUPPORTED_RED_MASK = 0xFF0000
+SUPPORTED_GREEN_MASK = 0x00FF00
+SUPPORTED_BLUE_MASK = 0x0000FF
 ALL_PLANES = 0xFFFFFFFF  # XCB doesn't define AllPlanes
 
 
@@ -47,7 +56,7 @@ class MSS(MSSBase):
     * XFixes: Including the cursor.
     """
 
-    def __init__(self, /, **kwargs: Any) -> None:
+    def __init__(self, /, **kwargs: Any) -> None:  # noqa: PLR0912
         super().__init__(**kwargs)
 
         display = kwargs.get("display", b"")
@@ -71,6 +80,71 @@ class MSS(MSSBase):
 
         # We don't probe the XFixes presence or version until we need it.
         self._xfixes_ready = None
+
+        # Probe the visuals (and related information), and make sure that our drawable is in an acceptable format.
+        # These iterations and tests don't involve any traffic with the server; it's all stuff that was included in the
+        # connection setup.  Effectively all modern setups will be acceptable, but we verify to be sure.
+
+        # Currently, we assume that the drawable we're capturing is the root; when we add single-window capture, we'll
+        # have to ask the server for its depth and visual.
+        assert self.root == self.drawable  # noqa: S101
+        self.drawable_depth = pref_screen.root_depth
+        self.drawable_visual_id = pref_screen.root_visual.value
+        # Server image byte order
+        if xcb_setup.image_byte_order != XCB_IMAGE_ORDER_LSB_FIRST:
+            msg = "Only X11 servers using LSB-First images are supported."
+            raise ScreenShotError(msg)
+        # Depth
+        if self.drawable_depth not in SUPPORTED_DEPTHS:
+            msg = f"Only screens of color depth 24 or 32 are supported, not {self.drawable_depth}"
+            raise ScreenShotError(msg)
+        # Format (i.e., bpp, padding)
+        for format_ in xcb_setup_pixmap_formats(xcb_setup):
+            if format_.depth == self.drawable_depth:
+                break
+        else:
+            msg = "Internal error: drawable's depth not found in screen's supported formats"
+            raise ScreenShotError(msg)
+        drawable_format = format_
+        if drawable_format.bits_per_pixel != SUPPORTED_BITS_PER_PIXEL:
+            msg = (
+                f"Only screens at 32 bpp (regardless of color depth) are supported; "
+                f"got {drawable_format.bits_per_pixel} bpp"
+            )
+            raise ScreenShotError(msg)
+        if drawable_format.scanline_pad != SUPPORTED_BITS_PER_PIXEL:
+            # To clarify the padding: the scanline_pad is the multiple that the scanline gets padded to.  If there is
+            # no padding, then it will be the same as one pixel's size.
+            msg = "Screens with scanline padding are not supported"
+            raise ScreenShotError(msg)
+        # Visual, the interpretation of pixels (like indexed, grayscale, etc).  (Visuals are arranged by depth, so we
+        # iterate over the depths first.)
+        for xcb_depth in xcb_screen_allowed_depths(pref_screen):
+            if xcb_depth.depth == self.drawable_depth:
+                break
+        else:
+            msg = "Internal error: drawable's depth not found in screen's supported depths"
+            raise ScreenShotError(msg)
+        for visual_info in xcb_depth_visuals(xcb_depth):
+            if visual_info.visual_id.value == self.drawable_visual_id:
+                break
+        else:
+            msg = "Internal error: drawable's visual not found in screen's supported visuals"
+            raise ScreenShotError(msg)
+        if visual_info.class_ not in {XCB_VISUAL_CLASS_TRUE_COLOR, XCB_VISUAL_CLASS_DIRECT_COLOR}:
+            msg = "Only TrueColor and DirectColor visuals are supported"
+            raise ScreenShotError(msg)
+        if (
+            visual_info.red_mask != SUPPORTED_RED_MASK
+            or visual_info.green_mask != SUPPORTED_GREEN_MASK
+            or visual_info.blue_mask != SUPPORTED_BLUE_MASK
+        ):
+            # There are two ways to phrase this layout: BGRx accounts for the byte order, while xRGB implies the native
+            # word order.  Since we return the data as a byte array, we use the former.  By the time we get to this
+            # point, we've already checked the endianness and depth, so this is pretty much never going to happen
+            # anyway.
+            msg = "Only visuals with BGRx ordering are supported"
+            raise ScreenShotError(msg)
 
     def close(self) -> None:
         if self.conn is not None:
@@ -159,18 +233,13 @@ class MSS(MSSBase):
         # we clear the image structure.
         img_data = bytearray(img_data_arr)
 
-        # FIXME In xcb.main(), there's a more complete implementation
-        # of checking the bit depth.  This includes checking the
-        # visual type, byte order, and also determines whether the
-        # alpha channel is real or just padding.
-        #
-        # In XCB, we don't get the bits per pixel with the image; it's
-        # actually part of the visual data.  (Xlib puts the necessary
-        # visual data in the image structure automatically.)  So for
-        # now, we just check the depth, until I get around to checking
-        # the full visual.
-        if img_reply.depth not in SUPPORTED_DEPTHS:
-            msg = f"[GetImage] depth value not implemented: {img_reply.depth}."
+        if img_reply.depth != self.drawable_depth or img_reply.visual.value != self.drawable_visual_id:
+            # This should never happen; a window can't change its visual.
+            msg = (
+                "Server returned an image with a depth or visual different than it initially reported: "
+                f"expected {self.drawable_depth},{hex(self.drawable_visual_id)}, "
+                f"got {img_reply.depth},{hex(img_reply.visual.value)}"
+            )
             raise ScreenShotError(msg)
 
         return self.cls_image(img_data, monitor)
@@ -184,7 +253,7 @@ class MSS(MSSBase):
         # We can work with 2.0 and later, but not sure about the
         # actual minimum version we can use.  That's ok; everything
         # these days is much more modern.
-        return not (reply.major_version, reply.minor_version) < (2, 0)
+        return (reply.major_version, reply.minor_version) >= (2, 0)
 
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGBx."""

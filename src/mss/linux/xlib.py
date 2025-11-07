@@ -271,7 +271,7 @@ class XError(ScreenShotError):
             if self.details["request_code"] >= X_FIRST_EXTENSION_OPCODE:
                 msg += f"\n  Minor opcode of failed request:  {self.details['minor_code']}"
             msg += (
-                f"\n  Resource id in failed request:  {self.details['resourceid']}"
+                f"\n  Resource id in failed request:  {self.details['resourceid'].value}"
                 f"\n  Serial number of failed request:  {self.details['serial']}"
             )
         return msg
