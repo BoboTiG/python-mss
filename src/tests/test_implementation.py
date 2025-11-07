@@ -235,14 +235,15 @@ def test_grab_with_tuple_percents() -> None:
         assert im.rgb == im2.rgb
 
 
-def test_thread_safety() -> None:
+@pytest.mark.parametrize("backend", ["xlib", "xcb"] if platform.system() == "Linux" else None)
+def test_thread_safety(backend: str) -> None:
     """Regression test for issue #169."""
 
     def record(check: dict) -> None:
         """Record for one second."""
         start_time = time.time()
         while time.time() - start_time < 1:
-            with mss.mss() as sct:
+            with mss.mss(backend=backend) as sct:
                 sct.grab(sct.monitors[1])
 
         check[threading.current_thread()] = True
