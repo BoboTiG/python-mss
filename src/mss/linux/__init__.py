@@ -6,13 +6,13 @@ from ..exception import ScreenShotError
 
 def MSS(backend: str = "xlib", **kwargs: Any) -> MSSBase:
     backend = backend.lower()
-    if backend == "xlib":
+    if backend in {"default", "xlib"}:
         from . import xlib  # noqa: PLC0415
 
         return xlib.MSS(**kwargs)
-    if backend in {"xcb", "getimage"}:
-        from . import getimage  # noqa: PLC0415
+    if backend == "xgetimage":
+        from . import xgetimage  # noqa: PLC0415
 
-        return getimage.MSS(**kwargs)
+        return xgetimage.MSS(**kwargs)
     msg = f"Backend {backend!r} not (yet?) implemented."
     raise ScreenShotError(msg)

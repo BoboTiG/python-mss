@@ -2,6 +2,7 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+from collections.abc import Callable
 import os.path
 from datetime import datetime
 from pathlib import Path
@@ -9,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from mss import mss
+from mss.base import MSSBase
 
 try:
     from datetime import UTC
@@ -19,13 +21,13 @@ except ImportError:
     UTC = timezone.utc
 
 
-def test_at_least_2_monitors() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_at_least_2_monitors(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         assert list(sct.save(mon=0))
 
 
-def test_files_exist() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_files_exist(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         for filename in sct.save():
             assert Path(filename).is_file()
 
@@ -35,13 +37,13 @@ def test_files_exist() -> None:
         assert Path("fullscreen.png").is_file()
 
 
-def test_callback() -> None:
+def test_callback(mss_impl: Callable[..., MSSBase]) -> None:
     def on_exists(fname: str) -> None:
         file = Path(fname)
         if Path(file).is_file():
             file.rename(f"{file.name}.old")
 
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         filename = sct.shot(mon=0, output="mon0.png", callback=on_exists)
         assert Path(filename).is_file()
 
@@ -49,24 +51,24 @@ def test_callback() -> None:
         assert Path(filename).is_file()
 
 
-def test_output_format_simple() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_output_format_simple(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         filename = sct.shot(mon=1, output="mon-{mon}.png")
     assert filename == "mon-1.png"
     assert Path(filename).is_file()
 
 
-def test_output_format_positions_and_sizes() -> None:
+def test_output_format_positions_and_sizes(mss_impl: Callable[..., MSSBase]) -> None:
     fmt = "sct-{top}x{left}_{width}x{height}.png"
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)
         assert filename == fmt.format(**sct.monitors[1])
     assert Path(filename).is_file()
 
 
-def test_output_format_date_simple() -> None:
+def test_output_format_date_simple(mss_impl: Callable[..., MSSBase]) -> None:
     fmt = "sct_{mon}-{date}.png"
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         try:
             filename = sct.shot(mon=1, output=fmt)
             assert Path(filename).is_file()
@@ -75,9 +77,9 @@ def test_output_format_date_simple() -> None:
             pytest.mark.xfail("Default date format contains ':' which is not allowed.")
 
 
-def test_output_format_date_custom() -> None:
+def test_output_format_date_custom(mss_impl: Callable[..., MSSBase]) -> None:
     fmt = "sct_{date:%Y-%m-%d}.png"
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)
     assert filename == fmt.format(date=datetime.now(tz=UTC))
     assert Path(filename).is_file()

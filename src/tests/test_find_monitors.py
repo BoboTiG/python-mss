@@ -2,18 +2,20 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+from collections.abc import Callable
 import os
 
 from mss import mss
+from mss.base import MSSBase
 
 
-def test_get_monitors() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_get_monitors(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         assert sct.monitors
 
 
-def test_keys_aio() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_keys_aio(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         all_monitors = sct.monitors[0]
     assert "top" in all_monitors
     assert "left" in all_monitors
@@ -21,8 +23,8 @@ def test_keys_aio() -> None:
     assert "width" in all_monitors
 
 
-def test_keys_monitor_1() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_keys_monitor_1(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         mon1 = sct.monitors[1]
     assert "top" in mon1
     assert "left" in mon1
@@ -30,8 +32,8 @@ def test_keys_monitor_1() -> None:
     assert "width" in mon1
 
 
-def test_dimensions() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_dimensions(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         mon = sct.monitors[1]
     assert mon["width"] > 0
     assert mon["height"] > 0

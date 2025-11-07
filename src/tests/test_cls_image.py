@@ -2,10 +2,12 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+from collections.abc import Callable
 import os
 from typing import Any
 
 from mss import mss
+from mss.base import MSSBase
 from mss.models import Monitor
 
 
@@ -15,8 +17,8 @@ class SimpleScreenShot:
         self.monitor = monitor
 
 
-def test_custom_cls_image() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_custom_cls_image(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         sct.cls_image = SimpleScreenShot  # type: ignore[assignment]
         mon1 = sct.monitors[1]
         image = sct.grab(mon1)

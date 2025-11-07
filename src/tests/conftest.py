@@ -2,13 +2,18 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-from collections.abc import Generator
+from collections.abc import Callable, Generator
+from functools import partial
 from hashlib import sha256
+import os
 from pathlib import Path
+from platform import system
 from zipfile import ZipFile
 
 import pytest
 
+from mss import mss
+from mss.base import MSSBase
 
 @pytest.fixture(autouse=True)
 def _no_warnings(recwarn: pytest.WarningsRecorder) -> Generator:
@@ -45,3 +50,13 @@ def raw() -> bytes:
 
     assert sha256(data).hexdigest() == "d86ed4366d5a882cfe1345de82c87b81aef9f9bf085f4c42acb6f63f3967eccd"
     return data
+
+
+@pytest.fixture(params=["xlib", "xgetimage"] if system() == "Linux" else ["default"])
+def backend(request) -> str:
+    return request.param
+
+
+@pytest.fixture
+def mss_impl(backend: str) -> Callable[..., MSSBase]:
+    return partial(mss, display=os.getenv("DISPLAY"), backend=backend)

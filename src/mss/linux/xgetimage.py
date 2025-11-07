@@ -72,7 +72,9 @@ class MSS(MSSBase):
         self._xfixes_ready = None
 
     def close(self) -> None:
-        disconnect(self.conn)
+        if self.conn is not None:
+            disconnect(self.conn)
+        self.conn = None
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""

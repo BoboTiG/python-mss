@@ -2,6 +2,7 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+from collections.abc import Callable
 import itertools
 import os
 import os.path
@@ -10,14 +11,15 @@ from pathlib import Path
 import pytest
 
 from mss import mss
+from mss.base import MSSBase
 
 Image = pytest.importorskip("PIL.Image", reason="PIL module not available.")
 
 
-def test_pil() -> None:
+def test_pil(mss_impl: Callable[..., MSSBase]) -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)
@@ -32,10 +34,10 @@ def test_pil() -> None:
     assert output.is_file()
 
 
-def test_pil_bgra() -> None:
+def test_pil_bgra(mss_impl: Callable[..., MSSBase]) -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
@@ -50,10 +52,10 @@ def test_pil_bgra() -> None:
     assert output.is_file()
 
 
-def test_pil_not_16_rounded() -> None:
+def test_pil_not_16_rounded(mss_impl: Callable[..., MSSBase]) -> None:
     width, height = 10, 10
     box = {"top": 0, "left": 0, "width": width, "height": height}
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         sct_img = sct.grab(box)
 
     img = Image.frombytes("RGB", sct_img.size, sct_img.rgb)

@@ -39,11 +39,6 @@ def display() -> Generator:
         yield vdisplay.new_display_var
 
 
-@pytest.fixture(params=["xlib", "getimage"])
-def backend(request) -> str:
-    return request.param
-
-
 def test_default_backend(display: str) -> None:
     with mss.mss(display=display) as sct:
         assert isinstance(sct, MSSBase)
@@ -65,13 +60,13 @@ def test_factory_systems(monkeypatch: pytest.MonkeyPatch, backend: str) -> None:
     # macOS
     monkeypatch.setattr(platform, "system", lambda: "Darwin")
     # ValueError on macOS Big Sur
-    with pytest.raises((ScreenShotError, ValueError)), mss.mss():
+    with pytest.raises((ScreenShotError, ValueError)), mss.mss(backend=backend):
         pass
     monkeypatch.undo()
 
     # Windows
     monkeypatch.setattr(platform, "system", lambda: "wInDoWs")
-    with pytest.raises(ImportError, match="cannot import name 'WINFUNCTYPE'"), mss.mss():
+    with pytest.raises(ImportError, match="cannot import name 'WINFUNCTYPE'"), mss.mss(backend=backend):
         pass
 
 
@@ -149,7 +144,7 @@ def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
         details = exc.value.details
         assert details
         assert isinstance(details, dict)
-        if backend == "getimage":
+        if backend == "xgetimage":
             pytest.xfail("Error strings are not yet implemented in XCB backends")
         assert isinstance(details["error"], str)
         if backend == "xlib":
