@@ -1,36 +1,37 @@
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
-from ..base import MSSBase
-from ..exception import ScreenShotError
-from ..models import Monitor
-from ..screenshot import ScreenShot
+from mss.base import MSSBase
+from mss.exception import ScreenShotError
+from mss.models import Monitor
+from mss.screenshot import ScreenShot
 
 # FIXME: We can't currently import libxcb etc. straight from xcb,
 # since it will update them when we call initialize, and we won't see
 # the changes.  I'm going to change initialize's API to address that.
 from . import xcb
 from .xcb import (
-    initialize,
-    connect,
-    disconnect,
-    xcb_setup_roots,
-    xcb_randr_query_version,
-    xcb_get_geometry,
-    xcb_randr_get_screen_resources_current,
-    xcb_randr_get_screen_resources_current_crtcs,
-    xcb_randr_get_crtc_info,
-    xcb_get_image,
     XCB_IMAGE_FORMAT_Z_PIXMAP,
-    xcb_get_image_data,
-    xcb_xfixes_query_version,
-    xcb_xfixes_get_cursor_image,
-    xcb_xfixes_get_cursor_image_cursor_image,
     XCB_RANDR_MAJOR_VERSION,
     XCB_RANDR_MINOR_VERSION,
     XCB_XFIXES_MAJOR_VERSION,
     XCB_XFIXES_MINOR_VERSION,
+    connect,
+    disconnect,
+    initialize,
+    xcb_get_geometry,
+    xcb_get_image,
+    xcb_get_image_data,
+    xcb_randr_get_crtc_info,
+    xcb_randr_get_screen_resources,
+    xcb_randr_get_screen_resources_crtcs,
+    xcb_randr_get_screen_resources_current,
+    xcb_randr_get_screen_resources_current_crtcs,
+    xcb_randr_query_version,
+    xcb_setup_roots,
+    xcb_xfixes_get_cursor_image,
+    xcb_xfixes_get_cursor_image_cursor_image,
+    xcb_xfixes_query_version,
 )
-
 
 SUPPORTED_DEPTHS = {24, 32}
 SUPPORTED_BYTES_PER_PIXEL = 32
@@ -183,10 +184,7 @@ class MSS(MSSBase):
         # We can work with 2.0 and later, but not sure about the
         # actual minimum version we can use.  That's ok; everything
         # these days is much more modern.
-        if (reply.major_version, reply.minor_version) < (2, 0):
-            return False
-
-        return True
+        return not (reply.major_version, reply.minor_version) < (2, 0)
 
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGBx."""

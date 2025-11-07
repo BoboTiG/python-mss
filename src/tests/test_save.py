@@ -3,13 +3,11 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 from collections.abc import Callable
-import os.path
 from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from mss import mss
 from mss.base import MSSBase
 
 try:

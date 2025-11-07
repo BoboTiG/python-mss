@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
     from typing import Any
 
-from ..exception import ScreenShotError
+from mss.exception import ScreenShotError
 
 # In general, anything global starting with Xcb, XCB_, or xcb_ is a
 # reflection of something in XCB with the same name.
@@ -633,6 +633,7 @@ class XcbRandrGetScreenResourcesCurrentReply(Structure):
         ("pad1", c_uint8 * 8),
     )
 
+
 # The version of the spec that the client was written against.
 XCB_RANDR_MAJOR_VERSION = 1
 XCB_RANDR_MINOR_VERSION = 6
@@ -734,6 +735,7 @@ XCB_RENDER_MINOR_VERSION = 11
 
 # xfixes
 
+
 class XcbXfixesQueryVersionReply(Structure):
     _fields_ = (
         ("response_type", c_uint8),
@@ -761,6 +763,7 @@ class XcbXfixesGetCursorImageReply(Structure):
         ("cursor_serial", c_uint32),
         ("pad1", c_uint8 * 8),
     )
+
 
 # The version of the spec that the client was written against.
 XCB_XFIXES_MAJOR_VERSION = 6
@@ -1070,8 +1073,12 @@ def xcb_render_query_pict_formats(c: XcbConnection) -> XcbRenderQueryPictFormats
 def xcb_render_query_version(c: XcbConnection) -> XcbRenderQueryVersionReply:
     return render.xcb_render_query_version(c).reply(c)
 
-def xcb_xfixes_query_version(c: XcbConnection, client_major_version: c_uint32, client_minor_version: c_uint32) -> XcbXfixesQueryVersionReply:
+
+def xcb_xfixes_query_version(
+    c: XcbConnection, client_major_version: c_uint32, client_minor_version: c_uint32
+) -> XcbXfixesQueryVersionReply:
     return xfixes.xcb_xfixes_query_version(c, client_major_version, client_minor_version).reply(c)
+
 
 def xcb_xfixes_get_cursor_image(c: XcbConnection) -> XcbXfixesGetCursorImageReply:
     return xfixes.xcb_xfixes_get_cursor_image(c).reply(c)
@@ -1276,7 +1283,7 @@ def get_utf8_prop(xcb_conn: XcbConnection, window: XcbWindow, prop_name: str) ->
 def connect(display: str | bytes | None = None) -> tuple[XcbConnection, int]:
     if isinstance(display, str):
         display = display.encode("utf-8")
-        
+
     pref_screen_num = c_int()
     conn_p = libxcb.xcb_connect(display, pref_screen_num)
     if libxcb.xcb_connection_has_error(conn_p) != 0:
@@ -1300,6 +1307,7 @@ def disconnect(conn: XcbConnection) -> None:
 
 def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
     import re
+
     from PIL import Image
 
     if not isinstance(target_name, re.Pattern):

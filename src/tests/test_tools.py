@@ -2,15 +2,13 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-from collections.abc import Callable
 import hashlib
-import os.path
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from mss import mss
 from mss.base import MSSBase
 from mss.tools import to_png
 

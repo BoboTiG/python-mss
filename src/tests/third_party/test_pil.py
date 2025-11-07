@@ -2,15 +2,12 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-from collections.abc import Callable
 import itertools
-import os
-import os.path
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from mss import mss
 from mss.base import MSSBase
 
 Image = pytest.importorskip("PIL.Image", reason="PIL module not available.")

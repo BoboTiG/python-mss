@@ -2,13 +2,11 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
-from collections.abc import Callable
 import itertools
-import os
+from collections.abc import Callable
 
 import pytest
 
-from mss import mss
 from mss.base import MSSBase, ScreenShot
 from mss.exception import ScreenShotError
 

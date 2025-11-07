@@ -4,8 +4,6 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-from collections.abc import Callable
-import os
 import platform
 import sys
 import threading
@@ -24,6 +22,8 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:  # pragma: nocover
+    from collections.abc import Callable
+
     from mss.models import Monitor
 
 try:
@@ -92,6 +92,7 @@ def test_factory_unknown_system(backend: str, monkeypatch: pytest.MonkeyPatch) -
 
     error = exc.value.args[0]
     assert error == "System 'chuck norris' not (yet?) implemented."
+
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @pytest.mark.parametrize("with_cursor", [False, True])

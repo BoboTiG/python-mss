@@ -33,7 +33,9 @@ def take_screenshot(*, backend: str) -> None:
 def create_top_level_win(master: tkinter.Tk, backend: str) -> None:  # type: ignore[name-defined]
     top_level_win = tkinter.Toplevel(master)
 
-    take_screenshot_btn = tkinter.Button(top_level_win, text="Take screenshot", command=partial(take_screenshot, backend=backend))
+    take_screenshot_btn = tkinter.Button(
+        top_level_win, text="Take screenshot", command=partial(take_screenshot, backend=backend)
+    )
     take_screenshot_btn.pack()
 
     take_screenshot_btn.invoke()

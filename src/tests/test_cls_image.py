@@ -3,10 +3,8 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 from collections.abc import Callable
-import os
 from typing import Any
 
-from mss import mss
 from mss.base import MSSBase
 from mss.models import Monitor
 

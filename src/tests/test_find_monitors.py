@@ -3,9 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 from collections.abc import Callable
-import os
 
-from mss import mss
 from mss.base import MSSBase
 
 

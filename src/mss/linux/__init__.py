@@ -1,7 +1,7 @@
 from typing import Any
 
-from ..base import MSSBase
-from ..exception import ScreenShotError
+from mss.base import MSSBase
+from mss.exception import ScreenShotError
 
 
 def MSS(backend: str = "xlib", **kwargs: Any) -> MSSBase:
