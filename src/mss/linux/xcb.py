@@ -1179,6 +1179,10 @@ def xcb_setup_roots(r: XcbSetup) -> list[_Pointer]:
     return list_xcb(libxcb.xcb_setup_roots_iterator, libxcb.xcb_screen_next, r)
 
 
+def xcb_randr_get_screen_resources_crtcs(r: _Pointer) -> Array:
+    return array_xcb(randr.xcb_randr_get_screen_resources_crtcs, randr.xcb_randr_get_screen_resources_crtcs_length, r)
+
+
 def xcb_randr_get_screen_resources_current_crtcs(r: _Pointer) -> Array:
     return array_xcb(
         randr.xcb_randr_get_screen_resources_current_crtcs, randr.xcb_randr_get_screen_resources_current_crtcs_length, r
