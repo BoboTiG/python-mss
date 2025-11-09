@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes.util
+from contextlib import suppress
 from copy import copy
 from ctypes import (
     CDLL,
@@ -22,7 +24,6 @@ from ctypes import (
     cast,
     cdll,
 )
-from ctypes.util import find_library
 from threading import Lock
 from typing import TYPE_CHECKING
 from weakref import finalize
@@ -857,6 +858,13 @@ class LibContainer:
         self._lock = Lock()
         self._initialized = False
 
+    def reset(self) -> None:
+        with self._lock:
+            self._initialized = False
+            for name in self._EXPOSED_NAMES:
+                with suppress(AttributeError):
+                    delattr(self, name)
+
     def __getattr__(self, name: str) -> CDLL:
         # In normal use, this will only be called once (for a library).  After that, all the names will be populated in
         # __dict__, and this fallback won't be used.
@@ -872,6 +880,7 @@ class LibContainer:
     def load(self) -> None:
         with self._lock:
             if self._initialized:
+                # Something else initialized this object while we were waiting for the lock.
                 return
 
             # We don't use the cached versions that ctypes.cdll exposes as attributes, since other libraries may be
@@ -886,9 +895,14 @@ class LibContainer:
             # Alternatively, we might define the functions to be initialized with a decorator on the functions that use
             # them.
 
-            self.xcb = cdll.LoadLibrary(find_library("xcb"))
+            libxcb_so = ctypes.util.find_library("xcb")
+            if libxcb_so is None:
+                msg = "Library libxcb.so not found"
+                raise ScreenShotError(msg)
+            self.xcb = cdll.LoadLibrary(libxcb_so)
 
             # Ordered as <xcb/xcb.h>
+
             self.xcb.xcb_request_check.argtypes = [POINTER(XcbConnection), XcbVoidCookie]
             self.xcb.xcb_request_check.restype = POINTER(XcbGenericErrorStructure)
             self.xcb.xcb_discard_reply.argtypes = [POINTER(XcbConnection), c_uint]
@@ -908,6 +922,7 @@ class LibContainer:
             self.xcb.xcb_disconnect.restype = None
 
             # Ordered as <xcb/xproto.h>
+
             self.xcb.xcb_depth_visuals.argtypes = [POINTER(XcbDepth)]
             self.xcb.xcb_depth_visuals.restype = POINTER(XcbVisualtype)
             self.xcb.xcb_depth_visuals_length.argtypes = [POINTER(XcbDepth)]
@@ -957,7 +972,12 @@ class LibContainer:
             initialize_xcb_void_func(self.xcb, "xcb_no_operation_checked", [POINTER(XcbConnection)])
 
             # Ordered as <xcb/randr.h>
-            self.randr = cdll.LoadLibrary(find_library("xcb-randr"))
+
+            libxcb_randr_so = ctypes.util.find_library("xcb-randr")
+            if libxcb_randr_so is None:
+                msg = "Library libxcb-randr.so not found"
+                raise ScreenShotError(msg)
+            self.randr = cdll.LoadLibrary(libxcb_randr_so)
             self.randr_id = XcbExtension.in_dll(self.randr, "xcb_randr_id")
             initialize_xcb_typed_func(
                 self.randr,
@@ -997,7 +1017,12 @@ class LibContainer:
             self.randr.xcb_randr_get_screen_resources_current_crtcs_length.restype = c_int
 
             # Ordered as <xcb/render.h>
-            self.render = cdll.LoadLibrary(find_library("xcb-render"))
+
+            libxcb_render_so = ctypes.util.find_library("xcb-render")
+            if libxcb_render_so is None:
+                msg = "Library libxcb-render.so not found"
+                raise ScreenShotError(msg)
+            self.render = cdll.LoadLibrary(libxcb_render_so)
             self.render_id = XcbExtension.in_dll(self.render, "xcb_render_id")
 
             self.render.xcb_render_pictdepth_visuals.argtypes = [POINTER(XcbRenderPictdepth)]
@@ -1035,7 +1060,11 @@ class LibContainer:
 
             # Ordered as <xcb/xfixes.h>
 
-            self.xfixes = cdll.LoadLibrary(find_library("xcb-xfixes"))
+            libxcb_xfixes_so = ctypes.util.find_library("xcb-xfixes")
+            if libxcb_xfixes_so is None:
+                msg = "Library libxcb-xfixes.so not found"
+                raise ScreenShotError(msg)
+            self.xfixes = cdll.LoadLibrary(libxcb_xfixes_so)
             self.xfixes_id = XcbExtension.in_dll(self.xfixes, "xcb_xfixes_id")
 
             initialize_xcb_typed_func(

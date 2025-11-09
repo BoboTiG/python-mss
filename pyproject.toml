@@ -134,6 +134,7 @@ strict_equality = true
 
 [tool.pytest.ini_options]
 pythonpath = "src"
+markers = ["without_libraries"]
 addopts = """
   --showlocals
   --strict-markers

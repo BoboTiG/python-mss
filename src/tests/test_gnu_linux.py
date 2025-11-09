@@ -2,19 +2,25 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+from __future__ import annotations
+
+import ctypes.util
 import platform
-from collections.abc import Generator
 from ctypes import CFUNCTYPE, POINTER, _Pointer, c_int
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, NonCallableMock, patch
 
 import pytest
 
 import mss
 import mss.linux
+import mss.linux.xcb
 import mss.linux.xlib
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 pyvirtualdisplay = pytest.importorskip("pyvirtualdisplay")
 
@@ -31,6 +37,26 @@ def spy_and_patch(monkeypatch: pytest.MonkeyPatch, obj: Any, name: str) -> Mock:
     spy = Mock(wraps=real)
     monkeypatch.setattr(obj, name, spy, raising=False)
     return spy
+
+
+@pytest.fixture(autouse=True)
+def without_libraries(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> Generator[None]:
+    marker = request.node.get_closest_marker("without_libraries")
+    if marker is None:
+        yield None
+        return
+    skip_find = frozenset(marker.args)
+    old_find_library = ctypes.util.find_library
+
+    def new_find_library(name: str, *args: list, **kwargs: dict[str, Any]) -> str | None:
+        if name in skip_find:
+            return None
+        return old_find_library(name, *args, **kwargs)
+
+    # We use a context here so other fixtures or the test itself can use .undo.
+    with monkeypatch.context() as mp:
+        mp.setattr(ctypes.util, "find_library", new_find_library)
+        yield None
 
 
 @pytest.fixture
@@ -84,15 +110,18 @@ def test_arg_display(display: str, backend: str, monkeypatch: pytest.MonkeyPatch
         pass
 
     # No `DISPLAY` in envars
-    monkeypatch.delenv("DISPLAY")
-    with pytest.raises(ScreenShotError), mss.mss(backend=backend):
-        pass
+    # The monkeypatch implementation of delenv seems to interact badly with some other uses of setenv, so we use a
+    # monkeypatch context to isolate it a bit.
+    with monkeypatch.context() as mp:
+        mp.delenv("DISPLAY")
+        with pytest.raises(ScreenShotError), mss.mss(backend=backend):
+            pass
 
 
 def test_xerror_without_details() -> None:
     # Opening an invalid display with the Xlib backend will create an XError instance, but since there was no
     # XErrorEvent, then the details won't be filled in.  Generate one.
-    with pytest.raises(ScreenShotError) as excinfo, mss.mss(display=":INVALID", backend="xlib"):
+    with pytest.raises(ScreenShotError) as excinfo, mss.mss(display=":INVALID"):
         pass
 
     exc = excinfo.value
@@ -102,15 +131,17 @@ def test_xerror_without_details() -> None:
     str(exc)
 
 
+@pytest.mark.without_libraries("xcb")
 @patch("mss.linux.xlib._X11", new=None)
-def test_no_xlib_library() -> None:
-    with pytest.raises(ScreenShotError), mss.mss(backend="xlib"):
+def test_no_xlib_library(backend: str) -> None:
+    with pytest.raises(ScreenShotError), mss.mss(backend=backend):
         pass
 
 
+@pytest.mark.without_libraries("xcb-randr")
 @patch("mss.linux.xlib._XRANDR", new=None)
-def test_no_xrandr_extension() -> None:
-    with pytest.raises(ScreenShotError), mss.mss(backend="xlib"):
+def test_no_xrandr_extension(backend: str) -> None:
+    with pytest.raises(ScreenShotError), mss.mss(backend=backend):
         pass
 
 
@@ -131,9 +162,6 @@ def test_unsupported_depth(backend: str) -> None:
 
 def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
     monitor = {"left": -30, "top": 0, "width": WIDTH, "height": HEIGHT}
-
-    if backend == "xlib":
-        assert not mss.linux.xlib._ERROR
 
     with mss.mss(display=display, backend=backend, with_cursor=True) as sct:
         # At one point, I had accidentally been reporting the resource ID as a CData object instead of the contained
@@ -163,9 +191,6 @@ def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
 
         if backend == "xlib":
             assert not mss.linux.xlib._ERROR
-
-    if backend == "xlib":
-        assert not mss.linux.xlib._ERROR
 
 
 def test__is_extension_enabled_unknown_name(display: str) -> None:
