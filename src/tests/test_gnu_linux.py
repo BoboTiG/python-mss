@@ -153,7 +153,7 @@ def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
         details = exc.value.details
         assert details
         assert isinstance(details, dict)
-        if backend == "xgetimage" and mss.linux.xcb.xcb_errors is None:
+        if backend == "xgetimage" and mss.linux.xcb.LIB.errors is None:
             pytest.xfail("Error strings in XCB backends are only available with the xcb-util-errors library.")
         assert isinstance(details["error"], str)
 

@@ -5,11 +5,8 @@ from mss.exception import ScreenShotError
 from mss.models import Monitor
 from mss.screenshot import ScreenShot
 
-# FIXME: We can't currently import libxcb etc. straight from xcb,
-# since it will update them when we call initialize, and we won't see
-# the changes.  I'm going to change initialize's API to address that.
-from . import xcb
 from .xcb import (
+    LIB,
     XCB_IMAGE_FORMAT_Z_PIXMAP,
     XCB_IMAGE_ORDER_LSB_FIRST,
     XCB_RANDR_MAJOR_VERSION,
@@ -20,7 +17,6 @@ from .xcb import (
     XCB_XFIXES_MINOR_VERSION,
     connect,
     disconnect,
-    initialize,
     xcb_depth_visuals,
     xcb_get_geometry,
     xcb_get_image,
@@ -63,17 +59,16 @@ class MSS(MSSBase):
         if not display:
             display = None
 
-        initialize()
         self.conn, pref_screen_num = connect(display)
 
         # Let XCB pre-populate its internal cache regarding the
         # extensions we might use, while we finish setup.
-        xcb.libxcb.xcb_prefetch_extension_data(self.conn, xcb.xcb_randr_id)
-        xcb.libxcb.xcb_prefetch_extension_data(self.conn, xcb.xcb_xfixes_id)
+        LIB.xcb.xcb_prefetch_extension_data(self.conn, LIB.randr_id)
+        LIB.xcb.xcb_prefetch_extension_data(self.conn, LIB.xfixes_id)
 
         # Get the connection setup information that was included when we
         # connected.
-        xcb_setup = xcb.libxcb.xcb_get_setup(self.conn).contents
+        xcb_setup = LIB.xcb.xcb_get_setup(self.conn).contents
         screens = xcb_setup_roots(xcb_setup)
         pref_screen = screens[pref_screen_num]
         self.root = self.drawable = pref_screen.root
@@ -174,7 +169,7 @@ class MSS(MSSBase):
 
         # Make sure we have the Xrandr extension we need.  This will
         # query the cache that we started populating in __init__.
-        randr_ext_data = xcb.libxcb.xcb_get_extension_data(self.conn, xcb.xcb_randr_id).contents
+        randr_ext_data = LIB.xcb.xcb_get_extension_data(self.conn, LIB.randr_id).contents
         if not randr_ext_data.present:
             return
 
@@ -190,7 +185,7 @@ class MSS(MSSBase):
 
         # Check to see if we have the xcb_randr_get_screen_resources_current
         # function in libxcb-randr, and that the server supports it.
-        if hasattr(xcb.randr, "xcb_randr_get_screen_resources_current") and randr_version >= (1, 3):
+        if hasattr(LIB.randr, "xcb_randr_get_screen_resources_current") and randr_version >= (1, 3):
             screen_resources = xcb_randr_get_screen_resources_current(self.conn, self.drawable)
             crtcs = xcb_randr_get_screen_resources_current_crtcs(screen_resources)
         else:
@@ -245,7 +240,7 @@ class MSS(MSSBase):
         return self.cls_image(img_data, monitor)
 
     def _cursor_impl_check_xfixes(self) -> bool:
-        xfixes_ext_data = xcb.libxcb.xcb_get_extension_data(self.conn, xcb.xcb_xfixes_id).contents
+        xfixes_ext_data = LIB.xcb.xcb_get_extension_data(self.conn, LIB.xfixes_id).contents
         if not xfixes_ext_data.present:
             return False
 

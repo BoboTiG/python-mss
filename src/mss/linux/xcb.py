@@ -188,27 +188,27 @@ class XProtoError(XError):
         # xcb-errors is a library to get descriptive error strings, instead of reporting the raw codes.  This is not
         # installed by default on most systems, but is quite helpful for developers.  We use it if it exists, but don't
         # force the matter.  We can't do this when we format the error message, since the XCB connection may be gone.
-        if xcb_errors:
+        if LIB.errors:
             # We don't try to reuse the error context, since it's per-connection, and probably will only be used once.
             ctx = POINTER(XcbErrorsContext)()
-            ctx_new_setup = xcb_errors.xcb_errors_context_new(xcb_conn, ctx)
+            ctx_new_setup = LIB.errors.xcb_errors_context_new(xcb_conn, ctx)
             if ctx_new_setup == 0:
                 try:
                     # Some of these may return NULL, but some are guaranteed.
                     ext_name = POINTER(c_char_p)()
-                    error_name = xcb_errors.xcb_errors_get_name_for_error(ctx, xcb_err.error_code, ext_name)
+                    error_name = LIB.errors.xcb_errors_get_name_for_error(ctx, xcb_err.error_code, ext_name)
                     details["error"] = error_name.decode("ascii", errors="replace")
                     if ext_name:
                         details["extension"] = ext_name.decode("ascii", errors="replace")
-                    major_name = xcb_errors.xcb_errors_get_name_for_major_code(ctx, xcb_err.major_code)
+                    major_name = LIB.errors.xcb_errors_get_name_for_major_code(ctx, xcb_err.major_code)
                     details["major_name"] = major_name.decode("ascii", errors="replace")
-                    minor_name = xcb_errors.xcb_errors_get_name_for_minor_code(
+                    minor_name = LIB.errors.xcb_errors_get_name_for_minor_code(
                         ctx, xcb_err.major_code, xcb_err.minor_code
                     )
                     if minor_name:
                         details["minor_name"] = minor_name.decode("ascii", errors="replace")
                 finally:
-                    xcb_errors.xcb_errors_context_free(ctx)
+                    LIB.errors.xcb_errors_context_free(ctx)
 
         super().__init__("X11 Protocol Error", details=details)
 
@@ -249,7 +249,7 @@ class CookieBase(Structure):
 
     def discard(self, xcb_conn: XcbConnection) -> None:
         """Free memory associated with this request, and ignore errors."""
-        libxcb.xcb_discard_reply(xcb_conn, self.sequence)
+        LIB.xcb.xcb_discard_reply(xcb_conn, self.sequence)
 
 
 class XcbVoidCookie(CookieBase):
@@ -263,11 +263,11 @@ class XcbVoidCookie(CookieBase):
 
         This will raise an exception if there is an error.
         """
-        err_p = libxcb.xcb_request_check(xcb_conn, self)
+        err_p = LIB.xcb.xcb_request_check(xcb_conn, self)
         if not err_p:
             return
         err = copy(err_p.contents)
-        libc.free(err_p)
+        LIB.c.free(err_p)
         raise XProtoError(xcb_conn, err)
 
 
@@ -306,11 +306,11 @@ class ReplyCookieBase(CookieBase):
         if err_p:
             # I think this is always NULL, but we can free it.
             if reply_p:
-                libc.free(reply_p)
+                LIB.c.free(reply_p)
             # Copying the error structure is cheap, and makes memory
             # management easier.
             err_copy = copy(err_p.contents)
-            libc.free(err_p)
+            LIB.c.free(err_p)
             raise XProtoError(xcb_conn, err_copy)
         # I would assert that reply_p is set here, but ruff doesn't
         # allow asserts.
@@ -322,7 +322,7 @@ class ReplyCookieBase(CookieBase):
         # correctness of this also depends on the _b_base_ pointers in
         # derived fields, which ctypes manages.
         reply_void_p = c_void_p(addressof(reply_p.contents))
-        finalizer = finalize(reply_p, libc.free, reply_void_p)
+        finalizer = finalize(reply_p, LIB.c.free, reply_void_p)
         finalizer.atexit = False
         return reply_p.contents
 
@@ -820,223 +820,272 @@ XCB_XFIXES_MINOR_VERSION = 0
 
 
 class XcbErrorsContext(Structure):
-    """A context for using this library.
+    """A context for using libxcb-errors.
 
     Create a context with xcb_errors_context_new() and destroy it with xcb_errors_context_free(). Except for
-    xcb_errors_context_free(), all functions in this library are thread-safe and can be called from multiple threads at
-    the same time, even on the same context.
+    xcb_errors_context_free(), all functions in libxcb-errors are thread-safe and can be called from multiple threads
+    at the same time, even on the same context.
     """
 
-    # Opaque
+
+#### XCB libraries singleton
 
 
-#### ctypes initialization
+class LibContainer:
+    """Container for XCB-related libraries.
+
+    There is one instance exposed as the xcb.LIB global.
+
+    You can access libxcb.so as xcb.LIB.xcb, libc as xcb.LIB.c, etc.
+
+    This lazily-loads the libraries, so it's safe to create even if the library
+    doesn't exist.  It will load and set up the libraries the first time that
+    an attribute is accessed.  It also exposes an explicit load() method.
+
+    Library accesses through this container return the ctypes CDLL object.
+    There are no smart wrappers.  In other words, if you're accessing
+    xcb.LIB.xcb.xcb_foo, then you need to handle the .reply() calls and such
+    yourself.  If you're accessing the wrapper functions in the xcb module
+    xcb.xcb_foo, then it will take care of that for you.
+    """
+
+    _EXPOSED_NAMES = frozenset(
+        {"c", "xcb", "randr", "randr_id", "render", "render_id", "xfixes", "xfixes_id", "errors"}
+    )
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._initialized = False
+
+    def __getattr__(self, name: str) -> CDLL:
+        # In normal use, this will only be called once (for a library).  After that, all the names will be populated in
+        # __dict__, and this fallback won't be used.
+        if name in self._EXPOSED_NAMES:
+            # This will set the attributes in self.__dict__, so __getattribute__ should now return them.
+            self.load()
+        # Go on to call object.__getattribute__.  This does the normal __dict__ lookup for us.  If it's for an
+        # attribute we just created, then it will return it directly.  If it's for an attribute that genuinely doesn't
+        # exist, it'll raise an AttributeError in the right format for the Python version (this changed slightly in
+        # Python 3.10).
+        return super().__getattribute__(name)
+
+    def load(self) -> None:
+        with self._lock:
+            if self._initialized:
+                return
+
+            # We don't use the cached versions that ctypes.cdll exposes as attributes, since other libraries may be
+            # doing their own things with these.
+
+            # We use the libc that the current process has loaded, to make sure we get the right version of free().
+            self.c = cdll.LoadLibrary(None)
+            self.c.free.argtypes = [c_void_p]
+            self.c.free.restype = None
+
+            # In the future, most of the following could be auto-generated from the XML specs, like xcffib does.
+            # Alternatively, we might define the functions to be initialized with a decorator on the functions that use
+            # them.
+
+            self.xcb = cdll.LoadLibrary(find_library("xcb"))
+
+            # Ordered as <xcb/xcb.h>
+            self.xcb.xcb_request_check.argtypes = [POINTER(XcbConnection), XcbVoidCookie]
+            self.xcb.xcb_request_check.restype = POINTER(XcbGenericErrorStructure)
+            self.xcb.xcb_discard_reply.argtypes = [POINTER(XcbConnection), c_uint]
+            self.xcb.xcb_discard_reply.restype = None
+            self.xcb.xcb_get_extension_data.argtypes = [POINTER(XcbConnection), POINTER(XcbExtension)]
+            self.xcb.xcb_get_extension_data.restype = POINTER(XcbQueryExtensionReply)
+            self.xcb.xcb_prefetch_extension_data.argtypes = [POINTER(XcbConnection), POINTER(XcbExtension)]
+            self.xcb.xcb_prefetch_extension_data.restype = None
+
+            self.xcb.xcb_get_setup.argtypes = [POINTER(XcbConnection)]
+            self.xcb.xcb_get_setup.restype = POINTER(XcbSetup)
+            self.xcb.xcb_connection_has_error.argtypes = [POINTER(XcbConnection)]
+            self.xcb.xcb_connection_has_error.restype = c_int
+            self.xcb.xcb_connect.argtypes = [c_char_p, POINTER(c_int)]
+            self.xcb.xcb_connect.restype = POINTER(XcbConnection)
+            self.xcb.xcb_disconnect.argtypes = [POINTER(XcbConnection)]
+            self.xcb.xcb_disconnect.restype = None
+
+            # Ordered as <xcb/xproto.h>
+            self.xcb.xcb_depth_visuals.argtypes = [POINTER(XcbDepth)]
+            self.xcb.xcb_depth_visuals.restype = POINTER(XcbVisualtype)
+            self.xcb.xcb_depth_visuals_length.argtypes = [POINTER(XcbDepth)]
+            self.xcb.xcb_depth_visuals_length.restype = c_int
+            self.xcb.xcb_depth_next.argtypes = [POINTER(XcbDepthIterator)]
+            self.xcb.xcb_depth_next.restype = None
+            self.xcb.xcb_screen_allowed_depths_iterator.argtypes = [POINTER(XcbScreen)]
+            self.xcb.xcb_screen_allowed_depths_iterator.restype = XcbDepthIterator
+            self.xcb.xcb_screen_next.argtypes = [POINTER(XcbScreenIterator)]
+            self.xcb.xcb_screen_next.restype = None
+            self.xcb.xcb_setup_vendor.argtypes = [POINTER(XcbSetup)]
+            self.xcb.xcb_setup_vendor.restype = POINTER(c_char)
+            self.xcb.xcb_setup_vendor_length.argtypes = [POINTER(XcbSetup)]
+            self.xcb.xcb_setup_vendor_length.restype = c_int
+            self.xcb.xcb_setup_pixmap_formats.argtypes = [POINTER(XcbSetup)]
+            self.xcb.xcb_setup_pixmap_formats.restype = POINTER(XcbFormat)
+            self.xcb.xcb_setup_pixmap_formats_length.argtypes = [POINTER(XcbSetup)]
+            self.xcb.xcb_setup_pixmap_formats_length.restype = c_int
+            self.xcb.xcb_setup_roots_iterator.argtypes = [POINTER(XcbSetup)]
+            self.xcb.xcb_setup_roots_iterator.restype = XcbScreenIterator
+            initialize_xcb_typed_func(
+                self.xcb, "xcb_get_geometry", [POINTER(XcbConnection), XcbDrawable], XcbGetGeometryReply
+            )
+            initialize_xcb_typed_func(
+                self.xcb, "xcb_intern_atom", [POINTER(XcbConnection), c_uint8, c_uint16, c_char_p], XcbInternAtomReply
+            )
+            initialize_xcb_typed_func(
+                self.xcb,
+                "xcb_get_property",
+                [POINTER(XcbConnection), c_uint8, XcbWindow, XcbAtom, XcbAtom, c_uint32, c_uint32],
+                XcbGetPropertyReply,
+            )
+            self.xcb.xcb_get_property_value.argtypes = [POINTER(XcbGetPropertyReply)]
+            self.xcb.xcb_get_property_value.restype = c_void_p
+            self.xcb.xcb_get_property_value_length.argtypes = [POINTER(XcbGetPropertyReply)]
+            self.xcb.xcb_get_property_value_length.restype = c_int
+            initialize_xcb_typed_func(
+                self.xcb,
+                "xcb_get_image",
+                [POINTER(XcbConnection), c_uint8, XcbDrawable, c_int16, c_int16, c_uint16, c_uint16, c_uint32],
+                XcbGetImageReply,
+            )
+            self.xcb.xcb_get_image_data.argtypes = [POINTER(XcbGetImageReply)]
+            self.xcb.xcb_get_image_data.restype = POINTER(c_uint8)
+            self.xcb.xcb_get_image_data_length.argtypes = [POINTER(XcbGetImageReply)]
+            self.xcb.xcb_get_image_data_length.restype = c_int
+            initialize_xcb_void_func(self.xcb, "xcb_no_operation_checked", [POINTER(XcbConnection)])
+
+            # Ordered as <xcb/randr.h>
+            self.randr = cdll.LoadLibrary(find_library("xcb-randr"))
+            self.randr_id = XcbExtension.in_dll(self.randr, "xcb_randr_id")
+            initialize_xcb_typed_func(
+                self.randr,
+                "xcb_randr_query_version",
+                [POINTER(XcbConnection), c_uint32, c_uint32],
+                XcbRandrQueryVersionReply,
+            )
+            initialize_xcb_typed_func(
+                self.randr,
+                "xcb_randr_get_screen_resources",
+                [POINTER(XcbConnection), XcbWindow],
+                XcbRandrGetScreenResourcesReply,
+            )
+            self.randr.xcb_randr_get_screen_resources_crtcs.argtypes = [POINTER(XcbRandrGetScreenResourcesReply)]
+            self.randr.xcb_randr_get_screen_resources_crtcs.restype = POINTER(XcbRandrCrtc)
+            self.randr.xcb_randr_get_screen_resources_crtcs_length.argtypes = [POINTER(XcbRandrGetScreenResourcesReply)]
+            self.randr.xcb_randr_get_screen_resources_crtcs_length.restype = c_int
+            initialize_xcb_typed_func(
+                self.randr,
+                "xcb_randr_get_crtc_info",
+                [POINTER(XcbConnection), XcbRandrCrtc, XcbTimestamp],
+                XcbRandrGetCrtcInfoReply,
+            )
+            initialize_xcb_typed_func(
+                self.randr,
+                "xcb_randr_get_screen_resources_current",
+                [POINTER(XcbConnection), XcbWindow],
+                XcbRandrGetScreenResourcesCurrentReply,
+            )
+            self.randr.xcb_randr_get_screen_resources_current_crtcs.argtypes = [
+                POINTER(XcbRandrGetScreenResourcesCurrentReply)
+            ]
+            self.randr.xcb_randr_get_screen_resources_current_crtcs.restype = POINTER(XcbRandrCrtc)
+            self.randr.xcb_randr_get_screen_resources_current_crtcs_length.argtypes = [
+                POINTER(XcbRandrGetScreenResourcesCurrentReply)
+            ]
+            self.randr.xcb_randr_get_screen_resources_current_crtcs_length.restype = c_int
+
+            # Ordered as <xcb/render.h>
+            self.render = cdll.LoadLibrary(find_library("xcb-render"))
+            self.render_id = XcbExtension.in_dll(self.render, "xcb_render_id")
+
+            self.render.xcb_render_pictdepth_visuals.argtypes = [POINTER(XcbRenderPictdepth)]
+            self.render.xcb_render_pictdepth_visuals.restype = POINTER(XcbRenderPictvisual)
+            self.render.xcb_render_pictdepth_visuals_length.argtypes = [POINTER(XcbRenderPictdepth)]
+            self.render.xcb_render_pictdepth_visuals_length.restype = c_int
+            self.render.xcb_render_pictdepth_next.argtypes = [POINTER(XcbRenderPictdepthIterator)]
+            self.render.xcb_render_pictdepth_next.restype = None
+            self.render.xcb_render_pictscreen_depths_iterator.argtypes = [POINTER(XcbRenderPictscreen)]
+            self.render.xcb_render_pictscreen_depths_iterator.restype = XcbRenderPictdepthIterator
+            self.render.xcb_render_pictscreen_next.argtypes = [POINTER(XcbRenderPictscreenIterator)]
+            self.render.xcb_render_pictscreen_next.restype = None
+            initialize_xcb_typed_func(
+                self.render,
+                "xcb_render_query_version",
+                [POINTER(XcbConnection)],
+                XcbRenderQueryVersionReply,
+            )
+            initialize_xcb_typed_func(
+                self.render,
+                "xcb_render_query_pict_formats",
+                [POINTER(XcbConnection)],
+                XcbRenderQueryPictFormatsReply,
+            )
+            self.render.xcb_render_query_pict_formats_formats.argtypes = [POINTER(XcbRenderQueryPictFormatsReply)]
+            self.render.xcb_render_query_pict_formats_formats.restype = POINTER(XcbRenderPictforminfo)
+            self.render.xcb_render_query_pict_formats_formats_length.argtypes = [
+                POINTER(XcbRenderQueryPictFormatsReply)
+            ]
+            self.render.xcb_render_query_pict_formats_formats_length.restype = c_int
+            self.render.xcb_render_query_pict_formats_screens_iterator.argtypes = [
+                POINTER(XcbRenderQueryPictFormatsReply)
+            ]
+            self.render.xcb_render_query_pict_formats_screens_iterator.restype = XcbRenderPictscreenIterator
+
+            # Ordered as <xcb/xfixes.h>
+
+            self.xfixes = cdll.LoadLibrary(find_library("xcb-xfixes"))
+            self.xfixes_id = XcbExtension.in_dll(self.xfixes, "xcb_xfixes_id")
+
+            initialize_xcb_typed_func(
+                self.xfixes,
+                "xcb_xfixes_query_version",
+                [POINTER(XcbConnection), c_uint32, c_uint32],
+                XcbXfixesQueryVersionReply,
+            )
+            initialize_xcb_typed_func(
+                self.xfixes,
+                "xcb_xfixes_get_cursor_image",
+                [POINTER(XcbConnection)],
+                XcbXfixesGetCursorImageReply,
+            )
+            self.xfixes.xcb_xfixes_get_cursor_image_cursor_image.argtypes = [POINTER(XcbXfixesGetCursorImageReply)]
+            self.xfixes.xcb_xfixes_get_cursor_image_cursor_image.restype = POINTER(c_uint32)
+            self.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.argtypes = [
+                POINTER(XcbXfixesGetCursorImageReply)
+            ]
+            self.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.restype = c_int
+
+            # xcb_errors is an optional library, mostly only useful to developers.  We use the qualified .so name,
+            # since it's subject to change incompatibly.
+            try:
+                self.errors = cdll.LoadLibrary("libxcb-errors.so.0")
+            except Exception:  # noqa: BLE001
+                self.errors = None
+            else:
+                self.errors.xcb_errors_context_new.argtypes = [
+                    POINTER(XcbConnection),
+                    POINTER(POINTER(XcbErrorsContext)),
+                ]
+                self.errors.xcb_errors_context_new.restype = c_int
+                self.errors.xcb_errors_context_free.argtypes = [POINTER(XcbErrorsContext)]
+                self.errors.xcb_errors_context_free.restype = None
+                self.errors.xcb_errors_get_name_for_major_code.argtypes = [POINTER(XcbErrorsContext), c_uint8]
+                self.errors.xcb_errors_get_name_for_major_code.restype = c_char_p
+                self.errors.xcb_errors_get_name_for_minor_code.argtypes = [POINTER(XcbErrorsContext), c_uint8, c_uint16]
+                self.errors.xcb_errors_get_name_for_minor_code.restype = c_char_p
+                self.errors.xcb_errors_get_name_for_error.argtypes = [
+                    POINTER(XcbErrorsContext),
+                    c_uint8,
+                    POINTER(c_char_p),
+                ]
+                self.errors.xcb_errors_get_name_for_error.restype = c_char_p
+
+            self._initialized = True
 
 
-_INITIALIZE_LOCK = Lock()
-_INITIALIZE_DONE = False
-
-
-def initialize() -> None:
-    with _INITIALIZE_LOCK:
-        global _INITIALIZE_DONE
-
-        if _INITIALIZE_DONE:
-            return
-
-        global libc, libxcb, randr, xcb_randr_id, render, xcb_render_id, xfixes, xcb_xfixes_id, xcb_errors
-
-        # We don't use the cached versions that ctypes.cdll exposes as
-        # attributes, since other libraries may be doing their own
-        # things with these.
-        # We use the libc that the current process has loaded, to make
-        # sure we get the right version of free().
-        libc = cdll.LoadLibrary(None)
-        libc.free.argtypes = [c_void_p]
-        libc.free.restype = None
-
-        # In the future, the following could be auto-generated from
-        # the XML specs, like xcffib does.
-
-        libxcb = cdll.LoadLibrary(find_library("xcb"))
-
-        # Ordered as <xcb/xcb.h>
-        libxcb.xcb_request_check.argtypes = [POINTER(XcbConnection), XcbVoidCookie]
-        libxcb.xcb_request_check.restype = POINTER(XcbGenericErrorStructure)
-        libxcb.xcb_discard_reply.argtypes = [POINTER(XcbConnection), c_uint]
-        libxcb.xcb_discard_reply.restype = None
-        libxcb.xcb_get_extension_data.argtypes = [POINTER(XcbConnection), POINTER(XcbExtension)]
-        libxcb.xcb_get_extension_data.restype = POINTER(XcbQueryExtensionReply)
-        libxcb.xcb_prefetch_extension_data.argtypes = [POINTER(XcbConnection), POINTER(XcbExtension)]
-        libxcb.xcb_prefetch_extension_data.restype = None
-
-        libxcb.xcb_get_setup.argtypes = [POINTER(XcbConnection)]
-        libxcb.xcb_get_setup.restype = POINTER(XcbSetup)
-        libxcb.xcb_connection_has_error.argtypes = [POINTER(XcbConnection)]
-        libxcb.xcb_connection_has_error.restype = c_int
-        libxcb.xcb_connect.argtypes = [c_char_p, POINTER(c_int)]
-        libxcb.xcb_connect.restype = POINTER(XcbConnection)
-        libxcb.xcb_disconnect.argtypes = [POINTER(XcbConnection)]
-        libxcb.xcb_disconnect.restype = None
-
-        # Ordered as <xcb/xproto.h>
-        libxcb.xcb_depth_visuals.argtypes = [POINTER(XcbDepth)]
-        libxcb.xcb_depth_visuals.restype = POINTER(XcbVisualtype)
-        libxcb.xcb_depth_visuals_length.argtypes = [POINTER(XcbDepth)]
-        libxcb.xcb_depth_visuals_length.restype = c_int
-        libxcb.xcb_depth_next.argtypes = [POINTER(XcbDepthIterator)]
-        libxcb.xcb_depth_next.restype = None
-        libxcb.xcb_screen_allowed_depths_iterator.argtypes = [POINTER(XcbScreen)]
-        libxcb.xcb_screen_allowed_depths_iterator.restype = XcbDepthIterator
-        libxcb.xcb_screen_next.argtypes = [POINTER(XcbScreenIterator)]
-        libxcb.xcb_screen_next.restype = None
-        libxcb.xcb_setup_vendor.argtypes = [POINTER(XcbSetup)]
-        libxcb.xcb_setup_vendor.restype = POINTER(c_char)
-        libxcb.xcb_setup_vendor_length.argtypes = [POINTER(XcbSetup)]
-        libxcb.xcb_setup_vendor_length.restype = c_int
-        libxcb.xcb_setup_pixmap_formats.argtypes = [POINTER(XcbSetup)]
-        libxcb.xcb_setup_pixmap_formats.restype = POINTER(XcbFormat)
-        libxcb.xcb_setup_pixmap_formats_length.argtypes = [POINTER(XcbSetup)]
-        libxcb.xcb_setup_pixmap_formats_length.restype = c_int
-        libxcb.xcb_setup_roots_iterator.argtypes = [POINTER(XcbSetup)]
-        libxcb.xcb_setup_roots_iterator.restype = XcbScreenIterator
-        initialize_xcb_typed_func(
-            libxcb, "xcb_get_geometry", [POINTER(XcbConnection), XcbDrawable], XcbGetGeometryReply
-        )
-        initialize_xcb_typed_func(
-            libxcb, "xcb_intern_atom", [POINTER(XcbConnection), c_uint8, c_uint16, c_char_p], XcbInternAtomReply
-        )
-        initialize_xcb_typed_func(
-            libxcb,
-            "xcb_get_property",
-            [POINTER(XcbConnection), c_uint8, XcbWindow, XcbAtom, XcbAtom, c_uint32, c_uint32],
-            XcbGetPropertyReply,
-        )
-        libxcb.xcb_get_property_value.argtypes = [POINTER(XcbGetPropertyReply)]
-        libxcb.xcb_get_property_value.restype = c_void_p
-        libxcb.xcb_get_property_value_length.argtypes = [POINTER(XcbGetPropertyReply)]
-        libxcb.xcb_get_property_value_length.restype = c_int
-        initialize_xcb_typed_func(
-            libxcb,
-            "xcb_get_image",
-            [POINTER(XcbConnection), c_uint8, XcbDrawable, c_int16, c_int16, c_uint16, c_uint16, c_uint32],
-            XcbGetImageReply,
-        )
-        libxcb.xcb_get_image_data.argtypes = [POINTER(XcbGetImageReply)]
-        libxcb.xcb_get_image_data.restype = POINTER(c_uint8)
-        libxcb.xcb_get_image_data_length.argtypes = [POINTER(XcbGetImageReply)]
-        libxcb.xcb_get_image_data_length.restype = c_int
-        initialize_xcb_void_func(libxcb, "xcb_no_operation_checked", [POINTER(XcbConnection)])
-
-        # Ordered as <xcb/randr.h>
-        randr = cdll.LoadLibrary(find_library("xcb-randr"))
-        xcb_randr_id = XcbExtension.in_dll(randr, "xcb_randr_id")
-        initialize_xcb_typed_func(
-            randr, "xcb_randr_query_version", [POINTER(XcbConnection), c_uint32, c_uint32], XcbRandrQueryVersionReply
-        )
-        initialize_xcb_typed_func(
-            randr,
-            "xcb_randr_get_screen_resources",
-            [POINTER(XcbConnection), XcbWindow],
-            XcbRandrGetScreenResourcesReply,
-        )
-        randr.xcb_randr_get_screen_resources_crtcs.argtypes = [POINTER(XcbRandrGetScreenResourcesReply)]
-        randr.xcb_randr_get_screen_resources_crtcs.restype = POINTER(XcbRandrCrtc)
-        randr.xcb_randr_get_screen_resources_crtcs_length.argtypes = [POINTER(XcbRandrGetScreenResourcesReply)]
-        randr.xcb_randr_get_screen_resources_crtcs_length.restype = c_int
-        initialize_xcb_typed_func(
-            randr,
-            "xcb_randr_get_crtc_info",
-            [POINTER(XcbConnection), XcbRandrCrtc, XcbTimestamp],
-            XcbRandrGetCrtcInfoReply,
-        )
-        initialize_xcb_typed_func(
-            randr,
-            "xcb_randr_get_screen_resources_current",
-            [POINTER(XcbConnection), XcbWindow],
-            XcbRandrGetScreenResourcesCurrentReply,
-        )
-        randr.xcb_randr_get_screen_resources_current_crtcs.argtypes = [POINTER(XcbRandrGetScreenResourcesCurrentReply)]
-        randr.xcb_randr_get_screen_resources_current_crtcs.restype = POINTER(XcbRandrCrtc)
-        randr.xcb_randr_get_screen_resources_current_crtcs_length.argtypes = [
-            POINTER(XcbRandrGetScreenResourcesCurrentReply)
-        ]
-        randr.xcb_randr_get_screen_resources_current_crtcs_length.restype = c_int
-
-        # Ordered as <xcb/render.h>
-        render = cdll.LoadLibrary(find_library("xcb-render"))
-        xcb_render_id = XcbExtension.in_dll(render, "xcb_render_id")
-
-        render.xcb_render_pictdepth_visuals.argtypes = [POINTER(XcbRenderPictdepth)]
-        render.xcb_render_pictdepth_visuals.restype = POINTER(XcbRenderPictvisual)
-        render.xcb_render_pictdepth_visuals_length.argtypes = [POINTER(XcbRenderPictdepth)]
-        render.xcb_render_pictdepth_visuals_length.restype = c_int
-        render.xcb_render_pictdepth_next.argtypes = [POINTER(XcbRenderPictdepthIterator)]
-        render.xcb_render_pictdepth_next.restype = None
-        render.xcb_render_pictscreen_depths_iterator.argtypes = [POINTER(XcbRenderPictscreen)]
-        render.xcb_render_pictscreen_depths_iterator.restype = XcbRenderPictdepthIterator
-        render.xcb_render_pictscreen_next.argtypes = [POINTER(XcbRenderPictscreenIterator)]
-        render.xcb_render_pictscreen_next.restype = None
-        initialize_xcb_typed_func(
-            render,
-            "xcb_render_query_version",
-            [POINTER(XcbConnection)],
-            XcbRenderQueryVersionReply,
-        )
-        initialize_xcb_typed_func(
-            render,
-            "xcb_render_query_pict_formats",
-            [POINTER(XcbConnection)],
-            XcbRenderQueryPictFormatsReply,
-        )
-        render.xcb_render_query_pict_formats_formats.argtypes = [POINTER(XcbRenderQueryPictFormatsReply)]
-        render.xcb_render_query_pict_formats_formats.restype = POINTER(XcbRenderPictforminfo)
-        render.xcb_render_query_pict_formats_formats_length.argtypes = [POINTER(XcbRenderQueryPictFormatsReply)]
-        render.xcb_render_query_pict_formats_formats_length.restype = c_int
-        render.xcb_render_query_pict_formats_screens_iterator.argtypes = [POINTER(XcbRenderQueryPictFormatsReply)]
-        render.xcb_render_query_pict_formats_screens_iterator.restype = XcbRenderPictscreenIterator
-
-        # Ordered as <xcb/xfixes.h>
-
-        xfixes = cdll.LoadLibrary(find_library("xcb-xfixes"))
-        xcb_xfixes_id = XcbExtension.in_dll(xfixes, "xcb_xfixes_id")
-
-        initialize_xcb_typed_func(
-            xfixes,
-            "xcb_xfixes_query_version",
-            [POINTER(XcbConnection), c_uint32, c_uint32],
-            XcbXfixesQueryVersionReply,
-        )
-        initialize_xcb_typed_func(
-            xfixes,
-            "xcb_xfixes_get_cursor_image",
-            [POINTER(XcbConnection)],
-            XcbXfixesGetCursorImageReply,
-        )
-        xfixes.xcb_xfixes_get_cursor_image_cursor_image.argtypes = [POINTER(XcbXfixesGetCursorImageReply)]
-        xfixes.xcb_xfixes_get_cursor_image_cursor_image.restype = POINTER(c_uint32)
-        xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.argtypes = [POINTER(XcbXfixesGetCursorImageReply)]
-        xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.restype = c_int
-
-        # xcb_errors is an optional library, mostly only useful to developers.
-        # We use the qualified .so name, since it's subject to change.
-        try:
-            xcb_errors = cdll.LoadLibrary("libxcb-errors.so.0")
-        except Exception:  # noqa: BLE001
-            xcb_errors = None
-        else:
-            xcb_errors.xcb_errors_context_new.argtypes = [POINTER(XcbConnection), POINTER(POINTER(XcbErrorsContext))]
-            xcb_errors.xcb_errors_context_new.restype = c_int
-            xcb_errors.xcb_errors_context_free.argtypes = [POINTER(XcbErrorsContext)]
-            xcb_errors.xcb_errors_context_free.restype = None
-            xcb_errors.xcb_errors_get_name_for_major_code.argtypes = [POINTER(XcbErrorsContext), c_uint8]
-            xcb_errors.xcb_errors_get_name_for_major_code.restype = c_char_p
-            xcb_errors.xcb_errors_get_name_for_minor_code.argtypes = [POINTER(XcbErrorsContext), c_uint8, c_uint16]
-            xcb_errors.xcb_errors_get_name_for_minor_code.restype = c_char_p
-            xcb_errors.xcb_errors_get_name_for_error.argtypes = [POINTER(XcbErrorsContext), c_uint8, POINTER(c_char_p)]
-            xcb_errors.xcb_errors_get_name_for_error.restype = c_char_p
-
-        _INITIALIZE_DONE = True
+LIB = LibContainer()
 
 
 #### Protocol operations
@@ -1057,7 +1106,7 @@ def xcb_get_geometry(c: XcbConnection, drawable: XcbDrawable) -> XcbGetGeometryR
     Gets the current geometry of the specified drawable (either
     `Window` or `Pixmap`).
     """
-    return libxcb.xcb_get_geometry(c, drawable).reply(c)
+    return LIB.xcb.xcb_get_geometry(c, drawable).reply(c)
 
 
 def xcb_intern_atom(
@@ -1076,10 +1125,10 @@ def xcb_intern_atom(
     Python-MSS note: The `atom()` function defined in this module is
     easier to use.
     """
-    return libxcb.xcb_intern_atom(c, only_if_exists, name_len, name).reply(c)
+    return LIB.xcb.xcb_intern_atom(c, only_if_exists, name_len, name).reply(c)
 
 
-def xcb_get_property(
+def xcb_get_property(  # noqa: PLR0913
     c: XcbConnection,
     delete: c_uint8,
     window: XcbWindow,
@@ -1101,10 +1150,10 @@ def xcb_get_property(
     function defined in this module is easier to use.
 
     """
-    return libxcb.xcb_get_property(c, delete, window, property_, type_, long_offset, long_length).reply(c)
+    return LIB.xcb.xcb_get_property(c, delete, window, property_, type_, long_offset, long_length).reply(c)
 
 
-def xcb_get_image(
+def xcb_get_image(  # noqa: PLR0913
     c: XcbConnection,
     format_: c_uint8,
     drawable: XcbDrawable,
@@ -1114,52 +1163,52 @@ def xcb_get_image(
     height: c_uint16,
     plane_mask: c_uint32,
 ) -> XcbGetImageReply:
-    return libxcb.xcb_get_image(c, format_, drawable, x, y, width, height, plane_mask).reply(c)
+    return LIB.xcb.xcb_get_image(c, format_, drawable, x, y, width, height, plane_mask).reply(c)
 
 
 # This is included as an example of a void operation.
 def xcb_no_operation(c: XcbConnection) -> None:
-    libxcb.xcb_no_operation_checked(c).check(c)
+    LIB.xcb.xcb_no_operation_checked(c).check(c)
 
 
 def xcb_randr_get_crtc_info(
     c: XcbConnection, crtc: XcbRandrCrtc, config_timestamp: XcbTimestamp
 ) -> XcbRandrGetCrtcInfoReply:
-    return randr.xcb_randr_get_crtc_info(c, crtc, config_timestamp).reply(c)
+    return LIB.randr.xcb_randr_get_crtc_info(c, crtc, config_timestamp).reply(c)
 
 
 def xcb_randr_query_version(
     c: XcbConnection, major_version: c_uint32, minor_version: c_uint32
 ) -> XcbRandrQueryVersionReply:
-    return randr.xcb_randr_query_version(c, major_version, minor_version).reply(c)
+    return LIB.randr.xcb_randr_query_version(c, major_version, minor_version).reply(c)
 
 
 def xcb_randr_get_screen_resources(c: XcbConnection, window: XcbWindow) -> XcbRandrGetScreenResourcesReply:
-    return randr.xcb_randr_get_screen_resources(c, window).reply(c)
+    return LIB.randr.xcb_randr_get_screen_resources(c, window).reply(c)
 
 
 def xcb_randr_get_screen_resources_current(
     c: XcbConnection, window: XcbWindow
 ) -> XcbRandrGetScreenResourcesCurrentReply:
-    return randr.xcb_randr_get_screen_resources_current(c, window).reply(c)
+    return LIB.randr.xcb_randr_get_screen_resources_current(c, window).reply(c)
 
 
 def xcb_render_query_pict_formats(c: XcbConnection) -> XcbRenderQueryPictFormatsReply:
-    return render.xcb_render_query_pict_formats(c).reply(c)
+    return LIB.render.xcb_render_query_pict_formats(c).reply(c)
 
 
 def xcb_render_query_version(c: XcbConnection) -> XcbRenderQueryVersionReply:
-    return render.xcb_render_query_version(c).reply(c)
+    return LIB.render.xcb_render_query_version(c).reply(c)
 
 
 def xcb_xfixes_query_version(
     c: XcbConnection, client_major_version: c_uint32, client_minor_version: c_uint32
 ) -> XcbXfixesQueryVersionReply:
-    return xfixes.xcb_xfixes_query_version(c, client_major_version, client_minor_version).reply(c)
+    return LIB.xfixes.xcb_xfixes_query_version(c, client_major_version, client_minor_version).reply(c)
 
 
 def xcb_xfixes_get_cursor_image(c: XcbConnection) -> XcbXfixesGetCursorImageReply:
-    return xfixes.xcb_xfixes_get_cursor_image(c).reply(c)
+    return LIB.xfixes.xcb_xfixes_get_cursor_image(c).reply(c)
 
 
 #### Trailing data accessors
@@ -1250,60 +1299,66 @@ def array_xcb(pointer_func: Callable, length_func: Callable, parent: Structure |
 
 # This is included as an easy test for this pattern.
 def xcb_setup_vendor(r: XcbSetup) -> Array:
-    return array_xcb(libxcb.xcb_setup_vendor, libxcb.xcb_setup_vendor_length, r)
+    return array_xcb(LIB.xcb.xcb_setup_vendor, LIB.xcb.xcb_setup_vendor_length, r)
 
 
 def xcb_setup_roots(r: XcbSetup) -> list[_Pointer]:
-    return list_xcb(libxcb.xcb_setup_roots_iterator, libxcb.xcb_screen_next, r)
+    return list_xcb(LIB.xcb.xcb_setup_roots_iterator, LIB.xcb.xcb_screen_next, r)
 
 
 def xcb_randr_get_screen_resources_crtcs(r: _Pointer) -> Array:
-    return array_xcb(randr.xcb_randr_get_screen_resources_crtcs, randr.xcb_randr_get_screen_resources_crtcs_length, r)
+    return array_xcb(
+        LIB.randr.xcb_randr_get_screen_resources_crtcs, LIB.randr.xcb_randr_get_screen_resources_crtcs_length, r
+    )
 
 
 def xcb_randr_get_screen_resources_current_crtcs(r: _Pointer) -> Array:
     return array_xcb(
-        randr.xcb_randr_get_screen_resources_current_crtcs, randr.xcb_randr_get_screen_resources_current_crtcs_length, r
+        LIB.randr.xcb_randr_get_screen_resources_current_crtcs,
+        LIB.randr.xcb_randr_get_screen_resources_current_crtcs_length,
+        r,
     )
 
 
 def xcb_setup_pixmap_formats(r: _Pointer) -> Array:
-    return array_xcb(libxcb.xcb_setup_pixmap_formats, libxcb.xcb_setup_pixmap_formats_length, r)
+    return array_xcb(LIB.xcb.xcb_setup_pixmap_formats, LIB.xcb.xcb_setup_pixmap_formats_length, r)
 
 
 def xcb_screen_allowed_depths(r: _Pointer) -> list[_Pointer]:
-    return list_xcb(libxcb.xcb_screen_allowed_depths_iterator, libxcb.xcb_depth_next, r)
+    return list_xcb(LIB.xcb.xcb_screen_allowed_depths_iterator, LIB.xcb.xcb_depth_next, r)
 
 
 def xcb_depth_visuals(r: _Pointer) -> Array:
-    return array_xcb(libxcb.xcb_depth_visuals, libxcb.xcb_depth_visuals_length, r)
+    return array_xcb(LIB.xcb.xcb_depth_visuals, LIB.xcb.xcb_depth_visuals_length, r)
 
 
 def xcb_get_image_data(r: XcbGetImageReply) -> Array:
-    return array_xcb(libxcb.xcb_get_image_data, libxcb.xcb_get_image_data_length, r)
+    return array_xcb(LIB.xcb.xcb_get_image_data, LIB.xcb.xcb_get_image_data_length, r)
 
 
 def xcb_render_pictdepth_visuals(r: XcbRenderPictdepth) -> Array:
-    return array_xcb(render.xcb_render_pictdepth_visuals, render.xcb_render_pictdepth_visuals_length, r)
+    return array_xcb(LIB.render.xcb_render_pictdepth_visuals, LIB.render.xcb_render_pictdepth_visuals_length, r)
 
 
 def xcb_render_pictscreen_depths(r: XcbRenderPictscreen) -> list[_Pointer]:
-    return list_xcb(render.xcb_render_pictscreen_depths_iterator, render.xcb_render_pictdepth_next, r)
+    return list_xcb(LIB.render.xcb_render_pictscreen_depths_iterator, LIB.render.xcb_render_pictdepth_next, r)
 
 
 def xcb_render_query_pict_formats_formats(r: XcbRenderQueryPictFormatsReply) -> Array:
     return array_xcb(
-        render.xcb_render_query_pict_formats_formats, render.xcb_render_query_pict_formats_formats_length, r
+        LIB.render.xcb_render_query_pict_formats_formats, LIB.render.xcb_render_query_pict_formats_formats_length, r
     )
 
 
 def xcb_render_query_pict_formats_screens(r: XcbRenderQueryPictFormatsReply) -> list[_Pointer]:
-    return list_xcb(render.xcb_render_query_pict_formats_screens_iterator, render.xcb_render_pictscreen_next, r)
+    return list_xcb(LIB.render.xcb_render_query_pict_formats_screens_iterator, LIB.render.xcb_render_pictscreen_next, r)
 
 
 def xcb_xfixes_get_cursor_image_cursor_image(r: XcbXfixesGetCursorImageReply) -> Array:
     return array_xcb(
-        xfixes.xcb_xfixes_get_cursor_image_cursor_image, xfixes.xcb_xfixes_get_cursor_image_cursor_image_length, r
+        LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image,
+        LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length,
+        r,
     )
 
 
@@ -1355,7 +1410,7 @@ def get_utf8_prop(xcb_conn: XcbConnection, window: XcbWindow, prop_name: str) ->
     resp = xcb_get_property(xcb_conn, 0, window, prop_atom, utf8_string_type, 0, 2**32 - 1)
     if resp.length == 0:
         return None
-    bytes_arr = cast(libxcb.xcb_get_property_value(resp), POINTER(c_uint8 * resp.value_len)).contents
+    bytes_arr = cast(LIB.xcb.xcb_get_property_value(resp), POINTER(c_uint8 * resp.value_len)).contents
     return bytes(bytes_arr).decode("utf_8")
 
 
@@ -1367,10 +1422,10 @@ def connect(display: str | bytes | None = None) -> tuple[XcbConnection, int]:
         display = display.encode("utf-8")
 
     pref_screen_num = c_int()
-    conn_p = libxcb.xcb_connect(display, pref_screen_num)
+    conn_p = LIB.xcb.xcb_connect(display, pref_screen_num)
 
     # We still get a connection object even if the connection fails.
-    conn_err = libxcb.xcb_connection_has_error(conn_p)
+    conn_err = LIB.xcb.xcb_connection_has_error(conn_p)
     if conn_err != 0:
         msg = "Cannot connect to display: "
         conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
@@ -1384,9 +1439,9 @@ def connect(display: str | bytes | None = None) -> tuple[XcbConnection, int]:
 
 
 def disconnect(conn: XcbConnection) -> None:
-    conn_err = libxcb.xcb_connection_has_error(conn)
+    conn_err = LIB.xcb.xcb_connection_has_error(conn)
     # XCB won't free its connection structures until we disconnect, even in the event of an error.
-    libxcb.xcb_disconnect(conn)
+    LIB.xcb.xcb_disconnect(conn)
     if conn_err != 0:
         msg = "Connection to X server closed: "
         conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
@@ -1397,15 +1452,14 @@ def disconnect(conn: XcbConnection) -> None:
         raise XError(msg)
 
 
-def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
-    import re
+def main(target_name: Any = "emacs", *, verbose: bool = True) -> None:  # noqa: PLR0912, PLR0915
+    import re  # noqa: PLC0415
 
-    from PIL import Image
+    from PIL import Image  # noqa: PLC0415
 
     if not isinstance(target_name, re.Pattern):
         target_name = re.compile(re.escape(target_name))
 
-    initialize()
     conn, pref_screen_num = connect()
 
     # This is just a ping, here to demonstrate and test a void-typed
@@ -1415,7 +1469,7 @@ def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
     # We need to have XCB initialize its internal cache about the
     # extensions.  We also want to make sure they're present and have
     # versions we can use.
-    randr_ext_data = libxcb.xcb_get_extension_data(conn, xcb_randr_id).contents
+    randr_ext_data = LIB.xcb.xcb_get_extension_data(conn, LIB.randr_id).contents
     if not randr_ext_data.present:
         msg = "RANDR extension not present on server"
         raise XError(msg)
@@ -1429,7 +1483,7 @@ def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
         msg = f"RANDR extension on server too old: {randr_version!r}"
         raise XError(msg)
 
-    render_ext_data = libxcb.xcb_get_extension_data(conn, xcb_render_id).contents
+    render_ext_data = LIB.xcb.xcb_get_extension_data(conn, LIB.render_id).contents
     if not render_ext_data.present:
         msg = "RENDER extension not present on server"
         raise XError(msg)
@@ -1444,7 +1498,7 @@ def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
 
     # Get the connection setup information that was included when we
     # connected.
-    xcb_setup = libxcb.xcb_get_setup(conn).contents
+    xcb_setup = LIB.xcb.xcb_get_setup(conn).contents
     vendor = xcb_setup_vendor(xcb_setup)
     if verbose:
         print("Vendor:", bytes(vendor).decode("ascii"))
@@ -1466,7 +1520,7 @@ def main(target_name: str | re.Pattern = "emacs", verbose=True) -> None:
     # _NET_WM_NAME.
 
     client_list_resp = xcb_get_property(conn, 0, root, atom(conn, "_NET_CLIENT_LIST"), XCB_ATOM_WINDOW, 0, 2**32 - 1)
-    window_list = cast(libxcb.xcb_get_property_value(client_list_resp), POINTER(XcbWindow))[: client_list_resp.length]
+    window_list = cast(LIB.xcb.xcb_get_property_value(client_list_resp), POINTER(XcbWindow))[: client_list_resp.length]
     if verbose:
         print([hex(x.value) for x in window_list])
 
