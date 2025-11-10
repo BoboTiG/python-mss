@@ -40,6 +40,7 @@ class MSSBase(metaclass=ABCMeta):
         self,
         /,
         *,
+        backend: str = "default",
         compression_level: int = 6,
         with_cursor: bool = False,
         # Linux only
@@ -51,6 +52,11 @@ class MSSBase(metaclass=ABCMeta):
         self.compression_level = compression_level
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
+        # If there isn't a factory that removed the "backend" argument, make sure that it was set to "default".
+        # Factories that do backend-specific dispatch should remove that argument.
+        if backend != "default":
+            msg = 'The only valid backend on this platform is "default".'
+            raise ScreenShotError(msg)
 
     def __enter__(self) -> MSSBase:  # noqa:PYI034
         """For the cool call `with MSS() as mss:`."""
