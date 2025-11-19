@@ -530,7 +530,7 @@ class LibContainer:
             finally:
                 self._initializing = False
 
-            self._initialized = True
+            self.initialized = True
 
 
 LIB = LibContainer()
