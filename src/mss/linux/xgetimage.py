@@ -5,35 +5,8 @@ from mss.exception import ScreenShotError
 from mss.models import Monitor
 from mss.screenshot import ScreenShot
 
-from .xcb import (
-    LIB,
-    XCB_IMAGE_FORMAT_Z_PIXMAP,
-    XCB_IMAGE_ORDER_LSB_FIRST,
-    XCB_RANDR_MAJOR_VERSION,
-    XCB_RANDR_MINOR_VERSION,
-    XCB_VISUAL_CLASS_DIRECT_COLOR,
-    XCB_VISUAL_CLASS_TRUE_COLOR,
-    XCB_XFIXES_MAJOR_VERSION,
-    XCB_XFIXES_MINOR_VERSION,
-    connect,
-    disconnect,
-    xcb_depth_visuals,
-    xcb_get_geometry,
-    xcb_get_image,
-    xcb_get_image_data,
-    xcb_randr_get_crtc_info,
-    xcb_randr_get_screen_resources,
-    xcb_randr_get_screen_resources_crtcs,
-    xcb_randr_get_screen_resources_current,
-    xcb_randr_get_screen_resources_current_crtcs,
-    xcb_randr_query_version,
-    xcb_screen_allowed_depths,
-    xcb_setup_pixmap_formats,
-    xcb_setup_roots,
-    xcb_xfixes_get_cursor_image,
-    xcb_xfixes_get_cursor_image_cursor_image,
-    xcb_xfixes_query_version,
-)
+from . import xcb
+from .xcb import LIB
 
 SUPPORTED_DEPTHS = {24, 32}
 SUPPORTED_BITS_PER_PIXEL = 32
@@ -59,7 +32,8 @@ class MSS(MSSBase):
         if not display:
             display = None
 
-        self.conn, pref_screen_num = connect(display)
+        self.conn: xcb.Connection | None
+        self.conn, pref_screen_num = xcb.connect(display)
 
         # Let XCB pre-populate its internal cache regarding the
         # extensions we might use, while we finish setup.
@@ -69,12 +43,13 @@ class MSS(MSSBase):
         # Get the connection setup information that was included when we
         # connected.
         xcb_setup = LIB.xcb.xcb_get_setup(self.conn).contents
-        screens = xcb_setup_roots(xcb_setup)
+        screens = xcb.setup_roots(xcb_setup)
         pref_screen = screens[pref_screen_num]
         self.root = self.drawable = pref_screen.root
+        self.drawable = self.root
 
         # We don't probe the XFixes presence or version until we need it.
-        self._xfixes_ready = None
+        self._xfixes_ready: bool | None = None
 
         # Probe the visuals (and related information), and make sure that our drawable is in an acceptable format.
         # These iterations and tests don't involve any traffic with the server; it's all stuff that was included in the
@@ -86,7 +61,7 @@ class MSS(MSSBase):
         self.drawable_depth = pref_screen.root_depth
         self.drawable_visual_id = pref_screen.root_visual.value
         # Server image byte order
-        if xcb_setup.image_byte_order != XCB_IMAGE_ORDER_LSB_FIRST:
+        if xcb_setup.image_byte_order != xcb.ImageOrder.LSBFirst:
             msg = "Only X11 servers using LSB-First images are supported."
             raise ScreenShotError(msg)
         # Depth
@@ -94,11 +69,11 @@ class MSS(MSSBase):
             msg = f"Only screens of color depth 24 or 32 are supported, not {self.drawable_depth}"
             raise ScreenShotError(msg)
         # Format (i.e., bpp, padding)
-        for format_ in xcb_setup_pixmap_formats(xcb_setup):
+        for format_ in xcb.setup_pixmap_formats(xcb_setup):
             if format_.depth == self.drawable_depth:
                 break
         else:
-            msg = "Internal error: drawable's depth not found in screen's supported formats"
+            msg = f"Internal error: drawable's depth {self.drawable_depth} not found in screen's supported formats"
             raise ScreenShotError(msg)
         drawable_format = format_
         if drawable_format.bits_per_pixel != SUPPORTED_BITS_PER_PIXEL:
@@ -114,19 +89,19 @@ class MSS(MSSBase):
             raise ScreenShotError(msg)
         # Visual, the interpretation of pixels (like indexed, grayscale, etc).  (Visuals are arranged by depth, so we
         # iterate over the depths first.)
-        for xcb_depth in xcb_screen_allowed_depths(pref_screen):
+        for xcb_depth in xcb.screen_allowed_depths(pref_screen):
             if xcb_depth.depth == self.drawable_depth:
                 break
         else:
             msg = "Internal error: drawable's depth not found in screen's supported depths"
             raise ScreenShotError(msg)
-        for visual_info in xcb_depth_visuals(xcb_depth):
+        for visual_info in xcb.depth_visuals(xcb_depth):
             if visual_info.visual_id.value == self.drawable_visual_id:
                 break
         else:
             msg = "Internal error: drawable's visual not found in screen's supported visuals"
             raise ScreenShotError(msg)
-        if visual_info.class_ not in {XCB_VISUAL_CLASS_TRUE_COLOR, XCB_VISUAL_CLASS_DIRECT_COLOR}:
+        if visual_info.class_ not in {xcb.VisualClass.TrueColor, xcb.VisualClass.DirectColor}:
             msg = "Only TrueColor and DirectColor visuals are supported"
             raise ScreenShotError(msg)
         if (
@@ -143,15 +118,19 @@ class MSS(MSSBase):
 
     def close(self) -> None:
         if self.conn is not None:
-            disconnect(self.conn)
+            xcb.disconnect(self.conn)
         self.conn = None
 
     def _monitors_impl(self) -> None:
         """Get positions of monitors. It will populate self._monitors."""
 
+        if self.conn is None:
+            msg = "Cannot identify monitors while the connection is closed"
+            raise ScreenShotError(msg)
+
         # The first entry is the whole X11 screen that the root is
         # on.  That's the one that covers all the monitors.
-        root_geom = xcb_get_geometry(self.conn, self.root)
+        root_geom = xcb.get_geometry(self.conn, self.root)
         self._monitors.append(
             {
                 "left": root_geom.x,
@@ -178,25 +157,26 @@ class MSS(MSSBase):
         # like).  If the server only supports 1.2, then that's what
         # it'll give us, and we're ok with that, but we also use a
         # faster path if the server implements at least 1.3.
-        randr_version_data = xcb_randr_query_version(self.conn, XCB_RANDR_MAJOR_VERSION, XCB_RANDR_MINOR_VERSION)
+        randr_version_data = xcb.randr_query_version(self.conn, xcb.RANDR_MAJOR_VERSION, xcb.RANDR_MINOR_VERSION)
         randr_version = (randr_version_data.major_version, randr_version_data.minor_version)
         if randr_version < (1, 2):
             return
 
+        screen_resources: xcb.RandrGetScreenResourcesReply | xcb.RandrGetScreenResourcesCurrentReply
         # Check to see if we have the xcb_randr_get_screen_resources_current
         # function in libxcb-randr, and that the server supports it.
         if hasattr(LIB.randr, "xcb_randr_get_screen_resources_current") and randr_version >= (1, 3):
-            screen_resources = xcb_randr_get_screen_resources_current(self.conn, self.drawable)
-            crtcs = xcb_randr_get_screen_resources_current_crtcs(screen_resources)
+            screen_resources = xcb.randr_get_screen_resources_current(self.conn, self.drawable.value)
+            crtcs = xcb.randr_get_screen_resources_current_crtcs(screen_resources)
         else:
             # Either the client or the server doesn't support the _current
             # form.  That's ok; we'll use the old function, which forces
             # a new query to the physical monitors.
-            screen_resources = xcb_randr_get_screen_resources(self.conn, self.drawable)
-            crtcs = xcb_randr_get_screen_resources_crtcs(screen_resources)
+            screen_resources = xcb.randr_get_screen_resources(self.conn, self.drawable)
+            crtcs = xcb.randr_get_screen_resources_crtcs(screen_resources)
 
         for crtc in crtcs:
-            crtc_info = xcb_randr_get_crtc_info(self.conn, crtc, screen_resources.timestamp)
+            crtc_info = xcb.randr_get_crtc_info(self.conn, crtc, screen_resources.timestamp)
             if crtc_info.num_outputs == 0:
                 continue
             self._monitors.append(
@@ -210,9 +190,13 @@ class MSS(MSSBase):
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
 
-        img_reply = xcb_get_image(
+        if self.conn is None:
+            msg = "Cannot take screenshot while the connection is closed"
+            raise ScreenShotError(msg)
+
+        img_reply = xcb.get_image(
             self.conn,
-            XCB_IMAGE_FORMAT_Z_PIXMAP,
+            xcb.ImageFormat.ZPixmap,
             self.drawable,
             monitor["left"],
             monitor["top"],
@@ -223,7 +207,7 @@ class MSS(MSSBase):
 
         # Now, save the image.  This is a reference into the img_reply
         # structure.
-        img_data_arr = xcb_get_image_data(img_reply)
+        img_data_arr = xcb.get_image_data(img_reply)
         # Copy this into a new bytearray, so that it will persist after
         # we clear the image structure.
         img_data = bytearray(img_data_arr)
@@ -240,11 +224,15 @@ class MSS(MSSBase):
         return self.cls_image(img_data, monitor)
 
     def _cursor_impl_check_xfixes(self) -> bool:
+        if self.conn is None:
+            msg = "Cannot take screenshot while the connection is closed"
+            raise ScreenShotError(msg)
+
         xfixes_ext_data = LIB.xcb.xcb_get_extension_data(self.conn, LIB.xfixes_id).contents
         if not xfixes_ext_data.present:
             return False
 
-        reply = xcb_xfixes_query_version(self.conn, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION)
+        reply = xcb.xfixes_query_version(self.conn, xcb.XFIXES_MAJOR_VERSION, xcb.XFIXES_MINOR_VERSION)
         # We can work with 2.0 and later, but not sure about the
         # actual minimum version we can use.  That's ok; everything
         # these days is much more modern.
@@ -253,13 +241,17 @@ class MSS(MSSBase):
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGBx."""
 
+        if self.conn is None:
+            msg = "Cannot take screenshot while the connection is closed"
+            raise ScreenShotError(msg)
+
         if self._xfixes_ready is None:
             self._xfixes_ready = self._cursor_impl_check_xfixes()
         if not self._xfixes_ready:
             msg = "Server does not have XFixes, or the version is too old."
             raise ScreenShotError(msg)
 
-        cursor_img = xcb_xfixes_get_cursor_image(self.conn)
+        cursor_img = xcb.xfixes_get_cursor_image(self.conn)
         region = {
             "left": cursor_img.x - cursor_img.xhot,
             "top": cursor_img.y - cursor_img.yhot,
@@ -267,7 +259,7 @@ class MSS(MSSBase):
             "height": cursor_img.height,
         }
 
-        data_arr = xcb_xfixes_get_cursor_image_cursor_image(cursor_img)
+        data_arr = xcb.xfixes_get_cursor_image_cursor_image(cursor_img)
         data = bytearray(data_arr)
         # We don't need to do the same array slice-and-dice work as
         # the Xlib-based implementation: Xlib has an unfortunate

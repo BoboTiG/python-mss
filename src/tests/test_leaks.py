@@ -109,7 +109,7 @@ def regression_issue_210(*, backend: str) -> None:
         regression_issue_210,
     ],
 )
-def test_resource_leaks(func: Callable[[], None], monitor_func: Callable[[], int], backend: str) -> None:
+def test_resource_leaks(func: Callable[..., None], monitor_func: Callable[[], int], backend: str) -> None:
     """Check for resource leaks with different use cases."""
     # Warm-up
     func(backend=backend)

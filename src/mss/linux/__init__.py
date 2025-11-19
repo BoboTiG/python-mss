@@ -4,7 +4,8 @@ from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
 
-def MSS(backend: str = "xlib", **kwargs: Any) -> MSSBase:
+# This factory function is named in upper-case for backwards compatibility.
+def MSS(backend: str = "default", **kwargs: Any) -> MSSBase:  # noqa: N802
     backend = backend.lower()
     if backend in {"default", "xlib"}:
         from . import xlib  # noqa: PLC0415

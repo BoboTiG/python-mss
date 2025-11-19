@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
+import os
 import platform
 import sys
 import threading
@@ -96,7 +97,7 @@ def test_factory_unknown_system(backend: str, monkeypatch: pytest.MonkeyPatch) -
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @pytest.mark.parametrize("with_cursor", [False, True])
-def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture, mss_impl: Callable[..., MSSBase]) -> None:
+def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
     def main(*args: str, ret: int = 0) -> None:
         if with_cursor:
             args = (*args, "--with-cursor")
@@ -130,7 +131,7 @@ def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture, mss_impl:
     for opt in ("-o", "--out"):
         main(opt, fmt)
         captured = capsys.readouterr()
-        with mss_impl() as sct:
+        with mss.mss(display=os.getenv("DISPLAY")) as sct:
             for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
                 filename = Path(fmt.format(mon=mon, **monitor))
                 assert line.endswith(filename.name)
