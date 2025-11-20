@@ -120,18 +120,23 @@ XCB_CONN_ERRMSG = {
 }
 
 
+def initialize() -> None:
+    LIB.initialize(callbacks=[xcbgen.initialize])
+
+
 def connect(display: str | bytes | None = None) -> tuple[Connection, int]:
     if isinstance(display, str):
         display = display.encode("utf-8")
 
-    LIB.initialize(callbacks=[xcbgen.initialize])
-
+    initialize()
     pref_screen_num = c_int()
     conn_p = LIB.xcb.xcb_connect(display, pref_screen_num)
 
     # We still get a connection object even if the connection fails.
     conn_err = LIB.xcb.xcb_connection_has_error(conn_p)
     if conn_err != 0:
+        # XCB won't free its connection structures until we disconnect, even in the event of an error.
+        LIB.xcb.xcb_disconnect(conn_p)
         msg = "Cannot connect to display: "
         conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
         if conn_errmsg:

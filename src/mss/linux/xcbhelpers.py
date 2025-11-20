@@ -25,21 +25,41 @@ from typing import TYPE_CHECKING
 from weakref import finalize
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable
+    from collections.abc import Callable, Iterable
     from typing import Any
 
 from mss.exception import ScreenShotError
 
-# In general, anything global starting with Xcb, XCB_, or xcb_ is a
-# reflection of something in XCB with the same name.
+# A quick refresher on why this module spends so much effort on object lifetimes, and how the pieces fit together:
 #
-# The functions starting with xcb_ that are based on list_xcb don't
-# have exact parallels in XCB, but that's because of C limitations.
-# XCB does export the same name with _iterator appended; for instance,
-# XCB doesn't have xcb_setup_roots, but it does have
-# xcb_setup_roots_iterator.
+# 1. Shape of XCB replies.
+#    Each reply that comes back from libxcb is one contiguous allocation that looks like:
+#       [fixed-size header][optional padding][embedded arrays/lists]
+#    The protocol spec describes where those trailing lists live, but callers are not expected to compute offsets by
+#    hand.  Instead, XCB exposes helper functions such as `xcb_setup_pixmap_formats` (returns pointer + length for a
+#    fixed-size array) or iterator factories for nested variable-length data.  As long as the original reply is still
+#    allocated, all of the derived pointers remain valid.
 #
-# Among other things, this makes it easier to autogenerate them.
+# 2. What ctypes does (and does not) track automatically.
+#    When user code reads `my_struct.foo`, ctypes returns another ctypes object that still refers to memory owned by
+#    `my_struct`; it does not copy the value.  To keep that relationship alive, ctypes silently sets `_b_base_` on the
+#    derived object so the garbage collector knows that `my_struct` must stay around.  This mechanism only works when
+#    ctypes itself materializes the derived object.
+#
+# 3. Why XCB accessors break that safety net.
+#    The XCB helpers we need - `xcb_setup_pixmap_formats`, `xcb_randr_get_screen_resources_crtcs`, etc. - return raw C
+#    pointers.  ctypes happily converts them to Python objects, but because the conversion went through a plain C
+#    call, `_b_base_` never gets filled in.  The GC no longer realizes that the derived array depends on the reply, so
+#    once every direct reference to the reply drops, libc is free to `free()` the allocation.  Any later access
+#    through the derived pointer becomes undefined behaviour.
+#
+# 4. How this module keeps everything safe.
+#    After every call into an XCB accessor we immediately call `depends_on(child, parent)`.  That helper installs a
+#    finalizer on `child` whose only job is to keep a reference to `parent`.  No extra work is performed; the callback
+#    holding the reference is enough to keep the reply alive until the child objects disappear.  Separately, when we
+#    first receive the reply, we register another finalizer that hands the pointer back to libc once *all* dependants
+#    have been collected.  As a result, higher-level code can treat these helper functions just like the XCB C API:
+#    grab the array you need, keep it as long as you like, and trust that it stays valid.
 
 
 def depends_on(subobject: Any, superobject: Any) -> None:
@@ -64,14 +84,11 @@ def depends_on(subobject: Any, superobject: Any) -> None:
     outer structure is not released before all the references to the
     inner objects have been cleared.
     """
-    # The implementation is quite simple.  We create a finalizer on
-    # the inner object, with a callback that references the outer
-    # object.  That ensures that there are live references to the
-    # outer object until the references to the inner object have been
-    # gc'd.  We can't just create a ref, though; it seems that their
-    # callbacks will only run if the ref itself is still referenced.
-    # We need the extra machinery that finalize provides, which uses
-    # an internal registry to keep the refs alive.
+    # The implementation is quite simple.  We create a finalizer on the inner object, with a callback that references
+    # the outer object.  That ensures that there are live references to the outer object until the references to the
+    # inner object have been gc'd.  We can't just create a ref, though; it seems that their callbacks will only run if
+    # the ref itself is still referenced.  We need the extra machinery that finalize provides, which uses an internal
+    # registry to keep the refs alive.
     finalize(subobject, id, superobject)
 
 
@@ -87,9 +104,8 @@ class XID(c_uint32):
 
 
 class GenericErrorStructure(Structure):
-    # The XCB name is xcb_generic_error.  It is named differently here
-    # to make it clear that this is not an exception class, since in
-    # Python, those traditionally end in ...Error.
+    # The XCB name in C is xcb_generic_error.  It is named differently here to make it clear that this is not an
+    # exception class, since in Python, those traditionally end in ...Error.
     _fields_ = (
         ("response_type", c_uint8),
         ("error_code", c_uint8),
@@ -105,60 +121,44 @@ class GenericErrorStructure(Structure):
 
 #### Request / response handling
 #
-# This section isn't needed to understand the main() function below.
-# It's using higher-level functions.  This section defines the way
-# that those functions are built.
+# The following recaps a lot of what's in the xcb-requests(3) man page, with a few notes about what we're doing in
+# this library.
 #
-# The following recaps a lot of what's in the xcb-requests(3) man
-# page, with a few notes about what we're doing in this library.
+# In XCB, when you send a request to the server, the function returns immediately.  You don't get back the server's
+# reply; you get back a "cookie".  (This just holds the sequence number of the request.)  Later, you can use that
+# cookie to get the reply or error back.
 #
-# In XCB, when you send a request to the server, the function returns
-# immediately.  You don't get back the server's reply; you get back a
-# "cookie".  (This just holds the sequence number of the request.)
-# Later, you can use that cookie to get the reply or error back.
+# This lets you fire off requests in rapid succession, and then afterwards check the results.  It also lets you do
+# other work (like process a screenshot) while a request is in flight (like getting the next screenshot).  This is
+# asynchronous processing, and is great for performance.
 #
-# This lets you fire off requests in rapid succession, and then
-# afterwards check the results.  It also lets you do other work (like
-# process a screenshot) while a request is in flight (like getting the
-# next screenshot).  This is asynchronous processing, and is great for
-# performance.
+# In this program, we currently don't try to do anything asynchronously, although the design doesn't preclude it.
+# (You'd add a synchronous=False flag to the entrypoint wrappers below, and not call .check / .reply, but rather just
+# return the cookie.)
 #
-# In this program, we currently don't try to do anything
-# asynchronously, although the design doesn't preclude it.  (You'd add
-# a synchronous=False flag to the entrypoint wrappers below, and not
-# call .check / .reply, but rather just return the cookie.)
+# XCB has two types of requests.  Void requests don't return anything from the server.  These are things like "create
+# a window".  The typed requests do request information from the server.  These are things like "get a window's size".
 #
-# XCB has two types of requests.  Void requests don't return anything
-# from the server.  These are things like "create a window".  The
-# typed requests do request information from the server.  These are
-# things like "get a window's size".
+# Void requests all return the same type of cookie.  The only thing you can do with the cookie is check to see if you
+# got an error.
 #
-# Void requests all return the same type of cookie.  The only thing
-# you can do with the cookie is check to see if you got an error.
+# Typed requests return a call-specific cookie with the same structure.  They are call-specific so they can be
+# type-checked.  (This is the case in both XCB C and in this library.)
 #
-# Typed requests return a call-specific cookie with the same
-# structure.  They are call-specific so they can be type-checked.
-# (This is the case in both XCB C and in this library.)
+# XCB has a concept of "checked" or "unchecked" request functions.  By default, void requests are unchecked.  For an
+# unchecked function, XCB doesn't do anything to let you know that the request completed successfully.  If there's an
+# error, then you need to handle it in your main loop, as a regular event.  We always use the checked versions
+# instead, so that we can raise an exception at the right place in the code.
 #
-# XCB has a concept of "checked" or "unchecked" request functions.  By
-# default, void requests are unchecked.  For an unchecked function,
-# XCB doesn't do anything to let you know that the request completed
-# successfully.  If there's an error, then you need to handle it in
-# your main loop, as a regular event.  We always use the checked
-# versions instead, so that we can raise an exception at the right
-# place in the code.
+# Similarly, typed requests default to checked, but have unchecked versions.  That's just to align their error
+# handling with the unchecked void functions; you always need to do something with the cookie so you can get the
+# response.
 #
-# Similarly, typed requests default to checked, but have unchecked
-# versions.  That's just to align their error handling with the
-# unchecked void functions; you always need to do something with the
-# cookie so you can get the response.
+# As mentioned, we always use the checked requests; that's unlikely to change, since error-checking with unchecked
+# requests requires control of the event loop.
 #
-# As mentioned, we always use the checked requests; that's unlikely to
-# change, since error-checking with unchecked requests requires
-# control of the event loop.
-#
-# Below are wrappers that set up the request / response functions in
-# ctypes, and define the cookie types to do error handling.
+# Below are wrappers that set up the request / response functions in ctypes, and define the cookie types to do error
+# handling.
 
 
 class XError(ScreenShotError):
@@ -187,8 +187,9 @@ class XProtoError(XError):
         }
 
         # xcb-errors is a library to get descriptive error strings, instead of reporting the raw codes.  This is not
-        # installed by default on most systems, but is quite helpful for developers.  We use it if it exists, but don't
-        # force the matter.  We can't do this when we format the error message, since the XCB connection may be gone.
+        # installed by default on most systems, but is quite helpful for developers.  We use it if it exists, but
+        # don't force the matter.  We can't delay this lookup until we format the error message, since the XCB
+        # connection may be gone by then.
         if LIB.errors:
             # We don't try to reuse the error context, since it's per-connection, and probably will only be used once.
             ctx = POINTER(XcbErrorsContext)()
@@ -226,7 +227,7 @@ class XProtoError(XError):
         minor_desc = (
             f"{details['minor_code']} ({details['minor_name']})" if "minor_name" in details else details["minor_code"]
         )
-        ext_desc = f"\n  Extension:  {details['ext_name']}" if "ext_desc" in details else ""
+        ext_desc = f"\n  Extension:  {details['extension']}" if "extension" in details else ""
         msg += (
             f"\nX Error of failed request:  {error_desc}"
             f"\n  Major opcode of failed request:  {major_desc}"
@@ -246,8 +247,10 @@ class CookieBase(Structure):
     in Python.
     """
 
-    # I've considered adding a finalizer that will raise an exception
-    # if this object goes out of scope without being disposed of.
+    # It's possible to add a finalizer that will raise an exception if a cookie is garbage collected without being
+    # disposed of (through discard, check, or reply).  If we ever start using asynchronous requests, then that would
+    # be good to add.  But for now, we can trust the wrapper functions to manage the cookies correctly, without the
+    # extra overhead of these finalizers.
 
     _fields_ = (("sequence", c_uint),)
 
@@ -276,7 +279,7 @@ class VoidCookie(CookieBase):
 
 
 class ReplyCookieBase(CookieBase):
-    _xcb_reply_func_ = None
+    _xcb_reply_func = None
 
     def reply(self, xcb_conn: Connection) -> Structure:
         """Wait for and return the server's response.
@@ -288,26 +291,23 @@ class ReplyCookieBase(CookieBase):
         instead.
         """
         err_p = POINTER(GenericErrorStructure)()
-        assert self._xcb_reply_func_ is not None  # noqa: S101
-        reply_p = self._xcb_reply_func_(xcb_conn, self, err_p)
+        assert self._xcb_reply_func is not None  # noqa: S101
+        reply_p = self._xcb_reply_func(xcb_conn, self, err_p)
         if err_p:
             # I think this is always NULL, but we can free it.
             if reply_p:
                 LIB.c.free(reply_p)
-            # Copying the error structure is cheap, and makes memory
-            # management easier.
+            # Copying the error structure is cheap, and makes memory management easier.
             err_copy = copy(err_p.contents)
             LIB.c.free(err_p)
             raise XProtoError(xcb_conn, err_copy)
-        # I would assert that reply_p is set here, but ruff doesn't
-        # allow asserts.
+        assert reply_p  # noqa: S101
 
-        # It's not known, at this point, how long the reply structure
-        # actually is: there may be trailing data that needs to be
-        # processed and then freed.  We have to set a finalizer on the
-        # reply, so it can be freed when Python is done with it.  The
-        # correctness of this also depends on the _b_base_ pointers in
-        # derived fields, which ctypes manages.
+        # It's not known, at this point, how long the reply structure actually is: there may be trailing data that
+        # needs to be processed and then freed.  We have to set a finalizer on the reply, so it can be freed when
+        # Python is done with it.  The whole dependency tree, though, leads back to this object and its finalizer.
+        # Importantly, reply_void_p does not carry a reference (direct or indirect) to reply_p; that would prevent
+        # it from ever being freed.
         reply_void_p = c_void_p(addressof(reply_p.contents))
         finalizer = finalize(reply_p, LIB.c.free, reply_void_p)
         finalizer.atexit = False
@@ -331,9 +331,8 @@ def initialize_xcb_typed_func(lib: CDLL, name: str, request_argtypes: list, repl
     title_name = base_name.title().replace("_", "")
     request_func = getattr(lib, name)
     reply_func = getattr(lib, f"{name}_reply")
-    # The cookie type isn't used outside this function, so we can just
-    # declare it here implicitly.
-    cookie_type = type(f"{title_name}Cookie", (ReplyCookieBase,), {"_xcb_reply_func_": reply_func})
+    # The cookie type isn't used outside this function, so we can just declare it here implicitly.
+    cookie_type = type(f"{title_name}Cookie", (ReplyCookieBase,), {"_xcb_reply_func": reply_func})
     request_func.argtypes = request_argtypes
     request_func.restype = cookie_type
     reply_func.argtypes = [POINTER(Connection), cookie_type, POINTER(POINTER(GenericErrorStructure))]
@@ -342,31 +341,18 @@ def initialize_xcb_typed_func(lib: CDLL, name: str, request_argtypes: list, repl
 
 ### XCB types
 
-# These are in the same order as they appear in the XML definitions,
-# as much as practical.  In a future release, we might want to
-# auto-generate them from the XML.
-
-# xcb client-side types
-
 
 class XcbExtension(Structure):
     _fields_ = (("name", c_char_p), ("global_id", c_int))
 
 
-# Constants
-# Since these are enums in XCB, they're interspersed with the types in
-# the definitions, but I've put them together in deference to custom.
-
-
-# xcb-errors
-
-
 class XcbErrorsContext(Structure):
     """A context for using libxcb-errors.
 
-    Create a context with xcb_errors_context_new() and destroy it with xcb_errors_context_free(). Except for
-    xcb_errors_context_free(), all functions in libxcb-errors are thread-safe and can be called from multiple threads
-    at the same time, even on the same context.
+    Create a context with xcb_errors_context_new() and destroy it with
+    xcb_errors_context_free(). Except for xcb_errors_context_free(),
+    all functions in libxcb-errors are thread-safe and can be called
+    from multiple threads at the same time, even on the same context.
     """
 
 
@@ -395,16 +381,15 @@ class LibContainer:
     There is one instance exposed as the xcb.LIB global.
 
     You can access libxcb.so as xcb.LIB.xcb, libc as xcb.LIB.c, etc.
+    These are not set up until initialize() is called.  It is safe to
+    call initialize() multiple times.
 
-    This lazily-loads the libraries, so it's safe to create even if the library
-    doesn't exist.  It will load and set up the libraries the first time that
-    an attribute is accessed.  It also exposes an explicit load() method.
-
-    Library accesses through this container return the ctypes CDLL object.
-    There are no smart wrappers.  In other words, if you're accessing
-    xcb.LIB.xcb.xcb_foo, then you need to handle the .reply() calls and such
-    yourself.  If you're accessing the wrapper functions in the xcb module
-    xcb.xcb_foo, then it will take care of that for you.
+    Library accesses through this container return the ctypes CDLL
+    object.  There are no smart wrappers (although the return types are
+    the cookie classes defined above).  In other words, if you're
+    accessing xcb.LIB.xcb.xcb_foo, then you need to handle the .reply()
+    calls and such yourself.  If you're accessing the wrapper functions
+    in the xcb module xcb.foo, then it will take care of that for you.
     """
 
     _EXPOSED_NAMES = frozenset(
@@ -446,6 +431,9 @@ class LibContainer:
                 # doing their own things with these.
 
                 # We use the libc that the current process has loaded, to make sure we get the right version of free().
+                # ctypes doesn't document that None is valid as the argument to LoadLibrary, but it does the same thing
+                # as a NULL argument to dlopen: it returns the current process and its loaded libraries.  This includes
+                # libc.
                 self.c = cdll.LoadLibrary(None)  # type: ignore[arg-type]
                 self.c.free.argtypes = [c_void_p]
                 self.c.free.restype = None
@@ -538,71 +526,55 @@ LIB = LibContainer()
 
 #### Trailing data accessors
 #
-# In X11, many replies have the header (the *Reply structures defined
-# above), plus some variable-length data after it.  For instance,
-# XcbScreen includes a list of XcbDepth structures.
+# In X11, many replies have the header (the *Reply structures defined above), plus some variable-length data after it.
+# For instance, XcbScreen includes a list of XcbDepth structures.
 #
 # These mostly follow two patterns.
 #
-# For objects with a constant size, we get a pointer and length (count),
-# cast to an array, and return the array contents.  (This doesn't involve
-# copying any data.)
+# For objects with a constant size, we get a pointer and length (count), cast to an array, and return the array
+# contents.  (This doesn't involve copying any data.)
 #
-# For objects with a variable size, we use the XCB-provided iterator
-# protocol to iterate over them, and return a Python list.  (This also
-# doesn't copy any data, but does construct a list.)  To continue the
-# example of how XcbScreen includes a list of XcbDepth structures: a
-# full XcbDepth is variable-length because it has a variable number of
-# visuals attached to it.
+# For objects with a variable size, we use the XCB-provided iterator protocol to iterate over them, and return a
+# Python list.  (This also doesn't copy any data, but does construct a list.)  To continue the example of how
+# XcbScreen includes a list of XcbDepth structures: a full XcbDepth is variable-length because it has a variable
+# number of visuals attached to it.
 #
 # These lists with variable element sizes follow a standard pattern:
 #
-# * There is an iterator class (such as XcbScreenIterator), based on
-#   the type you're iterating over.  This defines a data pointer to
-#   point to the current object, and a rem counter indicating the
-#   remaining number of objects.
-# * There is a function to advance the iterator (such as
-#   xcb_screen_next), based on the type of iterator being advanced.
-# * There is an initializer function (such as
-#   xcb_setup_roots_iterator) that takes the container (XcbSetup), and
-#   returns an iterator (XcbScreenIterator) pointing to the first object
-#   in the list.  (This iterator is returned by value, so Python can
-#   free it normally.)
+# * There is an iterator class (such as XcbScreenIterator), based on the type you're iterating over.  This defines a
+#   data pointer to point to the current object, and a rem counter indicating the remaining number of objects.
+# * There is a function to advance the iterator (such as xcb_screen_next), based on the type of iterator being
+#   advanced.
+# * There is an initializer function (such as xcb_setup_roots_iterator) that takes the container (XcbSetup), and
+#   returns an iterator (XcbScreenIterator) pointing to the first object in the list.  (This iterator is returned by
+#   value, so Python can free it normally.)
 #
-# The returned structures are actually part of the allocation of the
-# parent pointer: the POINTER(XcbScreen) objects point to objects that
-# were allocated along with the XcbSetup that we got them from.  That
-# means that it is very important that the XcbSetup not be freed until
-# the pointers that point into it are freed.
+# The returned structures are actually part of the allocation of the parent pointer: the POINTER(XcbScreen) objects
+# point to objects that were allocated along with the XcbSetup that we got them from.  That means that it is very
+# important that the XcbSetup not be freed until the pointers that point into it are freed.
 
 
 ### Iteration utility primitives
 
 
-def iterate_from_xcb(iterator_factory: Callable, next_func: Callable, parent: Structure | _Pointer) -> Generator[Any]:
-    # ctypes doesn't realize that the structure pointers we're
-    # yielding are actually references into the parent structure's
-    # allocation.  That means that the parent's finalizer can be
-    # called, freeing it, while one of these is still live.
-    #
-    # One fix would be to put an extra reference to the parent struct
-    # on the pointers we're returning.  However, that's not allowed by
-    # ruff.  We use depends_on as an alternative.
+def list_from_xcb(iterator_factory: Callable, next_func: Callable, parent: Structure | _Pointer) -> list:
     iterator = iterator_factory(parent)
+    items: list = []
     while iterator.rem != 0:
         current = iterator.data.contents
+        # Keep the parent reply alive until consumers drop this entry.
         depends_on(current, parent)
-        yield current
+        items.append(current)
         next_func(iterator)
-
-
-def list_from_xcb(iterator_factory: Callable, next_func: Callable, parent: Structure | _Pointer) -> list:
-    return list(iterate_from_xcb(iterator_factory, next_func, parent))
+    return items
 
 
 def array_from_xcb(pointer_func: Callable, length_func: Callable, parent: Structure | _Pointer) -> Array:
     pointer = pointer_func(parent)
     length = length_func(parent)
+    if length and not pointer:
+        msg = "XCB returned a NULL pointer for non-zero data length"
+        raise ScreenShotError(msg)
     array_ptr = cast(pointer, POINTER(pointer._type_ * length))
     array = array_ptr.contents
     depends_on(array, parent)

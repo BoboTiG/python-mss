@@ -152,9 +152,19 @@ def test_xrandr_extension_exists_but_is_not_enabled(display: str) -> None:
 
 
 def test_unsupported_depth(backend: str) -> None:
+    # 8-bit is normally PseudoColor.  If the order of testing the display support changes, this might raise a
+    # different message; just change the match= accordingly.
     with (
         pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=8) as vdisplay,
-        pytest.raises(ScreenShotError),
+        pytest.raises(ScreenShotError, match=r"\b8\b"),
+        mss.mss(display=vdisplay.new_display_var, backend=backend) as sct,
+    ):
+        sct.grab(sct.monitors[1])
+
+    # 16-bit is normally TrueColor, but still just 16 bits.
+    with (
+        pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=16) as vdisplay,
+        pytest.raises(ScreenShotError, match=r"\b16\b"),
         mss.mss(display=vdisplay.new_display_var, backend=backend) as sct,
     ):
         sct.grab(sct.monitors[1])

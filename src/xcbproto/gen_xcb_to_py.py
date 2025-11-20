@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Mapping
     from typing import Any, Self
 
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Configuration of what we want to generate
 
 TYPES: dict[str, list[str]] = {
@@ -77,7 +77,7 @@ REQUESTS: dict[str, list[str]] = {
     ],
 }
 
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Constant data used by the generator
 
 PRIMITIVE_CTYPES: dict[str, str] = {
@@ -150,7 +150,7 @@ from mss.linux.xcbhelpers import (
 """
 
 
-# ---------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Utility helpers.
 
 

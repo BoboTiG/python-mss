@@ -35,13 +35,11 @@ class MSS(MSSBase):
         self.conn: xcb.Connection | None
         self.conn, pref_screen_num = xcb.connect(display)
 
-        # Let XCB pre-populate its internal cache regarding the
-        # extensions we might use, while we finish setup.
+        # Let XCB pre-populate its internal cache regarding the extensions we might use, while we finish setup.
         LIB.xcb.xcb_prefetch_extension_data(self.conn, LIB.randr_id)
         LIB.xcb.xcb_prefetch_extension_data(self.conn, LIB.xfixes_id)
 
-        # Get the connection setup information that was included when we
-        # connected.
+        # Get the connection setup information that was included when we connected.
         xcb_setup = LIB.xcb.xcb_get_setup(self.conn).contents
         screens = xcb.setup_roots(xcb_setup)
         pref_screen = screens[pref_screen_num]
@@ -128,8 +126,7 @@ class MSS(MSSBase):
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
 
-        # The first entry is the whole X11 screen that the root is
-        # on.  That's the one that covers all the monitors.
+        # The first entry is the whole X11 screen that the root is on.  That's the one that covers all the monitors.
         root_geom = xcb.get_geometry(self.conn, self.root)
         self._monitors.append(
             {
@@ -140,43 +137,38 @@ class MSS(MSSBase):
             }
         )
 
-        # After that, we have one for each monitor on that X11 screen.
-        # For decades, that's been handled by Xrandr.  We don't
-        # presently try to work with Xinerama.  So, we're going to
-        # check the different outputs, according to Xrandr.  If that
-        # fails, we'll just leave the one root covering everything.
+        # After that, we have one for each monitor on that X11 screen.  For decades, that's been handled by Xrandr.
+        # We don't presently try to work with Xinerama.  So, we're going to check the different outputs, according to
+        # Xrandr.  If that fails, we'll just leave the one root covering everything.
 
-        # Make sure we have the Xrandr extension we need.  This will
-        # query the cache that we started populating in __init__.
+        # Make sure we have the Xrandr extension we need.  This will query the cache that we started populating in
+        # __init__.
         randr_ext_data = LIB.xcb.xcb_get_extension_data(self.conn, LIB.randr_id).contents
         if not randr_ext_data.present:
             return
 
-        # We ask the server to give us anything up to the version we
-        # support (i.e., what we expect the reply structs to look
-        # like).  If the server only supports 1.2, then that's what
-        # it'll give us, and we're ok with that, but we also use a
-        # faster path if the server implements at least 1.3.
+        # We ask the server to give us anything up to the version we support (i.e., what we expect the reply structs
+        # to look like).  If the server only supports 1.2, then that's what it'll give us, and we're ok with that, but
+        # we also use a faster path if the server implements at least 1.3.
         randr_version_data = xcb.randr_query_version(self.conn, xcb.RANDR_MAJOR_VERSION, xcb.RANDR_MINOR_VERSION)
         randr_version = (randr_version_data.major_version, randr_version_data.minor_version)
         if randr_version < (1, 2):
             return
 
         screen_resources: xcb.RandrGetScreenResourcesReply | xcb.RandrGetScreenResourcesCurrentReply
-        # Check to see if we have the xcb_randr_get_screen_resources_current
-        # function in libxcb-randr, and that the server supports it.
+        # Check to see if we have the xcb_randr_get_screen_resources_current function in libxcb-randr, and that the
+        # server supports it.
         if hasattr(LIB.randr, "xcb_randr_get_screen_resources_current") and randr_version >= (1, 3):
             screen_resources = xcb.randr_get_screen_resources_current(self.conn, self.drawable.value)
             crtcs = xcb.randr_get_screen_resources_current_crtcs(screen_resources)
         else:
-            # Either the client or the server doesn't support the _current
-            # form.  That's ok; we'll use the old function, which forces
-            # a new query to the physical monitors.
+            # Either the client or the server doesn't support the _current form.  That's ok; we'll use the old
+            # function, which forces a new query to the physical monitors.
             screen_resources = xcb.randr_get_screen_resources(self.conn, self.drawable)
             crtcs = xcb.randr_get_screen_resources_crtcs(screen_resources)
 
         for crtc in crtcs:
-            crtc_info = xcb.randr_get_crtc_info(self.conn, crtc, screen_resources.timestamp)
+            crtc_info = xcb.randr_get_crtc_info(self.conn, crtc, screen_resources.config_timestamp)
             if crtc_info.num_outputs == 0:
                 continue
             self._monitors.append(
@@ -184,8 +176,8 @@ class MSS(MSSBase):
             )
 
         # Extra credit would be to enumerate the virtual desktops; see
-        # https://specifications.freedesktop.org/wm/latest/ar01s03.html
-        # But I don't know how widely-used that style is.
+        # https://specifications.freedesktop.org/wm/latest/ar01s03.html.  But I don't know how widely-used that style
+        # is.
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
@@ -205,11 +197,9 @@ class MSS(MSSBase):
             ALL_PLANES,
         )
 
-        # Now, save the image.  This is a reference into the img_reply
-        # structure.
+        # Now, save the image.  This is a reference into the img_reply structure.
         img_data_arr = xcb.get_image_data(img_reply)
-        # Copy this into a new bytearray, so that it will persist after
-        # we clear the image structure.
+        # Copy this into a new bytearray, so that it will persist after we clear the image structure.
         img_data = bytearray(img_data_arr)
 
         if img_reply.depth != self.drawable_depth or img_reply.visual.value != self.drawable_visual_id:
@@ -233,9 +223,8 @@ class MSS(MSSBase):
             return False
 
         reply = xcb.xfixes_query_version(self.conn, xcb.XFIXES_MAJOR_VERSION, xcb.XFIXES_MINOR_VERSION)
-        # We can work with 2.0 and later, but not sure about the
-        # actual minimum version we can use.  That's ok; everything
-        # these days is much more modern.
+        # We can work with 2.0 and later, but not sure about the actual minimum version we can use.  That's ok;
+        # everything these days is much more modern.
         return (reply.major_version, reply.minor_version) >= (2, 0)
 
     def _cursor_impl(self) -> ScreenShot:
@@ -261,9 +250,7 @@ class MSS(MSSBase):
 
         data_arr = xcb.xfixes_get_cursor_image_cursor_image(cursor_img)
         data = bytearray(data_arr)
-        # We don't need to do the same array slice-and-dice work as
-        # the Xlib-based implementation: Xlib has an unfortunate
-        # historical accident that makes it have to return the cursor
-        # image in a different format.
+        # We don't need to do the same array slice-and-dice work as the Xlib-based implementation: Xlib has an
+        # unfortunate historical accident that makes it have to return the cursor image in a different format.
 
         return self.cls_image(data, region)
