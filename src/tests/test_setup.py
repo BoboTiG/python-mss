@@ -101,6 +101,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/third_party/__init__.py",
         f"mss-{__version__}/src/tests/third_party/test_numpy.py",
         f"mss-{__version__}/src/tests/third_party/test_pil.py",
+        f"mss-{__version__}/src/xcbproto/README.md",
         f"mss-{__version__}/src/xcbproto/gen_xcb_to_py.py",
         f"mss-{__version__}/src/xcbproto/randr.xml",
         f"mss-{__version__}/src/xcbproto/render.xml",
