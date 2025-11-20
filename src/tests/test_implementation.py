@@ -23,6 +23,8 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:  # pragma: nocover
+    from collections.abc import Callable
+
     from mss.models import Monitor
 
 try:
@@ -59,29 +61,34 @@ def test_incomplete_class(cls: type[MSSBase]) -> None:
         cls()
 
 
-def test_bad_monitor() -> None:
-    with mss.mss(display=os.getenv("DISPLAY")) as sct, pytest.raises(ScreenShotError):
+def test_bad_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct, pytest.raises(ScreenShotError):
         sct.shot(mon=222)
 
 
-def test_repr() -> None:
+def test_repr(mss_impl: Callable[..., MSSBase]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    with mss.mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         img = sct.grab(box)
     ref = ScreenShot(bytearray(b"42"), expected_box)
     assert repr(img) == repr(ref)
 
 
-def test_factory(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Current system
+def test_factory_no_backend() -> None:
     with mss.mss() as sct:
         assert isinstance(sct, MSSBase)
 
-    # Unknown
+
+def test_factory_current_system(backend: str) -> None:
+    with mss.mss(backend=backend) as sct:
+        assert isinstance(sct, MSSBase)
+
+
+def test_factory_unknown_system(backend: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
     with pytest.raises(ScreenShotError) as exc:
-        mss.mss()
+        mss.mss(backend=backend)
     monkeypatch.undo()
 
     error = exc.value.args[0]
@@ -190,7 +197,7 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     assert "usage: mss" in captured.out
 
 
-def test_grab_with_tuple() -> None:
+def test_grab_with_tuple(mss_impl: Callable[..., MSSBase]) -> None:
     left = 100
     top = 100
     right = 500
@@ -198,7 +205,7 @@ def test_grab_with_tuple() -> None:
     width = right - left  # 400px width
     height = lower - top  # 400px height
 
-    with mss.mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         # PIL like
         box = (left, top, right, lower)
         im = sct.grab(box)
@@ -212,8 +219,8 @@ def test_grab_with_tuple() -> None:
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_tuple_percents() -> None:
-    with mss.mss(display=os.getenv("DISPLAY")) as sct:
+def test_grab_with_tuple_percents(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
         top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
@@ -235,14 +242,14 @@ def test_grab_with_tuple_percents() -> None:
         assert im.rgb == im2.rgb
 
 
-def test_thread_safety() -> None:
+def test_thread_safety(backend: str) -> None:
     """Regression test for issue #169."""
 
     def record(check: dict) -> None:
         """Record for one second."""
         start_time = time.time()
         while time.time() - start_time < 1:
-            with mss.mss() as sct:
+            with mss.mss(backend=backend) as sct:
                 sct.grab(sct.monitors[1])
 
         check[threading.current_thread()] = True

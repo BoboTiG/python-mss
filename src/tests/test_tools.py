@@ -3,13 +3,13 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import hashlib
-import os.path
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-from mss import mss
+from mss.base import MSSBase
 from mss.tools import to_png
 
 WIDTH = 10
@@ -17,16 +17,16 @@ HEIGHT = 10
 MD5SUM = "ee1b645cc989cbfc48e613b395a929d3d79a922b77b9b38e46647ff6f74acef5"
 
 
-def test_bad_compression_level() -> None:
-    with mss(compression_level=42, display=os.getenv("DISPLAY")) as sct, pytest.raises(zlib.error):
+def test_bad_compression_level(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl(compression_level=42) as sct, pytest.raises(zlib.error):
         sct.shot()
 
 
-def test_compression_level() -> None:
+def test_compression_level(mss_impl: Callable[..., MSSBase]) -> None:
     data = b"rgb" * WIDTH * HEIGHT
     output = Path(f"{WIDTH}x{HEIGHT}.png")
 
-    with mss(display=os.getenv("DISPLAY")) as sct:
+    with mss_impl() as sct:
         to_png(data, (WIDTH, HEIGHT), level=sct.compression_level, output=output)
 
     assert hashlib.sha256(output.read_bytes()).hexdigest() == MD5SUM

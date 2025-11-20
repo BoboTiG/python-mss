@@ -3,17 +3,16 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import itertools
-import os
+from collections.abc import Callable
 
 import pytest
 
-from mss import mss
-from mss.base import ScreenShot
+from mss.base import MSSBase, ScreenShot
 from mss.exception import ScreenShotError
 
 
-def test_grab_monitor() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_grab_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         for mon in sct.monitors:
             image = sct.grab(mon)
             assert isinstance(image, ScreenShot)
@@ -21,8 +20,8 @@ def test_grab_monitor() -> None:
             assert isinstance(image.rgb, bytes)
 
 
-def test_grab_part_of_screen() -> None:
-    with mss(display=os.getenv("DISPLAY")) as sct:
+def test_grab_part_of_screen(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
         for width, height in itertools.product(range(1, 42), range(1, 42)):
             monitor = {"top": 160, "left": 160, "width": width, "height": height}
             image = sct.grab(monitor)
