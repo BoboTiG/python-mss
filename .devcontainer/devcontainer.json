@@ -1,0 +1,23 @@
+{
+  /* We use python:3 because it's based on Debian, which has libxcb-errors0 available.  The default universal image is
+   * based on Ubuntu, which doesn't. */
+  "image": "mcr.microsoft.com/devcontainers/python:3",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/apt-get-packages:1": {
+      "packages": [
+        /* Needed for MSS generally */
+        "libxfixes3", 
+        /* Needed for testing */
+        "xvfb", "xauth",
+        /* Improves error messages */
+        "libxcb-errors0",
+        /* We include the gdb stuff to troubleshoot when ctypes stuff goes off the rails. */
+        "debuginfod", "gdb",
+        /* GitHub checks out the repo with git-lfs configured. */
+        "git-lfs"
+      ],
+      "preserve_apt_list": true
+    }
+  },
+  "postCreateCommand": "echo set debuginfod enabled on | sudo tee /etc/gdb/gdbinit.d/debuginfod.gdb"
+}
