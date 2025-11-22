@@ -140,7 +140,7 @@ addopts = """
   --showlocals
   --strict-markers
   -r fE
-  -vvv
+  -v
   --cov=src/mss
   --cov-report=term-missing:skip-covered
 """
