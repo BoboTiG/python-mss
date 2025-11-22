@@ -9,6 +9,7 @@ from ctypes import (
     POINTER,
     Array,
     Structure,
+    _Pointer,
     c_char,
     c_int,
     c_int16,
@@ -32,6 +33,8 @@ RANDR_MAJOR_VERSION = 1
 RANDR_MINOR_VERSION = 6
 RENDER_MAJOR_VERSION = 0
 RENDER_MINOR_VERSION = 11
+SHM_MAJOR_VERSION = 1
+SHM_MINOR_VERSION = 2
 XFIXES_MAJOR_VERSION = 6
 XFIXES_MINOR_VERSION = 0
 
@@ -428,6 +431,47 @@ class RenderQueryPictFormatsReply(Structure):
     )
 
 
+class ShmQueryVersionReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("shared_pixmaps", c_uint8),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("major_version", c_uint16),
+        ("minor_version", c_uint16),
+        ("uid", c_uint16),
+        ("gid", c_uint16),
+        ("pixmap_format", c_uint8),
+        ("pad0", c_uint8 * 15),
+    )
+
+
+class ShmSeg(XID):
+    pass
+
+
+class ShmGetImageReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("depth", c_uint8),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("visual", Visualid),
+        ("size", c_uint32),
+        ("pad0", c_uint8 * 16),
+    )
+
+
+class ShmCreateSegmentReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("nfd", c_uint8),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("pad0", c_uint8 * 24),
+    )
+
+
 class XfixesQueryVersionReply(Structure):
     _fields_ = (
         ("response_type", c_uint8),
@@ -587,6 +631,10 @@ def xfixes_get_cursor_image_cursor_image(r: XfixesGetCursorImageReply) -> Array[
     )
 
 
+def shm_create_segment_reply_fds(c: Connection, r: ShmCreateSegmentReply) -> _Pointer[c_int]:
+    return LIB.shm.xcb_shm_create_segment_reply_fds(c, r)
+
+
 def get_geometry(c: Connection, drawable: Drawable) -> GetGeometryReply:
     return LIB.xcb.xcb_get_geometry(c, drawable).reply(c)
 
@@ -646,6 +694,39 @@ def render_query_version(
 
 def render_query_pict_formats(c: Connection) -> RenderQueryPictFormatsReply:
     return LIB.render.xcb_render_query_pict_formats(c).reply(c)
+
+
+def shm_query_version(c: Connection) -> ShmQueryVersionReply:
+    return LIB.shm.xcb_shm_query_version(c).reply(c)
+
+
+def shm_get_image(
+    c: Connection,
+    drawable: Drawable,
+    x: c_int16 | int,
+    y: c_int16 | int,
+    width: c_uint16 | int,
+    height: c_uint16 | int,
+    plane_mask: c_uint32 | int,
+    format_: c_uint8 | int,
+    shmseg: ShmSeg,
+    offset: c_uint32 | int,
+) -> ShmGetImageReply:
+    return LIB.shm.xcb_shm_get_image(c, drawable, x, y, width, height, plane_mask, format_, shmseg, offset).reply(c)
+
+
+def shm_attach_fd(c: Connection, shmseg: ShmSeg, shm_fd: c_int | int, read_only: c_uint8 | int) -> None:
+    return LIB.shm.xcb_shm_attach_fd(c, shmseg, shm_fd, read_only).check(c)
+
+
+def shm_create_segment(
+    c: Connection, shmseg: ShmSeg, size: c_uint32 | int, read_only: c_uint8 | int
+) -> ShmCreateSegmentReply:
+    return LIB.shm.xcb_shm_create_segment(c, shmseg, size, read_only).reply(c)
+
+
+def shm_detach(c: Connection, shmseg: ShmSeg) -> None:
+    return LIB.shm.xcb_shm_detach(c, shmseg).check(c)
 
 
 def xfixes_query_version(
@@ -761,6 +842,11 @@ def initialize() -> None:  # noqa: PLR0915
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image.restype = POINTER(c_uint32)
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.argtypes = (POINTER(XfixesGetCursorImageReply),)
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.restype = c_int
+    LIB.shm.xcb_shm_create_segment_reply_fds.argtypes = (
+        POINTER(Connection),
+        POINTER(ShmCreateSegmentReply),
+    )
+    LIB.shm.xcb_shm_create_segment_reply_fds.restype = POINTER(c_int)
     initialize_xcb_typed_func(LIB.xcb, "xcb_get_geometry", [POINTER(Connection), Drawable], GetGeometryReply)
     initialize_xcb_typed_func(
         LIB.xcb,
@@ -797,6 +883,28 @@ def initialize() -> None:  # noqa: PLR0915
     initialize_xcb_typed_func(
         LIB.render, "xcb_render_query_pict_formats", [POINTER(Connection)], RenderQueryPictFormatsReply
     )
+    initialize_xcb_typed_func(LIB.shm, "xcb_shm_query_version", [POINTER(Connection)], ShmQueryVersionReply)
+    initialize_xcb_typed_func(
+        LIB.shm,
+        "xcb_shm_get_image",
+        [POINTER(Connection), Drawable, c_int16, c_int16, c_uint16, c_uint16, c_uint32, c_uint8, ShmSeg, c_uint32],
+        ShmGetImageReply,
+    )
+    LIB.shm.xcb_shm_attach_fd.argtypes = (
+        Connection,
+        ShmSeg,
+        c_int,
+        c_uint8,
+    )
+    LIB.shm.xcb_shm_attach_fd.restype = VoidCookie
+    initialize_xcb_typed_func(
+        LIB.shm, "xcb_shm_create_segment", [POINTER(Connection), ShmSeg, c_uint32, c_uint8], ShmCreateSegmentReply
+    )
+    LIB.shm.xcb_shm_detach.argtypes = (
+        Connection,
+        ShmSeg,
+    )
+    LIB.shm.xcb_shm_detach.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.xfixes, "xcb_xfixes_query_version", [POINTER(Connection), c_uint32, c_uint32], XfixesQueryVersionReply
     )

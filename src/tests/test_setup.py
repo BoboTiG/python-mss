@@ -69,6 +69,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/mss/exception.py",
         f"mss-{__version__}/src/mss/factory.py",
         f"mss-{__version__}/src/mss/linux/__init__.py",
+        f"mss-{__version__}/src/mss/linux/base.py",
         f"mss-{__version__}/src/mss/linux/xcb.py",
         f"mss-{__version__}/src/mss/linux/xcbgen.py",
         f"mss-{__version__}/src/mss/linux/xcbhelpers.py",
@@ -105,6 +106,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/xcbproto/gen_xcb_to_py.py",
         f"mss-{__version__}/src/xcbproto/randr.xml",
         f"mss-{__version__}/src/xcbproto/render.xml",
+        f"mss-{__version__}/src/xcbproto/shm.xml",
         f"mss-{__version__}/src/xcbproto/xfixes.xml",
         f"mss-{__version__}/src/xcbproto/xproto.xml",
     ]
@@ -134,6 +136,7 @@ def test_wheel() -> None:
         "mss/exception.py",
         "mss/factory.py",
         "mss/linux/__init__.py",
+        "mss/linux/base.py",
         "mss/linux/xcb.py",
         "mss/linux/xcbgen.py",
         "mss/linux/xcbhelpers.py",
