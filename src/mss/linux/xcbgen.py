@@ -631,7 +631,7 @@ def xfixes_get_cursor_image_cursor_image(r: XfixesGetCursorImageReply) -> Array[
     )
 
 
-def shm_create_segment_reply_fds(c: Connection, r: ShmCreateSegmentReply) -> _Pointer[c_int]:
+def shm_create_segment_reply_fds(c: Connection | _Pointer[Connection], r: ShmCreateSegmentReply) -> _Pointer[c_int]:
     return LIB.shm.xcb_shm_create_segment_reply_fds(c, r)
 
 
@@ -665,7 +665,7 @@ def get_property(
 
 
 def no_operation(c: Connection) -> None:
-    return LIB.xcb.xcb_no_operation(c).check(c)
+    return LIB.xcb.xcb_no_operation_checked(c).check(c)
 
 
 def randr_query_version(
@@ -716,7 +716,7 @@ def shm_get_image(
 
 
 def shm_attach_fd(c: Connection, shmseg: ShmSeg, shm_fd: c_int | int, read_only: c_uint8 | int) -> None:
-    return LIB.shm.xcb_shm_attach_fd(c, shmseg, shm_fd, read_only).check(c)
+    return LIB.shm.xcb_shm_attach_fd_checked(c, shmseg, shm_fd, read_only).check(c)
 
 
 def shm_create_segment(
@@ -726,7 +726,7 @@ def shm_create_segment(
 
 
 def shm_detach(c: Connection, shmseg: ShmSeg) -> None:
-    return LIB.shm.xcb_shm_detach(c, shmseg).check(c)
+    return LIB.shm.xcb_shm_detach_checked(c, shmseg).check(c)
 
 
 def xfixes_query_version(
@@ -860,8 +860,8 @@ def initialize() -> None:  # noqa: PLR0915
         [POINTER(Connection), c_uint8, Window, Atom, Atom, c_uint32, c_uint32],
         GetPropertyReply,
     )
-    LIB.xcb.xcb_no_operation.argtypes = (Connection,)
-    LIB.xcb.xcb_no_operation.restype = VoidCookie
+    LIB.xcb.xcb_no_operation_checked.argtypes = (POINTER(Connection),)
+    LIB.xcb.xcb_no_operation_checked.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.randr, "xcb_randr_query_version", [POINTER(Connection), c_uint32, c_uint32], RandrQueryVersionReply
     )
@@ -890,21 +890,21 @@ def initialize() -> None:  # noqa: PLR0915
         [POINTER(Connection), Drawable, c_int16, c_int16, c_uint16, c_uint16, c_uint32, c_uint8, ShmSeg, c_uint32],
         ShmGetImageReply,
     )
-    LIB.shm.xcb_shm_attach_fd.argtypes = (
-        Connection,
+    LIB.shm.xcb_shm_attach_fd_checked.argtypes = (
+        POINTER(Connection),
         ShmSeg,
         c_int,
         c_uint8,
     )
-    LIB.shm.xcb_shm_attach_fd.restype = VoidCookie
+    LIB.shm.xcb_shm_attach_fd_checked.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.shm, "xcb_shm_create_segment", [POINTER(Connection), ShmSeg, c_uint32, c_uint8], ShmCreateSegmentReply
     )
-    LIB.shm.xcb_shm_detach.argtypes = (
-        Connection,
+    LIB.shm.xcb_shm_detach_checked.argtypes = (
+        POINTER(Connection),
         ShmSeg,
     )
-    LIB.shm.xcb_shm_detach.restype = VoidCookie
+    LIB.shm.xcb_shm_detach_checked.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.xfixes, "xcb_xfixes_query_version", [POINTER(Connection), c_uint32, c_uint32], XfixesQueryVersionReply
     )

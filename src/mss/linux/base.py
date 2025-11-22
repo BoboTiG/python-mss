@@ -9,6 +9,7 @@ from . import xcb
 from .xcb import LIB
 
 if TYPE_CHECKING:
+    from mss.models import Monitor
     from mss.screenshot import ScreenShot
 
 SUPPORTED_DEPTHS = {24, 32}
@@ -48,8 +49,8 @@ class MSSXCBBase(MSSBase):
         # Get the connection setup information that was included when we connected.
         xcb_setup = xcb.get_setup(self.conn)
         screens = xcb.setup_roots(xcb_setup)
-        pref_screen = screens[pref_screen_num]
-        self.root = self.drawable = pref_screen.root
+        self.pref_screen = screens[pref_screen_num]
+        self.root = self.drawable = self.pref_screen.root
 
         # We don't probe the XFixes presence or version until we need it.
         self._xfixes_ready: bool | None = None
@@ -61,8 +62,8 @@ class MSSXCBBase(MSSBase):
         # Currently, we assume that the drawable we're capturing is the root; when we add single-window capture,
         # we'll have to ask the server for its depth and visual.
         assert self.root == self.drawable  # noqa: S101
-        self.drawable_depth = pref_screen.root_depth
-        self.drawable_visual_id = pref_screen.root_visual.value
+        self.drawable_depth = self.pref_screen.root_depth
+        self.drawable_visual_id = self.pref_screen.root_visual.value
         # Server image byte order
         if xcb_setup.image_byte_order != xcb.ImageOrder.LSBFirst:
             msg = "Only X11 servers using LSB-First images are supported."
@@ -92,7 +93,7 @@ class MSSXCBBase(MSSBase):
             raise ScreenShotError(msg)
         # Visual, the interpretation of pixels (like indexed, grayscale, etc).  (Visuals are arranged by depth, so
         # we iterate over the depths first.)
-        for xcb_depth in xcb.screen_allowed_depths(pref_screen):
+        for xcb_depth in xcb.screen_allowed_depths(self.pref_screen):
             if xcb_depth.depth == self.drawable_depth:
                 break
         else:
@@ -226,3 +227,41 @@ class MSSXCBBase(MSSBase):
         # unfortunate historical accident that makes it have to return the cursor image in a different format.
 
         return self.cls_image(data, region)
+
+    def _grab_impl_xgetimage(self, monitor: Monitor, /) -> ScreenShot:
+        """Retrieve all pixels from a monitor using GetImage.
+
+        This is used by the XGetImage backend, and also the XShmGetImage
+        backend in fallback mode.
+        """
+
+        if self.conn is None:
+            msg = "Cannot take screenshot while the connection is closed"
+            raise ScreenShotError(msg)
+
+        img_reply = xcb.get_image(
+            self.conn,
+            xcb.ImageFormat.ZPixmap,
+            self.drawable,
+            monitor["left"],
+            monitor["top"],
+            monitor["width"],
+            monitor["height"],
+            ALL_PLANES,
+        )
+
+        # Now, save the image.  This is a reference into the img_reply structure.
+        img_data_arr = xcb.get_image_data(img_reply)
+        # Copy this into a new bytearray, so that it will persist after we clear the image structure.
+        img_data = bytearray(img_data_arr)
+
+        if img_reply.depth != self.drawable_depth or img_reply.visual.value != self.drawable_visual_id:
+            # This should never happen; a window can't change its visual.
+            msg = (
+                "Server returned an image with a depth or visual different than it initially reported: "
+                f"expected {self.drawable_depth},{hex(self.drawable_visual_id)}, "
+                f"got {img_reply.depth},{hex(img_reply.visual.value)}"
+            )
+            raise ScreenShotError(msg)
+
+        return self.cls_image(img_data, monitor)

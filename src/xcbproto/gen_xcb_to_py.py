@@ -1174,7 +1174,9 @@ def emit_fds(writer: CodeWriter, _registry: ProtocolRegistry, types: list[TypeDe
         # rather than having a function named after the field, it's named with just an "_fd" suffix.
         func_name = f"{format_function_name(typ.name, typ.protocol)}_reply_fds"
         writer.write()
-        writer.write(f"def {func_name}(c: Connection, r: {format_type_name(typ)}) -> _Pointer[c_int]:")
+        writer.write(
+            f"def {func_name}(c: Connection | _Pointer[Connection], r: {format_type_name(typ)}) -> _Pointer[c_int]:"
+        )
         with writer.indent():
             writer.write(f"return LIB.{lib_for_proto(typ.protocol)}.xcb_{func_name}(c, r)")
         rv.append(
@@ -1216,12 +1218,14 @@ def emit_requests(writer: CodeWriter, registry: ProtocolRegistry, requests: list
         params_with_alts = [(p[0], f"{p[1]} | int" if p[1] in INT_CTYPES else p[1]) for p in params]
         params_string = ", ".join(f"{p[0]}: {p[1]}" for p in params_with_alts)
         args_string = ", ".join(p[0] for p in params)
+        xcb_params_types = ["POINTER(Connection)", *params_types[1:]]
         if request.reply is None:
+            xcb_func_name += "_checked"
             writer.write()
             writer.write(f"def {func_name}({params_string}) -> None:")
             with writer.indent():
                 writer.write(f"return LIB.{lib}.{xcb_func_name}({args_string}).check(c)")
-            rv.append(FuncDecl(request.protocol, xcb_func_name, params_types, "VoidCookie"))
+            rv.append(FuncDecl(request.protocol, xcb_func_name, xcb_params_types, "VoidCookie"))
         else:
             reply_type = request.reply
             reply_type_name = format_type_name(reply_type)
@@ -1232,7 +1236,6 @@ def emit_requests(writer: CodeWriter, registry: ProtocolRegistry, requests: list
             # We have to use initialize_xcb_typed_func to initialize late, rather than making the cookie class here,
             # because the cookie definition needs to reference the XCB reply function.  We could also do a lazy
             # initialization, but it's probably not worth it.
-            xcb_params_types = ["POINTER(Connection)", *params_types[1:]]
             rv.append(
                 f'initialize_xcb_typed_func(LIB.{lib}, "{xcb_func_name}", '
                 f"[{', '.join(xcb_params_types)}], {reply_type_name})"
