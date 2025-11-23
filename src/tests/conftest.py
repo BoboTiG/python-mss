@@ -70,7 +70,7 @@ def raw() -> bytes:
     return data
 
 
-@pytest.fixture(params=["xlib", "xgetimage"] if system() == "Linux" else ["default"])
+@pytest.fixture(params=["xlib", "xgetimage", "xshmgetimage"] if system() == "Linux" else ["default"])
 def backend(request: pytest.FixtureRequest) -> str:
     return request.param
 

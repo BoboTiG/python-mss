@@ -230,10 +230,9 @@ class XProtoError(XError):
         ext_desc = f"\n  Extension:  {details['extension']}" if "extension" in details else ""
         msg += (
             f"\nX Error of failed request:  {error_desc}"
-            f"\n  Major opcode of failed request:  {major_desc}"
-            f"{ext_desc}"
-            f"\n  Minor opcode of failed request:  {minor_desc}"
-            f"\n  Resource id in failed request:  {details['resource_id']}"
+            f"\n  Major opcode of failed request:  {major_desc}{ext_desc}"
+            + (f"\n  Minor opcode of failed request:  {minor_desc}" if details["minor_code"] != 0 else "")
+            + f"\n  Resource id in failed request:  {details['resource_id']}"
             f"\n  Serial number of failed request:  {details['full_sequence']}"
         )
         return msg
@@ -452,7 +451,8 @@ class LibContainer:
                 self.xcb.xcb_get_extension_data.restype = POINTER(QueryExtensionReply)
                 self.xcb.xcb_prefetch_extension_data.argtypes = [POINTER(Connection), POINTER(XcbExtension)]
                 self.xcb.xcb_prefetch_extension_data.restype = None
-
+                self.xcb.xcb_generate_id.argtypes = [POINTER(Connection)]
+                self.xcb.xcb_generate_id.restype = XID
                 self.xcb.xcb_get_setup.argtypes = [POINTER(Connection)]
                 self.xcb.xcb_get_setup.restype = POINTER(Setup)
                 self.xcb.xcb_connection_has_error.argtypes = [POINTER(Connection)]
@@ -475,6 +475,13 @@ class LibContainer:
                     raise ScreenShotError(msg)
                 self.render = cdll.LoadLibrary(libxcb_render_so)
                 self.render_id = XcbExtension.in_dll(self.render, "xcb_render_id")
+
+                libxcb_shm_so = ctypes.util.find_library("xcb-shm")
+                if libxcb_shm_so is None:
+                    msg = "Library libxcb-shm.so not found"
+                    raise ScreenShotError(msg)
+                self.shm = cdll.LoadLibrary(libxcb_shm_so)
+                self.shm_id = XcbExtension.in_dll(self.shm, "xcb_shm_id")
 
                 libxcb_xfixes_so = ctypes.util.find_library("xcb-xfixes")
                 if libxcb_xfixes_so is None:
