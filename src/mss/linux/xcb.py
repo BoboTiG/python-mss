@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ctypes import Structure, _Pointer, c_int, c_uint8, c_uint16, c_uint32
+from ctypes import _Pointer, c_int
 
 from . import xcbgen
 

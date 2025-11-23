@@ -230,10 +230,9 @@ class XProtoError(XError):
         ext_desc = f"\n  Extension:  {details['extension']}" if "extension" in details else ""
         msg += (
             f"\nX Error of failed request:  {error_desc}"
-            f"\n  Major opcode of failed request:  {major_desc}"
-            f"{ext_desc}"
-            f"\n  Minor opcode of failed request:  {minor_desc}"
-            f"\n  Resource id in failed request:  {details['resource_id']}"
+            f"\n  Major opcode of failed request:  {major_desc}{ext_desc}"
+            + (f"\n  Minor opcode of failed request:  {minor_desc}" if details["minor_code"] != 0 else "")
+            + f"\n  Resource id in failed request:  {details['resource_id']}"
             f"\n  Serial number of failed request:  {details['full_sequence']}"
         )
         return msg

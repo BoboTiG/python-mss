@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import errno
+import enum
 import os
 from mmap import PROT_READ, mmap  # type: ignore[attr-defined]
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.linux import xcb
@@ -14,6 +14,12 @@ from .base import ALL_PLANES, MSSXCBBase
 if TYPE_CHECKING:
     from mss.models import Monitor
     from mss.screenshot import ScreenShot
+
+
+class ShmStatus(enum.Enum):
+    UNKNOWN = enum.auto()
+    AVAILABLE = enum.auto()
+    UNAVAILABLE = enum.auto()
 
 
 class MSS(MSSXCBBase):
@@ -31,9 +37,8 @@ class MSS(MSSXCBBase):
         self._buf: mmap | None = None
         self._shmseg: xcb.ShmSeg | None = None
 
-        # _shm_works is True if at least one screenshot has been taken, False if it's known to fail, and None until
-        # then.
-        self._shm_works: bool | None = self._setup_shm()
+        self.shm_status: ShmStatus = self._setup_shm()
+        self.shm_failed_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:
         """Debugging hook for troubleshooting MIT-SHM issues.
@@ -41,55 +46,69 @@ class MSS(MSSXCBBase):
         This will be called whenever MIT-SHM is disabled.  The optional
         arguments are not well-defined; exceptions are common.
         """
-        print(msg, args)
+        full_msg = msg
+        if args:
+            full_msg += " | " + ", ".join(str(arg) for arg in args)
+        self.shm_failed_reason = full_msg
 
-    def _setup_shm(self) -> Literal[False] | None:
+    def _setup_shm(self) -> ShmStatus:  # noqa: PLR0911
         assert self.conn is not None  # noqa: S101
 
-        shm_ext_data = xcb.get_extension_data(self.conn, LIB.shm_id)
-        if not shm_ext_data.present:
-            self._shm_report_issue("MIT-SHM extension not present")
-            return False
-
-        # We use the FD-based version of ShmGetImage, so we require the extension to be at least 1.3.
-        shm_version_data = xcb.shm_query_version(self.conn)
-        shm_version = (shm_version_data.major_version, shm_version_data.minor_version)
-        if shm_version < (1, 2):
-            self._shm_report_issue("MIT-SHM version too old", shm_version)
-            return False
-
-        # We allocate something large enough for the root, so we don't have to reallocate each time the window is
-        # resized.
-        # TODO(jholveck): Check in _grab_impl that we're not going to exceed this size.  That can happen if the
-        # root is resized.
-        size = self.pref_screen.width_in_pixels * self.pref_screen.height_in_pixels * 4
-
         try:
-            self._memfd = os.memfd_create("mss-shm-buf", flags=os.MFD_CLOEXEC)  # type: ignore[attr-defined]
-        except OSError as e:
-            self._shm_report_issue("memfd_create failed", e)
-            self._shutdown_shm()
-            return False
-        os.ftruncate(self._memfd, size)
+            shm_ext_data = xcb.get_extension_data(self.conn, LIB.shm_id)
+            if not shm_ext_data.present:
+                self._shm_report_issue("MIT-SHM extension not present")
+                return ShmStatus.UNAVAILABLE
 
-        try:
-            self._buf = mmap(self._memfd, size, prot=PROT_READ)  # type: ignore[call-arg]
-        except OSError as e:
-            self._shm_report_issue("mmap failed", e)
-            self._shutdown_shm()
-            return False
+            # We use the FD-based version of ShmGetImage, so we require the extension to be at least 1.2.
+            shm_version_data = xcb.shm_query_version(self.conn)
+            shm_version = (shm_version_data.major_version, shm_version_data.minor_version)
+            if shm_version < (1, 2):
+                self._shm_report_issue("MIT-SHM version too old", shm_version)
+                return ShmStatus.UNAVAILABLE
 
-        self._shmseg = xcb.ShmSeg(xcb.generate_id(self.conn).value)
-        try:
-            # This will normally be what raises an exception if you're on a remote connection.  I previously thought
-            # the server deferred that until the GetImage call, but I had not been properly checking the status here.
-            xcb.shm_attach_fd(self.conn, self._shmseg, self._memfd, read_only=False)
-        except xcb.XError as e:
-            self._shm_report_issue("Cannot attach MIT-SHM segment", e)
-            self._shutdown_shm()
-            return False
+            # We allocate something large enough for the root, so we don't have to reallocate each time the window is
+            # resized.
+            self._bufsize = self.pref_screen.width_in_pixels * self.pref_screen.height_in_pixels * 4
 
-        return None
+            if not hasattr(os, "memfd_create"):
+                self._shm_report_issue("os.memfd_create not available")
+                return ShmStatus.UNAVAILABLE
+            try:
+                self._memfd = os.memfd_create("mss-shm-buf", flags=os.MFD_CLOEXEC)  # type: ignore[attr-defined]
+            except OSError as e:
+                self._shm_report_issue("memfd_create failed", e)
+                self._shutdown_shm()
+                return ShmStatus.UNAVAILABLE
+            os.ftruncate(self._memfd, self._bufsize)
+
+            try:
+                self._buf = mmap(self._memfd, self._bufsize, prot=PROT_READ)  # type: ignore[call-arg]
+            except OSError as e:
+                self._shm_report_issue("mmap failed", e)
+                self._shutdown_shm()
+                return ShmStatus.UNAVAILABLE
+
+            self._shmseg = xcb.ShmSeg(xcb.generate_id(self.conn).value)
+            try:
+                # This will normally be what raises an exception if you're on a remote connection.  (I previously
+                # thought the server deferred that until the GetImage call, but I had not been properly checking the
+                # status.)
+                # This will close _memfd, on success or on failure.
+                try:
+                    xcb.shm_attach_fd(self.conn, self._shmseg, self._memfd, read_only=False)
+                finally:
+                    self._memfd = None
+            except xcb.XError as e:
+                self._shm_report_issue("Cannot attach MIT-SHM segment", e)
+                self._shutdown_shm()
+                return ShmStatus.UNAVAILABLE
+
+        except Exception:
+            self._shutdown_shm()
+            raise
+
+        return ShmStatus.UNKNOWN
 
     def close(self) -> None:
         self._shutdown_shm()
@@ -103,15 +122,7 @@ class MSS(MSSXCBBase):
             self._buf.close()
             self._buf = None
         if self._memfd is not None:
-            # TODO(jholveck): For some reason, at this point, self._memfd is no longer valid.  If I try to close it,
-            # I get EBADF, even if I try to close it before closing the mmap.  The theories I have about this involve
-            # the mmap object taking control, but it doesn't make sense that I could still use shm_attach_fd in that
-            # case.  I need to investigate before releasing.
-            try:
-                os.close(self._memfd)
-            except OSError as e:
-                if e.errno != errno.EBADF:
-                    raise
+            os.close(self._memfd)
             self._memfd = None
 
     def _grab_impl_xshmgetimage(self, monitor: Monitor) -> ScreenShot:
@@ -120,6 +131,16 @@ class MSS(MSSXCBBase):
             raise ScreenShotError(msg)
         assert self._buf is not None  # noqa: S101
         assert self._shmseg is not None  # noqa: S101
+
+        required_size = monitor["width"] * monitor["height"] * 4
+        if required_size > self._bufsize:
+            # This is temporary.  The permanent fix will depend on how
+            # issue https://github.com/BoboTiG/python-mss/issues/432 is resolved.
+            msg = (
+                "Requested capture size exceeds the allocated buffer. If you have resized the screen, "
+                "please recreate your MSS object."
+            )
+            raise ScreenShotError(msg)
 
         img_reply = xcb.shm_get_image(
             self.conn,
@@ -154,19 +175,19 @@ class MSS(MSSXCBBase):
 
     def _grab_impl(self, monitor: Monitor) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
-        if self._shm_works == False:  # noqa: E712
+        if self.shm_status == ShmStatus.UNAVAILABLE:
             return super()._grab_impl_xgetimage(monitor)
 
         try:
             rv = self._grab_impl_xshmgetimage(monitor)
         except XProtoError as e:
-            if self._shm_works is not None:
+            if self.shm_status != ShmStatus.UNKNOWN:
                 raise
             self._shm_report_issue("MIT-SHM GetImage failed", e)
-            self._shm_works = False
+            self.shm_status = ShmStatus.UNAVAILABLE
             self._shutdown_shm()
             rv = super()._grab_impl_xgetimage(monitor)
         else:
-            self._shm_works = True
+            self.shm_status = ShmStatus.AVAILABLE
 
         return rv
