@@ -80,3 +80,29 @@ def mss_impl(backend: str) -> Callable[..., MSSBase]:
     # We can't just use partial here, since it will read $DISPLAY at the wrong time.  This can cause problems,
     # depending on just how the fixtures get run.
     return lambda *args, **kwargs: mss(*args, display=os.getenv("DISPLAY"), backend=backend, **kwargs)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def inhibit_x11_resets() -> Generator[None, None, None]:
+    """Ensure that an X11 connection is open during the test session.
+
+    Under X11, when the last client disconnects, the server resets.  If
+    a new client tries to connect before the reset is complete, it may fail.
+    Since we often run the tests under Xvfb, they're frequently the only
+    clients.  Since our tests run in rapid succession, this combination
+    can lead to intermittent failures.
+
+    To avoid this, we open a connection at the start of the test session
+    and keep it open until the end.
+    """
+    if system() != "Linux":
+        yield
+        return
+
+    conn, _ = xcb.connect()
+    try:
+        yield
+    finally:
+        # Some tests may have reset xcb.LIB, so make sure it's currently initialized.
+        xcb.initialize()
+        xcb.disconnect(conn)
