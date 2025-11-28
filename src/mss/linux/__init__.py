@@ -14,6 +14,10 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
         from . import xgetimage  # noqa: PLC0415
 
         return xgetimage.MSS(**kwargs)
+    if backend == "xshmgetimage":
+        from . import xshmgetimage  # noqa: PLC0415
+
+        return xshmgetimage.MSS(**kwargs)
     msg = f"Backend {backend!r} not (yet?) implemented."
     raise ScreenShotError(msg)
 

@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from ctypes import Structure, c_int, c_uint8, c_uint16, c_uint32
+from ctypes import _Pointer, c_int
 
 from . import xcbgen
 
 # We import these just so they're re-exported to our users.
-# ruff: noqa: F401
+# ruff: noqa: F401, TC001
 from .xcbgen import (
     RANDR_MAJOR_VERSION,
     RANDR_MINOR_VERSION,
     RENDER_MAJOR_VERSION,
     RENDER_MINOR_VERSION,
+    SHM_MAJOR_VERSION,
+    SHM_MINOR_VERSION,
     XFIXES_MAJOR_VERSION,
     XFIXES_MINOR_VERSION,
     Atom,
@@ -52,6 +54,10 @@ from .xcbgen import (
     ScreenIterator,
     Setup,
     SetupIterator,
+    ShmCreateSegmentReply,
+    ShmGetImageReply,
+    ShmQueryVersionReply,
+    ShmSeg,
     Timestamp,
     VisualClass,
     Visualid,
@@ -91,13 +97,19 @@ from .xcbgen import (
     setup_pixmap_formats,
     setup_roots,
     setup_vendor,
+    shm_attach_fd,
+    shm_create_segment,
+    shm_create_segment_reply_fds,
+    shm_detach,
+    shm_get_image,
+    shm_query_version,
     xfixes_get_cursor_image,
     xfixes_get_cursor_image_cursor_image,
     xfixes_query_version,
 )
 
 # These are also here to re-export.
-from .xcbhelpers import LIB, Connection, XError
+from .xcbhelpers import LIB, XID, Connection, QueryExtensionReply, XcbExtension, XError
 
 XCB_CONN_ERROR = 1
 XCB_CONN_CLOSED_EXT_NOTSUPPORTED = 2
@@ -118,6 +130,53 @@ XCB_CONN_ERRMSG = {
     XCB_CONN_CLOSED_INVALID_SCREEN: "server does not have a screen matching the requested display",
     XCB_CONN_CLOSED_FDPASSING_FAILED: "could not pass file descriptor",
 }
+
+
+#### High-level XCB function wrappers
+
+
+def get_extension_data(
+    xcb_conn: Connection | _Pointer[Connection], ext: XcbExtension | _Pointer[XcbExtension]
+) -> QueryExtensionReply:
+    """Get extension data for the given extension.
+
+    Returns the extension data, which includes whether the extension is present
+    and its opcode information.
+    """
+    reply_p = LIB.xcb.xcb_get_extension_data(xcb_conn, ext)
+    return reply_p.contents
+
+
+def prefetch_extension_data(
+    xcb_conn: Connection | _Pointer[Connection], ext: XcbExtension | _Pointer[XcbExtension]
+) -> None:
+    """Prefetch extension data for the given extension.
+
+    This is a performance hint to XCB to fetch the extension data
+    asynchronously.
+    """
+    LIB.xcb.xcb_prefetch_extension_data(xcb_conn, ext)
+
+
+def generate_id(xcb_conn: Connection | _Pointer[Connection]) -> XID:
+    """Generate a new unique X resource ID.
+
+    Returns an XID that can be used to create new X resources.
+    """
+    return LIB.xcb.xcb_generate_id(xcb_conn)
+
+
+def get_setup(xcb_conn: Connection | _Pointer[Connection]) -> Setup:
+    """Get the connection setup information.
+
+    Returns the setup structure containing information about the X server,
+    including available screens, pixmap formats, etc.
+    """
+    setup_p = LIB.xcb.xcb_get_setup(xcb_conn)
+    return setup_p.contents
+
+
+# Connection management
 
 
 def initialize() -> None:
@@ -144,6 +203,12 @@ def connect(display: str | bytes | None = None) -> tuple[Connection, int]:
         else:
             msg += f"error code {conn_err}"
         raise XError(msg)
+
+    # Prefetch extension data for all extensions we support to populate XCB's internal cache.
+    prefetch_extension_data(conn_p, LIB.randr_id)
+    prefetch_extension_data(conn_p, LIB.render_id)
+    prefetch_extension_data(conn_p, LIB.shm_id)
+    prefetch_extension_data(conn_p, LIB.xfixes_id)
 
     return conn_p.contents, pref_screen_num.value
 

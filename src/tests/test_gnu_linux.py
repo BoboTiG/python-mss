@@ -191,7 +191,7 @@ def test_region_out_of_monitor_bounds(display: str, backend: str) -> None:
         details = exc.value.details
         assert details
         assert isinstance(details, dict)
-        if backend == "xgetimage" and mss.linux.xcb.LIB.errors is None:
+        if backend in {"xgetimage", "xshmgetimage"} and mss.linux.xcb.LIB.errors is None:
             pytest.xfail("Error strings in XCB backends are only available with the xcb-util-errors library.")
         assert isinstance(details["error"], str)
 
@@ -310,3 +310,41 @@ def test_with_cursor_failure(display: str) -> None:
             pytest.raises(ScreenShotError),
         ):
             sct.grab(sct.monitors[1])
+
+
+def test_shm_available() -> None:
+    """Verify that the xshmgetimage backend doesn't always fallback.
+
+    Since this backend does an automatic fallback for certain types of
+    anticipated issues, that could cause some failures to be masked.
+    Ensure this isn't happening.
+    """
+    with (
+        pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=DEPTH) as vdisplay,
+        mss.mss(display=vdisplay.new_display_var, backend="xshmgetimage") as sct,
+    ):
+        assert isinstance(sct, mss.linux.xshmgetimage.MSS)  # For Mypy
+        # The status currently isn't established as final until a grab succeeds.
+        sct.grab(sct.monitors[0])
+        assert sct.shm_status == mss.linux.xshmgetimage.ShmStatus.AVAILABLE
+
+
+def test_shm_fallback() -> None:
+    """Verify that the xshmgetimage backend falls back if MIT-SHM fails.
+
+    The most common case when a fallback is needed is with a TCP
+    connection, such as the one used with ssh relaying.  By using
+    DISPLAY=localhost:99 instead of DISPLAY=:99, we connect over TCP
+    instead of a local-domain socket.  This is sufficient to prevent
+    MIT-SHM from completing its setup: the extension is available, but
+    won't be able to attach a shared memory segment.
+    """
+    with (
+        pyvirtualdisplay.Display(size=(WIDTH, HEIGHT), color_depth=DEPTH, extra_args=["-listen", "tcp"]) as vdisplay,
+        mss.mss(display=f"localhost{vdisplay.new_display_var}", backend="xshmgetimage") as sct,
+    ):
+        assert isinstance(sct, mss.linux.xshmgetimage.MSS)  # For Mypy
+        # Ensure that the grab call completes without exception.
+        sct.grab(sct.monitors[0])
+        # Ensure that it really did have to fall back; otherwise, we'd need to change how we test this case.
+        assert sct.shm_status == mss.linux.xshmgetimage.ShmStatus.UNAVAILABLE
