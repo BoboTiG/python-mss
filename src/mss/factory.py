@@ -29,7 +29,8 @@ def mss(**kwargs: Any) -> MSSBase:
     if os_ == "linux":
         from mss import linux  # noqa: PLC0415
 
-        return linux.MSS(**kwargs)
+        # Linux has its own factory to choose the backend.
+        return linux.mss(**kwargs)
 
     if os_ == "windows":
         from mss import windows  # noqa: PLC0415

@@ -33,6 +33,36 @@ GNU/Linux
 
 .. module:: mss.linux
 
+Factory function to return the appropriate backend implementation.
+
+.. function:: mss(backend="default", **kwargs)
+
+    :keyword str backend: Backend name ("default", "xlib", "xgetimage", or "xshmgetimage").
+    :keyword display: Display name (e.g., ":0.0") for the X server.  Default is taken from the :envvar:`DISPLAY` environment variable.
+    :type display: str or None
+    :param kwargs: Additional arguments passed to the backend MSS class.
+    :rtype: :class:`mss.base.MSSBase`
+    :return: Backend-specific MSS instance.
+
+    Factory returning a proper MSS class instance for GNU/Linux.
+    The backend parameter selects the implementation:
+
+    - "default" or "xlib": Traditional Xlib-based backend (default)
+    - "xgetimage": XCB-based backend using XGetImage
+    - "xshmgetimage": XCB-based backend using XShmGetImage (falls back to XGetImage if unavailable)
+
+.. function:: MSS(*args, **kwargs)
+
+    Alias for :func:`mss` for backward compatibility.
+
+
+Xlib Backend
+^^^^^^^^^^^^
+
+.. module:: mss.linux.xlib
+
+Traditional Xlib-based backend (default).
+
 .. attribute:: CFUNCTIONS
 
     .. versionadded:: 6.1.0
@@ -78,6 +108,55 @@ GNU/Linux
         Clean-up method.
 
         .. versionadded:: 8.0.0
+
+
+XGetImage Backend
+^^^^^^^^^^^^^^^^^
+
+.. module:: mss.linux.xgetimage
+
+XCB-based backend using XGetImage protocol.
+
+.. class:: MSS
+
+    XCB implementation using XGetImage for screenshot capture.
+
+
+XShmGetImage Backend
+^^^^^^^^^^^^^^^^^^^^
+
+.. module:: mss.linux.xshmgetimage
+
+XCB-based backend using XShmGetImage protocol with shared memory.
+
+.. class:: ShmStatus
+
+    Enum describing the availability of the X11 MIT-SHM extension used by the backend.
+
+    .. attribute:: UNKNOWN
+
+        Initial state before any capture confirms availability or failure.
+
+    .. attribute:: AVAILABLE
+
+        Shared-memory capture works and will continue to be used.
+
+    .. attribute:: UNAVAILABLE
+
+        Shared-memory capture failed; MSS will use XGetImage.
+
+.. class:: MSS
+
+    XCB implementation using XShmGetImage for screenshot capture.
+    Falls back to XGetImage if shared memory extension is unavailable.
+
+    .. attribute:: shm_status
+
+        Current shared-memory availability, using :class:`mss.linux.xshmgetimage.ShmStatus`.
+
+    .. attribute:: shm_fallback_reason
+
+        Optional string describing why the backend fell back to XGetImage when MIT-SHM is unavailable.
 
 Windows
 -------

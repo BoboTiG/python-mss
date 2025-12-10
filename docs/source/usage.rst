@@ -5,7 +5,7 @@ Usage
 Import
 ======
 
-So MSS can be used as simply as::
+MSS can be used as simply as::
 
     from mss import mss
 
@@ -19,6 +19,11 @@ Or import the good one based on your operating system::
 
     # Microsoft Windows
     from mss.windows import MSS as mss
+
+On GNU/Linux you can also import a specific backend (see :ref:`backends`)
+directly when you need a particular implementation, for example::
+
+    from mss.linux.xshmgetimage import MSS as mss
 
 
 Instance
@@ -49,18 +54,56 @@ This is a much better usage, memory efficient::
 Also, it is a good thing to save the MSS instance inside an attribute of your class and calling it when needed.
 
 
+.. _backends:
+
+Backends
+--------
+
+Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss` functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.  For instance, you may know that your specific situation requires a particular backend.
+
+If you want to choose a particular backend, you can use the :py::`backend` keyword to :py:func:`mss`:::
+
+    with mss(backend="xgetimage") as sct:
+        ...
+
+Instead, you can also directly import the backend you want to use:::
+
+    from mss.linux.xgetimage import MSS as mss
+
+Currently, only the GNU/Linux implementation has multiple backends.  These are described in their own section below.
+
+
 GNU/Linux
 ---------
 
-On GNU/Linux, you can specify which display to use (useful for distant screenshots via SSH)::
+Display
+^^^^^^^
+
+On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the :keyword:`display` keyword::
 
     with mss(display=":0.0") as sct:
-        # ...
+        ...
 
 A more specific example (only valid on GNU/Linux):
 
 .. literalinclude:: examples/linux_display_keyword.py
     :lines: 9-
+
+Backends
+^^^^^^^^
+
+The GNU/Linux implementation has multiple backends (see :ref:`backends`), or ways it can take screenshots.  The :py:func:`mss.mss` and :py:func:`mss.linux.mss` functions will normally autodetect which one is appropriate, but you can override this if you want.
+
+There are three available backends.
+
+:py:mod:`xlib` (default)
+    The legacy backend, based on :c:func:`XGetImage`.  This backend is not being improved anymore.  It is only provided in case the newer backends don't work for some reason.
+
+:py:mod:`xgetimage`
+    A highly-compatible, but slow, backend, based on :c:func:`xcb_get_image`.  This backend is the slowest of the new backends, but works in all situations.  You can use this if you know that :py:mod:`xshmgetimage` won't work.
+
+:py:mod:`xshmgetimage`
+    The fastest backend, based on :c:func:`xcb_shm_get_image`.  This backend is the fastest, about three times faster than :py:mod:`xgetimage`.  However, it doesn't work for remote screenshots, such as over SSH.  If you use it with a remote display, then it will automatically switch to :py:mod:`xgetimage` instead.  It's always safe to use this backend.
 
 
 Command Line

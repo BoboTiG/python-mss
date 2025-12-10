@@ -51,6 +51,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/docs/source/examples/fps_multiprocessing.py",
         f"mss-{__version__}/docs/source/examples/from_pil_tuple.py",
         f"mss-{__version__}/docs/source/examples/linux_display_keyword.py",
+        f"mss-{__version__}/docs/source/examples/linux_xshm_backend.py",
         f"mss-{__version__}/docs/source/examples/opencv_numpy.py",
         f"mss-{__version__}/docs/source/examples/part_of_screen.py",
         f"mss-{__version__}/docs/source/examples/part_of_screen_monitor_2.py",

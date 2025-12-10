@@ -18,6 +18,15 @@ if TYPE_CHECKING:  # pragma: nocover
 
     from mss.models import Monitor, Monitors
 
+    # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
+    try:
+        from typing import Self
+    except ImportError:  # pragma: nocover
+        try:
+            from typing_extensions import Self
+        except ImportError:  # pragma: nocover
+            Self = Any  # type: ignore[assignment]
+
 try:
     from datetime import UTC
 except ImportError:  # pragma: nocover
@@ -58,7 +67,7 @@ class MSSBase(metaclass=ABCMeta):
             msg = 'The only valid backend on this platform is "default".'
             raise ScreenShotError(msg)
 
-    def __enter__(self) -> MSSBase:  # noqa:PYI034
+    def __enter__(self) -> Self:
         """For the cool call `with MSS() as mss:`."""
         return self
 

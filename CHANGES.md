@@ -1,5 +1,19 @@
 # Technical Changes
 
+## 10.1.1 (2025-xx-xx)
+
+### linux/__init__.py
+- Added an ``mss()`` factory to select between the different GNU/Linux backends.
+
+### linux/xlib.py
+- Moved the legacy Xlib backend into the ``mss.linux.xlib`` module to be used as a fallback implementation.
+
+### linux/xgetimage.py
+- Added an XCB-based backend that mirrors XGetImage semantics.
+
+### linux/xshmgetimage.py
+- Added an XCB backend powered by XShmGetImage with ``shm_status`` and ``shm_fallback_reason`` attributes for diagnostics.
+
 ## 10.1.0 (2025-08-16)
 
 ### darwin.py

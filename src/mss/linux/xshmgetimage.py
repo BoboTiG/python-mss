@@ -17,9 +17,9 @@ if TYPE_CHECKING:
 
 
 class ShmStatus(enum.Enum):
-    UNKNOWN = enum.auto()
-    AVAILABLE = enum.auto()
-    UNAVAILABLE = enum.auto()
+    UNKNOWN = enum.auto()  # Constructor says SHM *should* work, but we haven't seen a real GetImage succeed yet.
+    AVAILABLE = enum.auto()  # We've successfully used XShmGetImage at least once.
+    UNAVAILABLE = enum.auto()  # We know SHM GetImage is unusable; always use XGetImage.
 
 
 class MSS(MSSXCBBase):
@@ -27,6 +27,8 @@ class MSS(MSSXCBBase):
 
     This implementation is based on XCB, using the ShmGetImage request.
     If ShmGetImage fails, then this will fall back to using GetImage.
+    In that event, the reason for the fallback will be recorded in the
+    shm_fallback_reason attribute as a string, for debugging purposes.
     """
 
     def __init__(self, /, **kwargs: Any) -> None:
@@ -37,8 +39,12 @@ class MSS(MSSXCBBase):
         self._buf: mmap | None = None
         self._shmseg: xcb.ShmSeg | None = None
 
+        # Rather than trying to track the shm_status, we may be able to raise an exception in __init__ if XShmGetImage
+        # isn't available.  The factory in linux/__init__.py could then catch that and switch to XGetImage.
+        # The conditions under which the attach will succeed but the xcb_shm_get_image will fail are extremely
+        # rare, and I haven't yet found any that also will work with xcb_get_image.
         self.shm_status: ShmStatus = self._setup_shm()
-        self.shm_failed_reason: str | None = None
+        self.shm_fallback_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:
         """Debugging hook for troubleshooting MIT-SHM issues.
@@ -49,7 +55,7 @@ class MSS(MSSXCBBase):
         full_msg = msg
         if args:
             full_msg += " | " + ", ".join(str(arg) for arg in args)
-        self.shm_failed_reason = full_msg
+        self.shm_fallback_reason = full_msg
 
     def _setup_shm(self) -> ShmStatus:  # noqa: PLR0911
         assert self.conn is not None  # noqa: S101
@@ -91,10 +97,8 @@ class MSS(MSSXCBBase):
 
             self._shmseg = xcb.ShmSeg(xcb.generate_id(self.conn).value)
             try:
-                # This will normally be what raises an exception if you're on a remote connection.  (I previously
-                # thought the server deferred that until the GetImage call, but I had not been properly checking the
-                # status.)
-                # This will close _memfd, on success or on failure.
+                # This will normally be what raises an exception if you're on a remote connection.
+                # XCB will close _memfd, on success or on failure.
                 try:
                     xcb.shm_attach_fd(self.conn, self._shmseg, self._memfd, read_only=False)
                 finally:
@@ -178,16 +182,33 @@ class MSS(MSSXCBBase):
         if self.shm_status == ShmStatus.UNAVAILABLE:
             return super()._grab_impl_xgetimage(monitor)
 
+        # The usual path is just the next few lines.
         try:
             rv = self._grab_impl_xshmgetimage(monitor)
+            self.shm_status = ShmStatus.AVAILABLE
         except XProtoError as e:
             if self.shm_status != ShmStatus.UNKNOWN:
+                # We know XShmGetImage works, because it worked earlier.  Reraise the error.
                 raise
+
+            # Should we engage the fallback path?  In almost all cases, if XShmGetImage failed at this stage (after
+            # all our testing in __init__), XGetImage will also fail.  This could mean that the user sent an
+            # out-of-bounds request.  In more exotic situations, some rare X servers disallow screen capture
+            # altogether: security-hardened servers, for instance, or some XPrint servers.  But let's make sure, by
+            # testing the same request through XGetImage.
+            try:
+                rv = super()._grab_impl_xgetimage(monitor)
+            except XProtoError:  # noqa: TRY203
+                # The XGetImage also failed, so we don't know anything about whether XShmGetImage is usable.  Maybe
+                # the user sent an out-of-bounds request.  Maybe it's a security-hardened server.  We're not sure what
+                # the problem is.  So, if XGetImage failed, we re-raise that error (the one from XShmGetImage will be
+                # attached as __context__), but we won't update the shm_status yet.  (Technically, our except:raise
+                # clause here is redundant; it's just for clarity, to hold this comment.)
+                raise
+
+            # Using XShmGetImage failed, and using XGetImage worked.  Use XGetImage in the future.
             self._shm_report_issue("MIT-SHM GetImage failed", e)
             self.shm_status = ShmStatus.UNAVAILABLE
             self._shutdown_shm()
-            rv = super()._grab_impl_xgetimage(monitor)
-        else:
-            self.shm_status = ShmStatus.AVAILABLE
 
         return rv
