@@ -179,6 +179,7 @@ ignore = [
 "docs/source/*" = [
   "ERA001",   # commented code
   "INP001",   # file `xxx` is part of an implicit namespace package
+  "N811",     # importing constant (MSS) as non-constant (mss)
 ]
 "src/tests/*" = [
   "FBT001",   # boolean-typed positional argument in function definition

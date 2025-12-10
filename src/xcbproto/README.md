@@ -20,7 +20,7 @@ The generator is a **maintainer tool**, not part of the normal build process:
 
 3. The generator reads the XML protocol definitions and emits `xcbgen.py`.
 4. The maintainer ensures that this worked correctly, and moves the file to `src/mss/linux/xcbgen.py`.
-4. The generated `xcbgen.py` is committed to version control and distributed with the package, so end users never need to run the generator.
+5. The generated `xcbgen.py` is committed to version control and distributed with the package, so end users never need to run the generator.
 
 ## Protocol XML Files
 

@@ -5,7 +5,8 @@ See Git checking messages for full history.
 ## 10.1.1.dev0 (2025-xx-xx)
 - Linux: check the server for Xrandr support version (#417)
 - Linux: improve typing and error messages for X libraries (#418)
-- Linux: add a new XCB backend for better thread safety, error-checking, and future development (#425)
+- Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)
+- Linux: add the XShmGetImage backend with automatic XGetImage fallback and explicit status reporting (#431)
 - :heart: contributors: @jholveck
 
 ## 10.1.0 (2025-08-16)

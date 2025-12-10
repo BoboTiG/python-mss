@@ -35,6 +35,8 @@ if TYPE_CHECKING:  # pragma: nocover
 
 __all__ = ("MSS",)
 
+BACKENDS = ["default"]
+
 
 CAPTUREBLT = 0x40000000
 DIB_RGB_COLORS = 0

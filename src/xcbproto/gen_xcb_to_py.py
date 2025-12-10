@@ -71,6 +71,13 @@ REQUESTS: dict[str, list[str]] = {
         "QueryVersion",
         "QueryPictFormats",
     ],
+    "shm": [
+        "QueryVersion",
+        "GetImage",
+        "AttachFd",
+        "CreateSegment",
+        "Detach",
+    ],
     "xfixes": [
         "QueryVersion",
         "GetCursorImage",
@@ -95,7 +102,7 @@ PRIMITIVE_CTYPES: dict[str, str] = {
     "void": "None",
 }
 
-INT_CTYPES = {"c_int8", "c_int16", "c_int32", "c_int64", "c_uint8", "c_uint16", "c_uint32", "c_uint64"}
+INT_CTYPES = {"c_int", "c_int8", "c_int16", "c_int32", "c_int64", "c_uint8", "c_uint16", "c_uint32", "c_uint64"}
 
 EIGHT_BIT_TYPES = {
     "c_int8",
@@ -308,7 +315,12 @@ class ListField:
     enum: str | None = None
 
 
-StructMember = Field | Pad | ListField
+@dataclass
+class FdField:
+    name: str
+
+
+StructMember = Field | Pad | ListField | FdField
 
 
 class StructLikeDefn(LazyDefn):
@@ -349,6 +361,12 @@ class StructLikeDefn(LazyDefn):
                         type=child.attrib["type"],
                         enum=child.attrib.get("enum"),
                         mask=child.attrib.get("mask"),
+                    )
+                )
+            case "fd":
+                self.members.append(
+                    FdField(
+                        name=child.attrib["name"],
                     )
                 )
             case "pad":
@@ -647,7 +665,7 @@ def toposort_requirements(
             if member.enum:
                 enum = registry.resolve_enum(protocol, member.enum)
                 appendnew(rv.enums, enum)
-        elif isinstance(member, Pad):
+        elif isinstance(member, (FdField, Pad)):
             pass
         else:
             msg = f"Unrecognized struct member {member}"
@@ -763,7 +781,15 @@ def camel_case(name: str, protocol: str | None = None) -> str:
 
 
 def snake_case(name: str, protocol: str | None = None) -> str:
-    prefix = "" if protocol in {"xproto", None} else f"{snake_case(protocol)}_"  # type: ignore[arg-type]
+    prefix = (
+        ""
+        if protocol
+        in {
+            "xproto",
+            None,
+        }
+        else f"{snake_case(protocol)}_"  # type: ignore[arg-type]
+    )
     if name.islower():
         return prefix + name
     s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
@@ -823,7 +849,7 @@ def format_type_name(typedefn: TypeDefn) -> str:
     return base_name
 
 
-def format_field_name(field: Field) -> str:
+def format_field_name(field: Field | FdField) -> str:
     name = field.name
     return f"{name}_" if name in RESERVED_NAMES else name
 
@@ -995,23 +1021,29 @@ def emit_reply(writer: CodeWriter, registry: ProtocolRegistry, entry: ReplyDefn)
     #     uint16_t       sequence;
     #     uint32_t       length;
     # However, if the first field of the reply contents is a single byte, then it replaces pad0 in that structure.
-    members = entry.members[:]
+    nonfd_members = [m for m in entry.members if not isinstance(m, FdField)]
+
     field_entries: list[tuple[str, str] | StructMember] = [("response_type", "c_uint8")]
-    if members and isinstance(members[0], Field) and is_eight_bit(registry, entry.protocol, members[0].type):
-        member = members.pop(0)
+    if (
+        nonfd_members
+        and isinstance(nonfd_members[0], Field)
+        and is_eight_bit(registry, entry.protocol, nonfd_members[0].type)
+    ):
+        member = nonfd_members.pop(0)
         assert isinstance(member, Field)  # noqa: S101
         name = format_field_name(member)
         type_expr = python_type_for(registry, entry.protocol, member.type)
         field_entries.append((name, type_expr))
-    elif members and (isinstance(members[0], Pad) and members[0].bytes == 1):
+    elif nonfd_members and (isinstance(nonfd_members[0], Pad) and nonfd_members[0].bytes == 1):
         # XFixes puts the padding byte explicitly at the start of the replies, but it just gets folded in the same way.
-        member = members.pop(0)
+        member = nonfd_members.pop(0)
         field_entries.append(member)
     else:
         field_entries.append(Pad(bytes=1))
     field_entries.append(("sequence", "c_uint16"))
     field_entries.append(("length", "c_uint32"))
-    field_entries += members
+    field_entries += nonfd_members
+
     return emit_structlike(writer, registry, entry, field_entries)
 
 
@@ -1123,6 +1155,41 @@ def emit_lists(writer: CodeWriter, registry: ProtocolRegistry, types: list[TypeD
     return rv
 
 
+# File descriptor accessor wrappers
+
+
+def emit_fds(writer: CodeWriter, _registry: ProtocolRegistry, types: list[TypeDefn]) -> list[FuncDecl]:
+    rv: list[FuncDecl] = []
+    for typ in types:
+        if not isinstance(typ, StructLikeDefn):
+            continue
+        fd_members = [m for m in typ.members if isinstance(m, FdField)]
+        if not fd_members:
+            continue
+        if len(fd_members) > 1:
+            # I simply don't know how this would be represented in libxcb.
+            msg = f"Struct {typ.protocol}:{typ.name} has multiple FdFields, which is unsupported"
+            raise GenerationError(msg)
+        # The way that the reply fd accessor is named is not that great:
+        # rather than having a function named after the field, it's named with just an "_fd" suffix.
+        func_name = f"{format_function_name(typ.name, typ.protocol)}_reply_fds"
+        writer.write()
+        writer.write(
+            f"def {func_name}(c: Connection | _Pointer[Connection], r: {format_type_name(typ)}) -> _Pointer[c_int]:"
+        )
+        with writer.indent():
+            writer.write(f"return LIB.{lib_for_proto(typ.protocol)}.xcb_{func_name}(c, r)")
+        rv.append(
+            FuncDecl(
+                typ.protocol,
+                f"xcb_{func_name}",
+                ["POINTER(Connection)", f"POINTER({format_type_name(typ)})"],
+                "POINTER(c_int)",
+            )
+        )
+    return rv
+
+
 # Request wrapper functions
 
 
@@ -1139,20 +1206,26 @@ def emit_requests(writer: CodeWriter, registry: ProtocolRegistry, requests: list
         # a function when you call it.
         params: list[tuple[str, str]] = [("c", "Connection")]
         params += [
-            (format_field_name(field), python_type_for(registry, request.protocol, field.type))
-            for field in request.fields
+            (
+                format_field_name(field),
+                python_type_for(registry, request.protocol, field.type) if isinstance(field, Field) else "c_int",
+            )
+            for field in request.members
+            if not isinstance(field, (Pad, ListField))
         ]
         params_types = [p[1] for p in params]
         # Arrange for the wrappers to take Python ints in place of any of the int-based ctypes.
         params_with_alts = [(p[0], f"{p[1]} | int" if p[1] in INT_CTYPES else p[1]) for p in params]
         params_string = ", ".join(f"{p[0]}: {p[1]}" for p in params_with_alts)
         args_string = ", ".join(p[0] for p in params)
+        xcb_params_types = ["POINTER(Connection)", *params_types[1:]]
         if request.reply is None:
+            xcb_func_name += "_checked"
             writer.write()
             writer.write(f"def {func_name}({params_string}) -> None:")
             with writer.indent():
                 writer.write(f"return LIB.{lib}.{xcb_func_name}({args_string}).check(c)")
-            rv.append(FuncDecl(request.protocol, xcb_func_name, params_types, "VoidCookie"))
+            rv.append(FuncDecl(request.protocol, xcb_func_name, xcb_params_types, "VoidCookie"))
         else:
             reply_type = request.reply
             reply_type_name = format_type_name(reply_type)
@@ -1163,7 +1236,6 @@ def emit_requests(writer: CodeWriter, registry: ProtocolRegistry, requests: list
             # We have to use initialize_xcb_typed_func to initialize late, rather than making the cookie class here,
             # because the cookie definition needs to reference the XCB reply function.  We could also do a lazy
             # initialization, but it's probably not worth it.
-            xcb_params_types = ["POINTER(Connection)", *params_types[1:]]
             rv.append(
                 f'initialize_xcb_typed_func(LIB.{lib}, "{xcb_func_name}", '
                 f"[{', '.join(xcb_params_types)}], {reply_type_name})"
@@ -1209,6 +1281,7 @@ def generate(
     emit_enums(writer, registry, plan.enums)
     func_decls += emit_types(writer, registry, plan.types)
     func_decls += emit_lists(writer, registry, plan.types)
+    func_decls += emit_fds(writer, registry, plan.types)
     func_decls += emit_requests(writer, registry, plan.requests)
     emit_initialize(writer, func_decls)
 

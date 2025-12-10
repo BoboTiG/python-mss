@@ -19,7 +19,7 @@ from weakref import finalize
 import pytest
 
 from mss.exception import ScreenShotError
-from mss.linux import xcb, xgetimage
+from mss.linux import base, xcb, xgetimage
 from mss.linux.xcbhelpers import (
     XcbExtension,
     array_from_xcb,
@@ -172,7 +172,7 @@ class _VisualValidationHarness:
             randr_id=XcbExtension(),
             xfixes_id=XcbExtension(),
         )
-        self._monkeypatch.setattr(xgetimage, "LIB", fake_lib)
+        self._monkeypatch.setattr(xcb, "LIB", fake_lib)
         self._monkeypatch.setattr(xcb, "connect", lambda _display=None: (self.connection, 0))
         self._monkeypatch.setattr(xcb, "disconnect", lambda _conn: None)
         self._monkeypatch.setattr(xcb, "setup_roots", self._setup_roots)
@@ -190,16 +190,16 @@ class _VisualValidationHarness:
         self.screen.root_visual = xcb.Visualid(visual_id)
 
         self.format.depth = self.screen.root_depth
-        self.format.bits_per_pixel = xgetimage.SUPPORTED_BITS_PER_PIXEL
-        self.format.scanline_pad = xgetimage.SUPPORTED_BITS_PER_PIXEL
+        self.format.bits_per_pixel = base.SUPPORTED_BITS_PER_PIXEL
+        self.format.scanline_pad = base.SUPPORTED_BITS_PER_PIXEL
 
         self.depth.depth = self.screen.root_depth
 
         self.visual.visual_id = xcb.Visualid(visual_id)
         self.visual.class_ = xcb.VisualClass.TrueColor
-        self.visual.red_mask = xgetimage.SUPPORTED_RED_MASK
-        self.visual.green_mask = xgetimage.SUPPORTED_GREEN_MASK
-        self.visual.blue_mask = xgetimage.SUPPORTED_BLUE_MASK
+        self.visual.red_mask = base.SUPPORTED_RED_MASK
+        self.visual.green_mask = base.SUPPORTED_GREEN_MASK
+        self.visual.blue_mask = base.SUPPORTED_BLUE_MASK
 
         self.screens = [self.screen]
         self.pixmap_formats = [self.format]

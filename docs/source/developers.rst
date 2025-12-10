@@ -50,3 +50,12 @@ To build the documentation, simply type::
 
     $ python -m pip install -e '.[docs]'
     $ sphinx-build -d docs docs/source docs_out --color -W -bhtml
+
+
+XCB Code Generator
+==================
+
+The GNU/Linux XCB backends rely on generated ctypes bindings.  If you need to
+add new XCB requests or types, do **not** edit ``src/mss/linux/xcbgen.py`` by
+hand.  Instead, follow the workflow described in ``src/xcbproto/README.md``,
+which explains how to update ``gen_xcb_to_py.py`` and regenerate the bindings.

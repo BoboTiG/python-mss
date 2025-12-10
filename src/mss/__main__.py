@@ -3,8 +3,9 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import os.path
+import platform
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentError, ArgumentParser
 
 from mss import __version__
 from mss.exception import ScreenShotError
@@ -12,9 +13,28 @@ from mss.factory import mss
 from mss.tools import to_png
 
 
+def _backend_cli_choices() -> list[str]:
+    os_name = platform.system().lower()
+    if os_name == "darwin":
+        from mss import darwin  # noqa: PLC0415
+
+        return list(darwin.BACKENDS)
+    if os_name == "linux":
+        from mss import linux  # noqa: PLC0415
+
+        return list(linux.BACKENDS)
+    if os_name == "windows":
+        from mss import windows  # noqa: PLC0415
+
+        return list(windows.BACKENDS)
+    return ["default"]
+
+
 def main(*args: str) -> int:
     """Main logic."""
-    cli_args = ArgumentParser(prog="mss")
+    backend_choices = _backend_cli_choices()
+
+    cli_args = ArgumentParser(prog="mss", exit_on_error=False)
     cli_args.add_argument(
         "-c",
         "--coordinates",
@@ -40,9 +60,19 @@ def main(*args: str) -> int:
         action="store_true",
         help="do not print created files",
     )
+    cli_args.add_argument(
+        "-b", "--backend", default="default", choices=backend_choices, help="platform-specific backend to use"
+    )
     cli_args.add_argument("-v", "--version", action="version", version=__version__)
 
-    options = cli_args.parse_args(args or None)
+    try:
+        options = cli_args.parse_args(args or None)
+    except ArgumentError as e:
+        # By default, parse_args will print and the error and exit.  We
+        # return instead of exiting, to make unit testing easier.
+        cli_args.print_usage(sys.stderr)
+        print(f"{cli_args.prog}: error: {e}", file=sys.stderr)
+        return 2
     kwargs = {"mon": options.monitor, "output": options.output}
     if options.coordinates:
         try:
@@ -61,7 +91,7 @@ def main(*args: str) -> int:
             kwargs["output"] = "sct-{top}x{left}_{width}x{height}.png"
 
     try:
-        with mss(with_cursor=options.with_cursor) as sct:
+        with mss(with_cursor=options.with_cursor, backend=options.backend) as sct:
             if options.coordinates:
                 output = kwargs["output"].format(**kwargs["mon"])
                 sct_img = sct.grab(kwargs["mon"])

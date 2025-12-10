@@ -95,72 +95,104 @@ def test_factory_unknown_system(backend: str, monkeypatch: pytest.MonkeyPatch) -
     assert error == "System 'chuck norris' not (yet?) implemented."
 
 
-@patch.object(sys, "argv", new=[])  # Prevent side effects while testing
+@pytest.fixture
+def reset_sys_argv(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(sys, "argv", [])
+
+
+@pytest.mark.usefixtures("reset_sys_argv")
 @pytest.mark.parametrize("with_cursor", [False, True])
-def test_entry_point(with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
-    def main(*args: str, ret: int = 0) -> None:
+class TestEntryPoint:
+    """CLI entry-point scenarios split into focused tests."""
+
+    @staticmethod
+    def _run_main(with_cursor: bool, *args: str, ret: int = 0) -> None:
         if with_cursor:
             args = (*args, "--with-cursor")
         assert entry_point(*args) == ret
 
-    # No arguments
-    main()
-    captured = capsys.readouterr()
-    for mon, line in enumerate(captured.out.splitlines(), 1):
-        filename = Path(f"monitor-{mon}.png")
-        assert line.endswith(filename.name)
-        assert filename.is_file()
-        filename.unlink()
-
-    file = Path("monitor-1.png")
-    for opt in ("-m", "--monitor"):
-        main(opt, "1")
+    def test_no_arguments(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        self._run_main(with_cursor)
         captured = capsys.readouterr()
-        assert captured.out.endswith(f"{file.name}\n")
-        assert filename.is_file()
-        filename.unlink()
+        for mon, line in enumerate(captured.out.splitlines(), 1):
+            filename = Path(f"monitor-{mon}.png")
+            assert line.endswith(filename.name)
+            assert filename.is_file()
+            filename.unlink()
 
-    for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
-        main(*opts)
-        captured = capsys.readouterr()
-        assert not captured.out
-        assert filename.is_file()
-        filename.unlink()
+    def test_monitor_option_and_quiet(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        file = Path("monitor-1.png")
+        filename: Path | None = None
+        for opt in ("-m", "--monitor"):
+            self._run_main(with_cursor, opt, "1")
+            captured = capsys.readouterr()
+            assert captured.out.endswith(f"{file.name}\n")
+            filename = Path(captured.out.rstrip())
+            assert filename.is_file()
+            filename.unlink()
 
-    fmt = "sct-{mon}-{width}x{height}.png"
-    for opt in ("-o", "--out"):
-        main(opt, fmt)
-        captured = capsys.readouterr()
-        with mss.mss(display=os.getenv("DISPLAY")) as sct:
-            for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
-                filename = Path(fmt.format(mon=mon, **monitor))
-                assert line.endswith(filename.name)
-                assert filename.is_file()
-                filename.unlink()
+        assert filename is not None
+        for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
+            self._run_main(with_cursor, *opts)
+            captured = capsys.readouterr()
+            assert not captured.out
+            assert filename.is_file()
+            filename.unlink()
 
-    fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
-    for opt in ("-o", "--out"):
-        main("-m 1", opt, fmt)
-        filename = Path(fmt.format(mon=1, date=datetime.now(tz=UTC)))
-        captured = capsys.readouterr()
-        assert captured.out.endswith(f"{filename}\n")
-        assert filename.is_file()
-        filename.unlink()
+    def test_custom_output_pattern(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        fmt = "sct-{mon}-{width}x{height}.png"
+        for opt in ("-o", "--out"):
+            self._run_main(with_cursor, opt, fmt)
+            captured = capsys.readouterr()
+            with mss.mss(display=os.getenv("DISPLAY")) as sct:
+                for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
+                    filename = Path(fmt.format(mon=mon, **monitor))
+                    assert line.endswith(filename.name)
+                    assert filename.is_file()
+                    filename.unlink()
 
-    coordinates = "2,12,40,67"
-    filename = Path("sct-2x12_40x67.png")
-    for opt in ("-c", "--coordinates"):
-        main(opt, coordinates)
-        captured = capsys.readouterr()
-        assert captured.out.endswith(f"{filename}\n")
-        assert filename.is_file()
-        filename.unlink()
+    def test_output_pattern_with_date(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
+        for opt in ("-o", "--out"):
+            self._run_main(with_cursor, "-m 1", opt, fmt)
+            filename = Path(fmt.format(mon=1, date=datetime.now(tz=UTC)))
+            captured = capsys.readouterr()
+            assert captured.out.endswith(f"{filename}\n")
+            assert filename.is_file()
+            filename.unlink()
 
-    coordinates = "2,12,40"
-    for opt in ("-c", "--coordinates"):
-        main(opt, coordinates, ret=2)
-        captured = capsys.readouterr()
-        assert captured.out == "Coordinates syntax: top, left, width, height\n"
+    def test_coordinates_capture(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        coordinates = "2,12,40,67"
+        filename = Path("sct-2x12_40x67.png")
+        for opt in ("-c", "--coordinates"):
+            self._run_main(with_cursor, opt, coordinates)
+            captured = capsys.readouterr()
+            assert captured.out.endswith(f"{filename}\n")
+            assert filename.is_file()
+            filename.unlink()
+
+    def test_invalid_coordinates(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        coordinates = "2,12,40"
+        for opt in ("-c", "--coordinates"):
+            self._run_main(with_cursor, opt, coordinates, ret=2)
+            captured = capsys.readouterr()
+            assert captured.out == "Coordinates syntax: top, left, width, height\n"
+
+    def test_backend_option(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        backend = "default"
+        for opt in ("-b", "--backend"):
+            self._run_main(with_cursor, opt, backend, "-m1")
+            captured = capsys.readouterr()
+            filename = Path(captured.out.rstrip())
+            assert filename.is_file()
+            filename.unlink()
+
+    def test_invalid_backend_option(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
+        backend = "chuck_norris"
+        for opt in ("-b", "--backend"):
+            self._run_main(with_cursor, opt, backend, "-m1", ret=2)
+            captured = capsys.readouterr()
+            assert "argument -b/--backend: invalid choice: 'chuck_norris' (choose from" in captured.err
 
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing

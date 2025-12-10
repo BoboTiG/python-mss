@@ -20,6 +20,8 @@ if TYPE_CHECKING:  # pragma: nocover
 
 __all__ = ("MSS",)
 
+BACKENDS = ["default"]
+
 MAC_VERSION_CATALINA = 10.16
 
 kCGWindowImageBoundsIgnoreFraming = 1 << 0  # noqa: N816
