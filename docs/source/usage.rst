@@ -61,12 +61,12 @@ Backends
 
 Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss` functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.  For instance, you may know that your specific situation requires a particular backend.
 
-If you want to choose a particular backend, you can use the :py::`backend` keyword to :py:func:`mss`:::
+If you want to choose a particular backend, you can use the :py::`backend` keyword to :py:func:`mss`::
 
     with mss(backend="xgetimage") as sct:
         ...
 
-Instead, you can also directly import the backend you want to use:::
+Alternatively, you can also directly import the backend you want to use::
 
     from mss.linux.xgetimage import MSS as mss
 
@@ -80,11 +80,6 @@ Display
 ^^^^^^^
 
 On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the :keyword:`display` keyword::
-
-    with mss(display=":0.0") as sct:
-        ...
-
-A more specific example (only valid on GNU/Linux):
 
 .. literalinclude:: examples/linux_display_keyword.py
     :lines: 9-
