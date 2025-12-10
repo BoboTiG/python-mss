@@ -107,7 +107,7 @@ GNU/Linux XShm backend
 ----------------------
 
 Select the XShmGetImage backend explicitly and inspect whether it is active or
-falling back to XGetImage::
+falling back to XGetImage:
 
 .. literalinclude:: examples/linux_xshm_backend.py
     :lines: 7-

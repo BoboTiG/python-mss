@@ -3,6 +3,8 @@ from typing import Any
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
+BACKENDS = ["default", "xlib", "xgetimage", "xshmgetimage"]
+
 
 def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
     """Factory returning a proper MSS class instance.
@@ -30,6 +32,7 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
         from . import xshmgetimage  # noqa: PLC0415
 
         return xshmgetimage.MSS(**kwargs)
+    assert backend not in BACKENDS  # noqa: S101
     msg = f"Backend {backend!r} not (yet?) implemented."
     raise ScreenShotError(msg)
 

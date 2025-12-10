@@ -79,7 +79,7 @@ GNU/Linux
 Display
 ^^^^^^^
 
-On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the ``display`` keyword::
+On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the ``display`` keyword:
 
 .. literalinclude:: examples/linux_display_keyword.py
     :lines: 7-
@@ -116,8 +116,8 @@ You can use ``mss`` via the CLI::
 Or via direct call from Python::
 
     $ python -m mss --help
-    usage: __main__.py [-h] [-c COORDINATES] [-l {0,1,2,3,4,5,6,7,8,9}]
-                    [-m MONITOR] [-o OUTPUT] [-q] [-v] [--with-cursor]
+    usage: mss [-h] [-c COORDINATES] [-l {0,1,2,3,4,5,6,7,8,9}] [-m MONITOR]
+           [-o OUTPUT] [--with-cursor] [-q] [-b BACKEND] [-v]
 
     options:
     -h, --help            show this help message and exit
@@ -129,6 +129,9 @@ Or via direct call from Python::
                           the monitor to screenshot
     -o OUTPUT, --output OUTPUT
                           the output file name
+    -b, --backend BACKEND
+                          platform-specific backend to use
+                          (Linux: default/xlib/xgetimage/xshmgetimage; macOS/Windows: default)
     --with-cursor         include the cursor
     -q, --quiet           do not print created files
     -v, --version         show program's version number and exit
