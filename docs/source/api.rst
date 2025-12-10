@@ -47,9 +47,9 @@ Factory function to return the appropriate backend implementation.
     Factory returning a proper MSS class instance for GNU/Linux.
     The backend parameter selects the implementation:
 
-    - "default" or "xlib": Traditional Xlib-based backend (default)
+    - "default" or "xshmgetimage": XCB-based backend using XShmGetImage (default, with automatic fallback to XGetImage)
     - "xgetimage": XCB-based backend using XGetImage
-    - "xshmgetimage": XCB-based backend using XShmGetImage (falls back to XGetImage if unavailable)
+    - "xlib": Traditional Xlib-based backend retained for environments without working XCB libraries
 
 .. function:: MSS(*args, **kwargs)
 
@@ -61,7 +61,7 @@ Xlib Backend
 
 .. module:: mss.linux.xlib
 
-Traditional Xlib-based backend (default).
+Legacy Xlib-based backend, kept as a fallback when XCB is unavailable.
 
 .. attribute:: CFUNCTIONS
 

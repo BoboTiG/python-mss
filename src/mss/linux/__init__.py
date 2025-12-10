@@ -15,19 +15,18 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
     versions will look at other options as well.
     """
     backend = backend.lower()
-    if backend in {"default", "xlib"}:
+    if backend == "xlib":
         from . import xlib  # noqa: PLC0415
 
         return xlib.MSS(**kwargs)
     if backend == "xgetimage":
         from . import xgetimage  # noqa: PLC0415
 
-        # Note that the xshmgetimage backend will automatically fall
-        # back to XGetImage calls if XShmGetImage isn't available.  The
-        # only reason to use the xgetimage backend is if the user
-        # already knows that XShmGetImage isn't going to be supported.
+        # Note that the xshmgetimage backend will automatically fall back to XGetImage calls if XShmGetImage isn't
+        # available.  The only reason to use the xgetimage backend is if the user already knows that XShmGetImage
+        # isn't going to be supported.
         return xgetimage.MSS(**kwargs)
-    if backend == "xshmgetimage":
+    if backend in {"default", "xshmgetimage"}:
         from . import xshmgetimage  # noqa: PLC0415
 
         return xshmgetimage.MSS(**kwargs)

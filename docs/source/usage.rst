@@ -79,10 +79,11 @@ GNU/Linux
 Display
 ^^^^^^^
 
-On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the :keyword:`display` keyword::
+On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environment variable.  You can instead specify which display to use (useful for distant screenshots via SSH) using the ``display`` keyword::
 
 .. literalinclude:: examples/linux_display_keyword.py
-    :lines: 9-
+    :lines: 7-
+
 
 Backends
 ^^^^^^^^
@@ -91,14 +92,18 @@ The GNU/Linux implementation has multiple backends (see :ref:`backends`), or way
 
 There are three available backends.
 
-:py:mod:`xlib` (default)
-    The legacy backend, based on :c:func:`XGetImage`.  This backend is not being improved anymore.  It is only provided in case the newer backends don't work for some reason.
+:py:mod:`xshmgetimage` (default)
+    The fastest backend, based on :c:func:`xcb_shm_get_image`.  It is roughly three times faster than :py:mod:`xgetimage`
+    and is used automatically.  When the MIT-SHM extension is unavailable (for example on remote SSH displays), it
+    transparently falls back to :py:mod:`xgetimage` so you can always request it safely.
 
 :py:mod:`xgetimage`
-    A highly-compatible, but slow, backend, based on :c:func:`xcb_get_image`.  This backend is the slowest of the new backends, but works in all situations.  You can use this if you know that :py:mod:`xshmgetimage` won't work.
+    A highly-compatible, but slower, backend based on :c:func:`xcb_get_image`.  Use this explicitly only when you know
+    that :py:mod:`xshmgetimage` cannot operate in your environment.
 
-:py:mod:`xshmgetimage`
-    The fastest backend, based on :c:func:`xcb_shm_get_image`.  This backend is the fastest, about three times faster than :py:mod:`xgetimage`.  However, it doesn't work for remote screenshots, such as over SSH.  If you use it with a remote display, then it will automatically switch to :py:mod:`xgetimage` instead.  It's always safe to use this backend.
+:py:mod:`xlib`
+    The legacy backend powered by :c:func:`XGetImage`.  It is kept solely for systems where XCB libraries are
+    unavailable and no new features are being added to it.
 
 
 Command Line
