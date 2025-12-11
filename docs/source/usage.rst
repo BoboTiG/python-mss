@@ -61,7 +61,7 @@ Backends
 
 Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss` functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.  For instance, you may know that your specific situation requires a particular backend.
 
-If you want to choose a particular backend, you can use the :py::`backend` keyword to :py:func:`mss`::
+If you want to choose a particular backend, you can use the :py:attr:`backend` keyword to :py:func:`mss`::
 
     with mss(backend="xgetimage") as sct:
         ...
@@ -140,3 +140,6 @@ Or via direct call from Python::
 
 .. versionadded:: 8.0.0
     ``--with-cursor`` to include the cursor in screenshots.
+
+.. versionadded:: 10.2.0
+    ``--backend`` to force selecting the backend to use.

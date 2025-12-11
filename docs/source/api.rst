@@ -51,14 +51,20 @@ Factory function to return the appropriate backend implementation.
     - "xgetimage": XCB-based backend using XGetImage
     - "xlib": Traditional Xlib-based backend retained for environments without working XCB libraries
 
+    .. versionadded:: 10.2.0
+        The :py:attr:`backend` attribute.
+
 .. function:: MSS(*args, **kwargs)
 
     Alias for :func:`mss` for backward compatibility.
+
+    .. versionadded:: 10.2.0
 
 
 Xlib Backend
 ^^^^^^^^^^^^
 
+.. versionadded:: 10.2.0
 .. module:: mss.linux.xlib
 
 Legacy Xlib-based backend, kept as a fallback when XCB is unavailable.
@@ -113,6 +119,7 @@ Legacy Xlib-based backend, kept as a fallback when XCB is unavailable.
 XGetImage Backend
 ^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 10.2.0
 .. module:: mss.linux.xgetimage
 
 XCB-based backend using XGetImage protocol.
@@ -125,6 +132,7 @@ XCB-based backend using XGetImage protocol.
 XShmGetImage Backend
 ^^^^^^^^^^^^^^^^^^^^
 
+.. versionadded:: 10.2.0
 .. module:: mss.linux.xshmgetimage
 
 XCB-based backend using XShmGetImage protocol with shared memory.

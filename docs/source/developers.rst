@@ -55,6 +55,8 @@ To build the documentation, simply type::
 XCB Code Generator
 ==================
 
+.. versionadded:: 10.2.0
+
 The GNU/Linux XCB backends rely on generated ctypes bindings.  If you need to
 add new XCB requests or types, do **not** edit ``src/mss/linux/xcbgen.py`` by
 hand.  Instead, follow the workflow described in ``src/xcbproto/README.md``,

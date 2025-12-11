@@ -5,6 +5,7 @@ Who Uses it?
 This is a non exhaustive list where MSS is integrated or has inspired.
 Do not hesitate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_ if you are using MSS too.
 
+- Nvidia;
 - `Airtest <https://github.com/AirtestProject/Airtest>`_, a cross-platform UI automation framework for aames and apps;
 - `Automation Framework <https://github.com/capaximperii/AutomationFramework>`_, a Batmans utility;
 - `DeepEye <https://github.com/thayerAlshaabi/DeepEye>`_, a deep vision-based software library for autonomous and advanced driver-assistance systems;

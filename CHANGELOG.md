@@ -2,7 +2,7 @@
 
 See Git checking messages for full history.
 
-## 10.1.1.dev0 (2025-xx-xx)
+## 10.2.0.dev0 (2025-xx-xx)
 - Linux: check the server for Xrandr support version (#417)
 - Linux: improve typing and error messages for X libraries (#418)
 - Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)

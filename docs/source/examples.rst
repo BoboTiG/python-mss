@@ -112,6 +112,8 @@ falling back to XGetImage:
 .. literalinclude:: examples/linux_xshm_backend.py
     :lines: 7-
 
+.. versionadded:: 10.2.0
+
 PIL
 ===
 
