@@ -1,5 +1,7 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""macOS CoreGraphics backend for MSS.
+
+Uses the CoreGraphics APIs to capture windows and enumerates up to
+``max_displays`` active displays.
 """
 
 from __future__ import annotations

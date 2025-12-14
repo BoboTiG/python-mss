@@ -1,5 +1,8 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""Legacy Xlib-based GNU/Linux backend.
+
+This backend talks to X11 via Xlib and the Xrandr extension, and is retained
+as a fallback when XCB backends are unavailable. Cursor capture uses XFixes
+when available.
 """
 
 from __future__ import annotations

@@ -11,6 +11,7 @@ import mss
 # -- General configuration ------------------------------------------------
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
     "sphinx_new_tab_link",
@@ -29,6 +30,12 @@ version = mss.__version__
 release = "latest"
 language = "en"
 todo_include_todos = True
+autodoc_member_order = "bysource"
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+}
 
 
 # -- Options for HTML output ----------------------------------------------

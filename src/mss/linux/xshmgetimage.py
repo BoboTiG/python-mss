@@ -1,3 +1,11 @@
+"""XCB backend using MIT-SHM XShmGetImage with automatic fallback.
+
+This implementation prefers shared-memory captures for performance and will
+fall back to XGetImage when the MIT-SHM extension is unavailable or fails at
+runtime. The fallback reason is exposed via ``shm_fallback_reason`` to aid
+debugging.
+"""
+
 from __future__ import annotations
 
 import enum
@@ -17,18 +25,19 @@ if TYPE_CHECKING:
 
 
 class ShmStatus(enum.Enum):
+    """Availability of the MIT-SHM extension for this backend."""
+
     UNKNOWN = enum.auto()  # Constructor says SHM *should* work, but we haven't seen a real GetImage succeed yet.
     AVAILABLE = enum.auto()  # We've successfully used XShmGetImage at least once.
     UNAVAILABLE = enum.auto()  # We know SHM GetImage is unusable; always use XGetImage.
 
 
 class MSS(MSSXCBBase):
-    """Multiple ScreenShots implementation for GNU/Linux.
+    """XCB backend using XShmGetImage with an automatic XGetImage fallback.
 
-    This implementation is based on XCB, using the ShmGetImage request.
-    If ShmGetImage fails, then this will fall back to using GetImage.
-    In that event, the reason for the fallback will be recorded in the
-    shm_fallback_reason attribute as a string, for debugging purposes.
+    The ``shm_status`` attribute tracks whether shared memory is available,
+    and ``shm_fallback_reason`` records why a fallback occurred when MIT-SHM
+    cannot be used.
     """
 
     def __init__(self, /, **kwargs: Any) -> None:

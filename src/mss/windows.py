@@ -1,12 +1,13 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""Windows GDI-based backend for MSS.
+
+Uses user32/gdi32 APIs to capture the desktop and enumerate monitors.
 """
 
 from __future__ import annotations
 
 import ctypes
 import sys
-from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
+from ctypes import POINTER, Structure, c_int, c_void_p
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -23,6 +24,11 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
+
+try:
+    from ctypes import WINFUNCTYPE
+except ImportError:  # pragma: no cover - non-Windows doc builds
+    from ctypes import CFUNCTYPE as WINFUNCTYPE
 from threading import local
 from typing import TYPE_CHECKING, Any
 

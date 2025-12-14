@@ -1,6 +1,5 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
-"""
+# This is part of the MSS Python's module.
+# Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
@@ -21,6 +20,11 @@ def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: Pat
     :param tuple size: The (width, height) pair.
     :param int level: PNG compression level.
     :param str output: Output file name.
+
+    .. versionadded:: 3.0.0
+
+    .. versionchanged:: 3.2.0
+       Added the ``level`` keyword argument to control the PNG compression level.
     """
     pack = struct.pack
     crc32 = zlib.crc32
