@@ -447,8 +447,9 @@ class MSS(MSSBase):
     def _close_impl(self) -> None:
         # Clean-up
         if self._handles.display:
-            with lock:
-                self.xlib.XCloseDisplay(self._handles.display)
+            # We don't grab the lock, since MSSBase.close is holding
+            # it for us.
+            self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
             self._handles.drawable = None
             self._handles.root = None

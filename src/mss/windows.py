@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import ctypes
 import sys
-from ctypes import POINTER, Structure, c_int, c_void_p
+from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
 from ctypes.wintypes import (
     BOOL,
     DOUBLE,
@@ -25,10 +25,6 @@ from ctypes.wintypes import (
     WORD,
 )
 
-try:
-    from ctypes import WINFUNCTYPE
-except ImportError:  # pragma: no cover - non-Windows doc builds
-    from ctypes import CFUNCTYPE as WINFUNCTYPE
 from threading import local
 from typing import TYPE_CHECKING, Any
 

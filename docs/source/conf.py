@@ -6,6 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
+import ctypes
+
 import mss
 
 # -- General configuration ------------------------------------------------
@@ -36,6 +38,10 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
+
+# Monkey-patch WINFUNCTYPE into ctypes, so that we can import
+# mss.windows while building the documentation.
+ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE
 
 
 # -- Options for HTML output ----------------------------------------------

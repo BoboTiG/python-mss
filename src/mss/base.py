@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from threading import RLock
+from threading import Lock
 from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
@@ -37,7 +37,7 @@ except ImportError:  # pragma: nocover
 #: Global lock protecting access to platform screenshot calls.
 #:
 #: .. versionadded:: 6.0.0
-lock = RLock()
+lock = Lock()
 
 OPAQUE = 255
 
