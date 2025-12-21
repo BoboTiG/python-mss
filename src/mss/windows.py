@@ -128,7 +128,7 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._handles.bmi = bmi
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         # Clean-up
         if self._handles.bmp:
             self.gdi32.DeleteObject(self._handles.bmp)

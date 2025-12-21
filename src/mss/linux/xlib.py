@@ -444,7 +444,7 @@ class MSS(MSSBase):
 
         self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         # Clean-up
         if self._handles.display:
             with lock:

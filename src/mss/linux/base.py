@@ -120,7 +120,7 @@ class MSSXCBBase(MSSBase):
             msg = "Only visuals with BGRx ordering are supported"
             raise ScreenShotError(msg)
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         """Close the XCB connection."""
         if self.conn is not None:
             xcb.disconnect(self.conn)

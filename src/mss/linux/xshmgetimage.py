@@ -123,9 +123,8 @@ class MSS(MSSXCBBase):
 
         return ShmStatus.UNKNOWN
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         self._shutdown_shm()
-        super().close()
 
     def _shutdown_shm(self) -> None:
         # It would be nice to also try to tell the server to detach the shmseg, but we might be in an error path

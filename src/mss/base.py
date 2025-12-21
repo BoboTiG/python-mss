@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
 from datetime import datetime
-from threading import Lock
+from threading import RLock
 from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
@@ -37,7 +37,7 @@ except ImportError:  # pragma: nocover
 #: Global lock protecting access to platform screenshot calls.
 #:
 #: .. versionadded:: 6.0.0
-lock = Lock()
+lock = RLock()
 
 OPAQUE = 255
 
@@ -45,7 +45,7 @@ OPAQUE = 255
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
-    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
+    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor", "_closed"}
 
     def __init__(
         self,
@@ -81,6 +81,7 @@ class MSSBase(metaclass=ABCMeta):
         #: .. versionadded:: 8.0.0
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
+        self._closed = False
         # If there isn't a factory that removed the "backend" argument, make sure that it was set to "default".
         # Factories that do backend-specific dispatch should remove that argument.
         if backend != "default":
@@ -111,13 +112,39 @@ class MSSBase(metaclass=ABCMeta):
         It must populate self._monitors.
         """
 
-    def close(self) -> None:  # noqa:B027
-        """Clean-up."""
+    def _close_impl(self) -> None:  # noqa:B027
+        """Clean up.
+
+        This will be called at most once.
+        """
+        # It's not necessary for subclasses to implement this if they have nothing to clean up.
+
+    def close(self) -> None:
+        """Clean up.
+
+        This releases resources that MSS may be using.  Once the MSS
+        object is closed, it may not be use used again.
+
+        It is safe to call this multiple times; multiple calls have no
+        effect.
+
+        Rather than use :py:meth:`close` explicitly, we recommend you
+        use the MSS object as a context manager::
+
+            with mss.mss() as sct:
+                ...
+        """
+        with lock:
+            if self._closed:
+                return
+            self._close_impl()
+            self._closed = True
 
     def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
-        Note: *monitor* can be a tuple like the one PIL.Image.grab() accepts.
+        Note: *monitor* can be a tuple like the one
+        py:meth:`PIL.ImageGrab.grab` accepts: `(left, top, right, bottom)`
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
