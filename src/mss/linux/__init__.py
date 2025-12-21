@@ -1,23 +1,4 @@
-"""GNU/Linux backend dispatcher.
-
-This module picks the appropriate X11 backend implementation based on the
-``backend`` option. Available values:
-
-- ``"default"`` or ``"xshmgetimage"``: XCB-based backend using XShmGetImage
-    with automatic fallback to XGetImage when MIT-SHM is unavailable (default)
-- ``"xgetimage"``: XCB-based backend using XGetImage
-- ``"xlib"``: legacy Xlib-based backend retained for environments without
-    working XCB libraries
-
-Keyword arguments are forwarded to the selected backend. The ``display``
-argument (e.g., ``":0.0"``) targets a specific X server when needed.
-
-.. versionadded:: 10.2.0
-   The ``backend`` selector and the upper-case :func:`MSS` alias.
-
-The top-level :func:`mss` function proxies keyword arguments to the selected
-backend class and returns an :class:`mss.base.MSSBase` implementation.
-"""
+"""GNU/Linux backend dispatcher for X11 screenshot implementations."""
 
 from typing import Any
 
@@ -28,15 +9,32 @@ BACKENDS = ["default", "xlib", "xgetimage", "xshmgetimage"]
 
 
 def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
-    """Return a backend-specific MSS implementation.
+    """Return a backend-specific MSS implementation for GNU/Linux.
 
-    The ``backend`` flag selects the implementation:
+    Selects and instantiates the appropriate X11 backend based on the
+    ``backend`` parameter. Keyword arguments are forwarded to the selected
+    backend class.
 
-    - ``"default"``/``"xshmgetimage"`` (default): XCB backend using
-      XShmGetImage with automatic fallback to XGetImage
-    - ``"xgetimage"``: XCB backend using XGetImage
-    - ``"xlib"``: traditional Xlib backend retained for environments without
-      working XCB libraries
+    :param backend: Backend selector. Valid values:
+
+        - ``"default"`` or ``"xshmgetimage"`` (default): XCB-based backend
+          using XShmGetImage with automatic fallback to XGetImage when MIT-SHM
+          is unavailable
+        - ``"xgetimage"``: XCB-based backend using XGetImage
+        - ``"xlib"``: Legacy Xlib-based backend retained for environments
+          without working XCB libraries
+
+        .. versionadded:: 10.2.0 Prior to this version, the
+            :class:`mss.linux.xlib.MSS` implementation was the only available
+            backend.
+
+    :param kwargs: Keyword arguments forwarded to the backend. Common options
+        include ``display`` (e.g., ``":0.0"``) to target a specific X server.
+    :returns: An MSS backend implementation.
+
+    .. versionadded:: 10.2.0 Prior to this version, this didn't exist:
+         the :func:`mss.linux.MSS` was a class equivalent to the current
+         :class:`mss.linux.xlib.MSS` implementation.
     """
     backend = backend.lower()
     if backend == "xlib":
@@ -61,4 +59,9 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
 
 # Alias in upper-case for backward compatibility.  This is a supported name in the docs.
 def MSS(*args, **kwargs) -> MSSBase:  # type: ignore[no-untyped-def] # noqa: N802, ANN002, ANN003
+    """Alias for :func:`mss.linux.mss.mss` for backward compatibility.
+
+    .. versionchanged:: 10.2.0 Prior to this version, this was a class.
+    .. deprecated:: 10.2.0 Use :func:`mss.linux.mss` instead.
+    """
     return mss(*args, **kwargs)

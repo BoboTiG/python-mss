@@ -23,19 +23,16 @@ ALL_PLANES = 0xFFFFFFFF  # XCB doesn't define AllPlanes
 class MSSXCBBase(MSSBase):
     """Base class for XCB-based screenshot implementations.
 
-    This class provides common XCB initialization and monitor detection logic
-    that can be shared across different XCB screenshot methods (XGetImage,
-    XShmGetImage, XComposite, etc.).
+    Provides common XCB initialization and monitor detection logic that can be
+    shared across different XCB screenshot methods (``XGetImage``,
+    ``XShmGetImage``, ``XComposite``, etc.).
     """
 
     def __init__(self, /, **kwargs: Any) -> None:  # noqa: PLR0912
         """Initialize an XCB connection and validate the display configuration.
 
-        Args:
-            **kwargs: Keyword arguments, including optional 'display' for X11 display string.
-
-        Raises:
-            ScreenShotError: If the display configuration is not supported.
+        :param kwargs: Optional keyword arguments. Recognized key ``display``
+            specifies an X11 display string (bytes) to connect to.
         """
         super().__init__(**kwargs)
 
@@ -127,7 +124,12 @@ class MSSXCBBase(MSSBase):
         self.conn = None
 
     def _monitors_impl(self) -> None:
-        """Get positions of monitors. It will populate self._monitors."""
+        """Populate monitor geometry information.
+
+        Detects and appends monitor rectangles to ``self._monitors``. The first
+        entry represents the entire X11 root screen; subsequent entries, when
+        available, represent individual monitors reported by XRandR.
+        """
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
@@ -187,6 +189,11 @@ class MSSXCBBase(MSSBase):
         # style is.
 
     def _cursor_impl_check_xfixes(self) -> bool:
+        """Check XFixes availability and version.
+
+        :returns: ``True`` if the server provides XFixes with a compatible
+            version, otherwise ``False``.
+        """
         if self.conn is None:
             msg = "Cannot take screenshot while the connection is closed"
             raise ScreenShotError(msg)
@@ -201,7 +208,12 @@ class MSSXCBBase(MSSBase):
         return (reply.major_version, reply.minor_version) >= (2, 0)
 
     def _cursor_impl(self) -> ScreenShot:
-        """Retrieve all cursor data. Pixels have to be RGBx."""
+        """Capture the current cursor image.
+
+        Pixels are returned in BGRA ordering.
+
+        :returns: A screenshot object containing the cursor image and region.
+        """
 
         if self.conn is None:
             msg = "Cannot take screenshot while the connection is closed"
@@ -229,10 +241,14 @@ class MSSXCBBase(MSSBase):
         return self.cls_image(data, region)
 
     def _grab_impl_xgetimage(self, monitor: Monitor, /) -> ScreenShot:
-        """Retrieve all pixels from a monitor using GetImage.
+        """Retrieve pixels from a monitor using ``GetImage``.
 
-        This is used by the XGetImage backend, and also the XShmGetImage
-        backend in fallback mode.
+        Used by the XGetImage backend and by the XShmGetImage backend in
+        fallback mode.
+
+        :param monitor: Monitor rectangle specifying ``left``, ``top``,
+            ``width``, and ``height`` to capture.
+        :returns: A screenshot object containing the captured region.
         """
 
         if self.conn is None:

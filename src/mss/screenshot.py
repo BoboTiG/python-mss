@@ -29,23 +29,34 @@ class ScreenShot:
 
         #: Bytearray of the raw BGRA pixels retrieved by ctypes
         #: OS independent implementations.
-        self.raw = data
+        self.raw: bytearray = data
 
         #: NamedTuple of the screenshot coordinates.
-        self.pos = Pos(monitor["left"], monitor["top"])
+        self.pos: Pos = Pos(monitor["left"], monitor["top"])
 
         #: NamedTuple of the screenshot size.
-        self.size = Size(monitor["width"], monitor["height"]) if size is None else size
+        self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} pos={self.left},{self.top} size={self.width}x{self.height}>"
 
     @property
     def __array_interface__(self) -> dict[str, Any]:
-        """Numpy array interface support.
-        It uses raw data in BGRA form.
+        """NumPy array interface support.
 
-        See https://docs.scipy.org/doc/numpy/reference/arrays.interface.html
+        This is used by NumPy, many SciPy projects, CuPy, PyTorch (via
+        ``torch.from_numpy``), TensorFlow (via ``tf.convert_to_tensor``),
+        JAX (via ``jax.numpy.asarray``), Pandas, scikit-learn, Matplotlib,
+        some OpenCV functions, and others.  This allows you to pass a
+        :class:`ScreenShot` instance directly to these libraries without
+        needing to convert it first.
+
+        This is in HWC order, with 4 channels (BGRA).
+
+        .. seealso::
+
+            https://numpy.org/doc/stable/reference/arrays.interface.html
+               The NumPy array interface protocol specification
         """
         return {
             "version": 3,
@@ -62,33 +73,46 @@ class ScreenShot:
 
     @property
     def bgra(self) -> bytes:
-        """BGRA values from the BGRA raw pixels."""
+        """BGRx values from the BGRx raw pixels.
+
+        The format is a bytes object with BGRxBGRx... sequence.  A specific
+        pixel can be accessed as bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].
+
+        .. note::
+            While the name is `bgra`, the alpha channel may or may not be valid.
+        """
         return bytes(self.raw)
 
     @property
-    def height(self) -> int:
-        """Convenient accessor to the height size."""
-        return self.size.height
-
-    @property
-    def left(self) -> int:
-        """Convenient accessor to the left position."""
-        return self.pos.left
-
-    @property
     def pixels(self) -> Pixels:
-        """:return list: RGB tuples."""
+        """RGB tuples.
+
+        The format is a list of rows.  Each row is a list of pixels.
+        Each pixel is a tuple of (R, G, B).
+        """
         if not self.__pixels:
             rgb_tuples: Iterator[Pixel] = zip(self.raw[2::4], self.raw[1::4], self.raw[::4])
             self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width))
 
         return self.__pixels
 
+    def pixel(self, coord_x: int, coord_y: int) -> Pixel:
+        """Return the pixel value at a given position.
+
+        :returns: A tuple of (R, G, B) values.
+        """
+        try:
+            return self.pixels[coord_y][coord_x]
+        except IndexError as exc:
+            msg = f"Pixel location ({coord_x}, {coord_y}) is out of range."
+            raise ScreenShotError(msg) from exc
+
     @property
     def rgb(self) -> bytes:
         """Compute RGB values from the BGRA raw pixels.
 
-        :return bytes: RGB pixels.
+        The format is a bytes object with BGRBGR... sequence.  A specific
+        pixel can be accessed as rgb[(y * width + x) * 3:(y * width + x) * 3 + 3].
         """
         if not self.__rgb:
             rgb = bytearray(self.height * self.width * 3)
@@ -106,19 +130,16 @@ class ScreenShot:
         return self.pos.top
 
     @property
+    def left(self) -> int:
+        """Convenient accessor to the left position."""
+        return self.pos.left
+
+    @property
     def width(self) -> int:
         """Convenient accessor to the width size."""
         return self.size.width
 
-    def pixel(self, coord_x: int, coord_y: int) -> Pixel:
-        """Returns the pixel value at a given position.
-
-        :param int coord_x: The x coordinate.
-        :param int coord_y: The y coordinate.
-        :return tuple: The pixel value as (R, G, B).
-        """
-        try:
-            return self.pixels[coord_y][coord_x]
-        except IndexError as exc:
-            msg = f"Pixel location ({coord_x}, {coord_y}) is out of range."
-            raise ScreenShotError(msg) from exc
+    @property
+    def height(self) -> int:
+        """Convenient accessor to the height size."""
+        return self.size.height

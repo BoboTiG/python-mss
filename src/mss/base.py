@@ -45,7 +45,7 @@ OPAQUE = 255
 class MSSBase(metaclass=ABCMeta):
     """This class will be overloaded by a system specific one."""
 
-    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor", "_closed"}
+    __slots__ = {"_closed", "_monitors", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,

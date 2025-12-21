@@ -17,6 +17,15 @@ def mss(**kwargs: Any) -> MSSBase:
 
     It then proxies its arguments to the class for
     instantiation.
+
+    .. seealso::
+        - :class:`mss.darwin.MSS`
+        - :class:`mss.linux.MSS`
+        - :class:`mss.windows.MSS`
+        - :func:`mss.linux.mss`
+        - :class:`mss.linux.xshmgetimage.MSS`
+        - :class:`mss.linux.xgetimage.MSS`
+        - :class:`mss.linux.xlib.MSS`
     """
     os_ = platform.system().lower()
 

@@ -7,11 +7,6 @@ Core Package
 
 .. automodule:: mss
 
-Factory Helpers
-===============
-
-.. automodule:: mss.factory
-
 Screenshot Objects
 ==================
 

@@ -3,6 +3,9 @@
 This backend talks to X11 via Xlib and the Xrandr extension, and is retained
 as a fallback when XCB backends are unavailable. Cursor capture uses XFixes
 when available.
+
+.. versionadded:: 10.2.0 Prior to this version, this was available as
+    ``mss.linux.MSS``.
 """
 
 from __future__ import annotations
@@ -415,15 +418,18 @@ class MSS(MSSBase):
         if not _X11:
             msg = "No X11 library found."
             raise ScreenShotError(msg)
+        #: :meta private:
         self.xlib = cdll.LoadLibrary(_X11)
 
         if not _XRANDR:
             msg = "No Xrandr extension found."
             raise ScreenShotError(msg)
+        #: :meta private:
         self.xrandr = cdll.LoadLibrary(_XRANDR)
 
         if self.with_cursor:
             if _XFIXES:
+                #: :meta private:
                 self.xfixes = cdll.LoadLibrary(_XFIXES)
             else:
                 self.with_cursor = False

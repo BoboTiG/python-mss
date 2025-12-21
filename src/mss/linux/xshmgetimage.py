@@ -1,9 +1,14 @@
 """XCB backend using MIT-SHM XShmGetImage with automatic fallback.
 
+This is the fastest Linux backend available, and will work in most common
+cases. However, it will not work over remote X connections, such as over ssh.
+
 This implementation prefers shared-memory captures for performance and will
 fall back to XGetImage when the MIT-SHM extension is unavailable or fails at
 runtime. The fallback reason is exposed via ``shm_fallback_reason`` to aid
 debugging.
+
+.. versionadded:: 10.2.0
 """
 
 from __future__ import annotations
@@ -33,12 +38,7 @@ class ShmStatus(enum.Enum):
 
 
 class MSS(MSSXCBBase):
-    """XCB backend using XShmGetImage with an automatic XGetImage fallback.
-
-    The ``shm_status`` attribute tracks whether shared memory is available,
-    and ``shm_fallback_reason`` records why a fallback occurred when MIT-SHM
-    cannot be used.
-    """
+    """XCB backend using XShmGetImage with an automatic XGetImage fallback."""
 
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -52,7 +52,11 @@ class MSS(MSSXCBBase):
         # isn't available.  The factory in linux/__init__.py could then catch that and switch to XGetImage.
         # The conditions under which the attach will succeed but the xcb_shm_get_image will fail are extremely
         # rare, and I haven't yet found any that also will work with xcb_get_image.
+        #: Whether we can use the MIT-SHM extensions for this connection.
+        #: This will not be ``AVAILABLE`` until at least one capture has succeeded.
+        #: It may be set to ``UNAVAILABLE`` sooner.
         self.shm_status: ShmStatus = self._setup_shm()
+        #: If MIT-SHM is unavailable, the reason why (for debugging purposes).
         self.shm_fallback_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:

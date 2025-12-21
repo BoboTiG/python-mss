@@ -24,7 +24,6 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-
 from threading import local
 from typing import TYPE_CHECKING, Any
 
