@@ -251,6 +251,31 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSSBase]) -> None:
         assert im.rgb == im2.rgb
 
 
+def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSSBase]) -> None:
+    with mss_impl() as sct:
+        # Remember that rect tuples are PIL-style: (left, top, right, bottom)
+
+        # Negative top
+        negative_box = (100, -100, 500, 500)
+        with pytest.raises(ScreenShotError):
+            sct.grab(negative_box)
+
+        # Negative left
+        negative_box = (-100, 100, 500, 500)
+        with pytest.raises(ScreenShotError):
+            sct.grab(negative_box)
+
+        # Negative width (but right > 0)
+        negative_box = (100, 100, 50, 500)
+        with pytest.raises(ScreenShotError):
+            sct.grab(negative_box)
+
+        # Negative height (but bottom > 0)
+        negative_box = (100, 100, 500, 50)
+        with pytest.raises(ScreenShotError):
+            sct.grab(negative_box)
+
+
 def test_grab_with_tuple_percents(mss_impl: Callable[..., MSSBase]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
