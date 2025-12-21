@@ -9,6 +9,7 @@ Do not hesitate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_ 
 - `Airtest <https://github.com/AirtestProject/Airtest>`_, a cross-platform UI automation framework for aames and apps;
 - `Automation Framework <https://github.com/capaximperii/AutomationFramework>`_, a Batmans utility;
 - `DeepEye <https://github.com/thayerAlshaabi/DeepEye>`_, a deep vision-based software library for autonomous and advanced driver-assistance systems;
+- `Diablo 4 Loot Filter <https://github.com/d4lfteam/d4lf>`_;
 - `DoomPy <https://github.com/WNoxchi/DoomPy>`_ (Autonomous Anti-Demonic Combat Algorithms);
 - `Europilot <https://github.com/jsistla/eu-pilot>`_, a self-driving algorithm using Euro Truck Simulator (ETS2);
 - `Flexx Python UI toolkit <https://github.com/zoofio/flexx>`_;
