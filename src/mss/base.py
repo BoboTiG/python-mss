@@ -123,7 +123,7 @@ class MSSBase(metaclass=ABCMeta):
         """Clean up.
 
         This releases resources that MSS may be using.  Once the MSS
-        object is closed, it may not be use used again.
+        object is closed, it may not be used again.
 
         It is safe to call this multiple times; multiple calls have no
         effect.
