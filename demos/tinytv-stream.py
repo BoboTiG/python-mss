@@ -736,13 +736,15 @@ def show_stats(byte_counts: Iterable[int]) -> None:
 
     :param byte_counts: Iterable of byte counts per frame.
     """
-    start_time = time.clock_gettime(time.CLOCK_MONOTONIC)
+    # If we needed high-precision, such as for benchmarking very short times, we might want to use time.perf_counter().
+    # However, time.monotonic() is sufficient for simple stats reporting.
+    start_time = time.monotonic()
     time_deque: deque[float] = deque(maxlen=100)
     byte_count_deque: deque[int] = deque(maxlen=100)
     next_display_update = 0.0
     last_status_len = 0
     for frame_count, byte_count in enumerate(byte_counts):
-        now = time.clock_gettime(time.CLOCK_MONOTONIC)
+        now = time.monotonic()
         time_deque.append(now)
         byte_count_deque.append(byte_count)
         if now >= next_display_update and len(time_deque) > 1:
