@@ -110,4 +110,8 @@ def main(*args: str) -> int:
 
 
 if __name__ == "__main__":  # pragma: nocover
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except ScreenShotError as exc:
+        print("[ERROR]", exc)
+        sys.exit(1)
