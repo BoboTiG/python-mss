@@ -1,3 +1,16 @@
+"""XCB backend using MIT-SHM XShmGetImage with automatic fallback.
+
+This is the fastest Linux backend available, and will work in most common
+cases. However, it will not work over remote X connections, such as over ssh.
+
+This implementation prefers shared-memory captures for performance and will
+fall back to XGetImage when the MIT-SHM extension is unavailable or fails at
+runtime. The fallback reason is exposed via ``shm_fallback_reason`` to aid
+debugging.
+
+.. versionadded:: 10.2.0
+"""
+
 from __future__ import annotations
 
 import enum
@@ -17,18 +30,19 @@ if TYPE_CHECKING:
 
 
 class ShmStatus(enum.Enum):
+    """Availability of the MIT-SHM extension for this backend."""
+
     UNKNOWN = enum.auto()  # Constructor says SHM *should* work, but we haven't seen a real GetImage succeed yet.
     AVAILABLE = enum.auto()  # We've successfully used XShmGetImage at least once.
     UNAVAILABLE = enum.auto()  # We know SHM GetImage is unusable; always use XGetImage.
 
 
 class MSS(MSSXCBBase):
-    """Multiple ScreenShots implementation for GNU/Linux.
+    """XCB backend using XShmGetImage with an automatic XGetImage fallback.
 
-    This implementation is based on XCB, using the ShmGetImage request.
-    If ShmGetImage fails, then this will fall back to using GetImage.
-    In that event, the reason for the fallback will be recorded in the
-    shm_fallback_reason attribute as a string, for debugging purposes.
+    .. seealso::
+        :py:class:`mss.linux.base.MSSXCBBase`
+            Lists constructor parameters.
     """
 
     def __init__(self, /, **kwargs: Any) -> None:
@@ -43,7 +57,11 @@ class MSS(MSSXCBBase):
         # isn't available.  The factory in linux/__init__.py could then catch that and switch to XGetImage.
         # The conditions under which the attach will succeed but the xcb_shm_get_image will fail are extremely
         # rare, and I haven't yet found any that also will work with xcb_get_image.
+        #: Whether we can use the MIT-SHM extensions for this connection.
+        #: This will not be ``AVAILABLE`` until at least one capture has succeeded.
+        #: It may be set to ``UNAVAILABLE`` sooner.
         self.shm_status: ShmStatus = self._setup_shm()
+        #: If MIT-SHM is unavailable, the reason why (for debugging purposes).
         self.shm_fallback_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:
@@ -114,9 +132,9 @@ class MSS(MSSXCBBase):
 
         return ShmStatus.UNKNOWN
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         self._shutdown_shm()
-        super().close()
+        super()._close_impl()
 
     def _shutdown_shm(self) -> None:
         # It would be nice to also try to tell the server to detach the shmseg, but we might be in an error path

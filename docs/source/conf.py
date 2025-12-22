@@ -6,11 +6,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
+import ctypes
+
 import mss
 
 # -- General configuration ------------------------------------------------
 
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
     "sphinx_new_tab_link",
@@ -29,6 +32,16 @@ version = mss.__version__
 release = "latest"
 language = "en"
 todo_include_todos = True
+autodoc_member_order = "bysource"
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "show-inheritance": True,
+}
+
+# Monkey-patch WINFUNCTYPE into ctypes, so that we can import
+# mss.windows while building the documentation.
+ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE  # type:ignore[attr-defined]
 
 
 # -- Options for HTML output ----------------------------------------------

@@ -1,5 +1,7 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""macOS CoreGraphics backend for MSS.
+
+Uses the CoreGraphics APIs to capture windows and enumerates up to
+``max_displays`` active displays.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ from mss.screenshot import ScreenShot, Size
 if TYPE_CHECKING:  # pragma: nocover
     from mss.models import CFunctions, Monitor
 
-__all__ = ("MSS",)
+__all__ = ("IMAGE_OPTIONS", "MSS")
 
 BACKENDS = ["default"]
 
@@ -27,8 +29,9 @@ MAC_VERSION_CATALINA = 10.16
 kCGWindowImageBoundsIgnoreFraming = 1 << 0  # noqa: N816
 kCGWindowImageNominalResolution = 1 << 4  # noqa: N816
 kCGWindowImageShouldBeOpaque = 1 << 1  # noqa: N816
-# Note: set `IMAGE_OPTIONS = 0` to turn on scaling (see issue #257 for more information)
-IMAGE_OPTIONS = kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque | kCGWindowImageNominalResolution
+#: For advanced users: as a note, you can set ``IMAGE_OPTIONS = 0`` to turn on scaling; see issue #257 for more
+#: information.
+IMAGE_OPTIONS: int = kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque | kCGWindowImageNominalResolution
 
 
 def cgfloat() -> type[c_double | c_float]:
@@ -92,14 +95,22 @@ CFUNCTIONS: CFunctions = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for macOS.
     It uses intensively the CoreGraphics library.
+
+    :param max_displays: maximum number of displays to handle (default: 32).
+    :type max_displays: int
+
+    .. seealso::
+
+        :py:class:`mss.base.MSSBase`
+            Lists other parameters.
     """
 
     __slots__ = {"core", "max_displays"}
 
     def __init__(self, /, **kwargs: Any) -> None:
-        """MacOS initialisations."""
         super().__init__(**kwargs)
 
+        #: Maximum number of displays to handle.
         self.max_displays = kwargs.get("max_displays", 32)
 
         self._init_library()
@@ -117,6 +128,7 @@ class MSS(MSSBase):
         if not coregraphics:
             msg = "No CoreGraphics library found."
             raise ScreenShotError(msg)
+        # :meta:private:
         self.core = ctypes.cdll.LoadLibrary(coregraphics)
 
     def _set_cfunctions(self) -> None:

@@ -29,7 +29,7 @@ You will need `pytest <https://pypi.org/project/pytest/>`_::
 How to Test?
 ------------
 
-Launch the test suit::
+Launch the test suite::
 
     $ python -m pytest
 

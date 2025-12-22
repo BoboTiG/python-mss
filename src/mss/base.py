@@ -1,6 +1,5 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
-"""
+# This is part of the MSS Python's module.
+# Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
@@ -35,15 +34,28 @@ except ImportError:  # pragma: nocover
 
     UTC = timezone.utc
 
+#: Global lock protecting access to platform screenshot calls.
+#:
+#: .. versionadded:: 6.0.0
 lock = Lock()
 
 OPAQUE = 255
 
 
 class MSSBase(metaclass=ABCMeta):
-    """This class will be overloaded by a system specific one."""
+    """Base class for all Multiple ScreenShots implementations.
 
-    __slots__ = {"_monitors", "cls_image", "compression_level", "with_cursor"}
+    :param backend: Backend selector, for platforms with multiple backends.
+    :param compression_level: PNG compression level.
+    :param with_cursor: Include the mouse cursor in screenshots.
+    :param display: X11 display name (GNU/Linux only).
+    :param max_displays: Maximum number of displays to enumerate (macOS only).
+
+    .. versionadded:: 8.0.0
+        ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
+    """
+
+    __slots__ = {"_closed", "_monitors", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,
@@ -58,9 +70,17 @@ class MSSBase(metaclass=ABCMeta):
         max_displays: int = 32,  # noqa: ARG002
     ) -> None:
         self.cls_image: type[ScreenShot] = ScreenShot
+        #: PNG compression level used when saving the screenshot data into a file
+        #: (see :py:func:`zlib.compress()` for details).
+        #:
+        #: .. versionadded:: 3.2.0
         self.compression_level = compression_level
+        #: Include the mouse cursor in screenshots.
+        #:
+        #: .. versionadded:: 8.0.0
         self.with_cursor = with_cursor
         self._monitors: Monitors = []
+        self._closed = False
         # If there isn't a factory that removed the "backend" argument, make sure that it was set to "default".
         # Factories that do backend-specific dispatch should remove that argument.
         if backend != "default":
@@ -91,17 +111,43 @@ class MSSBase(metaclass=ABCMeta):
         It must populate self._monitors.
         """
 
-    def close(self) -> None:  # noqa:B027
-        """Clean-up."""
+    def _close_impl(self) -> None:  # noqa:B027
+        """Clean up.
+
+        This will be called at most once.
+        """
+        # It's not necessary for subclasses to implement this if they have nothing to clean up.
+
+    def close(self) -> None:
+        """Clean up.
+
+        This releases resources that MSS may be using.  Once the MSS
+        object is closed, it may not be used again.
+
+        It is safe to call this multiple times; multiple calls have no
+        effect.
+
+        Rather than use :py:meth:`close` explicitly, we recommend you
+        use the MSS object as a context manager::
+
+            with mss.mss() as sct:
+                ...
+        """
+        with lock:
+            if self._closed:
+                return
+            self._close_impl()
+            self._closed = True
 
     def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
-        Note: *monitor* can be a tuple like the one PIL.Image.grab() accepts.
+        Note: *monitor* can be a tuple like the one
+        py:meth:`PIL.ImageGrab.grab` accepts: `(left, top, right, bottom)`
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
-        :return :class:`ScreenShot <ScreenShot>`.
+        :returns: Screenshot of the requested region.
         """
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
@@ -133,16 +179,16 @@ class MSSBase(metaclass=ABCMeta):
 
         This method has to fill self._monitors with all information
         and use it as a cache:
-            self._monitors[0] is a dict of all monitors together
-            self._monitors[N] is a dict of the monitor N (with N > 0)
+
+        - self._monitors[0] is a dict of all monitors together
+        - self._monitors[N] is a dict of the monitor N (with N > 0)
 
         Each monitor is a dict with:
-        {
-            'left':   the x-coordinate of the upper-left corner,
-            'top':    the y-coordinate of the upper-left corner,
-            'width':  the width,
-            'height': the height
-        }
+
+        - ``left``: the x-coordinate of the upper-left corner
+        - ``top``: the y-coordinate of the upper-left corner
+        - ``width``: the width
+        - ``height``: the height
         """
         if not self._monitors:
             with lock:
@@ -160,28 +206,13 @@ class MSSBase(metaclass=ABCMeta):
     ) -> Iterator[str]:
         """Grab a screenshot and save it to a file.
 
-        :param int mon: The monitor to screenshot (default=0).
-                        -1: grab one screenshot of all monitors
-                         0: grab one screenshot by monitor
-                        N: grab the screenshot of the monitor N
-
-        :param str output: The output filename.
-
-            It can take several keywords to customize the filename:
-            - `{mon}`: the monitor number
-            - `{top}`: the screenshot y-coordinate of the upper-left corner
-            - `{left}`: the screenshot x-coordinate of the upper-left corner
-            - `{width}`: the screenshot's width
-            - `{height}`: the screenshot's height
-            - `{date}`: the current date using the default formatter
-
-            As it is using the `format()` function, you can specify
-            formatting options like `{date:%Y-%m-%s}`.
-
-        :param callable callback: Callback called before saving the
-            screenshot to a file.  Take the `output` argument as parameter.
-
-        :return generator: Created file(s).
+        :param int mon: The monitor to screenshot (default=0). ``-1`` grabs all
+            monitors, ``0`` grabs each monitor, and ``N`` grabs monitor ``N``.
+        :param str output: The output filename. Keywords: ``{mon}``, ``{top}``,
+            ``{left}``, ``{width}``, ``{height}``, ``{date}``.
+        :param callable callback: Called before saving the screenshot; receives
+            the ``output`` argument.
+        :return: Created file(s).
         """
         monitors = self.monitors
         if not monitors:

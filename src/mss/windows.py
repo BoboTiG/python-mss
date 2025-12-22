@@ -1,5 +1,6 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""Windows GDI-based backend for MSS.
+
+Uses user32/gdi32 APIs to capture the desktop and enumerate monitors.
 """
 
 from __future__ import annotations
@@ -93,12 +94,19 @@ CFUNCTIONS: CFunctions = {
 
 
 class MSS(MSSBase):
-    """Multiple ScreenShots implementation for Microsoft Windows."""
+    """Multiple ScreenShots implementation for Microsoft Windows.
+
+    This has no Windows-specific constructor parameters.
+
+    .. seealso::
+
+        :py:class:`mss.base.MSSBase`
+            Lists constructor parameters.
+    """
 
     __slots__ = {"_handles", "gdi32", "user32"}
 
     def __init__(self, /, **kwargs: Any) -> None:
-        """Windows initialisations."""
         super().__init__(**kwargs)
 
         self.user32 = ctypes.WinDLL("user32")
@@ -122,7 +130,7 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._handles.bmi = bmi
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         # Clean-up
         if self._handles.bmp:
             self.gdi32.DeleteObject(self._handles.bmp)

@@ -1,5 +1,11 @@
-"""This is part of the MSS Python's module.
-Source: https://github.com/BoboTiG/python-mss.
+"""Legacy Xlib-based GNU/Linux backend.
+
+This backend talks to X11 via Xlib and the Xrandr extension, and is retained
+as a fallback when XCB backends are unavailable. Cursor capture uses XFixes
+when available.
+
+.. versionadded:: 10.2.0 Prior to this version, this was available as
+    ``mss.linux.MSS``.
 """
 
 from __future__ import annotations
@@ -379,12 +385,20 @@ CFUNCTIONS: CFunctions = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.
+
+    :param display: Optional keyword argument.
+        Specifies an X11 display string to connect to.  The default is
+        taken from the environment variable :envvar:`DISPLAY`.
+    :type display: str | bytes | None
+
+    .. seealso::
+        :py:class:`mss.base.MSSBase`
+            Lists other parameters.
     """
 
     __slots__ = {"_handles", "xfixes", "xlib", "xrandr"}
 
     def __init__(self, /, **kwargs: Any) -> None:
-        """GNU/Linux initialisations."""
         super().__init__(**kwargs)
 
         # Available thread-specific variables
@@ -412,15 +426,18 @@ class MSS(MSSBase):
         if not _X11:
             msg = "No X11 library found."
             raise ScreenShotError(msg)
+        #: :meta private:
         self.xlib = cdll.LoadLibrary(_X11)
 
         if not _XRANDR:
             msg = "No Xrandr extension found."
             raise ScreenShotError(msg)
+        #: :meta private:
         self.xrandr = cdll.LoadLibrary(_XRANDR)
 
         if self.with_cursor:
             if _XFIXES:
+                #: :meta private:
                 self.xfixes = cdll.LoadLibrary(_XFIXES)
             else:
                 self.with_cursor = False
@@ -441,11 +458,12 @@ class MSS(MSSBase):
 
         self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
-    def close(self) -> None:
+    def _close_impl(self) -> None:
         # Clean-up
         if self._handles.display:
-            with lock:
-                self.xlib.XCloseDisplay(self._handles.display)
+            # We don't grab the lock, since MSSBase.close is holding
+            # it for us.
+            self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
             self._handles.drawable = None
             self._handles.root = None

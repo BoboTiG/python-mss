@@ -1,3 +1,14 @@
+"""XCB-based backend using the XGetImage request.
+
+This backend issues XCB ``GetImage`` requests and supports the RandR and
+XFixes extensions when available for monitor enumeration and cursor capture.
+
+This backend will work on any X connection, but is slower than the xshmgetimage
+backend.
+
+.. versionadded:: 10.2.0
+"""
+
 from mss.models import Monitor
 from mss.screenshot import ScreenShot
 
@@ -5,12 +16,11 @@ from .base import MSSXCBBase
 
 
 class MSS(MSSXCBBase):
-    """Multiple ScreenShots implementation for GNU/Linux.
+    """XCB backend using XGetImage requests on GNU/Linux.
 
-    This implementation is based on XCB, using the GetImage request.
-    It can optionally use some extensions:
-    * RandR: Enumerate individual monitors' sizes.
-    * XFixes: Including the cursor.
+    .. seealso::
+        :py:class:`mss.linux.base.MSSXCBBase`
+            Lists constructor parameters.
     """
 
     def _grab_impl(self, monitor: Monitor) -> ScreenShot:
