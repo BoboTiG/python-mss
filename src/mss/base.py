@@ -142,8 +142,8 @@ class MSSBase(metaclass=ABCMeta):
     def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
-        Note: *monitor* can be a tuple like the one
-        py:meth:`PIL.ImageGrab.grab` accepts: `(left, top, right, bottom)`
+        Note: ``monitor`` can be a tuple like the one
+        :py:meth:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
@@ -177,11 +177,11 @@ class MSSBase(metaclass=ABCMeta):
         If the monitor has rotation, you have to deal with it
         inside this method.
 
-        This method has to fill self._monitors with all information
+        This method has to fill ``self._monitor``s with all information
         and use it as a cache:
 
-        - self._monitors[0] is a dict of all monitors together
-        - self._monitors[N] is a dict of the monitor N (with N > 0)
+        - ``self._monitors[0]`` is a dict of all monitors together
+        - ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
 
         Each monitor is a dict with:
 
@@ -247,7 +247,7 @@ class MSSBase(metaclass=ABCMeta):
 
     def shot(self, /, **kwargs: Any) -> str:
         """Helper to save the screenshot of the 1st monitor, by default.
-        You can pass the same arguments as for ``save``.
+        You can pass the same arguments as for :meth:`save`.
         """
         kwargs["mon"] = kwargs.get("mon", 1)
         return next(self.save(**kwargs))
