@@ -20,7 +20,7 @@ class Pos(NamedTuple):
 
 
 class Size(NamedTuple):
-    #: The hoirizontal X width.
+    #: The horizontal X width.
     width: int
     #: The vertical Y height.
     height: int
