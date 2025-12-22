@@ -177,7 +177,7 @@ class MSSBase(metaclass=ABCMeta):
         If the monitor has rotation, you have to deal with it
         inside this method.
 
-        This method has to fill ``self._monitor``s with all information
+        This method has to fill ``self._monitors`` with all information
         and use it as a cache:
 
         - ``self._monitors[0]`` is a dict of all monitors together
