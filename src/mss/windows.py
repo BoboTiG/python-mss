@@ -94,12 +94,19 @@ CFUNCTIONS: CFunctions = {
 
 
 class MSS(MSSBase):
-    """Multiple ScreenShots implementation for Microsoft Windows."""
+    """Multiple ScreenShots implementation for Microsoft Windows.
+
+    This has no Windows-specific constructor parameters.
+
+    .. seealso::
+
+        :py:class:`mss.base.MSSBase`
+            Lists constructor parameters.
+    """
 
     __slots__ = {"_handles", "gdi32", "user32"}
 
     def __init__(self, /, **kwargs: Any) -> None:
-        """Windows initialisations."""
         super().__init__(**kwargs)
 
         self.user32 = ctypes.WinDLL("user32")

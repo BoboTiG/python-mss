@@ -43,7 +43,17 @@ OPAQUE = 255
 
 
 class MSSBase(metaclass=ABCMeta):
-    """This class will be overloaded by a system specific one."""
+    """Base class for all Multiple ScreenShots implementations.
+
+    :param backend: Backend selector, for platforms with multiple backends.
+    :param compression_level: PNG compression level.
+    :param with_cursor: Include the mouse cursor in screenshots.
+    :param display: X11 display name (GNU/Linux only).
+    :param max_displays: Maximum number of displays to enumerate (macOS only).
+
+    .. versionadded:: 8.0.0
+        ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
+    """
 
     __slots__ = {"_closed", "_monitors", "cls_image", "compression_level", "with_cursor"}
 
@@ -59,17 +69,6 @@ class MSSBase(metaclass=ABCMeta):
         # Mac only
         max_displays: int = 32,  # noqa: ARG002
     ) -> None:
-        """Initialize common MSS options.
-
-        :param backend: Backend selector (only ``"default"`` is valid on this platform).
-        :param compression_level: PNG compression level.
-        :param with_cursor: Include the mouse cursor in screenshots.
-        :param display: X11 display name (GNU/Linux only).
-        :param max_displays: Maximum number of displays to enumerate (macOS only).
-
-        .. versionadded:: 8.0.0
-           ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
-        """
         self.cls_image: type[ScreenShot] = ScreenShot
         #: PNG compression level used when saving the screenshot data into a file
         #: (see :py:func:`zlib.compress()` for details).
@@ -173,10 +172,12 @@ class MSSBase(metaclass=ABCMeta):
 
         This method has to fill self._monitors with all information
         and use it as a cache:
+
         - self._monitors[0] is a dict of all monitors together
         - self._monitors[N] is a dict of the monitor N (with N > 0)
 
         Each monitor is a dict with:
+
         - ``left``: the x-coordinate of the upper-left corner
         - ``top``: the y-coordinate of the upper-left corner
         - ``width``: the width

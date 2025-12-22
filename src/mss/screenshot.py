@@ -76,10 +76,12 @@ class ScreenShot:
         """BGRx values from the BGRx raw pixels.
 
         The format is a bytes object with BGRxBGRx... sequence.  A specific
-        pixel can be accessed as bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].
+        pixel can be accessed as
+        ``bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
         .. note::
-            While the name is `bgra`, the alpha channel may or may not be valid.
+            While the name is ``bgra``, the alpha channel may or may not be
+            valid.
         """
         return bytes(self.raw)
 
@@ -112,7 +114,8 @@ class ScreenShot:
         """Compute RGB values from the BGRA raw pixels.
 
         The format is a bytes object with BGRBGR... sequence.  A specific
-        pixel can be accessed as rgb[(y * width + x) * 3:(y * width + x) * 3 + 3].
+        pixel can be accessed as
+        ``rgb[(y * width + x) * 3:(y * width + x) * 3 + 3]``.
         """
         if not self.__rgb:
             rgb = bytearray(self.height * self.width * 3)

@@ -50,13 +50,18 @@ GNU/Linux Xlib Backend
 
 .. automodule:: mss.linux.xlib
 
-GNU/Linux XGetImage Backend
----------------------------
+GNU/Linux XCB Base
+------------------
+
+.. automodule:: mss.linux.base
+
+GNU/Linux XCB XGetImage Backend
+-------------------------------
 
 .. automodule:: mss.linux.xgetimage
 
-GNU/Linux XShmGetImage Backend
-------------------------------
+GNU/Linux XCB XShmGetImage Backend
+----------------------------------
 
 .. automodule:: mss.linux.xshmgetimage
 

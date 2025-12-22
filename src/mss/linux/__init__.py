@@ -12,24 +12,27 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
     """Return a backend-specific MSS implementation for GNU/Linux.
 
     Selects and instantiates the appropriate X11 backend based on the
-    ``backend`` parameter. Keyword arguments are forwarded to the selected
-    backend class.
+    ``backend`` parameter.
 
     :param backend: Backend selector. Valid values:
 
         - ``"default"`` or ``"xshmgetimage"`` (default): XCB-based backend
           using XShmGetImage with automatic fallback to XGetImage when MIT-SHM
-          is unavailable
-        - ``"xgetimage"``: XCB-based backend using XGetImage
+          is unavailable; see :py:class:`mss.linux.xshmgetimage.MSS`.
+        - ``"xgetimage"``: XCB-based backend using XGetImage;
+          see :py:class:`mss.linux.xgetimage.MSS`.
         - ``"xlib"``: Legacy Xlib-based backend retained for environments
-          without working XCB libraries
+          without working XCB libraries; see :py:class:`mss.linux.xlib.MSS`.
 
         .. versionadded:: 10.2.0 Prior to this version, the
             :class:`mss.linux.xlib.MSS` implementation was the only available
             backend.
 
-    :param kwargs: Keyword arguments forwarded to the backend. Common options
-        include ``display`` (e.g., ``":0.0"``) to target a specific X server.
+    :param display: Optional keyword argument.  Specifies an X11 display
+        string to connect to.  The default is taken from the environment
+        variable :envvar:`DISPLAY`.
+    :type display: str | bytes | None
+    :param kwargs: Additional keyword arguments passed to the backend class.
     :returns: An MSS backend implementation.
 
     .. versionadded:: 10.2.0 Prior to this version, this didn't exist:

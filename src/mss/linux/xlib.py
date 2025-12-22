@@ -385,12 +385,20 @@ CFUNCTIONS: CFunctions = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.
+
+    :param display: Optional keyword argument.
+        Specifies an X11 display string to connect to.  The default is
+        taken from the environment variable :envvar:`DISPLAY`.
+    :type display: str | bytes | None
+
+    .. seealso::
+        :py:class:`mss.base.MSSBase`
+            Lists other parameters.
     """
 
     __slots__ = {"_handles", "xfixes", "xlib", "xrandr"}
 
     def __init__(self, /, **kwargs: Any) -> None:
-        """GNU/Linux initialisations."""
         super().__init__(**kwargs)
 
         # Available thread-specific variables

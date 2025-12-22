@@ -26,19 +26,25 @@ class MSSXCBBase(MSSBase):
     Provides common XCB initialization and monitor detection logic that can be
     shared across different XCB screenshot methods (``XGetImage``,
     ``XShmGetImage``, ``XComposite``, etc.).
+
+    :param display: Optional keyword argument.
+        Specifies an X11 display string to connect to.  The default is
+        taken from the environment variable :envvar:`DISPLAY`.
+    :type display: str | bytes | None
+
+    .. seealso::
+        :py:class:`mss.base.MSSBase`
+            Lists other parameters.
     """
 
     def __init__(self, /, **kwargs: Any) -> None:  # noqa: PLR0912
-        """Initialize an XCB connection and validate the display configuration.
-
-        :param kwargs: Optional keyword arguments. Recognized key ``display``
-            specifies an X11 display string (bytes) to connect to.
-        """
         super().__init__(**kwargs)
 
         display = kwargs.get("display", b"")
         if not display:
             display = None
+        elif isinstance(display, str):
+            display = display.encode("utf-8")
 
         self.conn: xcb.Connection | None
         self.conn, pref_screen_num = xcb.connect(display)

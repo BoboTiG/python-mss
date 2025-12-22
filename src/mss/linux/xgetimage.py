@@ -16,7 +16,12 @@ from .base import MSSXCBBase
 
 
 class MSS(MSSXCBBase):
-    """XCB backend using XGetImage requests on GNU/Linux."""
+    """XCB backend using XGetImage requests on GNU/Linux.
+
+    .. seealso::
+        :py:class:`mss.linux.base.MSSXCBBase`
+            Lists constructor parameters.
+    """
 
     def _grab_impl(self, monitor: Monitor) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""

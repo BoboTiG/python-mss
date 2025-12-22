@@ -38,7 +38,12 @@ class ShmStatus(enum.Enum):
 
 
 class MSS(MSSXCBBase):
-    """XCB backend using XShmGetImage with an automatic XGetImage fallback."""
+    """XCB backend using XShmGetImage with an automatic XGetImage fallback.
+
+    .. seealso::
+        :py:class:`mss.linux.base.MSSXCBBase`
+            Lists constructor parameters.
+    """
 
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)

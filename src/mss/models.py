@@ -13,10 +13,14 @@ CFunctions = dict[str, tuple[str, list[Any], Any]]
 
 
 class Pos(NamedTuple):
+    #: The horizontal X coordinate of the position.
     left: int
+    #: The vertical Y coordinate of the position.
     top: int
 
 
 class Size(NamedTuple):
+    #: The hoirizontal X width.
     width: int
+    #: The vertical Y height.
     height: int
