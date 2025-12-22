@@ -18,7 +18,7 @@ def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: Pat
 
     :param bytes data: RGBRGB...RGB data.
     :param tuple size: The (width, height) pair.
-    :param int level: PNG compression level.
+    :param int level: PNG compression level (see :py:func:`zlib.compress()` for details).
     :param str output: Output file name.
 
     .. versionadded:: 3.0.0
