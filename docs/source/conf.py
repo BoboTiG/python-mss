@@ -39,9 +39,10 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 
-# Monkey-patch WINFUNCTYPE into ctypes, so that we can import
-# mss.windows while building the documentation.
+# Monkey-patch WINFUNCTYPE and WinError into ctypes, so that we can
+# import mss.windows while building the documentation.
 ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE  # type:ignore[attr-defined]
+ctypes.WinError = lambda _code=None, _descr=None: OSError()  # type:ignore[attr-defined]
 
 
 # -- Options for HTML output ----------------------------------------------

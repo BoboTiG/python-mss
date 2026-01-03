@@ -7,31 +7,33 @@ from __future__ import annotations
 
 import ctypes
 import sys
-from ctypes import POINTER, WINFUNCTYPE, Structure, c_int, c_void_p
+from ctypes import POINTER, WINFUNCTYPE, Structure, WinError, _Pointer
 from ctypes.wintypes import (
     BOOL,
-    DOUBLE,
+    BYTE,
     DWORD,
     HBITMAP,
     HDC,
     HGDIOBJ,
+    HMONITOR,
     HWND,
     INT,
     LONG,
     LPARAM,
     LPRECT,
+    LPVOID,
     RECT,
     UINT,
     WORD,
 )
 from threading import local
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctions, Monitor
+    from mss.models import CFunctionsErrChecked, Monitor
     from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
@@ -39,6 +41,7 @@ __all__ = ("MSS",)
 BACKENDS = ["default"]
 
 
+LPCRECT = POINTER(RECT)  # Actually a const pointer, but ctypes has no const.
 CAPTUREBLT = 0x40000000
 DIB_RGB_COLORS = 0
 SRCCOPY = 0x00CC0020
@@ -65,10 +68,34 @@ class BITMAPINFOHEADER(Structure):
 class BITMAPINFO(Structure):
     """Structure that defines the dimensions and color information for a DIB."""
 
-    _fields_ = (("bmiHeader", BITMAPINFOHEADER), ("bmiColors", DWORD * 3))
+    # The bmiColors entry is variable length, but it's unused the way we do things.  We declare it to be four bytes,
+    # which is how it's declared in C.
+    _fields_ = (("bmiHeader", BITMAPINFOHEADER), ("bmiColors", BYTE * 4))
 
 
-MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
+MONITORNUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
+
+
+def _errcheck(result: BOOL | _Pointer, func: Callable, arguments: tuple) -> tuple:
+    """If the result is zero, raise an exception."""
+    if not result:
+        # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes
+        # instead.
+        winerror = WinError()
+        details = {
+            "func": func.__name__,
+            "args": arguments,
+            "error_code": winerror.winerror,
+            "error_msg": winerror.strerror,
+        }
+        if winerror.winerror == 0:
+            # Some functions return NULL/0 on failure without setting last error.  (Example: CreateCompatibleBitmap
+            # with an invalid HDC.)
+            msg = f"Windows graphics function failed (no error provided): {func.__name__}"
+            raise ScreenShotError(msg, details=details)
+        msg = f"Windows graphics function failed: {func.__name__}: {winerror.strerror}"
+        raise ScreenShotError(msg, details=details) from winerror
+    return arguments
 
 
 # C functions that will be initialised later.
@@ -76,20 +103,24 @@ MONITORNUMPROC = WINFUNCTYPE(INT, DWORD, DWORD, POINTER(RECT), DOUBLE)
 # Available attr: gdi32, user32.
 #
 # Note: keep it sorted by cfunction.
-CFUNCTIONS: CFunctions = {
-    # Syntax: cfunction: (attr, argtypes, restype)
-    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL),
-    "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP),
-    "CreateCompatibleDC": ("gdi32", [HDC], HDC),
-    "DeleteDC": ("gdi32", [HDC], HDC),
-    "DeleteObject": ("gdi32", [HGDIOBJ], INT),
-    "EnumDisplayMonitors": ("user32", [HDC, c_void_p, MONITORNUMPROC, LPARAM], BOOL),
-    "GetDeviceCaps": ("gdi32", [HWND, INT], INT),
-    "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, c_void_p, POINTER(BITMAPINFO), UINT], BOOL),
-    "GetSystemMetrics": ("user32", [INT], INT),
-    "GetWindowDC": ("user32", [HWND], HDC),
-    "ReleaseDC": ("user32", [HWND, HDC], c_int),
-    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ),
+CFUNCTIONS: CFunctionsErrChecked = {
+    # Syntax: cfunction: (attr, argtypes, restype, errcheck)
+    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _errcheck),
+    "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP, _errcheck),
+    "CreateCompatibleDC": ("gdi32", [HDC], HDC, _errcheck),
+    "DeleteDC": ("gdi32", [HDC], HDC, _errcheck),
+    "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _errcheck),
+    "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _errcheck),
+    "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, LPVOID, POINTER(BITMAPINFO), UINT], INT, _errcheck),
+    # While GetSystemMetrics will return 0 if the parameter is invalid, it will also sometimes return 0 if the
+    # parameter is valid but the value is actually 0 (e.g., SM_CLEANBOOT on a normal boot).  Thus, we do not attach an
+    # errcheck function here.
+    "GetSystemMetrics": ("user32", [INT], INT, None),
+    "GetWindowDC": ("user32", [HWND], HDC, _errcheck),
+    "ReleaseDC": ("user32", [HWND, HDC], INT, _errcheck),
+    # SelectObject returns NULL on error the way we call it.  If it's called to select a region, it returns HGDI_ERROR
+    # on error.
+    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ, _errcheck),
 }
 
 
@@ -109,23 +140,27 @@ class MSS(MSSBase):
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-        self.user32 = ctypes.WinDLL("user32")
-        self.gdi32 = ctypes.WinDLL("gdi32")
+        self.user32 = ctypes.WinDLL("user32", use_last_error=True)
+        self.gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
         self._set_cfunctions()
         self._set_dpi_awareness()
 
         # Available thread-specific variables
         self._handles = local()
-        self._handles.region_width_height = (0, 0)
+        self._handles.region_width_height = None
         self._handles.bmp = None
         self._handles.srcdc = self.user32.GetWindowDC(0)
         self._handles.memdc = self.gdi32.CreateCompatibleDC(self._handles.srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
+        # biWidth and biHeight are set in _grab_impl().
         bmi.bmiHeader.biPlanes = 1  # Always 1
         bmi.bmiHeader.biBitCount = 32  # See grab.__doc__ [2]
         bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
+        bmi.bmiHeader.biSizeImage = 0  # Windows infers the size
+        bmi.bmiHeader.biXPelsPerMeter = 0  # Unspecified
+        bmi.bmiHeader.biYPelsPerMeter = 0  # Unspecified
         bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
         self._handles.bmi = bmi
@@ -151,8 +186,8 @@ class MSS(MSSBase):
             "gdi32": self.gdi32,
             "user32": self.user32,
         }
-        for func, (attr, argtypes, restype) in CFUNCTIONS.items():
-            cfactory(attrs[attr], func, argtypes, restype)
+        for func, (attr, argtypes, restype, errcheck) in CFUNCTIONS.items():
+            cfactory(attrs[attr], func, argtypes, restype, errcheck)
 
     def _set_dpi_awareness(self) -> None:
         """Set DPI awareness to capture full screen on Hi-DPI monitors."""
@@ -185,7 +220,8 @@ class MSS(MSSBase):
         )
 
         # Each monitor
-        def _callback(_monitor: int, _data: HDC, rect: LPRECT, _dc: LPARAM) -> int:
+        @MONITORNUMPROC
+        def callback(_monitor: HMONITOR, _data: HDC, rect: LPRECT, _dc: LPARAM) -> bool:
             """Callback for monitorenumproc() function, it will return
             a RECT with appropriate values.
             """
@@ -198,10 +234,9 @@ class MSS(MSSBase):
                     "height": int_(rct.bottom) - int_(rct.top),
                 },
             )
-            return 1
+            return True
 
-        callback = MONITORNUMPROC(_callback)
-        user32.EnumDisplayMonitors(0, 0, callback, 0)
+        user32.EnumDisplayMonitors(0, None, callback, 0)
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB.
@@ -240,17 +275,23 @@ class MSS(MSSBase):
         if self._handles.region_width_height != (width, height):
             self._handles.region_width_height = (width, height)
             self._handles.bmi.bmiHeader.biWidth = width
-            self._handles.bmi.bmiHeader.biHeight = -height  # Why minus? [1]
+            self._handles.bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
             self._handles.data = ctypes.create_string_buffer(width * height * 4)  # [2]
             if self._handles.bmp:
                 gdi.DeleteObject(self._handles.bmp)
+                # Set to None to prevent another DeleteObject in case CreateCompatibleBitmap raises an exception.
+                self._handles.bmp = None
             self._handles.bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
             gdi.SelectObject(memdc, self._handles.bmp)
 
         gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
-        bits = gdi.GetDIBits(memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS)
-        if bits != height:
-            msg = "gdi32.GetDIBits() failed."
+        scanlines_copied = gdi.GetDIBits(
+            memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS
+        )
+        if scanlines_copied != height:
+            # If the result was 0 (failure), an exception would have been raised by _errcheck.  This is just a sanity
+            # clause.
+            msg = f"gdi32.GetDIBits() failed: only {scanlines_copied} scanlines copied instead of {height}"
             raise ScreenShotError(msg)
 
         return self.cls_image(bytearray(self._handles.data), monitor)
