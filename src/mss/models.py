@@ -1,7 +1,7 @@
 # This is part of the MSS Python's module.
 # Source: https://github.com/BoboTiG/python-mss.
 
-from typing import Any, Callable, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple
 
 Monitor = dict[str, int]
 Monitors = list[Monitor]
@@ -9,8 +9,9 @@ Monitors = list[Monitor]
 Pixel = tuple[int, int, int]
 Pixels = list[tuple[Pixel, ...]]
 
-CFunctions = dict[str, tuple[str, list[Any], Any]]
-CFunctionsErrChecked = dict[str, tuple[str, list[Any], Any, Optional[Callable]]]
+if TYPE_CHECKING:
+    CFunctions = dict[str, tuple[str, list[Any], Any]]
+    CFunctionsErrChecked = dict[str, tuple[str, list[Any], Any, Callable | None]]
 
 
 class Pos(NamedTuple):
