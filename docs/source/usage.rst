@@ -54,12 +54,37 @@ This is a much better usage, memory efficient::
 Also, it is a good thing to save the MSS instance inside an attribute of your class and calling it when needed.
 
 
+Multithreading
+==============
+
+MSS is thread-safe and can be used from multiple threads.
+
+**Sharing one MSS object**: You can use the same MSS object from multiple threads.  Calls to
+:py:meth:`mss.base.MSSBase.grab` (and other capture methods) are serialized automatically, meaning only one thread
+will capture at a time.  This may be relaxed in a future version if it can be done safely.
+
+**Using separate MSS objects**: You can also create different MSS objects in different threads.  Whether these run
+concurrently or are serialized by the OS depends on the platform.
+
+Custom :py:class:`mss.screenshot.ScreenShot` classes (see :ref:`custom_cls_image`) must **not** call
+:py:meth:`mss.base.MSSBase.grab` in their constructor.
+
+.. danger::
+    These guarantees do not apply to the obsolete Xlib backend, :py:mod:`mss.linux.xlib`.  That backend is only used
+    if you specifically request it, so you won't be caught off-guard.
+
+.. versionadded:: 10.2.0
+    Prior to this version, on some operating systems, the MSS object could only be used on the thread on which it was
+    created.
+
 .. _backends:
 
 Backends
---------
+========
 
-Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss` functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.  For instance, you may know that your specific situation requires a particular backend.
+Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss`
+functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.
+For instance, you may know that your specific situation requires a particular backend.
 
 If you want to choose a particular backend, you can use the :py:attr:`backend` keyword to :py:func:`mss`::
 

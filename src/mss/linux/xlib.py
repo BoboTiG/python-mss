@@ -32,10 +32,10 @@ from ctypes import (
     create_string_buffer,
 )
 from ctypes.util import find_library
-from threading import current_thread, local
+from threading import Lock, current_thread, local
 from typing import TYPE_CHECKING, Any
 
-from mss.base import MSSBase, lock
+from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
 if TYPE_CHECKING:  # pragma: nocover
@@ -44,6 +44,11 @@ if TYPE_CHECKING:  # pragma: nocover
 
 __all__ = ("MSS",)
 
+
+# Global lock protecting access to Xlib calls.
+# A per-object lock must not be acquired while this is held.  It is safe to acquire this global lock while a
+# per-object lock is currently held.
+_lock = Lock()
 
 X_FIRST_EXTENSION_OPCODE = 128
 PLAINMASK = 0x00FFFFFF
@@ -391,6 +396,13 @@ class MSS(MSSBase):
         taken from the environment variable :envvar:`DISPLAY`.
     :type display: str | bytes | None
 
+    .. danger::
+        The Xlib backend does not have the same multithreading
+        guarantees as the rest of MSS.  Specifically, the object may
+        only be used on the thread in which it was created.
+        Additionally, while rare, using multiple MSS objects in
+        different threads simultaneously may still cause problems.
+
     .. seealso::
         :py:class:`mss.base.MSSBase`
             Lists other parameters.
@@ -444,26 +456,27 @@ class MSS(MSSBase):
 
         self._set_cfunctions()
 
-        # Install the error handler to prevent interpreter crashes: any error will raise a ScreenShotError exception
-        self._handles.original_error_handler = self.xlib.XSetErrorHandler(_error_handler)
+        with _lock:
+            # Install the error handler to prevent interpreter crashes: any error will raise a ScreenShotError
+            # exception
+            self._handles.original_error_handler = self.xlib.XSetErrorHandler(_error_handler)
 
-        self._handles.display = self.xlib.XOpenDisplay(display)
-        if not self._handles.display:
-            msg = f"Unable to open display: {display!r}."
-            raise ScreenShotError(msg)
+            self._handles.display = self.xlib.XOpenDisplay(display)
+            if not self._handles.display:
+                msg = f"Unable to open display: {display!r}."
+                raise ScreenShotError(msg)
+
+            self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
 
         if not self._is_extension_enabled("RANDR"):
             msg = "Xrandr not enabled."
             raise ScreenShotError(msg)
 
-        self._handles.drawable = self._handles.root = self.xlib.XDefaultRootWindow(self._handles.display)
-
     def _close_impl(self) -> None:
         # Clean-up
         if self._handles.display:
-            # We don't grab the lock, since MSSBase.close is holding
-            # it for us.
-            self.xlib.XCloseDisplay(self._handles.display)
+            with _lock:
+                self.xlib.XCloseDisplay(self._handles.display)
             self._handles.display = None
             self._handles.drawable = None
             self._handles.root = None
@@ -475,7 +488,8 @@ class MSS(MSSBase):
             # Interesting technical stuff can be found here:
             #     https://core.tcl-lang.org/tk/file?name=generic/tkError.c&ci=a527ef995862cb50
             #     https://github.com/tcltk/tk/blob/b9cdafd83fe77499ff47fa373ce037aff3ae286a/generic/tkError.c
-            self.xlib.XSetErrorHandler(self._handles.original_error_handler)
+            with _lock:
+                self.xlib.XSetErrorHandler(self._handles.original_error_handler)
             self._handles.original_error_handler = None
 
         # Also empty the error dict
@@ -488,7 +502,7 @@ class MSS(MSSBase):
         first_error_return = c_int()
 
         try:
-            with lock:
+            with _lock:
                 self.xlib.XQueryExtension(
                     self._handles.display,
                     name.encode("latin1"),
@@ -519,59 +533,62 @@ class MSS(MSSBase):
         int_ = int
         xrandr = self.xrandr
 
-        xrandr_major = c_int(0)
-        xrandr_minor = c_int(0)
-        xrandr.XRRQueryVersion(display, xrandr_major, xrandr_minor)
+        with _lock:
+            xrandr_major = c_int(0)
+            xrandr_minor = c_int(0)
+            xrandr.XRRQueryVersion(display, xrandr_major, xrandr_minor)
 
-        # All monitors
-        gwa = XWindowAttributes()
-        self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
-        self._monitors.append(
-            {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
-        )
-
-        # Each monitor
-        # A simple benchmark calling 10 times those 2 functions:
-        # XRRGetScreenResources():        0.1755971429956844 s
-        # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
-        # The second is faster by a factor of 44! So try to use it first.
-        # It doesn't query the monitors for updated information, but it does require the server to support
-        # RANDR 1.3.  We also make sure the client supports 1.3, by checking for the presence of the function.
-        if hasattr(xrandr, "XRRGetScreenResourcesCurrent") and (xrandr_major.value, xrandr_minor.value) >= (1, 3):
-            mon = xrandr.XRRGetScreenResourcesCurrent(display, self._handles.drawable).contents
-        else:
-            mon = xrandr.XRRGetScreenResources(display, self._handles.drawable).contents
-
-        crtcs = mon.crtcs
-        for idx in range(mon.ncrtc):
-            crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
-            if crtc.noutput == 0:
-                xrandr.XRRFreeCrtcInfo(crtc)
-                continue
-
+            # All monitors
+            gwa = XWindowAttributes()
+            self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
             self._monitors.append(
-                {
-                    "left": int_(crtc.x),
-                    "top": int_(crtc.y),
-                    "width": int_(crtc.width),
-                    "height": int_(crtc.height),
-                },
+                {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
             )
-            xrandr.XRRFreeCrtcInfo(crtc)
-        xrandr.XRRFreeScreenResources(mon)
+
+            # Each monitor
+            # A simple benchmark calling 10 times those 2 functions:
+            # XRRGetScreenResources():        0.1755971429956844 s
+            # XRRGetScreenResourcesCurrent(): 0.0039125580078689 s
+            # The second is faster by a factor of 44! So try to use it first.
+            # It doesn't query the monitors for updated information, but it does require the server to support RANDR
+            # 1.3.  We also make sure the client supports 1.3, by checking for the presence of the function.
+            if hasattr(xrandr, "XRRGetScreenResourcesCurrent") and (xrandr_major.value, xrandr_minor.value) >= (1, 3):
+                mon = xrandr.XRRGetScreenResourcesCurrent(display, self._handles.drawable).contents
+            else:
+                mon = xrandr.XRRGetScreenResources(display, self._handles.drawable).contents
+
+            crtcs = mon.crtcs
+            for idx in range(mon.ncrtc):
+                crtc = xrandr.XRRGetCrtcInfo(display, mon, crtcs[idx]).contents
+                if crtc.noutput == 0:
+                    xrandr.XRRFreeCrtcInfo(crtc)
+                    continue
+
+                self._monitors.append(
+                    {
+                        "left": int_(crtc.x),
+                        "top": int_(crtc.y),
+                        "width": int_(crtc.width),
+                        "height": int_(crtc.height),
+                    },
+                )
+                xrandr.XRRFreeCrtcInfo(crtc)
+            xrandr.XRRFreeScreenResources(mon)
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
-        ximage = self.xlib.XGetImage(
-            self._handles.display,
-            self._handles.drawable,
-            monitor["left"],
-            monitor["top"],
-            monitor["width"],
-            monitor["height"],
-            PLAINMASK,
-            ZPIXMAP,
-        )
+
+        with _lock:
+            ximage = self.xlib.XGetImage(
+                self._handles.display,
+                self._handles.drawable,
+                monitor["left"],
+                monitor["top"],
+                monitor["width"],
+                monitor["height"],
+                PLAINMASK,
+                ZPIXMAP,
+            )
 
         try:
             bits_per_pixel = ximage.contents.bits_per_pixel
@@ -586,14 +603,16 @@ class MSS(MSSBase):
             data = bytearray(raw_data.contents)
         finally:
             # Free
-            self.xlib.XDestroyImage(ximage)
+            with _lock:
+                self.xlib.XDestroyImage(ximage)
 
         return self.cls_image(data, monitor)
 
     def _cursor_impl(self) -> ScreenShot:
         """Retrieve all cursor data. Pixels have to be RGB."""
         # Read data of cursor/mouse-pointer
-        ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
+        with _lock:
+            ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
         if not (ximage and ximage.contents):
             msg = "Cannot read XFixesGetCursorImage()"
             raise ScreenShotError(msg)
