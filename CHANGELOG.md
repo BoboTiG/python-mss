@@ -8,6 +8,7 @@ See Git checking messages for full history.
 - Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)
 - Linux: add the XShmGetImage backend with automatic XGetImage fallback and explicit status reporting (#431)
 - Windows: improve error checking and messages for Win32 API calls (#448)
+- Mac: fix memory leak (#450, #453)
 - :heart: contributors: @jholveck
 
 ## 10.1.0 (2025-08-16)
