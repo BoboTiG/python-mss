@@ -9,7 +9,18 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import sys
-from ctypes import POINTER, Structure, c_double, c_float, c_int32, c_ubyte, c_uint32, c_uint64, c_void_p
+from ctypes import (
+    POINTER,
+    Structure,
+    c_double,
+    c_float,
+    c_int32,
+    c_long,
+    c_size_t,
+    c_ubyte,
+    c_uint32,
+    c_void_p,
+)
 from platform import mac_ver
 from typing import TYPE_CHECKING, Any
 
@@ -75,17 +86,16 @@ CFUNCTIONS: CFunctions = {
     # Syntax: cfunction: (attr, argtypes, restype)
     "CGDataProviderCopyData": ("core", [c_void_p], c_void_p),
     "CGDisplayBounds": ("core", [c_uint32], CGRect),
-    "CGDisplayRotation": ("core", [c_uint32], c_float),
-    "CFDataGetBytePtr": ("core", [c_void_p], c_void_p),
-    "CFDataGetLength": ("core", [c_void_p], c_uint64),
-    "CFRelease": ("core", [c_void_p], c_void_p),
-    "CGDataProviderRelease": ("core", [c_void_p], c_void_p),
+    "CGDisplayRotation": ("core", [c_uint32], c_double),
+    "CFDataGetBytePtr": ("core", [c_void_p], POINTER(c_ubyte)),
+    "CFDataGetLength": ("core", [c_void_p], c_long),
+    "CFRelease": ("core", [c_void_p], None),
     "CGGetActiveDisplayList": ("core", [c_uint32, POINTER(c_uint32), POINTER(c_uint32)], c_int32),
-    "CGImageGetBitsPerPixel": ("core", [c_void_p], int),
-    "CGImageGetBytesPerRow": ("core", [c_void_p], int),
+    "CGImageGetBitsPerPixel": ("core", [c_void_p], c_size_t),
+    "CGImageGetBytesPerRow": ("core", [c_void_p], c_size_t),
     "CGImageGetDataProvider": ("core", [c_void_p], c_void_p),
-    "CGImageGetHeight": ("core", [c_void_p], int),
-    "CGImageGetWidth": ("core", [c_void_p], int),
+    "CGImageGetHeight": ("core", [c_void_p], c_size_t),
+    "CGImageGetWidth": ("core", [c_void_p], c_size_t),
     "CGRectStandardize": ("core", [CGRect], CGRect),
     "CGRectUnion": ("core", [CGRect, CGRect], CGRect),
     "CGWindowListCreateImage": ("core", [CGRect, c_uint32, c_uint32, c_uint32], c_void_p),
@@ -197,7 +207,7 @@ class MSS(MSSBase):
 
         width = core.CGImageGetWidth(image_ref)
         height = core.CGImageGetHeight(image_ref)
-        prov = copy_data = None
+        copy_data = None
         try:
             prov = core.CGImageGetDataProvider(image_ref)
             copy_data = core.CGDataProviderCopyData(prov)
@@ -219,10 +229,9 @@ class MSS(MSSBase):
                     cropped.extend(data[start:end])
                 data = cropped
         finally:
-            if prov:
-                core.CGDataProviderRelease(prov)
             if copy_data:
                 core.CFRelease(copy_data)
+            core.CFRelease(image_ref)
 
         return self.cls_image(data, monitor, size=Size(width, height))
 
