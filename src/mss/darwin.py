@@ -90,7 +90,6 @@ CFUNCTIONS: CFunctions = {
     "CFDataGetBytePtr": ("core", [c_void_p], POINTER(c_ubyte)),
     "CFDataGetLength": ("core", [c_void_p], c_long),
     "CFRelease": ("core", [c_void_p], None),
-    "CGDataProviderRelease": ("core", [c_void_p], None),
     "CGGetActiveDisplayList": ("core", [c_uint32, POINTER(c_uint32), POINTER(c_uint32)], c_int32),
     "CGImageGetBitsPerPixel": ("core", [c_void_p], c_size_t),
     "CGImageGetBytesPerRow": ("core", [c_void_p], c_size_t),
