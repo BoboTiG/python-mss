@@ -139,6 +139,7 @@ class MSS(MSSBase):
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
+        # user32 and gdi32 should not be changed after initialization.
         self.user32 = ctypes.WinDLL("user32", use_last_error=True)
         self.gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
         self._set_cfunctions()

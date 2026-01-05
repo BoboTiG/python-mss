@@ -73,17 +73,29 @@ class MSSBase(metaclass=ABCMeta):
         # Mac only
         max_displays: int = 32,  # noqa: ARG002
     ) -> None:
+        # The cls_image is only used atomically, so does not require locking.
         self.cls_image: type[ScreenShot] = ScreenShot
+        # The compression level is only used atomically, so does not require locking.
         #: PNG compression level used when saving the screenshot data into a file
         #: (see :py:func:`zlib.compress()` for details).
         #:
         #: .. versionadded:: 3.2.0
         self.compression_level = compression_level
+        # The with_cursor attribute is not meant to be changed after initialization.
         #: Include the mouse cursor in screenshots.
+        #:
+        #: In some circumstances, it may not be possible to include the cursor.  In that case, MSS will automatically
+        #: change this to False when the object is created.
+        #:
+        #: This should not be changed after creating the object.
         #:
         #: .. versionadded:: 8.0.0
         self.with_cursor = with_cursor
-        # All attributes below are protected by self._lock.
+
+        # The attributes below are protected by self._lock.  The attributes above are user-visible, so we don't
+        # control when they're modified.  Currently, we only make sure that they're safe to modify while locked, or
+        # document that the user shouldn't change them.  We could also use properties protect them against changes, or
+        # change them under the lock.
         self._lock = Lock()
         self._monitors: Monitors = []
         self._closed = False
@@ -209,8 +221,7 @@ class MSSBase(metaclass=ABCMeta):
         with self._lock:
             if not self._monitors:
                 self._monitors_impl()
-
-        return self._monitors
+            return self._monitors
 
     def save(
         self,
