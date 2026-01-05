@@ -37,6 +37,10 @@ except ImportError:  # pragma: nocover
 #: Global lock protecting access to platform screenshot calls.
 #:
 #: .. versionadded:: 6.0.0
+#:
+#: .. deprecated:: 10.2.0
+#:    The global lock is no longer used, and will be removed in a future release.
+#:    MSS objects now have their own locks, which are not publicly-accessible.
 lock = Lock()
 
 OPAQUE = 255
@@ -55,7 +59,7 @@ class MSSBase(metaclass=ABCMeta):
         ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
     """
 
-    __slots__ = {"_closed", "_monitors", "cls_image", "compression_level", "with_cursor"}
+    __slots__ = {"_closed", "_lock", "_monitors", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,
@@ -69,18 +73,33 @@ class MSSBase(metaclass=ABCMeta):
         # Mac only
         max_displays: int = 32,  # noqa: ARG002
     ) -> None:
+        # The cls_image is only used atomically, so does not require locking.
         self.cls_image: type[ScreenShot] = ScreenShot
+        # The compression level is only used atomically, so does not require locking.
         #: PNG compression level used when saving the screenshot data into a file
         #: (see :py:func:`zlib.compress()` for details).
         #:
         #: .. versionadded:: 3.2.0
         self.compression_level = compression_level
+        # The with_cursor attribute is not meant to be changed after initialization.
         #: Include the mouse cursor in screenshots.
+        #:
+        #: In some circumstances, it may not be possible to include the cursor.  In that case, MSS will automatically
+        #: change this to False when the object is created.
+        #:
+        #: This should not be changed after creating the object.
         #:
         #: .. versionadded:: 8.0.0
         self.with_cursor = with_cursor
+
+        # The attributes below are protected by self._lock.  The attributes above are user-visible, so we don't
+        # control when they're modified.  Currently, we only make sure that they're safe to modify while locked, or
+        # document that the user shouldn't change them.  We could also use properties protect them against changes, or
+        # change them under the lock.
+        self._lock = Lock()
         self._monitors: Monitors = []
         self._closed = False
+
         # If there isn't a factory that removed the "backend" argument, make sure that it was set to "default".
         # Factories that do backend-specific dispatch should remove that argument.
         if backend != "default":
@@ -97,24 +116,33 @@ class MSSBase(metaclass=ABCMeta):
 
     @abstractmethod
     def _cursor_impl(self) -> ScreenShot | None:
-        """Retrieve all cursor data. Pixels have to be RGB."""
+        """Retrieve all cursor data. Pixels have to be RGB.
+
+        The object lock will be held when this method is called.
+        """
 
     @abstractmethod
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB.
-        That method has to be run using a threading lock.
+
+        The object lock will be held when this method is called.
         """
 
     @abstractmethod
     def _monitors_impl(self) -> None:
-        """Get positions of monitors (has to be run using a threading lock).
+        """Get positions of monitors.
+
         It must populate self._monitors.
+
+        The object lock will be held when this method is called.
         """
 
     def _close_impl(self) -> None:  # noqa:B027
         """Clean up.
 
         This will be called at most once.
+
+        The object lock will be held when this method is called.
         """
         # It's not necessary for subclasses to implement this if they have nothing to clean up.
 
@@ -133,7 +161,7 @@ class MSSBase(metaclass=ABCMeta):
             with mss.mss() as sct:
                 ...
         """
-        with lock:
+        with self._lock:
             if self._closed:
                 return
             self._close_impl()
@@ -165,7 +193,7 @@ class MSSBase(metaclass=ABCMeta):
             msg = f"Region has zero or negative size: {monitor!r}"
             raise ScreenShotError(msg)
 
-        with lock:
+        with self._lock:
             screenshot = self._grab_impl(monitor)
             if self.with_cursor and (cursor := self._cursor_impl()):
                 return self._merge(screenshot, cursor)
@@ -190,11 +218,10 @@ class MSSBase(metaclass=ABCMeta):
         - ``width``: the width
         - ``height``: the height
         """
-        if not self._monitors:
-            with lock:
+        with self._lock:
+            if not self._monitors:
                 self._monitors_impl()
-
-        return self._monitors
+            return self._monitors
 
     def save(
         self,

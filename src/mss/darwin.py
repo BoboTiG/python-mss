@@ -120,6 +120,7 @@ class MSS(MSSBase):
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
+        # max_displays is only used by _monitors_impl, while the lock is held.
         #: Maximum number of displays to handle.
         self.max_displays = kwargs.get("max_displays", 32)
 

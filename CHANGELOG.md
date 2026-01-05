@@ -9,6 +9,7 @@ See Git checking messages for full history.
 - Linux: add the XShmGetImage backend with automatic XGetImage fallback and explicit status reporting (#431)
 - Windows: improve error checking and messages for Win32 API calls (#448)
 - Mac: fix memory leak (#450, #453)
+- improve multithreading: allow multiple threads to use the same MSS object, allow multiple MSS objects to concurrently take screenshots, and document multithreading guarantees (#446, #452)
 - :heart: contributors: @jholveck
 
 ## 10.1.0 (2025-08-16)
@@ -19,7 +20,7 @@ See Git checking messages for full history.
 ## 10.0.0 (2024-11-14)
 - removed support for Python 3.8
 - added support for Python 3.14
-- Linux: fixed a threadding issue in `.close()` when calling `XCloseDisplay()` (#251)
+- Linux: fixed a threading issue in `.close()` when calling `XCloseDisplay()` (#251)
 - Linux: minor optimization when checking for a X extension status (#251)
 - :heart: contributors: @kianmeng, @shravanasati, @mgorny
 

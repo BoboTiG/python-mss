@@ -26,7 +26,6 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-from threading import local
 from typing import TYPE_CHECKING, Any, Callable
 
 from mss.base import MSSBase
@@ -135,22 +134,23 @@ class MSS(MSSBase):
             Lists constructor parameters.
     """
 
-    __slots__ = {"_handles", "gdi32", "user32"}
+    __slots__ = {"_bmi", "_bmp", "_data", "_memdc", "_region_width_height", "_srcdc", "gdi32", "user32"}
 
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
+        # user32 and gdi32 should not be changed after initialization.
         self.user32 = ctypes.WinDLL("user32", use_last_error=True)
         self.gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
         self._set_cfunctions()
         self._set_dpi_awareness()
 
-        # Available thread-specific variables
-        self._handles = local()
-        self._handles.region_width_height = None
-        self._handles.bmp = None
-        self._handles.srcdc = self.user32.GetWindowDC(0)
-        self._handles.memdc = self.gdi32.CreateCompatibleDC(self._handles.srcdc)
+        # Available instance-specific variables
+        self._region_width_height: tuple[int, int] | None = None
+        self._bmp: HBITMAP | None = None
+        self._srcdc = self.user32.GetWindowDC(0)
+        self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
+        self._data: ctypes.Array[ctypes.c_char] | None = None
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -163,21 +163,21 @@ class MSS(MSSBase):
         bmi.bmiHeader.biYPelsPerMeter = 0  # Unspecified
         bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
         bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
-        self._handles.bmi = bmi
+        self._bmi = bmi
 
     def _close_impl(self) -> None:
         # Clean-up
-        if self._handles.bmp:
-            self.gdi32.DeleteObject(self._handles.bmp)
-            self._handles.bmp = None
+        if self._bmp:
+            self.gdi32.DeleteObject(self._bmp)
+            self._bmp = None
 
-        if self._handles.memdc:
-            self.gdi32.DeleteDC(self._handles.memdc)
-            self._handles.memdc = None
+        if self._memdc:
+            self.gdi32.DeleteDC(self._memdc)
+            self._memdc = None
 
-        if self._handles.srcdc:
-            self.user32.ReleaseDC(0, self._handles.srcdc)
-            self._handles.srcdc = None
+        if self._srcdc:
+            self.user32.ReleaseDC(0, self._srcdc)
+            self._srcdc = None
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -268,33 +268,32 @@ class MSS(MSSBase):
         retrieved by gdi32.GetDIBits() as a sequence of RGB values.
         Thanks to http://stackoverflow.com/a/3688682
         """
-        srcdc, memdc = self._handles.srcdc, self._handles.memdc
+        srcdc, memdc = self._srcdc, self._memdc
         gdi = self.gdi32
         width, height = monitor["width"], monitor["height"]
 
-        if self._handles.region_width_height != (width, height):
-            self._handles.region_width_height = (width, height)
-            self._handles.bmi.bmiHeader.biWidth = width
-            self._handles.bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
-            self._handles.data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            if self._handles.bmp:
-                gdi.DeleteObject(self._handles.bmp)
+        if self._region_width_height != (width, height):
+            self._region_width_height = (width, height)
+            self._bmi.bmiHeader.biWidth = width
+            self._bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
+            self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
+            if self._bmp:
+                gdi.DeleteObject(self._bmp)
                 # Set to None to prevent another DeleteObject in case CreateCompatibleBitmap raises an exception.
-                self._handles.bmp = None
-            self._handles.bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
-            gdi.SelectObject(memdc, self._handles.bmp)
+                self._bmp = None
+            self._bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
+            gdi.SelectObject(memdc, self._bmp)
 
         gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
-        scanlines_copied = gdi.GetDIBits(
-            memdc, self._handles.bmp, 0, height, self._handles.data, self._handles.bmi, DIB_RGB_COLORS
-        )
+        assert self._data is not None  # noqa: S101 for type checker
+        scanlines_copied = gdi.GetDIBits(memdc, self._bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS)
         if scanlines_copied != height:
             # If the result was 0 (failure), an exception would have been raised by _errcheck.  This is just a sanity
             # clause.
             msg = f"gdi32.GetDIBits() failed: only {scanlines_copied} scanlines copied instead of {height}"
             raise ScreenShotError(msg)
 
-        return self.cls_image(bytearray(self._handles.data), monitor)
+        return self.cls_image(bytearray(self._data), monitor)
 
     def _cursor_impl(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""
