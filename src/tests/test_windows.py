@@ -35,18 +35,18 @@ def test_region_caching() -> None:
         # Grab the area 1
         region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
         sct.grab(region1)
-        bmp1 = id(sct._handles.bmp)
+        bmp1 = id(sct._bmp)
 
         # Grab the area 2, the cached BMP is used
         # Same sizes but different positions
         region2 = {"top": 200, "left": 200, "width": 200, "height": 200}
         sct.grab(region2)
-        bmp2 = id(sct._handles.bmp)
+        bmp2 = id(sct._bmp)
         assert bmp1 == bmp2
 
         # Grab the area 2 again, the cached BMP is used
         sct.grab(region2)
-        assert bmp2 == id(sct._handles.bmp)
+        assert bmp2 == id(sct._bmp)
 
 
 def test_region_not_caching() -> None:
@@ -60,14 +60,14 @@ def test_region_not_caching() -> None:
     region1 = {"top": 0, "left": 0, "width": 100, "height": 100}
     region2 = {"top": 0, "left": 0, "width": 50, "height": 1}
     grab1.grab(region1)
-    bmp1 = id(grab1._handles.bmp)
+    bmp1 = id(grab1._bmp)
     grab2.grab(region2)
-    bmp2 = id(grab2._handles.bmp)
+    bmp2 = id(grab2._bmp)
     assert bmp1 != bmp2
 
     # Grab the area 1, is not bad cached BMP previous grab the area 2
     grab1.grab(region1)
-    bmp1 = id(grab1._handles.bmp)
+    bmp1 = id(grab1._bmp)
     assert bmp1 != bmp2
 
 

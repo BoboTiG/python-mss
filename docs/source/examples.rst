@@ -96,6 +96,11 @@ You can get the bytes of the PNG image:
 Advanced
 ========
 
+.. _custom_cls_image:
+
+Custom ScreenShot Subclass
+--------------------------
+
 You can handle data using a custom class:
 
 .. literalinclude:: examples/custom_cls_image.py

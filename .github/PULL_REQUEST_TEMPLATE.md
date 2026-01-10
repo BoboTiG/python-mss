@@ -1,14 +1,9 @@
 ### Changes proposed in this PR
 
-- Fixes #
-- ...
-- ...
-
-It is **very** important to keep up to date tests and documentation.
+Fixes #
+(...)
 
 - [ ] Tests added/updated
 - [ ] Documentation updated
-
-Is your code right?
-
+- [ ] Changelog entry added
 - [ ] `./check.sh` passed

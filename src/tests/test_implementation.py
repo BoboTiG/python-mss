@@ -24,6 +24,7 @@ from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Callable
+    from typing import Any
 
     from mss.models import Monitor
 
@@ -299,27 +300,45 @@ def test_grab_with_tuple_percents(mss_impl: Callable[..., MSSBase]) -> None:
         assert im.rgb == im2.rgb
 
 
-def test_thread_safety(backend: str) -> None:
-    """Regression test for issue #169."""
+class TestThreadSafety:
+    def run_test(self, do_grab: Callable[[], Any]) -> None:
+        def record() -> None:
+            """Record for one second."""
+            start_time = time.time()
+            while time.time() - start_time < 1:
+                do_grab()
 
-    def record(check: dict) -> None:
-        """Record for one second."""
-        start_time = time.time()
-        while time.time() - start_time < 1:
+            checkpoint[threading.current_thread()] = True
+
+        checkpoint: dict = {}
+        t1 = threading.Thread(target=record)
+        t2 = threading.Thread(target=record)
+
+        t1.start()
+        time.sleep(0.5)
+        t2.start()
+
+        t1.join()
+        t2.join()
+
+        assert len(checkpoint) == 2
+
+    def test_issue_169(self, backend: str) -> None:
+        """Regression test for issue #169."""
+
+        def do_grab() -> None:
             with mss.mss(backend=backend) as sct:
                 sct.grab(sct.monitors[1])
 
-        check[threading.current_thread()] = True
+        self.run_test(do_grab)
 
-    checkpoint: dict = {}
-    t1 = threading.Thread(target=record, args=(checkpoint,))
-    t2 = threading.Thread(target=record, args=(checkpoint,))
+    def test_same_object_multiple_threads(self, backend: str) -> None:
+        """Ensure that the same MSS object can be used by multiple threads.
 
-    t1.start()
-    time.sleep(0.5)
-    t2.start()
-
-    t1.join()
-    t2.join()
-
-    assert len(checkpoint) == 2
+        This also implicitly tests that it can be used on a thread
+        different than the one that created it.
+        """
+        if backend == "xlib":
+            pytest.skip("The xlib backend does not support this ability")
+        with mss.mss(backend=backend) as sct:
+            self.run_test(lambda: sct.grab(sct.monitors[1]))
