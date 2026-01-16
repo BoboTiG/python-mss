@@ -1,260 +1,92 @@
 #! /usr/bin/env python3
 
-# This demo isn't meant to be a comprehensive explanation of video
-# encoding.  There are, however, some concepts that are unavoidable
-# when converting from a sequence of snapshots to a video file.  We'll
-# go over some of those here.
+# This demo shows one common use case for MSS: capture the screen and
+# write a real video file (MP4) rather than saving individual images.
 #
-# The descriptions given here are simplified.  It doesn't go into the
-# more obscure details, like H.264 switching frames or the AAC priming
-# delay.  Nevertheless, this should be enough to get the concepts
-# you'll need to understand and build on this demo.
+# It’s intentionally not a full “video encoding” course. The goal is
+# to explain the few concepts that show up throughout the program so
+# you can read, tweak, and extend it.
 #
+# What tools are we using?
+# ------------------------
 #
-# libav
-# -----
+# Most people first meet video encoding through the `ffmpeg` command.
+# Under the hood, ffmpeg is built on the “libav*” C libraries. In this
+# demo we use PyAV (`import av`), which is a Pythonic wrapper around
+# those libraries.
 #
-# If you care enough about video files to be reading this, you've
-# probably used ffmpeg.  This is a Swiss Army Knife of video file
-# manipulation.
-#
-# The ffmpeg tool is based on several libraries, which are part of
-# ffmpeg, and widely used elsewhere:
-# 
-# - libavcodec: Encoding/decoding library
-# - libavfilter: Graph-based frame editing library
-# - libavformat: I/O and muxing/demuxing library
-# - libavdevice: Special devices muxing/demuxing library
-# - libavutil: Common utility library
-# - libswresample: Audio resampling, format conversion and mixing
-# - libswscale: Color conversion and scaling library
-#
-# In this demo, I just refer to these collectively as "libav".  Think
-# of these as the library version of ffmpeg.  We mostly use libavcodec
-# and libavformat, but that detail isn't something we see in Python:
-# all these libraries are essentially one giant bundle as far as we
-# care.
-#
-# The libav libaries are in C.  We use the PyAV library.  This is not
-# simply bindings or a direct translation of the libav C API to
-# Python, but rather, a library that's based on libav, but meant to be
-# more Pythonic.  
-#
-# [note: it's important to include the fact that pyav.org has outdated
-# docs, since they show up prominently in Google searches.  The link
-# to the GitHub issue is just to tell people that the ]
-#
-# The docs for PyAV are at <https://pyav.basswood-io.com/docs/stable/>.
-# The older docs at pyav.org are outdated; see
+# PyAV docs: <https://pyav.basswood-io.com/docs/stable/>
+# Note: the older docs at pyav.org are outdated; see
 # <https://github.com/PyAV-Org/PyAV/issues/1574>.
+# Caveats: <https://pyav.basswood-io.com/docs/stable/overview/caveats.html>
 #
-# There was briefly a fork called basewood-av, but it has since been
-# discontinued and merged back into PyAV; see
-# <https://github.com/PyAV-Org/PyAV/discussions/1827>.  Despite the
-# domain name, pyav.basswood-io.com hosts the current official PyAV
-# documentation, not fork-specific docs.
+# Containers, streams, and codecs
+# -------------------------------
 #
-# The PyAV developers are separate from ffmpeg, and there is a bit of
-# a difference in the approaches that PyAV takes.  See also
-# https://pyav.basswood-io.com/docs/stable/overview/caveats.html
+# A file like `capture.mp4` is a *container*: it holds one or more
+# *streams* (usually video and/or audio). This demo writes one video
+# stream.
 #
+# The container interleaves (“muxes”) stream data so players can read
+# everything in timestamp order. libav calls those pieces “packets”.
+# (In MP4 they’re not literally network-style packets; the term is a
+# longstanding libav abstraction.)
 #
-# Container Files
-# ---------------
+# A *codec* is the algorithm that compresses/decompresses a stream.
+# For MP4 video, common codecs include H.264 and H.265. This demo
+# defaults to H.264 via `libx264`, because it’s widely supported. You
+# can switch to hardware encoders (e.g. `h264_nvenc`) if available.
 #
-# A single file, like kittycat.mp4, is called a "container" in media
-# file terms.  This is a collection of "streams" (sometimes called
-# "elementary streams"), all woven together.
+# Frames and frame reordering (I/P/B)
+# ----------------------------------
 #
-# It might contain just a video stream (like we do here), just an
-# audio stream (like in a .m4a file, which is just a renamed .mp4
-# file), or both (most common).  It might also contain several of
-# each; for instance, different languages will usually be in separate
-# audio streams.  There are other stream types, like subtitles, as
-# well.
+# Video is encoded as a sequence of frames:
+# - I-frames: complete images.
+# - P-frames: changes from previous frames.
+# - B-frames: changes predicted using both past *and future* frames.
 #
-# Weaving these streams together is called "multiplexing", or "muxing"
-# for short.  Each stream's data gets bundled into "chunks" that are
-# typically called "packets".  The container keeps packets from the
-# same time, but different streams, close to each other in the file.
+# B-frames are why “the order frames are encoded/decoded” can differ
+# from “the order frames are shown”. That leads directly to timestamps.
 #
-# (By the way, the term "packet" is a holdover from MPEG-2 and before.
-# Technically, MP4 files don't have packets: they have chunks, which
-# can hold AAC frames, H.264 NALs, etc.  The data that used to be in
-# MPEG-2 packet headers is now in MP4 tables.  To keep the terminology
-# consistent between codecs and container formats, libav refers to the
-# objects encapsulating all this as packets, regardless of the codec
-# or container format.)
+# Timestamps (PTS/DTS)
+# --------------------
 #
-# For instance, at the beginning of the file, you might have one audio
-# packet covering the first 21 ms, then a subtitle packet covering the
-# first several seconds, then seven video packets each covering 3 ms,
-# followed by another audio packet for the next 21 ms, and so on.
+# Every frame has a *presentation timestamp* (PTS): when the viewer
+# should see it.
 #
+# Encoders may output packets in a different order due to B-frames.
+# Those packets also have a *decode timestamp* (DTS): when the decoder
+# must decode them so the PTS schedule can be met.
 #
-# Video Codecs
-# ------------
+# In this demo we set PTS on `VideoFrame`s and let libav/PyAV propagate
+# timestamps into the encoded packets.
 #
-# Within an MP4 file, the video can be stored in a lot of different
-# formats.  These are the most common:
-#
-# - MPEG-2: used by DVDs, not much else anymore.
-# - MPEG-4 Part 2: also known as DivX.  Very popular in the early 2000s,
-#   not seen much anymore except older archives.
-# - H.264: commonly used by BluRay, many streaming services, and many
-#   MP4 files in the wild.
-# - H.265: increasingly used, but not supported by older hardware.
-# - AV1 and VP9: used by some streaming services; hardware support
-#   varies, so these are typically offered alongside H.264 (or H.265)
-#   as fallbacks.
-#
-# These are all stream formats.  There are many libraries that can
-# create these files.  These libraries are known as "codecs".  In
-# some contexts, the word "codec" is also used to name the stream
-# format itself, so "H.264" might sometimes be called a codec.
-#
-# In this demo, we use H.264, since it's the most common.  You can
-# also specify other codecs.
-#
-# In ffmpeg, and the av libraries that we use here, the best codec for
-# H.264 that doesn't require any specific hardware is libx264.  There
-# are also faster ones that are hardware-accelerated, such as
-# h264_nvenc which uses specialized chips on Nvidia video cards.
-#
-#
-# Frame Types
-# -----------
-#
-# Reference: https://en.wikipedia.org/wiki/Video_compression_picture_types
-#
-# [Note: We can probably just give a brief description of the frame
-# types.]
-#
-# The reason that video files can compress so well, much better than
-# storing a JPEG for each frame, is that the file often can describe
-# just the motion.  In a video of a cat meowing, the first frame will
-# have everything that's visible: the room in the background, the
-# entire cat, the whole thing.  We call a video frame that stores the
-# whole picture an "I-frame".
-#
-# But the second frame just has to talk about what's changed in that
-# 1/30 sec: it can just say that the tail moved this much to the left,
-# the eyes closed slightly, what the now-visible bits of the eyelids
-# look like, what's changed about the ear when it moved, etc.  We call
-# this sort of frame, one that just stores the differences from a
-# previous frame, a "P-frame".
-#
-# We still want to refresh the whole picture from scratch from time to
-# time.  Since the differences between video frames are compressed,
-# they're also imperfect.  Over time, these imperfections can
-# accumulate.  Also, sometimes a frame may have been lost between when
-# we store it and when the viewer sees it, such as if we made a DVD
-# that later got scratched; we want to let the viewer recover from
-# such a situation.  To keep things clean, we sometimes send out a new
-# I-frame, redrawing the whole picture anew.  This normally happens
-# about every 0.5 to 2 seconds, depending on the program's purpose.
-# The group of pictures starting with a fresh I-frame is,
-# straightforwardly enough, called a "group of pictures" (GOP).
-#
-# Sometimes, it's useful for a frame to give motion based not just on
-# the past, but also the future.  For instance, when the cat's mouth
-# first starts to open, you might want to say "look ahead at how the
-# inside of the mouth looks when it's totally open, and draw just this
-# tiny sliver of it now."  These are called "B-frames".
-#
-# A GOP usually arranges these frame types in a cadence, like
-# IBBPBBPBB....  The specifics are up to the encoder, but the user can
-# normally configure it to some degree.
-#
-#
-# Timestamps
-# ----------
-#
-# [note: Managing the PTS is a big part of the code, so I want to
-# describe it.  The DTS is also worth at least highlighting, as is the
-# fact that packets from the encoder may be in a different order than
-# presentation order.]
-#
-# In a video file, time is very important.  It's used to synchronize
-# audio and video, to prevent frame timing quantization from causing
-# the clock to drift, and many other purposes.
-#
-# The time at which each frame should be shown is called its
-# "presentation time stamp", or "PTS".  Normally, the PTS of the first
-# frame is 0, and the rest of the video file is based on that.
-#
-# Because B-frames can require future frames to interpret, the future
-# frames they depend on have to be decoded first.  That means that the
-# order in which frames are decoded can be different from the order in
-# which they are presented.  This leads to a second timestamp on each
-# frame: the "decoding time stamp", or "DTS".
-#
-# Different container formats store the timestamps in different
-# places: the container's structures, the packet headers, the streams,
-# etc.  Because of this, there are multiple places that carry
-# timestamps.  You can just set the timestamp on the video frame, and
-# libav will propagate it from there to the packets and so forth.
-#
-#
-# Time Base
+# Time base
 # ---------
 #
-# [note: Most people new to video encoding may assume that timestamps
-# are in float or integer nanoseconds or something, so the concept of
-# the time base is significant.  We also attach it to multiple
-# objects: the container object, the video stream context object, and
-# each frame.  So, the reason we do that is worth noting.  Preserve the
-# link to the PyAV docs.]
+# Timestamps are integers, and their unit is a fraction of a second
+# called the *time base*. For example, with a time base of 1/90000,
+# a timestamp of 90000 means “1 second”. PyAV will convert between time
+# bases when needed, but you must set them consistently where you
+# generate timestamps.
 #
-# In most video file formats, the time isn't specified in predefined
-# units like nanoseconds.  Instead, in your video file, you specify
-# the time units you're using, a fraction of a second.  This is called
-# your time base.
+# See <https://pyav.basswood-io.com/docs/stable/api/time.html>
 #
-# There are a lot of different places in a video encoding pipeline
-# where you set a time base: everywhere that might need to encode a
-# timestamp.  They don't necessarily have to be the same (PyAV will
-# convert between the different time bases as needed), so the time
-# base has to be set on several objects.  See also
-# <https://pyav.basswood-io.com/docs/stable/api/time.html>
+# This demo uses a time base of 1/90000 (a common MPEG-derived choice).
 #
-# In this demo, we use a common time base of 1/90000 sec everywhere.
-# This is a common standard, from the MPEG world.  It became a
-# standard because it can exactly represent 24 fps (film), 25 fps
-# (European TV), 30 fps (US TV, nominally), and 30000/1001 fps (about
-# 29.97, US broadcast TV).
+# Performance (why multiple threads?)
+# ----------------------------------
 #
+# Capturing frames, converting them to `VideoFrame`s, encoding, and
+# muxing are separate stages. This demo pipelines those stages across
+# threads so that (for example) encoding can run while the next screen
+# grab is happening. The slowest stage typically limits overall FPS.
 #
-# Performance
-# -----------
-#
-# This demo uses multiple threads to improve performance.  These
-# threads are pipelined; see the comments at the start of
-# common/pipeline.py for information about that concept.
-#
-# In a pipelined design, the slowest stage usually sets the overall
-# rate.  Suppose you and your roommates are all doing the dishes:
-# Alice collects dishes and scrapes off food, Bob washes the dishes,
-# Carol rinses them, Dave dries them, and Evelyn puts them away.
-# If the
-#
-# [note: A detailed description of pipelining threads is in
-# common/pipeline.py.  This section should discuss the stages
-# we're using, and note that the encoding stage is usually the
-# bottleneck.]
-#
-#
-#
-# [note: Not sure where to integrate this, but make sure the numbers
-# are somewhere.]
-#
-# In one test, here's some numbers this program could achieve, on an
-# idle system.  This is just meant as a rough guide; your results will
-# almost certainly vary significantly.
-# - libx264, 1920x1080: 80 fps
-# - libx264, 3840x2160: 18 fps
-# - h264_nvenc, 1920x1080: 190 fps
-# - h264_nvenc, 3840x2160: 41 fps
+# On an idle system (rough guide; will vary widely):
+# - libx264, 1920x1080: ~80 fps
+# - libx264, 3840x2160: ~18 fps
+# - h264_nvenc, 1920x1080: ~190 fps
+# - h264_nvenc, 3840x2160: ~41 fps
 
 import argparse
 import logging
@@ -283,7 +115,7 @@ CODEC_OPTIONS = {
     # features that are widely supported, but not mandatory.
     "profile": "high",
     # The "medium" preset is as good of a preset as any for a demo
-    # like this.  Different codecs have different presets; the the
+    # like this.  Different codecs have different presets; the
     # h264_nvenc actually prefers "p4", but accepts "medium" as a
     # similar preset.
     "preset": "medium",
@@ -313,7 +145,7 @@ def video_capture(
     shutdown_requested: Event,
 ) -> Generator[tuple[mss.screenshot.ScreenShot, float], None, None]:
     # Keep track of the time when we want to get the next frame.  We
-    # limit the frame time this way instead of sleeping 1/30 sec each
+    # limit the frame time this way instead of sleeping 1/fps sec each
     # frame, since we want to also account for the time taken to get
     # the screenshot and other overhead.
     #
@@ -326,11 +158,9 @@ def video_capture(
     # Keep running this loop until the main thread says we should
     # stop.
     while not shutdown_requested.is_set():
-
         # Wait until we're ready.  This should, ideally, happen every
-        # 1/30 second.
+        # 1/fps second.
         while (now := time.monotonic()) < next_frame_at:
-            # 
             time.sleep(next_frame_at - now)
 
         # Capture a frame, and send it to the next processing stage.
@@ -365,42 +195,51 @@ def video_process(
         tuple[mss.screenshot.ScreenShot, float]
     ],
 ) -> Generator[av.VideoFrame, None, None]:
-    # We track when the first
+    # We track when the first frame happened so we can make PTS start at 0.
+    # Many video players and other tools expect that.
     first_frame_at: float | None = None
 
     for screenshot, timestamp in screenshot_and_timestamp:
-        # A screenshot's pixel data can take a long time to copy.
-        # Just for the CPU to copy the bytes, on my hardware, takes
-        # about 3ms for a 4k screenshot.  This means we want to be
-        # very careful about how we want to get the data from the
-        # ScreenShot object to the VideoFrame.
+        # Avoiding extra pixel copies
+        # ---------------------------
         #
-        # In Python, there's a concept called a "buffer".  This is a
-        # range of memory that can be shared between objects, so the
-        # objects don't have to copy the data.  This is very common in
-        # libraries like NumPy that work with very large datasets, and
-        # interpret that data in different ways.
+        # Copying a full frame of pixels is expensive.  On typical
+        # hardware, a plain CPU memcpy of a 4K BGRA image can cost on
+        # the order of ~3ms by itself, which is a big chunk of a
+        # 30fps budget (33ms) and an even bigger chunk of a 60fps
+        # budget (16.7ms).
         #
-        # The most common buffers are in extensions written in C, but
-        # Python objects of type memoryview, bytes, bytearray, and
-        # array.array are all buffers.  The screenshot.bgra attribute
-        # is also a buffer.  (Currently, it's a bytes object, but this
-        # may change in the future.)
+        # So we want to be careful about the *conversion* step from an
+        # MSS `ScreenShot` to a PyAV `VideoFrame`.  Ideally, that step
+        # should reuse the same underlying bytes rather than creating
+        # additional intermediate copies.
         #
-        # PyAV doesn't let you create a VideoFrame object directly
-        # from pixel data in a buffer.  (It is possible to update the
-        # data in a VideoFrame to point to a different buffer, but
-        # that still allocates the memory first.)
+        # Buffers in Python
+        # -----------------
         #
-        # However, while it's not documented, PyAV does have the
-        # from_numpy_buffer method (separately from the from_ndarray
-        # method).  This creates a VideoFrame that shares memory with
-        # a NumPy array.  We tell NumPy to create a new ndarray that
-        # shares the screenshot's buffer, and create a VideoFrame that
-        # uses that buffer.
+        # Many Python objects expose their underlying memory via the
+        # "buffer protocol".  A buffer is just a view of raw bytes that
+        # other libraries can interpret without copying.
+        #
+        # Common buffer objects include: `bytes`, `bytearray`,
+        # `memoryview`, and `array.array`.  `screenshot.bgra` is also a
+        # buffer (currently it is a `bytes` object, though that detail
+        # may change in the future).
+        #
+        # Minimum-copy path: ScreenShot -> NumPy -> VideoFrame
+        # --------------------------------------------------
+        #
+        # `np.frombuffer()` creates an ndarray *view* of an existing
+        # buffer (no copy).  Reshaping also stays as a view.
+        #
+        # PyAV's `VideoFrame.from_ndarray()` always copies the data
+        # into a new frame-owned buffer.  For this demo we use
+        # the undocumented `VideoFrame.from_numpy_buffer()`, which creates a
+        # `VideoFrame` that shares memory with the ndarray.
         ndarray = np.frombuffer(screenshot.bgra, dtype=np.uint8)
         ndarray = ndarray.reshape(screenshot.height, screenshot.width, 4)
         frame = av.VideoFrame.from_numpy_buffer(ndarray, format="bgra")
+
         # Set the PTS and time base for the frame.
         if first_frame_at is None:
             first_frame_at = timestamp
@@ -430,7 +269,8 @@ def show_stats(
     any individual stage.
     """
     # The start time is only used for showing the clock.  The actual
-    # timing stats all use the times we put in the captured frames.
+    # timing stats use packet timestamps (ultimately derived from the
+    # frame PTS we compute during capture).
     start_time = time.monotonic()
     time_deque: deque[int] = deque(maxlen=100)
     bit_count_deque: deque[int] = deque(maxlen=100)
@@ -443,11 +283,20 @@ def show_stats(
         yield packet_batch
 
         for packet in packet_batch:
-            # The PTS would make more sense for logging FPS than the
-            # DTS, but because of frame reordering, it makes the stats
-            # a little bit unstable.  Using DTS consistently makes the
-            # timing quite stable, and over the 100-frame window,
-            # still quite precise.
+            # FPS from timestamps: why DTS, not PTS?
+            #
+            # Intuitively, you'd expect to compute FPS from PTS (the
+            # time the viewer should *see* each frame).  But encoders
+            # can reorder frames internally (especially with B-frames),
+            # so packets may come out in a different order than PTS.
+            #
+            # If we update a sliding window with out-of-order PTS
+            # values, the window start/end can "wiggle" even when the
+            # pipeline is steady, which makes the displayed FPS noisy.
+            #
+            # DTS is the time order the decoder must process packets.
+            # Packets are emitted in DTS order, so using DTS gives a
+            # stable, monotonic timeline for the sliding window.
             time_deque.append(packet.dts)
             bit_count = packet.size * 8
             bit_count_deque.append(bit_count)
@@ -474,9 +323,11 @@ def show_stats(
             full_line = f"\r{line}{' ' * (last_status_len - this_status_len)}"
             print(full_line, end="")
             last_status_len = this_status_len
-    # It's difficult to correctly print the fps and bitrate near the
-    # tail, since we get the last many frames as a big batch.  Instead
-    # of leaving misleading information on the screen, we erase the
+    # Near shutdown the encoder flush can emit packets in large bursts,
+    # and we also throttle status updates (to avoid spamming the
+    # terminal).  That combination means the last displayed line may be
+    # stale or not representative of the final frames.  Rather than
+    # leaving potentially misleading numbers on screen, erase the
     # status display.
     print(f"\r{' ' * last_status_len}\r", end="")
 
@@ -512,33 +363,42 @@ def main() -> None:
         description="Capture screen video to MP4 file"
     )
     parser.add_argument(
-        "-f", "--fps", type=int, default=30, help="frames per second (default: 30)"
+        "-f",
+        "--fps",
+        type=int,
+        default=30,
+        help="frames per second (default: 30)",
     )
     monitor_group = parser.add_mutually_exclusive_group()
     monitor_group.add_argument(
-        "-m", "--monitor",
+        "-m",
+        "--monitor",
         type=int,
         default=1,
         help="monitor ID to capture (default: 1)",
     )
     monitor_group.add_argument(
-        "-r", "--region",
+        "-r",
+        "--region",
         type=parse_region,
         metavar="LEFT,TOP,RIGHT,BOTTOM",
         help="region to capture as comma-separated coordinates",
     )
     parser.add_argument(
-        "-c", "--codec",
+        "-c",
+        "--codec",
         default="libx264",
         help="video codec (default: libx264; try h264_nvenc for Nvidia hardware encoding)",
     )
     parser.add_argument(
-        "-d", "--duration-secs",
+        "-d",
+        "--duration-secs",
         type=float,
         help="Duration to record (default: no limit)",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         default="capture.mp4",
         help="output filename (default: capture.mp4)",
     )
@@ -577,23 +437,32 @@ def main() -> None:
             )
             video_stream.width = monitor["width"]
             video_stream.height = monitor["height"]
-            # Setting the time_base on the stream is possible, but
-            # isn't what we need (for reasons I'm unclear on): we need
-            # to set it on the codec context.
+            # There are multiple time bases in play (stream,
+            # codec context, per-frame).  Depending on the container
+            # and codec, some of these might be ignored or overridden.
+            # We set the desired time base consistently everywhere,
+            # so that the saved timestamps are correct regardless of what
+            # format we're saving to.
+            video_stream.time_base = TIME_BASE
             video_stream.codec_context.time_base = TIME_BASE
-            # Assigning the pix_fmt is telling the video encoder what
-            # we'll be sending it, not necessarily what it will
-            # output.  If the codec supports BGRx inputs, then that's
-            # the most efficient way for us to send it our frames.
-            # Otherwise, there will be a software, CPU-side conversion
-            # step when we send it our BGRx frames.  We're actually
-            # probably sending it frames in BGR0, not BGRA, but PyAV
-            # doesn't claim to support reading frames in BGR0, only
-            # BGRA.  H.264 doesn't support an alpha channel anyway, so
-            # we can just send it BGR0 frames and tell it they're BGRA.
-            if any(
-                f.name == "bgra" for f in video_stream.codec.video_formats
-            ):
+            # `pix_fmt` here describes the pixel format we will *feed*
+            # into the encoder (not necessarily what the encoder will
+            # store in the bitstream).  H.264 encoders ultimately
+            # convert to a YUV format internally.
+            #
+            # If the encoder accepts BGRA input (e.g., h264_nvenc), we
+            # can hand it MSS's BGRA frames directly and avoid an extra
+            # pre-conversion step on our side.
+            #
+            # If the encoder doesn't accept BGRA input (e.g., libx264),
+            # PyAV will insert a conversion step automatically.  In that
+            # case, we let the codec choose the pix_fmt it's going to
+            # expect.
+            #
+            # Note: the alpha channel is ignored by H.264.  We may
+            # effectively be sending BGRx/BGR0.  But PyAV's VideoFrame
+            # only exposes "bgra" as the closest supported format.
+            if any(f.name == "bgra" for f in video_stream.codec.video_formats):
                 video_stream.pix_fmt = "bgra"
             # We open (initialize) the codec explicitly here.  PyAV
             # will automatically open it the first time we call
@@ -658,9 +527,8 @@ def main() -> None:
             LOGGER.debug("  Encode:     %s", stage_video_encode.native_id)
             LOGGER.debug("  Mux:        %s", stage_mux.native_id)
 
-            print("Starting video capture.  Press Ctrl-C to stop.")
+            old_sigint_handler = signal.getsignal(signal.SIGINT)
 
-            old_sigint_handler = None
             def sigint_handler(_signum: int, _frame: Any) -> None:
                 # Restore the default behavior, so if our shutdown
                 # doesn't work because of a bug in our code, the user
@@ -673,7 +541,10 @@ def main() -> None:
                 # a fresh line for this message.
                 print("\nShutting down")
                 shutdown_requested.set()
-            signal.signal(signal.SIGINT, sigint_handler)
+
+            old_sigint_handler = signal.signal(signal.SIGINT, sigint_handler)
+
+            print("Starting video capture.  Press Ctrl-C to stop.")
 
             if duration_secs is not None:
                 stage_video_capture.join(timeout=duration_secs)
@@ -682,17 +553,41 @@ def main() -> None:
                 # shutdown event again, and return to our normal
                 # processing loop.
                 shutdown_requested.set()
-            
+
             stage_video_capture.join()
             stage_video_process.join()
             stage_video_encode.join()
             stage_show_stats.join()
             stage_mux.join()
 
-            if codec != "libx264" and video_stream.reformatter is not None:
+            # PyAV may insert an implicit conversion step between the frames we
+            # provide and what the encoder actually accepts (pixel format,
+            # colorspace, etc.). When that happens, `video_stream.reformatter`
+            # gets set.
+            #
+            # This is useful to know for performance: those conversions are
+            # typically CPU-side work and can become a bottleneck.
+            # Hardware-accelerated encoders, such as `h264_nvenc`, often accept
+            # BGRx, and can perform the conversion using specialized hardware.
+            #
+            # We already know that libx264 doesn't accept RGB input, so
+            # we don't warn about that.  (There is a libx264rgb, but that
+            # uses a H.264 format that is not widely supported.)
+            # We just want to warn about other
+            # codecs, since some of them might have ways to use BGRx input,
+            # and the programmer might want to investigate.
+            #
+            # Note: `reformatter` is created lazily, so it may only be set after
+            # frames have been sent through the encoder, which is why we check
+            # it at the end.
+            if video_stream.reformatter is not None and codec != "libx264":
                 LOGGER.warning(
-                    "Software encoder is in a hardware encoding "
-                    "path; this may slow things down"
+                    "PyAV inserted a CPU-side pixel-format/colorspace conversion "
+                    "step (video_stream.reformatter is set) while encoding with %s; "
+                    "this can reduce FPS.  Check the acceptable pix_fmts for this codec, "
+                    "and see if one of them can accept some variation of BGRx input "
+                    "directly.",
+                    codec,
                 )
 
 
