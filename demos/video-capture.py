@@ -435,6 +435,13 @@ def main() -> None:
             video_stream = avmux.add_stream(
                 codec, rate=fps, options=CODEC_OPTIONS
             )
+            # Ideally, we would set attributes such as colorspace,
+            # color_range, color_primaries, and color_trc here to
+            # describe the colorspace accurately.  This would be
+            # significant if we're capturing on a Display P3 Mac, while
+            # the video file is on an sRGB Windows machine.  Currently,
+            # MSS doesn't give us that information, so we skip it for
+            # now.
             video_stream.width = monitor["width"]
             video_stream.height = monitor["height"]
             # There are multiple time bases in play (stream,
