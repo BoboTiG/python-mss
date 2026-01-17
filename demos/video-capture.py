@@ -113,11 +113,17 @@ import mss
 from common.pipeline import Mailbox, PipelineStage
 
 
-# These are the options you'd give to ffmpeg that would affect the
-# video codec.
+# These are the options you'd give to ffmpeg that it sends to the
+# video codec.  The options you can use here can be listed with
+# `ffmpeg -help encoder=libx264`, or whatever encoder you're using for
+# this demo's `--codec` flag.  The options for each encoder are described
+# in more detail in `man ffmpeg-codecs`.
 CODEC_OPTIONS = {
     # The "high" profile means that the encoder can use some H.264
-    # features that are widely supported, but not mandatory.
+    # features that are widely supported, but not mandatory.  If
+    # you're using a codec other than H.264, you'll need to comment
+    # out this line: the relevant features are already part of the
+    # main profile in later codecs like H.265, VP8, VP9, and AV1.
     "profile": "high",
     # The "medium" preset is as good of a preset as any for a demo
     # like this.  Different codecs have different presets; the
@@ -406,7 +412,12 @@ def main() -> None:
         "-c",
         "--codec",
         default="libx264",
-        help="video codec (default: libx264; try h264_nvenc for Nvidia hardware encoding)",
+        help=(
+            'video codec implementation, same as the ffmpeg "-c:v" flag.  '
+            'Run "python3 -m av --codecs" for a full list.  '
+            "(default: libx264.  Try h264_nvenc for Nvidia "
+            "hardware encoding.)"
+        ),
     )
     parser.add_argument(
         "-d",
@@ -439,6 +450,8 @@ def main() -> None:
         else:
             monitor = sct.monitors[args.monitor]
 
+        # We don't pass the container format to av.open here, so it
+        # will choose it based on the extension: .mp4, .mkv, etc.
         with av.open(filename, "w") as avmux:
             # We could initialize video_stream in video_encode, but
             # doing it here means that we can open it before starting
@@ -473,16 +486,25 @@ def main() -> None:
             # itself; those are used to identify its colorspace, so
             # the codec can do the correct RGB to YUV conversion.
             if DISPLAY_IS_SRGB:
-                video_stream.color_primaries = 1  # libavutil's AVCOL_PRI_BT709; PyAV doesn't define constants for color primaries.
-                video_stream.colorspace = av.video.reformatter.Colorspace.ITU709  # More commonly called BT.709
+                # color_primaries=1 is libavutil's AVCOL_PRI_BT709;
+                # PyAV doesn't define named constants for color
+                # primaries.
+                video_stream.color_primaries = 1
+                # What PyAV refers to as ITU709 is more commonly known
+                # as BT.709.
+                video_stream.colorspace = (
+                    av.video.reformatter.Colorspace.ITU709
+                )
                 # The "JPEG" color range is saying that we're using a
                 # color range like a computer, not like broadcast TV.
                 video_stream.color_range = av.video.reformatter.ColorRange.JPEG
-                # Technically, sRGB's transformation characteristic is
-                # AVCOL_TRC_IEC61966_2_1.  It's nearly the same as
-                # BT.709's TRC, so some video encoders will tag it as
-                # AVCOL_TRC_BT709 (1) instead.
-                video_stream.color_trc = 13  # libavutil's AVCOL_TRC_IEC61966_2_1; PyAV doesn't define constants for TRCs.
+                # PyAV doesn't define named constants for TRCs, so we
+                # pass it a numeric value.  Technically, sRGB's
+                # transformation characteristic is
+                # AVCOL_TRC_IEC61966_2_1 (13).  It's nearly the same
+                # as BT.709's TRC, so some video encoders will tag it
+                # as AVCOL_TRC_BT709 (1) instead.
+                video_stream.color_trc = 13
 
             video_stream.width = monitor["width"]
             video_stream.height = monitor["height"]
