@@ -255,23 +255,15 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSSBase]) -> None:
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSSBase]) -> None:
     with mss_impl() as sct:
         # Remember that rect tuples are PIL-style: (left, top, right, bottom)
+        # Negative left/top coordinates are valid for multi-monitor setups
+        # where monitors can be positioned to the left of or above the primary.
 
-        # Negative top
-        negative_box = (100, -100, 500, 500)
-        with pytest.raises(ScreenShotError):
-            sct.grab(negative_box)
-
-        # Negative left
-        negative_box = (-100, 100, 500, 500)
-        with pytest.raises(ScreenShotError):
-            sct.grab(negative_box)
-
-        # Negative width (but right > 0)
+        # Negative width (right < left)
         negative_box = (100, 100, 50, 500)
         with pytest.raises(ScreenShotError):
             sct.grab(negative_box)
 
-        # Negative height (but bottom > 0)
+        # Negative height (bottom < top)
         negative_box = (100, 100, 500, 50)
         with pytest.raises(ScreenShotError):
             sct.grab(negative_box)
