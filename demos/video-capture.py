@@ -81,7 +81,11 @@
 # Capturing frames, converting them to `VideoFrame`s, encoding, and
 # muxing are separate stages.  This demo pipelines those stages across
 # threads so that (for example) encoding can run while the next screen
-# grab is happening.  The slowest stage typically limits overall FPS.
+# grab is happening.  The comments at the top of common/pipeline.py
+# describe pipelining in detail.
+#
+# The slowest stage typically limits overall FPS.  Usually, that's the
+# encoder.
 #
 # On an idle system (rough guide; will vary widely):
 # - libx264, 1920x1080: ~80 fps
