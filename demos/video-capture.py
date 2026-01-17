@@ -3,7 +3,7 @@
 # This demo shows one common use case for MSS: capture the screen and
 # write a real video file (MP4) rather than saving individual images.
 #
-# It’s intentionally not a full “video encoding” course. The goal is
+# It's intentionally not a full "video encoding" course.  The goal is
 # to explain the few concepts that show up throughout the program so
 # you can read, tweak, and extend it.
 #
@@ -11,9 +11,9 @@
 # ------------------------
 #
 # Most people first meet video encoding through the `ffmpeg` command.
-# Under the hood, ffmpeg is built on the “libav*” C libraries. In this
-# demo we use PyAV (`import av`), which is a Pythonic wrapper around
-# those libraries.
+# Under the hood, ffmpeg is built on the "libav*" C libraries.  In
+# this demo we use PyAV (`import av`), which is a Pythonic wrapper
+# around those libraries.
 #
 # PyAV docs: <https://pyav.basswood-io.com/docs/stable/>
 # Note: the older docs at pyav.org are outdated; see
@@ -24,17 +24,17 @@
 # -------------------------------
 #
 # A file like `capture.mp4` is a *container*: it holds one or more
-# *streams* (usually video and/or audio). This demo writes one video
+# *streams* (usually video and/or audio).  This demo writes one video
 # stream.
 #
-# The container interleaves (“muxes”) stream data so players can read
-# everything in timestamp order. libav calls those pieces “packets”.
-# (In MP4 they’re not literally network-style packets; the term is a
+# The container interleaves ("muxes") stream data so players can read
+# everything in timestamp order. libav calls those pieces "packets".
+# (In MP4 they're not literally network-style packets; the term is a
 # longstanding libav abstraction.)
 #
 # A *codec* is the algorithm that compresses/decompresses a stream.
-# For MP4 video, common codecs include H.264 and H.265. This demo
-# defaults to H.264 via `libx264`, because it’s widely supported. You
+# For MP4 video, common codecs include H.264 and H.265.  This demo
+# defaults to H.264 via `libx264`, because it's widely supported.  You
 # can switch to hardware encoders (e.g. `h264_nvenc`) if available.
 #
 # Frames and frame reordering (I/P/B)
@@ -45,8 +45,9 @@
 # - P-frames: changes from previous frames.
 # - B-frames: changes predicted using both past *and future* frames.
 #
-# B-frames are why “the order frames are encoded/decoded” can differ
-# from “the order frames are shown”. That leads directly to timestamps.
+# B-frames are why "the order frames are encoded/decoded" can differ
+# from "the order frames are shown".  That leads directly to
+# timestamps.
 #
 # Timestamps (PTS/DTS)
 # --------------------
@@ -58,15 +59,15 @@
 # Those packets also have a *decode timestamp* (DTS): when the decoder
 # must decode them so the PTS schedule can be met.
 #
-# In this demo we set PTS on `VideoFrame`s and let libav/PyAV propagate
-# timestamps into the encoded packets.
+# In this demo we set PTS on `VideoFrame`s and let libav/PyAV
+# propagate timestamps into the encoded packets.
 #
 # Time base
 # ---------
 #
 # Timestamps are integers, and their unit is a fraction of a second
-# called the *time base*. For example, with a time base of 1/90000,
-# a timestamp of 90000 means “1 second”. PyAV will convert between time
+# called the *time base*.  For example, with a time base of 1/90000, a
+# timestamp of 90000 means "1 second".  PyAV will convert between time
 # bases when needed, but you must set them consistently where you
 # generate timestamps.
 #
@@ -78,9 +79,9 @@
 # ----------------------------------
 #
 # Capturing frames, converting them to `VideoFrame`s, encoding, and
-# muxing are separate stages. This demo pipelines those stages across
+# muxing are separate stages.  This demo pipelines those stages across
 # threads so that (for example) encoding can run while the next screen
-# grab is happening. The slowest stage typically limits overall FPS.
+# grab is happening.  The slowest stage typically limits overall FPS.
 #
 # On an idle system (rough guide; will vary widely):
 # - libx264, 1920x1080: ~80 fps
@@ -134,6 +135,10 @@ CODEC_OPTIONS = {
 
 
 TIME_BASE = Fraction(1, 90000)
+
+# Currently, MSS doesn't give us information about the display's
+# colorspace.  See where this is used below for more information.
+DISPLAY_IS_SRGB = False
 
 LOGGER = logging.getLogger("video-capture")
 
@@ -195,8 +200,8 @@ def video_process(
         tuple[mss.screenshot.ScreenShot, float]
     ],
 ) -> Generator[av.VideoFrame, None, None]:
-    # We track when the first frame happened so we can make PTS start at 0.
-    # Many video players and other tools expect that.
+    # We track when the first frame happened so we can make PTS start
+    # at 0.  Many video players and other tools expect that.
     first_frame_at: float | None = None
 
     for screenshot, timestamp in screenshot_and_timestamp:
@@ -205,9 +210,9 @@ def video_process(
         #
         # Copying a full frame of pixels is expensive.  On typical
         # hardware, a plain CPU memcpy of a 4K BGRA image can cost on
-        # the order of ~3ms by itself, which is a big chunk of a
-        # 30fps budget (33ms) and an even bigger chunk of a 60fps
-        # budget (16.7ms).
+        # the order of ~3ms by itself, which is a big chunk of a 30fps
+        # budget (33ms) and an even bigger chunk of a 60fps budget
+        # (16.7ms).
         #
         # So we want to be careful about the *conversion* step from an
         # MSS `ScreenShot` to a PyAV `VideoFrame`.  Ideally, that step
@@ -218,24 +223,24 @@ def video_process(
         # -----------------
         #
         # Many Python objects expose their underlying memory via the
-        # "buffer protocol".  A buffer is just a view of raw bytes that
-        # other libraries can interpret without copying.
+        # "buffer protocol".  A buffer is just a view of raw bytes
+        # that other libraries can interpret without copying.
         #
         # Common buffer objects include: `bytes`, `bytearray`,
-        # `memoryview`, and `array.array`.  `screenshot.bgra` is also a
-        # buffer (currently it is a `bytes` object, though that detail
-        # may change in the future).
+        # `memoryview`, and `array.array`.  `screenshot.bgra` is also
+        # a buffer (currently it is a `bytes` object, though that
+        # detail may change in the future).
         #
         # Minimum-copy path: ScreenShot -> NumPy -> VideoFrame
-        # --------------------------------------------------
+        # ----------------------------------------------------
         #
         # `np.frombuffer()` creates an ndarray *view* of an existing
         # buffer (no copy).  Reshaping also stays as a view.
         #
         # PyAV's `VideoFrame.from_ndarray()` always copies the data
-        # into a new frame-owned buffer.  For this demo we use
-        # the undocumented `VideoFrame.from_numpy_buffer()`, which creates a
-        # `VideoFrame` that shares memory with the ndarray.
+        # into a new frame-owned buffer.  For this demo we use the
+        # undocumented `VideoFrame.from_numpy_buffer()`, which creates
+        # a `VideoFrame` that shares memory with the ndarray.
         ndarray = np.frombuffer(screenshot.bgra, dtype=np.uint8)
         ndarray = ndarray.reshape(screenshot.height, screenshot.width, 4)
         frame = av.VideoFrame.from_numpy_buffer(ndarray, format="bgra")
@@ -245,6 +250,14 @@ def video_process(
             first_frame_at = timestamp
         frame.pts = int((timestamp - first_frame_at) / TIME_BASE)
         frame.time_base = TIME_BASE
+
+        # If we know the colorspace of our frames, mark them
+        # accordingly.  See the comment where we set these attributes
+        # on video_stream for details.
+        if DISPLAY_IS_SRGB:
+            frame.colorspace = av.video.reformatter.Colorspace.ITU709
+            frame.color_range = av.video.reformatter.ColorRange.JPEG
+
         yield frame
 
 
@@ -287,8 +300,9 @@ def show_stats(
             #
             # Intuitively, you'd expect to compute FPS from PTS (the
             # time the viewer should *see* each frame).  But encoders
-            # can reorder frames internally (especially with B-frames),
-            # so packets may come out in a different order than PTS.
+            # can reorder frames internally (especially with
+            # B-frames), so packets may come out in a different order
+            # than PTS.
             #
             # If we update a sliding window with out-of-order PTS
             # values, the window start/end can "wiggle" even when the
@@ -323,11 +337,11 @@ def show_stats(
             full_line = f"\r{line}{' ' * (last_status_len - this_status_len)}"
             print(full_line, end="")
             last_status_len = this_status_len
-    # Near shutdown the encoder flush can emit packets in large bursts,
-    # and we also throttle status updates (to avoid spamming the
-    # terminal).  That combination means the last displayed line may be
-    # stale or not representative of the final frames.  Rather than
-    # leaving potentially misleading numbers on screen, erase the
+    # Near shutdown the encoder flush can emit packets in large
+    # bursts, and we also throttle status updates (to avoid spamming
+    # the terminal).  That combination means the last displayed line
+    # may be stale or not representative of the final frames.  Rather
+    # than leaving potentially misleading numbers on screen, erase the
     # status display.
     print(f"\r{' ' * last_status_len}\r", end="")
 
@@ -435,20 +449,44 @@ def main() -> None:
             video_stream = avmux.add_stream(
                 codec, rate=fps, options=CODEC_OPTIONS
             )
+
             # Ideally, we would set attributes such as colorspace,
             # color_range, color_primaries, and color_trc here to
-            # describe the colorspace accurately.  This would be
-            # significant if we're capturing on a Display P3 Mac, while
-            # the video file is on an sRGB Windows machine.  Currently,
-            # MSS doesn't give us that information, so we skip it for
-            # now.
+            # describe the colorspace accurately.  Otherwise, the
+            # player has to guess whether this was recorded on an sRGB
+            # Windows machine, a Display P3 Mac, or if it's using
+            # linear RGB.  Currently, MSS doesn't give us colorspace
+            # information (DISPLAY_IS_SRGB is always False in this
+            # demo), so we don't try to specify a particular
+            # colorspace.  However, if your application knows the
+            # colorspace you're recording from, then you can set those
+            # attributes on the stream and the frames accordingly.
+            #
+            # These properties on the stream (actually, they're
+            # attached to its CodecContext) are used to tell the
+            # stream and container how to label the video stream's
+            # colorspace.  There are similar attributes on the frame
+            # itself; those are used to identify its colorspace, so
+            # the codec can do the correct RGB to YUV conversion.
+            if DISPLAY_IS_SRGB:
+                video_stream.color_primaries = 1  # libavutil's AVCOL_PRI_BT709; PyAV doesn't define constants for color primaries.
+                video_stream.colorspace = av.video.reformatter.Colorspace.ITU709  # More commonly called BT.709
+                # The "JPEG" color range is saying that we're using a
+                # color range like a computer, not like broadcast TV.
+                video_stream.color_range = av.video.reformatter.ColorRange.JPEG
+                # Technically, sRGB's transformation characteristic is
+                # AVCOL_TRC_IEC61966_2_1.  It's nearly the same as
+                # BT.709's TRC, so some video encoders will tag it as
+                # AVCOL_TRC_BT709 (1) instead.
+                video_stream.color_trc = 13  # libavutil's AVCOL_TRC_IEC61966_2_1; PyAV doesn't define constants for TRCs.
+
             video_stream.width = monitor["width"]
             video_stream.height = monitor["height"]
-            # There are multiple time bases in play (stream,
-            # codec context, per-frame).  Depending on the container
-            # and codec, some of these might be ignored or overridden.
-            # We set the desired time base consistently everywhere,
-            # so that the saved timestamps are correct regardless of what
+            # There are multiple time bases in play (stream, codec
+            # context, per-frame).  Depending on the container and
+            # codec, some of these might be ignored or overridden.  We
+            # set the desired time base consistently everywhere, so
+            # that the saved timestamps are correct regardless of what
             # format we're saving to.
             video_stream.time_base = TIME_BASE
             video_stream.codec_context.time_base = TIME_BASE
@@ -458,13 +496,13 @@ def main() -> None:
             # convert to a YUV format internally.
             #
             # If the encoder accepts BGRA input (e.g., h264_nvenc), we
-            # can hand it MSS's BGRA frames directly and avoid an extra
-            # pre-conversion step on our side.
+            # can hand it MSS's BGRA frames directly and avoid an
+            # extra pre-conversion step on our side.
             #
-            # If the encoder doesn't accept BGRA input (e.g., libx264),
-            # PyAV will insert a conversion step automatically.  In that
-            # case, we let the codec choose the pix_fmt it's going to
-            # expect.
+            # If the encoder doesn't accept BGRA input (e.g.,
+            # libx264), PyAV will insert a conversion step
+            # automatically.  In that case, we let the codec choose
+            # the pix_fmt it's going to expect.
             #
             # Note: the alpha channel is ignored by H.264.  We may
             # effectively be sending BGRx/BGR0.  But PyAV's VideoFrame
@@ -567,34 +605,34 @@ def main() -> None:
             stage_show_stats.join()
             stage_mux.join()
 
-            # PyAV may insert an implicit conversion step between the frames we
-            # provide and what the encoder actually accepts (pixel format,
-            # colorspace, etc.). When that happens, `video_stream.reformatter`
-            # gets set.
+            # PyAV may insert an implicit conversion step between the
+            # frames we provide and what the encoder actually accepts
+            # (pixel format, colorspace, etc.).  When that happens,
+            # `video_stream.reformatter` gets set.
             #
-            # This is useful to know for performance: those conversions are
-            # typically CPU-side work and can become a bottleneck.
-            # Hardware-accelerated encoders, such as `h264_nvenc`, often accept
-            # BGRx, and can perform the conversion using specialized hardware.
+            # This is useful to know for performance: those
+            # conversions are typically CPU-side work and can become a
+            # bottleneck.  Hardware-accelerated encoders, such as
+            # `h264_nvenc`, often accept BGRx, and can perform the
+            # conversion using specialized hardware.
             #
-            # We already know that libx264 doesn't accept RGB input, so
-            # we don't warn about that.  (There is a libx264rgb, but that
-            # uses a H.264 format that is not widely supported.)
-            # We just want to warn about other
-            # codecs, since some of them might have ways to use BGRx input,
-            # and the programmer might want to investigate.
+            # We already know that libx264 doesn't accept RGB input,
+            # so we don't warn about that.  (There is a libx264rgb,
+            # but that writes to a different H.264 format.)  We just
+            # want to warn about other codecs, since some of them
+            # might have ways to use BGRx input, and the programmer
+            # might want to investigate.
             #
-            # Note: `reformatter` is created lazily, so it may only be set after
-            # frames have been sent through the encoder, which is why we check
-            # it at the end.
+            # Note: `reformatter` is created lazily, so it may only be
+            # set after frames have been sent through the encoder,
+            # which is why we check it at the end.
             if video_stream.reformatter is not None and codec != "libx264":
                 LOGGER.warning(
-                    "PyAV inserted a CPU-side pixel-format/colorspace conversion "
-                    "step (video_stream.reformatter is set) while encoding with %s; "
-                    "this can reduce FPS.  Check the acceptable pix_fmts for this codec, "
-                    "and see if one of them can accept some variation of BGRx input "
-                    "directly.",
-                    codec,
+                    "PyAV inserted a CPU-side pixel-format/colorspace "
+                    "conversion step; this can reduce FPS.  Check the "
+                    "acceptable pix_fmts for this codec, and see if one "
+                    "of them can accept some variation of BGRx input "
+                    "directly."
                 )
 
 
