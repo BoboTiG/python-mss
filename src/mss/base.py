@@ -186,9 +186,6 @@ class MSSBase(metaclass=ABCMeta):
                 "height": monitor[3] - monitor[1],
             }
 
-        if monitor["left"] < 0 or monitor["top"] < 0:
-            msg = f"Region has negative coordinates: {monitor!r}"
-            raise ScreenShotError(msg)
         if monitor["width"] <= 0 or monitor["height"] <= 0:
             msg = f"Region has zero or negative size: {monitor!r}"
             raise ScreenShotError(msg)
