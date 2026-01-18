@@ -8,6 +8,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 import ctypes
 
+# Monkey-patch PROT_READ into mmap if missing (Windows), so that we can
+# import mss.linux.xshmgetimage while building the documentation.
+import mmap
+
+if not hasattr(mmap, "PROT_READ"):
+    mmap.PROT_READ = 1  # type:ignore[attr-defined]
+
 import mss
 
 # -- General configuration ------------------------------------------------
@@ -43,7 +50,6 @@ autodoc_default_options = {
 # import mss.windows while building the documentation.
 ctypes.WINFUNCTYPE = ctypes.CFUNCTYPE  # type:ignore[attr-defined]
 ctypes.WinError = lambda _code=None, _descr=None: OSError()  # type:ignore[attr-defined]
-
 
 # -- Options for HTML output ----------------------------------------------
 
