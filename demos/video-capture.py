@@ -75,6 +75,35 @@
 #
 # This demo uses a time base of 1/90000 (a common MPEG-derived choice).
 #
+# Constant Frame Rate (CFR) and Variable Frame Rate (VFR)
+# -------------------------------------------------------
+#
+# Many video files run at a fixed frame rate, like 30 fps.  Each frame
+# is shown at 1/30 sec intervals.  This is called *constant frame
+# rate*, or *CFR*, and that's what we do in the simple version of this
+# demo.
+#
+# One problem with this is that, if the encoder can't keep up, the
+# video will appear sped-up when played back.  The comments at the
+# beginning of the simple version of this demo go into more detail
+# about that problem.
+#
+# In this advanced version, we use *variable frame rate*, or *VFR*.
+# That's because we can't be sure that the encoder will be able to
+# work fast enough: we haven't tuned its settings for your screen
+# resolution and hardware.  While the encoder might be fast enough, it
+# might only be able to operate at 18 fps, or even less.
+#
+# Instead, we mark each frame with the correct time that it should be
+# shown.  Even if the encoder is falling behind, its frames are still
+# marked with the right times, so the player will just keep the
+# previous frame on the screen a little longer.
+#
+# Some video editing software historically has had problems with VFR
+# video.  It's much better now than it was a few years ago, but if you
+# plan to edit the video, you may need to convert it to CFR.  There
+# are many resources online about how to do that.
+#
 # Performance (why multiple threads?)
 # ----------------------------------
 #
@@ -128,7 +157,8 @@ CODEC_OPTIONS = {
     # The "medium" preset is as good of a preset as any for a demo
     # like this.  Different codecs have different presets; the
     # h264_nvenc actually prefers "p4", but accepts "medium" as a
-    # similar preset.
+    # similar preset.  You might prefer "fast" if you're not getting
+    # enough FPS.
     "preset": "medium",
     # 6 Mbit/sec is vaguely the ballpark for a good-quality video at
     # 1080p and 30 fps, but there's a lot of variation.  We're just
