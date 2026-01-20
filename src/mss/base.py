@@ -278,7 +278,10 @@ class MSSBase(metaclass=ABCMeta):
 
     @staticmethod
     def _merge(screenshot: ScreenShot, cursor: ScreenShot, /) -> ScreenShot:
-        """Create composite image by blending screenshot and mouse cursor."""
+        """Create composite image by blending screenshot and mouse cursor.
+
+        The cursor image should be in straight (not premultiplied) alpha.
+        """
         (cx, cy), (cw, ch) = cursor.pos, cursor.size
         (x, y), (w, h) = screenshot.pos, screenshot.size
 
