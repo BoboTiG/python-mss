@@ -124,9 +124,10 @@ import mss
 from common.pipeline import Mailbox, PipelineStage
 
 
-# These are the options you'd give to ffmpeg that it sends to the video codec.  The options you can use here can be
-# listed with `ffmpeg -help encoder=libx264`, or whatever encoder you're using for this demo's `--codec` flag.  The
-# options for each encoder are described in more detail in `man ffmpeg-codecs`.
+# These are the options you'd give to ffmpeg that it sends to the video codec.  Because ffmpeg and PyAV both use the
+# libav libraries, you can get the list of available flags with `ffmpeg -help encoder=libx264`, or whatever encoder
+# you're using for this demo's `--codec` flag.  The options for each encoder are described in more detail in `man
+# ffmpeg-codecs`.
 CODEC_OPTIONS = {
     # The "high" profile means that the encoder can use some H.264 features that are widely supported, but not
     # mandatory.  If you're using a codec other than H.264, you'll need to comment out this line: the relevant
@@ -238,6 +239,19 @@ def video_process(
         frame = av.VideoFrame.from_numpy_buffer(ndarray, format="bgra")
 
         # Set the PTS and time base for the frame.
+        #
+        # We compute PTS based on the actual time we captured the screenshot, relative to when we got the first
+        # frame.  This gives us variable frame rate (VFR) video that accurately reflects the times the frames were
+        # captured.
+        #
+        # However, if we were muxing in an audio stream as well, we'd want to use a common clock for both audio and
+        # video PTS, preferably based on the audio clock.  That's because audio glitches are more noticeable than
+        # video glitches, so audio timing should be prioritized.  In that case, the video PTS would be based on the
+        # audio clock, not the actual capture time.
+        #
+        # The easiest way to do that is to record the monotonic clock in both the video and audio capture stages
+        # (taking the audio latency into account), record the audio PTS based on how many audio samples have been
+        # captured, and then adjust the video PTS based on the skew between the audio and monotonic clocks.
         if first_frame_at is None:
             first_frame_at = timestamp
         frame.pts = int((timestamp - first_frame_at) / TIME_BASE)
@@ -465,16 +479,20 @@ def main() -> None:
             video_stream.time_base = TIME_BASE
             video_stream.codec_context.time_base = TIME_BASE
             # `pix_fmt` here describes the pixel format we will *feed* into the encoder (not necessarily what the
-            # encoder will store in the bitstream).  H.264 encoders ultimately convert to a YUV format internally.
+            # encoder will store in the bitstream).  H.264 encoders ultimately convert to a YUV 4:2:0 format
+            # internally.
             #
-            # If the encoder accepts BGRA input (e.g., h264_nvenc), we can hand it MSS's BGRA frames directly and
-            # avoid an extra pre-conversion step on our side.
+            # If the encoder accepts BGRx input (e.g., h264_nvenc), we can hand it MSS's BGRx frames directly and
+            # avoid an extra pre-conversion step on our side.  For a hardware encoder, that lets specialized hardware
+            # do the conversion to YUV efficiently.
             #
-            # If the encoder doesn't accept BGRA input (e.g., libx264), PyAV will insert a conversion step
-            # automatically.  In that case, we let the codec choose the pix_fmt it's going to expect.
+            # If the encoder doesn't accept BGRx input (e.g., libx264), PyAV will insert a conversion step
+            # automatically.  In that case, we let the codec choose the pix_fmt it wants.
             #
-            # Note: the alpha channel is ignored by H.264.  We may effectively be sending BGRx/BGR0.  But PyAV's
-            # VideoFrame only exposes "bgra" as the closest supported format.
+            # Note: the alpha channel is ignored by H.264.  We usually are sending sending BGRx/BGR0.  But PyAV's
+            # VideoFrame only exposes "bgra" as the closest supported format, so that's how we tag our frames, and
+            # what we tell the codec to expect, if possible.  You might need to change this for codecs like VP9 that
+            # can handle alpha channels.
             if any(f.name == "bgra" for f in video_stream.codec.video_formats):
                 video_stream.pix_fmt = "bgra"
                 # We open (initialize) the codec explicitly here.  PyAV will automatically open it the first time we
@@ -536,6 +554,19 @@ def main() -> None:
             LOGGER.debug("  Encode:     %s", stage_video_encode.native_id)
             LOGGER.debug("  Mux:        %s", stage_mux.native_id)
 
+            # Handle Ctrl-C gracefully by requesting shutdown.
+            #
+            # Python always routes signals to the main thread, so we don't have to worry about another thread getting
+            # a SIGINT (the Ctrl-C signal).  That's significant because if the video capture stage tried to set the
+            # shutdown_requested event (which requires the event lock) while it was already waiting for it (hence
+            # holding the lock), it could end up deadlocked.  The main thread doesn't ever acquire that lock.  As
+            # another point of safety, Python only will invoke our signal handler at a "safe" point, such as between
+            # bytecode instructions.
+
+            # We set old_sigint_handler twice: once here, and once when we change the handler.  The first time is
+            # just in case a signal arrives in the tiny window between when we set the new handler (by calling
+            # signal.signal), and when we assign it to old_sigint_handler (with "=").  Signal handling, like
+            # threading, is tricky to get right.
             old_sigint_handler = signal.getsignal(signal.SIGINT)
 
             def sigint_handler(_signum: int, _frame: Any) -> None:
@@ -552,6 +583,8 @@ def main() -> None:
             print("Starting video capture.  Press Ctrl-C to stop.")
 
             if duration_secs is not None:
+                # Wait for up to the specified duration.  If the pipeline shuts down for other reasons (such as an
+                # exception), then we'll recognize it sooner with this join.
                 stage_video_capture.join(timeout=duration_secs)
                 # Either the join timed out, or we processed a ^C and requested it exit.  Either way, it's safe to set
                 # the shutdown event again, and return to our normal processing loop.
