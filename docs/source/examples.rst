@@ -209,3 +209,19 @@ Different possibilities to convert raw BGRA values to RGB::
         ...
 
 .. versionadded:: 3.2.0
+
+
+Demos
+=====
+
+In addition to these simple examples, there are full demos of more complex use cases in the ``demos/`` directory of the
+source code.  The demos are not installed with the package, but you can run them directly from the source tree after
+cloning the repository.
+
+These are complete, working programs that use MSS for screen capture as a key part of their functionality.  They show
+not only how to invoke MSS, but also some of the techniques for using the captured frames efficiently, in real-world
+scenarios.
+
+These include:
+- MP4 video capture with encoding using PyAV (FFmpeg bindings)
+- Live streaming to a TinyTV as MJPEG
