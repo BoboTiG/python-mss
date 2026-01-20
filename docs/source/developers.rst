@@ -40,7 +40,8 @@ Code Quality
 To ensure the code quality is correct enough::
 
     $ python -m pip install -e '.[dev]'
-    $ ./check.sh
+    $ ./check.sh  # Linux/macOS
+    $ .\check.ps1  # Windows (PowerShell)
 
 
 Documentation
