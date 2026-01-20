@@ -213,8 +213,9 @@ def main() -> None:
             # some frames, while it decides how to encode them based
             # on future frames.  Now that we're done sending it
             # frames, we need to get the packets for any frames it's
-            # still holding onto.  We do this by sending None instead
-            # of a frame object.
+            # still holding onto.  This is referred to as "flushing"
+            # the stream.  We do this by sending None instead of a
+            # frame object.
             packets = video_stream.encode(None)
             avmux.mux(packets)
 
