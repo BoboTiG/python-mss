@@ -10,6 +10,13 @@
 # What tools are we using?
 # ------------------------
 #
+# You'll need a few libraries that don't come with Python: PyAV,
+# NumPy, SI-Prefix, and (of course) MSS.  You'll need to install those
+# with "pip install av mss numpy si-prefix".  Normally, you'll want to
+# install these into a venv; if you don't know about those, there are
+# lots of great tutorials online.  The most critical one we use is
+# PyAV.
+#
 # Most people first meet video encoding through the `ffmpeg` command.
 # Under the hood, ffmpeg is built on the "libav*" C libraries.  In
 # this demo we use PyAV (`import av`), which is a Pythonic wrapper
@@ -134,6 +141,7 @@ from math import floor
 from threading import Event
 from typing import Any
 
+# Install the necessary libraries with "pip install av mss numpy si-prefix".
 import av
 import numpy as np
 from si_prefix import si_format

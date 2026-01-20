@@ -42,6 +42,7 @@
 import logging
 import time
 
+# Install the necessary libraries with "pip install av mss pillow".
 import av
 from PIL import Image
 
