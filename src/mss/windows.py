@@ -1,6 +1,7 @@
 """Windows GDI-based backend for MSS.
 
 Uses user32/gdi32 APIs to capture the desktop and enumerate monitors.
+This implementation uses CreateDIBSection for direct memory access to pixel data.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from ctypes.wintypes import (
     BOOL,
     BYTE,
     DWORD,
+    HANDLE,
     HBITMAP,
     HDC,
     HGDIOBJ,
@@ -88,7 +90,7 @@ def _errcheck(result: BOOL | _Pointer, func: Callable, arguments: tuple) -> tupl
             "error_msg": winerror.strerror,
         }
         if winerror.winerror == 0:
-            # Some functions return NULL/0 on failure without setting last error.  (Example: CreateCompatibleBitmap
+            # Some functions return NULL/0 on failure without setting last error.  (Example: CreateDIBSection
             # with an invalid HDC.)
             msg = f"Windows graphics function failed (no error provided): {func.__name__}"
             raise ScreenShotError(msg, details=details)
@@ -105,12 +107,16 @@ def _errcheck(result: BOOL | _Pointer, func: Callable, arguments: tuple) -> tupl
 CFUNCTIONS: CFunctionsErrChecked = {
     # Syntax: cfunction: (attr, argtypes, restype, errcheck)
     "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _errcheck),
-    "CreateCompatibleBitmap": ("gdi32", [HDC, INT, INT], HBITMAP, _errcheck),
     "CreateCompatibleDC": ("gdi32", [HDC], HDC, _errcheck),
+    # CreateDIBSection: ppvBits (4th param) receives a pointer to the DIB pixel data.
+    # hSection is NULL and offset is 0 to have the system allocate the memory.
+    "CreateDIBSection": ("gdi32", [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD], HBITMAP, _errcheck),
     "DeleteDC": ("gdi32", [HDC], HDC, _errcheck),
     "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _errcheck),
     "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _errcheck),
-    "GetDIBits": ("gdi32", [HDC, HBITMAP, UINT, UINT, LPVOID, POINTER(BITMAPINFO), UINT], INT, _errcheck),
+    # GdiFlush flushes the calling thread's current batch of GDI operations.
+    # This ensures DIB memory is fully updated before reading.
+    "GdiFlush": ("gdi32", [], BOOL, None),
     # While GetSystemMetrics will return 0 if the parameter is invalid, it will also sometimes return 0 if the
     # parameter is valid but the value is actually 0 (e.g., SM_CLEANBOOT on a normal boot).  Thus, we do not attach an
     # errcheck function here.
@@ -126,6 +132,10 @@ CFUNCTIONS: CFunctionsErrChecked = {
 class MSS(MSSBase):
     """Multiple ScreenShots implementation for Microsoft Windows.
 
+    This implementation uses CreateDIBSection for direct memory access to pixel data,
+    which eliminates the need for GetDIBits. The DIB pixel data is written directly
+    to system-managed memory that we can read from.
+
     This has no Windows-specific constructor parameters.
 
     .. seealso::
@@ -134,7 +144,17 @@ class MSS(MSSBase):
             Lists constructor parameters.
     """
 
-    __slots__ = {"_bmi", "_bmp", "_data", "_memdc", "_region_width_height", "_srcdc", "gdi32", "user32"}
+    __slots__ = {
+        "_bmi",
+        "_dib",
+        "_dib_array",
+        "_dib_bits",
+        "_memdc",
+        "_region_width_height",
+        "_srcdc",
+        "gdi32",
+        "user32",
+    }
 
     def __init__(self, /, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -147,29 +167,30 @@ class MSS(MSSBase):
 
         # Available instance-specific variables
         self._region_width_height: tuple[int, int] | None = None
-        self._bmp: HBITMAP | None = None
+        self._dib: HBITMAP | None = None
+        self._dib_bits: LPVOID = LPVOID()  # Pointer to DIB pixel data
+        self._dib_array: ctypes.Array[ctypes.c_char] | None = None  # Cached array view of DIB memory
         self._srcdc = self.user32.GetWindowDC(0)
         self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
-        self._data: ctypes.Array[ctypes.c_char] | None = None
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
         # biWidth and biHeight are set in _grab_impl().
         bmi.bmiHeader.biPlanes = 1  # Always 1
-        bmi.bmiHeader.biBitCount = 32  # See grab.__doc__ [2]
+        bmi.bmiHeader.biBitCount = 32  # 32-bit RGBX
         bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
         bmi.bmiHeader.biSizeImage = 0  # Windows infers the size
         bmi.bmiHeader.biXPelsPerMeter = 0  # Unspecified
         bmi.bmiHeader.biYPelsPerMeter = 0  # Unspecified
-        bmi.bmiHeader.biClrUsed = 0  # See grab.__doc__ [3]
-        bmi.bmiHeader.biClrImportant = 0  # See grab.__doc__ [3]
+        bmi.bmiHeader.biClrUsed = 0
+        bmi.bmiHeader.biClrImportant = 0
         self._bmi = bmi
 
     def _close_impl(self) -> None:
         # Clean-up
-        if self._bmp:
-            self.gdi32.DeleteObject(self._bmp)
-            self._bmp = None
+        if self._dib:
+            self.gdi32.DeleteObject(self._dib)
+            self._dib = None
 
         if self._memdc:
             self.gdi32.DeleteDC(self._memdc)
@@ -239,34 +260,17 @@ class MSS(MSSBase):
         user32.EnumDisplayMonitors(0, None, callback, 0)
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB.
+        """Retrieve all pixels from a monitor using CreateDIBSection.
 
-        In the code, there are a few interesting things:
+        CreateDIBSection creates a DIB with system-managed memory backing,
+        allowing BitBlt to write directly to memory we can read. This eliminates
+        the need for a separate GetDIBits call.
 
-        [1] bmi.bmiHeader.biHeight = -height
-
-        A bottom-up DIB is specified by setting the height to a
-        positive number, while a top-down DIB is specified by
-        setting the height to a negative number.
-        https://msdn.microsoft.com/en-us/library/ms787796.aspx
-        https://msdn.microsoft.com/en-us/library/dd144879%28v=vs.85%29.aspx
-
-
-        [2] bmi.bmiHeader.biBitCount = 32
-            image_data = create_string_buffer(height * width * 4)
-
-        We grab the image in RGBX mode, so that each word is 32bit
-        and we have no striding.
-        Inspired by https://github.com/zoofIO/flexx
-
-
-        [3] bmi.bmiHeader.biClrUsed = 0
-            bmi.bmiHeader.biClrImportant = 0
-
-        When biClrUsed and biClrImportant are set to zero, there
-        is "no" color table, so we can read the pixels of the bitmap
-        retrieved by gdi32.GetDIBits() as a sequence of RGB values.
-        Thanks to http://stackoverflow.com/a/3688682
+        Note on biHeight: A bottom-up DIB is specified by setting the height to a
+        positive number, while a top-down DIB is specified by setting the height
+        to a negative number. We use negative height for top-down orientation.
+        https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
+        https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createdibsection
         """
         srcdc, memdc = self._srcdc, self._memdc
         gdi = self.gdi32
@@ -275,25 +279,40 @@ class MSS(MSSBase):
         if self._region_width_height != (width, height):
             self._region_width_height = (width, height)
             self._bmi.bmiHeader.biWidth = width
-            self._bmi.bmiHeader.biHeight = -height  # Why minus? See [1]
-            self._data = ctypes.create_string_buffer(width * height * 4)  # [2]
-            if self._bmp:
-                gdi.DeleteObject(self._bmp)
-                # Set to None to prevent another DeleteObject in case CreateCompatibleBitmap raises an exception.
-                self._bmp = None
-            self._bmp = gdi.CreateCompatibleBitmap(srcdc, width, height)
-            gdi.SelectObject(memdc, self._bmp)
+            self._bmi.bmiHeader.biHeight = -height  # Negative for top-down DIB
 
+            if self._dib:
+                gdi.DeleteObject(self._dib)
+                self._dib = None
+
+            # CreateDIBSection creates the DIB and returns a pointer to the pixel data
+            self._dib_bits = LPVOID()
+            self._dib = gdi.CreateDIBSection(
+                memdc,
+                self._bmi,
+                DIB_RGB_COLORS,
+                ctypes.byref(self._dib_bits),
+                None,  # hSection = NULL (system allocates memory)
+                0,  # offset = 0
+            )
+            gdi.SelectObject(memdc, self._dib)
+
+            # Create a ctypes array type that maps directly to the DIB memory.
+            # This avoids the overhead of ctypes.string_at() creating an intermediate bytes object.
+            size = width * height * 4
+            array_type = ctypes.c_char * size
+            self._dib_array = ctypes.cast(self._dib_bits, POINTER(array_type)).contents
+
+        # BitBlt copies screen content directly into the DIB's memory
         gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
-        assert self._data is not None  # noqa: S101 for type checker
-        scanlines_copied = gdi.GetDIBits(memdc, self._bmp, 0, height, self._data, self._bmi, DIB_RGB_COLORS)
-        if scanlines_copied != height:
-            # If the result was 0 (failure), an exception would have been raised by _errcheck.  This is just a sanity
-            # clause.
-            msg = f"gdi32.GetDIBits() failed: only {scanlines_copied} scanlines copied instead of {height}"
-            raise ScreenShotError(msg)
 
-        return self.cls_image(bytearray(self._data), monitor)
+        # Flush GDI operations to ensure DIB memory is fully updated before reading.
+        # This ensures the BitBlt has completed before we access the memory.
+        gdi.GdiFlush()
+
+        # Read directly from DIB memory via the cached array view
+        assert self._dib_array is not None  # noqa: S101  for type checker
+        return self.cls_image(bytearray(self._dib_array), monitor)
 
     def _cursor_impl(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""
