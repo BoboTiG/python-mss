@@ -1,8 +1,10 @@
 # History
 
-See Git checking messages for full history.
+See Git commit messages for full history.
 
-## 10.2.0.dev0 (2025-xx-xx)
+## 10.2.0.dev0 (2026-xx-xx)
+- Windows: switch from `GetDIBits` to more memory efficient `CreateDIBSection` for `MSS.grab` implementation (#449)
+- Windows: fix gdi32.GetDIBits() failed after a couple of minutes of recording (#268)
 - Linux: check the server for Xrandr support version (#417)
 - Linux: improve typing and error messages for X libraries (#418)
 - Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)
@@ -10,7 +12,7 @@ See Git checking messages for full history.
 - Windows: improve error checking and messages for Win32 API calls (#448)
 - Mac: fix memory leak (#450, #453)
 - improve multithreading: allow multiple threads to use the same MSS object, allow multiple MSS objects to concurrently take screenshots, and document multithreading guarantees (#446, #452)
-- :heart: contributors: @jholveck
+- :heart: contributors: @jholveck, @halldorfannar
 
 ## 10.1.0 (2025-08-16)
 - Mac: up to 60% performances improvement by taking screenshots at nominal resolution (e.g. scaling is off by default). To enable back scaling, set `mss.darwin.IMAGE_OPTIONS = 0`. (#257)
