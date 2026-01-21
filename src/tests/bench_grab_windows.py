@@ -130,7 +130,7 @@ def benchmark_raw_bitblt() -> None:
             bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy | captureblt)
             gdiflush()
         elapsed = perf_counter() - start
-        print(f"With CAPTUREBLT:    {elapsed/ITERATIONS*1000:.2f}ms ({ITERATIONS/elapsed:.1f} FPS)")
+        print(f"With CAPTUREBLT:    {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
 
         # Test without CAPTUREBLT
         start = perf_counter()
@@ -138,7 +138,7 @@ def benchmark_raw_bitblt() -> None:
             bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy)
             gdiflush()
         elapsed = perf_counter() - start
-        print(f"Without CAPTUREBLT: {elapsed/ITERATIONS*1000:.2f}ms ({ITERATIONS/elapsed:.1f} FPS)")
+        print(f"Without CAPTUREBLT: {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
 
 
 def analyze_frame_timing() -> None:
@@ -190,15 +190,15 @@ def analyze_frame_timing() -> None:
         print("\nVSync pattern analysis:")
         print("  60 Hz (16.67ms): ", end="")
         near_60hz = sum(1 for t in times if 15 < t < 18)
-        print(f"{near_60hz}/{num_samples} samples ({near_60hz/num_samples*100:.0f}%)")
+        print(f"{near_60hz}/{num_samples} samples ({near_60hz / num_samples * 100:.0f}%)")
 
         print("  30 Hz (33.33ms): ", end="")
         near_30hz = sum(1 for t in times if 31 < t < 36)
-        print(f"{near_30hz}/{num_samples} samples ({near_30hz/num_samples*100:.0f}%)")
+        print(f"{near_30hz}/{num_samples} samples ({near_30hz / num_samples * 100:.0f}%)")
 
         print("  < 10ms (fast):   ", end="")
         fast = sum(1 for t in times if t < 10)
-        print(f"{fast}/{num_samples} samples ({fast/num_samples*100:.0f}%)")
+        print(f"{fast}/{num_samples} samples ({fast / num_samples * 100:.0f}%)")
 
         # Histogram buckets
         print("\nHistogram (ms):")
