@@ -1,5 +1,128 @@
 #! /usr/bin/env python3
 
+# This demo shows how to use MSS for artificial intelligence.  For
+# this demo, we'll be using a simple object detection task: see if
+# there's a cat on your monitor.  I mean, displayed on the monitor,
+# not sitting on your laptop.
+#
+# This demo is not meant to be an introduction to AI or computer
+# vision.  We assume you have an understanding of the basics of AI,
+# and of PyTorch.
+#
+# Object Detection
+# ================
+#
+# An object detector is a different beast than an object classifier.
+# Object classifiers are a common introduction to computer vision.
+# These will look at a picture that has a single foreground object,
+# front and center, and try to identify what type of object this is: a
+# cat, person, bicycle, etc.
+#
+# An object detector looks at an image and identifies _multiple
+# objects_ within it.  Instead of assigning a single label to the
+# whole image, saying "this is a picture of a cat", it might say
+# "there is a cat here, and a bicycle over there," and provide some
+# basic information about each one.  This is, for instance, what a
+# self-driving car uses to identify what it's seeing on its cameras.
+#
+# For this demo, we want to tell if a cat is anywhere on the screen,
+# not if the whole screen is a picture of a cat.  That means that we
+# want to use an detector, not a classifier.
+#
+# The detector will find any number of objects.  For each object it
+# detects, a typical detector produces three pieces of information:
+#
+# - A *label*, which identifies _what kind of object_ the detector
+#   believes it has found.  Labels are represented internally as
+#   integers that map to a fixed list of categories the model was
+#   trained on (for example, "cat," "bicycle," or "person").
+#
+# - A *position*, usually given as a bounding box.  A bounding box
+#   describes _where_ the object appears in the image, using a small
+#   set of numbers that define a rectangle around it.
+#
+# - A *score*, which indicates how confident the model is in that
+#   detection.  Higher scores mean the model is more confident; lower
+#   scores mean it is less confident.  The score is a relative
+#   confidence signal, not a calibrated probability, and it should not
+#   be interpreted as a percentage or compared across different
+#   models.
+#
+# Most modern object detectors follow this same basic pattern, even if
+# their internal architectures differ.  In the Torchvision model used
+# in this demo, these results are returned as parallel one-dimensional
+# tensors: one tensor of labels, one tensor of bounding boxes, and one
+# tensor of scores.  Each index across these tensors refers to the
+# same detected object.
+#
+# The Model We're Using
+# =====================
+#
+# In this demo, we use a pre-trained object-detection model provided
+# by PyTorch's Torchvision library: `fasterrcnn_resnet50_fpn_v2`, with
+# weights `FasterRCNN_ResNet50_FPN_V2_Weights.COCO_V1`.
+#
+# This name is long, but each part reflects a piece of a larger system
+# built up over many years of research and engineering.
+#
+# *Faster R-CNN* is the overall object-detection architecture.
+# Introduced in 2015, it builds on earlier R-CNN variants and
+# established the now-common two-stage approach to detection: first
+# proposing regions that might contain objects, then classifying and
+# refining those regions.  This basic structure is still widely used
+# today.
+#
+# *ResNet-50* refers to the convolutional neural network used as the
+# _backbone_.  ResNet itself was originally developed for image
+# classification, but its feature-extraction layers proved broadly
+# useful and are now reused in many vision systems.  In this model,
+# ResNet-50 converts raw pixels into _features_ - numerical
+# representations that capture visual patterns such as edges,
+# textures, shapes, and object parts - while the original
+# classification layers are replaced by the detection-specific
+# components of Faster R-CNN.
+#
+# *FPN*, or Feature Pyramid Network, is a later addition that
+# addresses one of the main challenges in object detection: scale.  It
+# combines high-level, semantically rich features (good at recognizing
+# _what_ is present) with lower-level, higher-resolution features
+# (better at preserving _where_ things are).  By layering these ideas
+# on top of the backbone, the model can detect both large and small
+# objects more reliably.
+#
+# The *v2* suffix indicates a newer Torchvision implementation that
+# incorporates refinements from more recent research and practice.  In
+# particular, it follows a standardized training and configuration
+# setup described in the 2021 paper "Benchmarking Detection Transfer
+# Learning with Vision Transformers".  Despite the paper's title, this
+# model does *not* use Transformers; it uses a ResNet-50 backbone, but
+# benefits from the same modernized training approach.
+#
+# Finally, *COCO_V1* indicates that the model was trained on the COCO
+# dataset, a widely used community benchmark for object detection.
+# COCO contains hundreds of thousands of labeled images covering 80
+# common object categories (such as people, animals, and vehicles),
+# along with a small number of additional placeholder categories that
+# appear as "N/A" in the model metadata.
+#
+# Performance
+# ===========
+#
+# The biggest determinant of performance is whether the model runs on
+# a GPU or on the CPU.  GPUs are extremely well-suited to AI
+# workloads, and PyTorch’s strongest and most mature GPU support today
+# is through NVIDIA’s CUDA platform.
+#
+# With a CUDA-capable GPU, this demo’s main loop typically runs in
+# around 100 ms per frame (about 10 fps).  When run on the CPU, the
+# same work takes roughly 5000 ms per frame (about 0.2 fps).
+#
+# Screen size has little effect on performance.  The preprocessing
+# stage scales the captured image to a fixed size, so the slow part -
+# running the neural network - takes roughly the same amount of time
+# regardless of the original screen resolution.
+
+
 import itertools
 import time
 
@@ -18,11 +141,10 @@ import mss
 
 
 def top_unique_labels(labels, scores):
-    """Return the unique labels, ordered by score descending.
+    """Return the unique labels, ordered by descending score.
 
-    In other words, if you have a person (0.67), dog (0.98), tv
-    (0.88), dog (0.71), you'll get back the labels for dog, tv,
-    person, in that order.
+    If you have a person (0.67), dog (0.98), tv (0.88), dog (0.71),
+    you'll get back the labels for dog, tv, person, in that order.
 
     The labels are a 1d tensor of integers, which are identifiers for
     model-specific categories, such as indices into
@@ -43,9 +165,18 @@ def top_unique_labels(labels, scores):
 # a neural net.
 @torch.inference_mode()
 def main():
-    # Use CUDA if it's installed and available.  This is much faster
-    # than doing all the work on the CPU.
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Prefer CUDA if available.  PyTorch’s CUDA backend is the most
+    # mature and consistently supported option, and can be tens of
+    # times faster than running the same model on the CPU.
+    #
+    # Other GPU backends (such as Apple’s MPS, AMD ROCm, or Intel XPU)
+    # exist, but support and configuration vary widely across systems.
+    # Since this demo hasn’t been tested on those platforms, it
+    # conservatively falls back to the CPU when CUDA is not available.
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
 
     # The first time you run this demo, Torchvision will download a
     # 167 MByte DNN.  This is cached in ~/.cache/torch/hub/checkpoints
