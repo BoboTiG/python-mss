@@ -9,22 +9,11 @@ import threading
 import pytest
 
 import mss
-from mss.exception import ScreenShotError
 
 try:
     import mss.windows
 except ImportError:
     pytestmark = pytest.mark.skip
-
-
-def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
-    # Test bad data retrieval
-    with mss.mss() as sct:
-        assert isinstance(sct, mss.windows.MSS)  # For Mypy
-
-        monkeypatch.setattr(sct.gdi32, "GetDIBits", lambda *_: 0)
-        with pytest.raises(ScreenShotError):
-            sct.shot()
 
 
 def test_region_caching() -> None:
@@ -35,18 +24,18 @@ def test_region_caching() -> None:
         # Grab the area 1
         region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
         sct.grab(region1)
-        bmp1 = id(sct._bmp)
+        dib1 = id(sct._dib)
 
-        # Grab the area 2, the cached BMP is used
+        # Grab the area 2, the cached DIB is used
         # Same sizes but different positions
         region2 = {"top": 200, "left": 200, "width": 200, "height": 200}
         sct.grab(region2)
-        bmp2 = id(sct._bmp)
-        assert bmp1 == bmp2
+        dib2 = id(sct._dib)
+        assert dib1 == dib2
 
-        # Grab the area 2 again, the cached BMP is used
+        # Grab the area 2 again, the cached DIB is used
         sct.grab(region2)
-        assert bmp2 == id(sct._bmp)
+        assert dib2 == id(sct._dib)
 
 
 def test_region_not_caching() -> None:
@@ -60,15 +49,15 @@ def test_region_not_caching() -> None:
     region1 = {"top": 0, "left": 0, "width": 100, "height": 100}
     region2 = {"top": 0, "left": 0, "width": 50, "height": 1}
     grab1.grab(region1)
-    bmp1 = id(grab1._bmp)
+    dib1 = id(grab1._dib)
     grab2.grab(region2)
-    bmp2 = id(grab2._bmp)
-    assert bmp1 != bmp2
+    dib2 = id(grab2._dib)
+    assert dib1 != dib2
 
-    # Grab the area 1, is not bad cached BMP previous grab the area 2
+    # Grab the area 1, is not bad cached DIB previous grab the area 2
     grab1.grab(region1)
-    bmp1 = id(grab1._bmp)
-    assert bmp1 != bmp2
+    dib1 = id(grab1._dib)
+    assert dib1 != dib2
 
 
 def run_child_thread(loops: int) -> None:

@@ -85,6 +85,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/__init__.py",
         f"mss-{__version__}/src/tests/bench_bgra2rgb.py",
         f"mss-{__version__}/src/tests/bench_general.py",
+        f"mss-{__version__}/src/tests/bench_grab_windows.py",
         f"mss-{__version__}/src/tests/conftest.py",
         f"mss-{__version__}/src/tests/res/monitor-1024x768.raw.zip",
         f"mss-{__version__}/src/tests/test_bgra_to_rgb.py",
