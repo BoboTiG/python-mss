@@ -4,6 +4,7 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
+import builtins
 import ctypes.util
 import platform
 from ctypes import CFUNCTYPE, POINTER, _Pointer, c_int
@@ -315,3 +316,32 @@ def test_shm_fallback() -> None:
         sct.grab(sct.monitors[0])
         # Ensure that it really did have to fall back; otherwise, we'd need to change how we test this case.
         assert sct.shm_status == mss.linux.xshmgetimage.ShmStatus.UNAVAILABLE
+
+
+def test_exception_while_holding_memoryview(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that an exception at a particular point doesn't prevent cleanup.
+
+    The particular point is the window when the XShmGetImage's mmapped
+    buffer has a memoryview still outstanding, and the pixel data is
+    being copied into a bytearray.  This can take a few milliseconds.
+    """
+    # Force an exception during bytearray(img_mv)
+    real_bytearray = builtins.bytearray
+
+    def boom(*args: list, **kwargs: dict[str, Any]) -> bytearray:
+        # Only explode when called with the memoryview (the code path we care about).
+        if len(args) > 0 and isinstance(args[0], memoryview):
+            # We still need to eliminate args from the stack frame, just like the fix.
+            del args, kwargs
+            msg = "Boom!"
+            raise RuntimeError(msg)
+        return real_bytearray(*args, **kwargs)
+
+    # We have to be careful about the order in which we catch things.  If we were to catch and discard the exception
+    # before the MSS object closes, it won't trigger the bug.  That's why we have the pytest.raises outside the
+    # mss.mss block.  In addition, we do as much as we can before patching bytearray, to limit its scope.
+    with pytest.raises(RuntimeError, match="Boom!"), mss.mss(backend="xshmgetimage") as sct:  # noqa: PT012
+        monitor = sct.monitors[0]
+        with monkeypatch.context() as m:
+            m.setattr(builtins, "bytearray", boom)
+            sct.grab(monitor)
