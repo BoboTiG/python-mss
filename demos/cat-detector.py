@@ -77,9 +77,11 @@
 # Performance
 # ===========
 #
-# The biggest determinant of performance is whether the model runs on a GPU or on the CPU.  GPUs are extremely
-# well-suited to AI workloads, and PyTorch's strongest and most mature GPU support today is through NVIDIA's CUDA
-# platform.
+# This demo can run the model on either the CPU or a GPU.  The single biggest factor affecting performance is which
+# one you use.  Modern neural networks are designed around large amounts of parallel computation, which GPUs handle
+# much more efficiently than CPUs.  In practice, that means the same model runs dramatically faster on a GPU than on
+# the CPU, even though the underlying math is identical.  PyTorch's strongest and most mature GPU support today is
+# through Nvidia's CUDA platform, so that is the only GPU supported by this demo.
 #
 # Screen size has little effect on performance.  The model starts by scaling the captured image to a consistent size
 # (fitting it within 1333x800 px), so the slow part - running the neural network - takes roughly the same amount of
@@ -92,7 +94,8 @@
 # ===========
 #
 # The first time you run this demo, Torchvision will download a 167 MByte DNN.  This is cached in
-# ~/.cache/torch/hub/checkpoints on Unix.  If you want to know where the cache is stored on other platforms, this information will be displayed after downloading the DNN.
+# ~/.cache/torch/hub/checkpoints on Unix.  If you want to know where the cache is stored on other platforms, it will
+# be displayed while downloading the DNN.
 
 from __future__ import annotations
 
@@ -106,7 +109,7 @@ import torch
 import torchvision.models.detection
 import torchvision.transforms.v2
 
-# You'll also need to "pip install mss pillow".
+# You'll also need to install MSS and Pillow, such as with "pip install mss pillow".
 from PIL import Image
 
 import mss
