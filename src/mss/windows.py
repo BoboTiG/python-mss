@@ -32,9 +32,10 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctionsErrChecked, Monitor
+    from mss.models import CFunctionsErrChecked
     from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
@@ -46,6 +47,9 @@ LPCRECT = POINTER(RECT)  # Actually a const pointer, but ctypes has no const.
 CAPTUREBLT = 0x40000000
 DIB_RGB_COLORS = 0
 SRCCOPY = 0x00CC0020
+CCHDEVICENAME = 32
+MONITORINFOF_PRIMARY = 0x01
+EDD_GET_DEVICE_INTERFACE_NAME = 0x00000001
 
 
 class BITMAPINFOHEADER(Structure):
@@ -72,6 +76,35 @@ class BITMAPINFO(Structure):
     # The bmiColors entry is variable length, but it's unused the way we do things.  We declare it to be four bytes,
     # which is how it's declared in C.
     _fields_ = (("bmiHeader", BITMAPINFOHEADER), ("bmiColors", BYTE * 4))
+
+
+class MONITORINFOEXW(Structure):
+    """Extended monitor information structure.
+    https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-monitorinfoexw
+    """
+
+    _fields_ = (
+        ("cbSize", DWORD),
+        ("rcMonitor", RECT),
+        ("rcWork", RECT),
+        ("dwFlags", DWORD),
+        ("szDevice", WORD * CCHDEVICENAME),
+    )
+
+
+class DISPLAY_DEVICEW(Structure):  # noqa: N801
+    """Display device information structure.
+    https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-display_devicew
+    """
+
+    _fields_ = (
+        ("cb", DWORD),
+        ("DeviceName", WORD * 32),
+        ("DeviceString", WORD * 128),
+        ("StateFlags", DWORD),
+        ("DeviceID", WORD * 128),
+        ("DeviceKey", WORD * 128),
+    )
 
 
 MONITORNUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
@@ -113,6 +146,7 @@ CFUNCTIONS: CFunctionsErrChecked = {
     "CreateDIBSection": ("gdi32", [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD], HBITMAP, _errcheck),
     "DeleteDC": ("gdi32", [HDC], HDC, _errcheck),
     "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _errcheck),
+    "EnumDisplayDevicesW": ("user32", [POINTER(WORD), DWORD, POINTER(DISPLAY_DEVICEW), DWORD], BOOL, None),
     "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _errcheck),
     # GdiFlush flushes the calling thread's current batch of GDI operations.
     # This ensures DIB memory is fully updated before reading.
@@ -121,6 +155,7 @@ CFUNCTIONS: CFunctionsErrChecked = {
     # parameter is valid but the value is actually 0 (e.g., SM_CLEANBOOT on a normal boot).  Thus, we do not attach an
     # errcheck function here.
     "GetSystemMetrics": ("user32", [INT], INT, None),
+    "GetMonitorInfoW": ("user32", [HMONITOR, POINTER(MONITORINFOEXW)], BOOL, _errcheck),
     "GetWindowDC": ("user32", [HWND], HDC, _errcheck),
     "ReleaseDC": ("user32", [HWND, HDC], INT, _errcheck),
     # SelectObject returns NULL on error the way we call it.  If it's called to select a region, it returns HGDI_ERROR
@@ -232,28 +267,57 @@ class MSS(MSSBase):
 
         # All monitors
         self._monitors.append(
-            {
-                "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
-                "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
-                "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
-                "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
-            },
+            Monitor(
+                int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN (left)
+                int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN (top)
+                int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN (width)
+                int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN (height)
+            ),
         )
 
         # Each monitor
         @MONITORNUMPROC
-        def callback(_monitor: HMONITOR, _data: HDC, rect: LPRECT, _dc: LPARAM) -> bool:
+        def callback(hmonitor: HMONITOR, _data: HDC, rect: LPRECT, _dc: LPARAM) -> bool:
             """Callback for monitorenumproc() function, it will return
             a RECT with appropriate values.
             """
+            # Get monitor info to check if it's the primary monitor and get device name
+            info = MONITORINFOEXW()
+            info.cbSize = ctypes.sizeof(MONITORINFOEXW)
+            user32.GetMonitorInfoW(hmonitor, ctypes.byref(info))
+
             rct = rect.contents
+            left = int_(rct.left)
+            top = int_(rct.top)
+            # Check the dwFlags field for MONITORINFOF_PRIMARY
+            is_primary = bool(info.dwFlags & MONITORINFOF_PRIMARY)
+            # Extract device name (null-terminated wide string)
+            device_name = ctypes.wstring_at(ctypes.addressof(info.szDevice))
+
+            # Get friendly device string (manufacturer/model info)
+            display_device = DISPLAY_DEVICEW()
+            display_device.cb = ctypes.sizeof(DISPLAY_DEVICEW)
+            device_string = device_name
+
+            # EnumDisplayDevicesW can get more detailed info about the device
+            if user32.EnumDisplayDevicesW(
+                ctypes.cast(ctypes.addressof(info.szDevice), POINTER(WORD)),
+                0,
+                ctypes.byref(display_device),
+                0,
+            ):
+                # DeviceString contains the friendly name like "Generic PnP Monitor" or manufacturer name
+                device_string = ctypes.wstring_at(ctypes.addressof(display_device.DeviceString))
+
             self._monitors.append(
-                {
-                    "left": int_(rct.left),
-                    "top": int_(rct.top),
-                    "width": int_(rct.right) - int_(rct.left),
-                    "height": int_(rct.bottom) - int_(rct.top),
-                },
+                Monitor(
+                    left,
+                    top,
+                    int_(rct.right) - left,
+                    int_(rct.bottom) - top,
+                    is_primary=is_primary,
+                    name=device_string,
+                ),
             )
             return True
 

@@ -37,9 +37,10 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctions, Monitor
+    from mss.models import CFunctions
     from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
@@ -542,7 +543,7 @@ class MSS(MSSBase):
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
             self._monitors.append(
-                {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
+                Monitor(int_(gwa.x), int_(gwa.y), int_(gwa.width), int_(gwa.height)),
             )
 
             # Each monitor
@@ -565,12 +566,12 @@ class MSS(MSSBase):
                     continue
 
                 self._monitors.append(
-                    {
-                        "left": int_(crtc.x),
-                        "top": int_(crtc.y),
-                        "width": int_(crtc.width),
-                        "height": int_(crtc.height),
-                    },
+                    Monitor(
+                        int_(crtc.x),
+                        int_(crtc.y),
+                        int_(crtc.width),
+                        int_(crtc.height),
+                    ),
                 )
                 xrandr.XRRFreeCrtcInfo(crtc)
             xrandr.XRRFreeScreenResources(mon)
@@ -618,17 +619,17 @@ class MSS(MSSBase):
             raise ScreenShotError(msg)
 
         cursor_img: XFixesCursorImage = ximage.contents
-        region = {
-            "left": cursor_img.x - cursor_img.xhot,
-            "top": cursor_img.y - cursor_img.yhot,
-            "width": cursor_img.width,
-            "height": cursor_img.height,
-        }
+        region = Monitor(
+            cursor_img.x - cursor_img.xhot,
+            cursor_img.y - cursor_img.yhot,
+            cursor_img.width,
+            cursor_img.height,
+        )
 
-        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region["height"] * region["width"]))
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region.height * region.width))
         raw = bytearray(raw_data.contents)
 
-        data = bytearray(region["height"] * region["width"] * 4)
+        data = bytearray(region.height * region.width * 4)
         data[3::4] = raw[3::8]
         data[2::4] = raw[2::8]
         data[1::4] = raw[1::8]

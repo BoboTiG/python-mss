@@ -3,13 +3,16 @@
 See Git commit messages for full history.
 
 ## 10.2.0.dev0 (2026-xx-xx)
+- Add `Monitor` class to replace `dict[str, int]` with `is_primary` and `name` attributes (#153)
+- Add `primary_monitor` property to MSS base class for easy access to the primary monitor (#153)
+- Windows: add primary monitor detection using `GetMonitorInfoW` API (#153)
+- Windows: add monitor device name extraction using `EnumDisplayDevicesW` API (#153)
 - Windows: switch from `GetDIBits` to more memory efficient `CreateDIBSection` for `MSS.grab` implementation (#449)
 - Windows: fix gdi32.GetDIBits() failed after a couple of minutes of recording (#268)
 - Linux: check the server for Xrandr support version (#417)
 - Linux: improve typing and error messages for X libraries (#418)
 - Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)
 - Linux: add the XShmGetImage backend with automatic XGetImage fallback and explicit status reporting (#431)
-- Windows: improve error checking and messages for Win32 API calls (#448)
 - Mac: fix memory leak (#450, #453)
 - improve multithreading: allow multiple threads to use the same MSS object, allow multiple MSS objects to concurrently take screenshots, and document multithreading guarantees (#446, #452)
 - Add full demos for different ways to use MSS (#444, #456, #465)
