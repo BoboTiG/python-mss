@@ -225,3 +225,4 @@ scenarios.
 These include:
 - MP4 video capture with encoding using PyAV (FFmpeg bindings)
 - Live streaming to a TinyTV as MJPEG
+- Detect images of cats on the screen

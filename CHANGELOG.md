@@ -12,7 +12,7 @@ See Git commit messages for full history.
 - Windows: improve error checking and messages for Win32 API calls (#448)
 - Mac: fix memory leak (#450, #453)
 - improve multithreading: allow multiple threads to use the same MSS object, allow multiple MSS objects to concurrently take screenshots, and document multithreading guarantees (#446, #452)
-- Add full demos for different ways to use MSS (#444, #456)
+- Add full demos for different ways to use MSS (#444, #456, #465)
 - :heart: contributors: @jholveck, @halldorfannar
 
 ## 10.1.0 (2025-08-16)
