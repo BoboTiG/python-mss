@@ -68,8 +68,10 @@ def test_bad_monitor(mss_impl: Callable[..., MSSBase]) -> None:
 
 
 def test_repr(mss_impl: Callable[..., MSSBase]) -> None:
+    from mss.models import Monitor  # noqa: PLC0415
+
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_box = Monitor(0, 0, 10, 10)
     with mss_impl() as sct:
         img = sct.grab(box)
     ref = ScreenShot(bytearray(b"42"), expected_box)
