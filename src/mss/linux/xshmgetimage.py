@@ -188,21 +188,12 @@ class MSS(MSSXCBBase):
 
         # Snapshot the buffer into new bytearray.
         new_size = monitor["width"] * monitor["height"] * 4
-        # Slicing the memoryview creates a new memoryview that points to the relevant subregion.  Making this and
-        # then copying it into a fresh bytearray is much faster than slicing the mmap object.
-        try:
-            img_mv: memoryview | None = memoryview(self._buf)[:new_size]
-            assert img_mv is not None  # noqa: S101
-            img_data = bytearray(img_mv)
-        finally:
-            # Imagine that an exception happened in the above code, such as an asynchronous KeyboardInterrupt.  Let's
-            # imagine it happened after we created img_mv, but while we were populating img_data, a process that can
-            # take a few milliseconds.  That exception includes this stack frame, and hence holds a reference to
-            # img_mv.  If the exception unwinds to the enclosing `with mss() as sct:` block, then self._buf.close()
-            # would be executed, to close the mmapped region.  But img_mv still exists, and self._buf.close() would
-            # throw an exception, because it can't close the region while references exist.  To prevent that, remove
-            # the reference to img_mv during the stack unwind here.
-            img_mv = None
+        # Slicing the memoryview creates a new memoryview that points to the relevant subregion.  Making this and then
+        # copying it into a fresh bytearray is much faster than slicing the mmap object.  Make sure we don't hold an
+        # open memoryview if an exception happens, since that will prevent us from closing self._buf during the stack
+        # unwind.
+        with memoryview(self._buf) as img_mv:
+            img_data = bytearray(img_mv[:new_size])
 
         return self.cls_image(img_data, monitor)
 
