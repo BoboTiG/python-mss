@@ -19,7 +19,7 @@
 # identify what it's seeing on its cameras.
 #
 # For this demo, we want to tell if a cat is anywhere on the screen, not if the whole screen is a picture of a cat.
-# That means that we want to use an detector, not a classifier.
+# That means that we want to use a detector, not a classifier.
 #
 # The detector will find any number of objects.  For each object it detects, a typical detector produces three pieces
 # of information:
@@ -92,7 +92,7 @@
 # ===========
 #
 # The first time you run this demo, Torchvision will download a 167 MByte DNN.  This is cached in
-# ~/.cache/torch/hub/checkpoints on Unix.  I'm not sure where it's cached on other platforms, but it will tell you.
+# ~/.cache/torch/hub/checkpoints on Unix.  If you want to know where the cache is stored on other platforms, this information will be displayed after downloading the DNN.
 
 from __future__ import annotations
 
@@ -120,7 +120,7 @@ SCORE_THRESH = 0.60
 # If an image is too small, then it's got a pretty decent chance of being a false positive: it's hard to tell if a
 # Discord or Slack reaction icon is a cat or something different.  We ignore any results that are too small to be
 # reliable.  Here, this cutoff is 0.1% of the whole monitor (about 1.5 cm square on a 27" monitor, the diameter of a
-# AA battery).  Like the score threshold, this is just something you try and see what the model seems to be able to
+# AA battery).  Like the score threshold, this is just something you try and see what the model is able to
 # recognize reliably.
 MIN_AREA_FRAC = 0.001
 
@@ -235,7 +235,7 @@ def main() -> None:
     preprocess = weights.transforms()
 
     # The labels ("what type of object is this") that the model gives us are just integers; for this model, they're
-    # from 0 to 90.  The English words describing them ("cat") are in a list, stored in the weight's metadata.
+    # from 0 to 90.  The English words describing them (like "cat") are in a list, stored in the weight's metadata.
     model_labels = weights.meta["categories"]
     cat_label = model_labels.index("cat")
 
