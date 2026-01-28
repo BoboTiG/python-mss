@@ -135,19 +135,17 @@ def screenshot_to_tensor(sct_img: mss.ScreenShot, device: str | torch.device) ->
 
     # Get a 1d tensor of BGRA values.  PyTorch will issue a warning at this step: the ScreenShot's bgra object is
     # read-only, but PyTorch doesn't support read-only tensors.  However, this is harmless in our case: we'll end up
-    # copying the data anyway when we run contiguous().
+    # copying the data anyway.
     img = torch.frombuffer(sct_img.bgra, dtype=torch.uint8)
-    # Do the rest of this on the GPU, if desired.
+    # Bring everything to the desired device.  This is still just a linear buffer of BGRA bytes.
     img = img.to(device)
-    # Convert to an HWC view: (H, W, 4)
-    img = img.view(sct_img.height, sct_img.width, 4)
-    # Drop alpha and reorder BGR -> RGB
-    rgb_hwc = img[..., [2, 1, 0]]
-    # HWC -> CHW
-    rgb_chw = rgb_hwc.permute(2, 0, 1)
-    # Copy this into contiguous memory, for improved performance.  (Some models might be faster with
-    # .to(memory_format=torch.channels_last) instead.)
-    return rgb_chw.contiguous()
+    # The next two steps will all just create views of the original tensor, without copying the data.
+    img = img.view(sct_img.height, sct_img.width, 4)  # Interpret as BGRA HWC
+    img = img.permute(2, 0, 1)  # Permute the axes: BGRA CHW
+    # This final step will create a copy.  Copying the data is required to reorder the channels.  This also has the
+    # advantage of also making the tensor contiguous, for more efficient access.
+    img = img[[2, 1, 0], ...]  # Reorder the channels: RGB CHW
+    return img
 
 
 def top_unique_labels(labels: torch.Tensor, scores: torch.Tensor) -> torch.Tensor:
@@ -280,9 +278,9 @@ def main() -> None:
             # Grab the screenshot.
             sct_img = sct.grab(monitor)
 
-            # We transfer the image from MSS to PyTorch via a Pillow Image.  Faster approaches exist (see below) but
-            # PIL is more readable.  The bulk of the time in this program is spent doing the AI work, so we just use
-            # the most convenient mechanism.
+            # We transfer the image from MSS to PyTorch via a Pillow Image.  Faster approaches exist (see
+            # screenshot_to_tensor), but PIL is more readable.  The bulk of the time in this program is spent doing
+            # the AI work, so we just use the most convenient mechanism.
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
             # We explicitly convert it to a tensor here, even though Torchvision can also convert it in the preprocess
@@ -297,8 +295,8 @@ def main() -> None:
             img_tensor = torchvision.transforms.v2.functional.pil_to_tensor(img).to(device)
 
             # An alternative to using PIL is shown in screenshot_to_tensor.  In one test, this saves about 20 ms per
-            # frame if using a GPU, but is actually slower if using the CPU.  This would replace the "img=" and
-            # "img_tensor=" lines above.
+            # frame if using a GPU, and about 200 ms if using a CPU.  This would replace the "img=" and "img_tensor="
+            # lines above.
             #
             #img_tensor = screenshot_to_tensor(sct_img, device)
 
@@ -367,9 +365,7 @@ def main() -> None:
                         status_line_msg = status_line_msg[:28] + "..."
             # The frame_duration_avg will be None in the first iteration, since there isn't yet a full iteration to
             # measure.
-            duration_avg_str = (
-                f"{frame_duration_avg * 1000:5.0f}" if frame_duration_avg is not None else "-----"
-            )
+            duration_avg_str = f"{frame_duration_avg * 1000:5.0f}" if frame_duration_avg is not None else "-----"
 
             # Build the whole status line.  It's a constant width, so that when we overwrite it each frame, the new
             # status line will completely overwrite the previous one.
