@@ -49,7 +49,8 @@
 # Timestamps (PTS/DTS)
 # --------------------
 #
-# Every frame has a *presentation timestamp* (PTS): when the viewer should see it.
+# Every frame has a *presentation timestamp* (PTS): when the viewer should see it.  (See the next section for how
+# these are represented.)
 #
 # Encoders may output packets in a different order due to B-frames.  Those packets also have a *decode timestamp*
 # (DTS): when the decoder must decode them so the PTS schedule can be met.
@@ -73,8 +74,12 @@
 # Many video files run at a fixed frame rate, like 30 fps.  Each frame is shown at 1/30 sec intervals.  This is called
 # *constant frame rate*, or *CFR*, and that's what we do in the simple version of this demo.
 #
-# One problem with this is that, if the encoder can't keep up, the video will appear sped-up when played back.  The
-# comments at the beginning of the simple version of this demo go into more detail about that problem.
+# Applications using CFR usually set the time base to the frame rate, such as 1/30 sec.  This lets them just use the
+# frame number for the PTS.
+#
+# One problem with real-time recording to CFR is that, if the encoder can't keep up, the video will appear sped-up
+# when played back.  The comments at the beginning of the simple version of this demo go into more detail about that
+# problem.
 #
 # In this advanced version, we use *variable frame rate*, or *VFR*.  That's because we can't be sure that the encoder
 # will be able to work fast enough: we haven't tuned its settings for your screen resolution and hardware.  While the
