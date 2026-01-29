@@ -9,6 +9,18 @@ import pytest
 from mss.base import MSSBase
 
 
+def test_primary_monitor_exists(mss_impl: Callable[..., MSSBase]) -> None:
+    """Test that primary_monitor returns a monitor dict."""
+    with mss_impl() as sct:
+        primary = sct.primary_monitor
+        assert primary is not None
+        assert isinstance(primary, dict)
+        assert "left" in primary
+        assert "top" in primary
+        assert "width" in primary
+        assert "height" in primary
+
+
 def test_primary_monitor_is_in_monitors_list(mss_impl: Callable[..., MSSBase]) -> None:
     """Test that the primary monitor is in the monitors list."""
     with mss_impl() as sct:
@@ -27,9 +39,9 @@ def test_primary_monitor_marked_or_first(mss_impl: Callable[..., MSSBase]) -> No
         assert primary is not None
 
         # Either it's marked as primary, or it's the first monitor
-        if primary.is_primary:
+        if primary.get("is_primary", False):
             # Should be marked as primary
-            assert primary.is_primary is True
+            assert primary["is_primary"] is True
         else:
             # Should be the first monitor as fallback
             assert primary == monitors[1]
@@ -43,7 +55,7 @@ def test_primary_monitor_coordinates_windows() -> None:
     with mss.mss() as sct:
         primary = sct.primary_monitor
         assert primary is not None
-        if primary.is_primary:
+        if primary.get("is_primary", False):
             # On Windows, the primary monitor is at (0, 0)
-            assert primary.left == 0
-            assert primary.top == 0
+            assert primary["left"] == 0
+            assert primary["top"] == 0

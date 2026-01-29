@@ -4,12 +4,12 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
-from mss.models import Monitor
 
 from . import xcb
 from .xcb import LIB
 
 if TYPE_CHECKING:
+    from mss.models import Monitor
     from mss.screenshot import ScreenShot
 
 SUPPORTED_DEPTHS = {24, 32}
@@ -144,12 +144,12 @@ class MSSXCBBase(MSSBase):
         # monitors.
         root_geom = xcb.get_geometry(self.conn, self.root)
         self._monitors.append(
-            Monitor(
-                root_geom.x,
-                root_geom.y,
-                root_geom.width,
-                root_geom.height,
-            )
+            {
+                "left": root_geom.x,
+                "top": root_geom.y,
+                "width": root_geom.width,
+                "height": root_geom.height,
+            }
         )
 
         # After that, we have one for each monitor on that X11 screen.  For decades, that's been handled by
@@ -186,7 +186,9 @@ class MSSXCBBase(MSSBase):
             crtc_info = xcb.randr_get_crtc_info(self.conn, crtc, screen_resources.config_timestamp)
             if crtc_info.num_outputs == 0:
                 continue
-            self._monitors.append(Monitor(crtc_info.x, crtc_info.y, crtc_info.width, crtc_info.height))
+            self._monitors.append(
+                {"left": crtc_info.x, "top": crtc_info.y, "width": crtc_info.width, "height": crtc_info.height}
+            )
 
         # Extra credit would be to enumerate the virtual desktops; see
         # https://specifications.freedesktop.org/wm/latest/ar01s03.html.  But I don't know how widely-used that
@@ -230,12 +232,12 @@ class MSSXCBBase(MSSBase):
             raise ScreenShotError(msg)
 
         cursor_img = xcb.xfixes_get_cursor_image(self.conn)
-        region = Monitor(
-            cursor_img.x - cursor_img.xhot,
-            cursor_img.y - cursor_img.yhot,
-            cursor_img.width,
-            cursor_img.height,
-        )
+        region = {
+            "left": cursor_img.x - cursor_img.xhot,
+            "top": cursor_img.y - cursor_img.yhot,
+            "width": cursor_img.width,
+            "height": cursor_img.height,
+        }
 
         data_arr = xcb.xfixes_get_cursor_image_cursor_image(cursor_img)
         data = bytearray(data_arr)

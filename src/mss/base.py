@@ -167,7 +167,7 @@ class MSSBase(metaclass=ABCMeta):
             self._close_impl()
             self._closed = True
 
-    def grab(self, monitor: Monitor | dict[str, int] | tuple[int, int, int, int], /) -> ScreenShot:
+    def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
         Note: ``monitor`` can be a tuple like the one
@@ -177,23 +177,14 @@ class MSSBase(metaclass=ABCMeta):
                         See :meth:`monitors <monitors>` for object details.
         :returns: Screenshot of the requested region.
         """
-        from mss.models import Monitor as MonitorCls  # noqa: PLC0415
-
-        # Convert PIL bbox style or dict to Monitor
+        # Convert PIL bbox style
         if isinstance(monitor, tuple):
-            monitor = MonitorCls(
-                monitor[0],
-                monitor[1],
-                monitor[2] - monitor[0],
-                monitor[3] - monitor[1],
-            )
-        elif isinstance(monitor, dict):
-            monitor = MonitorCls(
-                monitor["left"],
-                monitor["top"],
-                monitor["width"],
-                monitor["height"],
-            )
+            monitor = {
+                "left": monitor[0],
+                "top": monitor[1],
+                "width": monitor[2] - monitor[0],
+                "height": monitor[3] - monitor[1],
+            }
 
         if monitor["width"] <= 0 or monitor["height"] <= 0:
             msg = f"Region has zero or negative size: {monitor!r}"
@@ -244,7 +235,7 @@ class MSSBase(metaclass=ABCMeta):
             return None
 
         for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
-            if monitor.is_primary:
+            if monitor.get("is_primary", False):
                 return monitor
         # Fallback to the first monitor if no primary is found
         return monitors[1]

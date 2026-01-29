@@ -32,10 +32,9 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
-from mss.models import Monitor
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctionsErrChecked
+    from mss.models import CFunctionsErrChecked, Monitor
     from mss.screenshot import ScreenShot
 
 __all__ = ("MSS",)
@@ -267,12 +266,12 @@ class MSS(MSSBase):
 
         # All monitors
         self._monitors.append(
-            Monitor(
-                int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN (left)
-                int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN (top)
-                int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN (width)
-                int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN (height)
-            ),
+            {
+                "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
+                "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
+                "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
+                "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
+            },
         )
 
         # Each monitor
@@ -310,14 +309,14 @@ class MSS(MSSBase):
                 device_string = ctypes.wstring_at(ctypes.addressof(display_device.DeviceString))
 
             self._monitors.append(
-                Monitor(
-                    left,
-                    top,
-                    int_(rct.right) - left,
-                    int_(rct.bottom) - top,
-                    is_primary=is_primary,
-                    name=device_string,
-                ),
+                {
+                    "left": left,
+                    "top": top,
+                    "width": int_(rct.right) - left,
+                    "height": int_(rct.bottom) - top,
+                    "is_primary": is_primary,
+                    "name": device_string,
+                },
             )
             return True
 

@@ -68,9 +68,7 @@ class ScreenShot:
     @classmethod
     def from_size(cls: type[ScreenShot], data: bytearray, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
-        from mss.models import Monitor  # noqa: PLC0415
-
-        monitor = Monitor(0, 0, width, height)
+        monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
 
     @property

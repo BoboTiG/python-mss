@@ -26,11 +26,10 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
-from mss.models import Monitor
 from mss.screenshot import ScreenShot, Size
 
 if TYPE_CHECKING:  # pragma: nocover
-    from mss.models import CFunctions
+    from mss.models import CFunctions, Monitor
 
 __all__ = ("IMAGE_OPTIONS", "MSS")
 
@@ -159,7 +158,7 @@ class MSS(MSSBase):
         # We need to update the value with every single monitor found
         # using CGRectUnion.  Else we will end with infinite values.
         all_monitors = CGRect()
-        self._monitors.append(Monitor(0, 0, 0, 0))  # Placeholder, updated later
+        self._monitors.append({})
 
         # Each monitor
         display_count = c_uint32(0)
@@ -178,24 +177,24 @@ class MSS(MSSBase):
                 width, height = height, width
 
             self._monitors.append(
-                Monitor(
-                    int_(rect.origin.x),
-                    int_(rect.origin.y),
-                    int_(width),
-                    int_(height),
-                ),
+                {
+                    "left": int_(rect.origin.x),
+                    "top": int_(rect.origin.y),
+                    "width": int_(width),
+                    "height": int_(height),
+                },
             )
 
             # Update AiO monitor's values
             all_monitors = core.CGRectUnion(all_monitors, rect)
 
         # Set the AiO monitor's values
-        self._monitors[0] = Monitor(
-            int_(all_monitors.origin.x),
-            int_(all_monitors.origin.y),
-            int_(all_monitors.size.width),
-            int_(all_monitors.size.height),
-        )
+        self._monitors[0] = {
+            "left": int_(all_monitors.origin.x),
+            "top": int_(all_monitors.origin.y),
+            "width": int_(all_monitors.size.width),
+            "height": int_(all_monitors.size.height),
+        }
 
     def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""

@@ -22,4 +22,4 @@ def test_custom_cls_image(mss_impl: Callable[..., MSSBase]) -> None:
         image = sct.grab(mon1)
     assert isinstance(image, SimpleScreenShot)
     assert isinstance(image.raw, bytes)
-    assert isinstance(image.monitor, Monitor)
+    assert isinstance(image.monitor, dict)
