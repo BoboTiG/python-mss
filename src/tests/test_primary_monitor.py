@@ -9,10 +9,13 @@ import pytest
 from mss.base import MSSBase
 
 
-def test_primary_monitor_exists(mss_impl: Callable[..., MSSBase]) -> None:
-    """Test that primary_monitor returns a monitor dict."""
+def test_primary_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+    """Test that primary_monitor property works correctly."""
     with mss_impl() as sct:
         primary = sct.primary_monitor
+        monitors = sct.monitors
+
+        # Should return a valid monitor dict
         assert primary is not None
         assert isinstance(primary, dict)
         assert "left" in primary
@@ -20,30 +23,13 @@ def test_primary_monitor_exists(mss_impl: Callable[..., MSSBase]) -> None:
         assert "width" in primary
         assert "height" in primary
 
-
-def test_primary_monitor_is_in_monitors_list(mss_impl: Callable[..., MSSBase]) -> None:
-    """Test that the primary monitor is in the monitors list."""
-    with mss_impl() as sct:
-        primary = sct.primary_monitor
-        monitors = sct.monitors
-        assert primary is not None
-        # Primary should be one of the monitors (excluding index 0 which is "all monitors")
+        # Should be in the monitors list (excluding index 0 which is "all monitors")
         assert primary in monitors[1:]
 
-
-def test_primary_monitor_marked_or_first(mss_impl: Callable[..., MSSBase]) -> None:
-    """Test that primary_monitor returns either the marked primary or the first monitor."""
-    with mss_impl() as sct:
-        primary = sct.primary_monitor
-        monitors = sct.monitors
-        assert primary is not None
-
-        # Either it's marked as primary, or it's the first monitor
+        # Should either be marked as primary or be the first monitor as fallback
         if primary.get("is_primary", False):
-            # Should be marked as primary
             assert primary["is_primary"] is True
         else:
-            # Should be the first monitor as fallback
             assert primary == monitors[1]
 
 
