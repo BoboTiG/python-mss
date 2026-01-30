@@ -16,7 +16,6 @@ def test_primary_monitor(mss_impl: Callable[..., MSSBase]) -> None:
         monitors = sct.monitors
 
         # Should return a valid monitor dict
-        assert primary is not None
         assert isinstance(primary, dict)
         assert "left" in primary
         assert "top" in primary
@@ -40,7 +39,6 @@ def test_primary_monitor_coordinates_windows() -> None:
 
     with mss.mss() as sct:
         primary = sct.primary_monitor
-        assert primary is not None
         if primary.get("is_primary", False):
             # On Windows, the primary monitor is at (0, 0)
             assert primary["left"] == 0

@@ -221,18 +221,20 @@ class MSSBase(metaclass=ABCMeta):
             return self._monitors
 
     @property
-    def primary_monitor(self) -> Monitor | None:
+    def primary_monitor(self) -> Monitor:
         """Get the primary monitor.
 
         Returns the monitor marked as primary. If no monitor is marked as primary
         (or the platform doesn't support primary monitor detection), returns the
-        first monitor (at index 1). Returns None if no monitors are available.
+        first monitor (at index 1).
+
+        :raises ScreenShotError: If no monitors are available.
 
         .. versionadded:: 10.2.0
         """
         monitors = self.monitors
         if len(monitors) <= 1:  # Only the "all monitors" entry or empty
-            return None
+            raise ScreenShotError("No monitor found.")
 
         for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
             if monitor.get("is_primary", False):
