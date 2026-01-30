@@ -13,6 +13,7 @@ See Git commit messages for full history.
 - Linux: improve typing and error messages for X libraries (#418)
 - Linux: introduce an XCB-powered backend stack with a factory in ``mss.linux`` while keeping the Xlib code as a fallback (#425)
 - Linux: add the XShmGetImage backend with automatic XGetImage fallback and explicit status reporting (#431)
+- Windows: improve error checking and messages for Win32 API calls (#448)
 - Mac: fix memory leak (#450, #453)
 - improve multithreading: allow multiple threads to use the same MSS object, allow multiple MSS objects to concurrently take screenshots, and document multithreading guarantees (#446, #452)
 - Add full demos for different ways to use MSS (#444, #456, #465)
