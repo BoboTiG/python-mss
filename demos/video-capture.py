@@ -478,8 +478,8 @@ def main() -> None:
 
             # Width and height must be divisible by 2, otherwise the encoder will fail.
             # Round down to the nearest even number.
-            video_stream.width = monitor["width"] & ~1
-            video_stream.height = monitor["height"] & ~1
+            video_stream.width = monitor["width"] // 2 * 2
+            video_stream.height = monitor["height"] // 2 * 2
             # There are multiple time bases in play (stream, codec context, per-frame).  Depending on the container
             # and codec, some of these might be ignored or overridden.  We set the desired time base consistently
             # everywhere, so that the saved timestamps are correct regardless of what format we're saving to.

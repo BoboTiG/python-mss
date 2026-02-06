@@ -78,8 +78,8 @@ def main() -> None:
             video_stream = avmux.add_stream(CODEC, rate=FPS, options=CODEC_OPTIONS)
             # Width and height must be divisible by 2, otherwise the encoder will fail.
             # Round down to the nearest even number.
-            video_stream.width = monitor["width"] & ~1
-            video_stream.height = monitor["height"] & ~1
+            video_stream.width = monitor["width"] // 2 * 2
+            video_stream.height = monitor["height"] // 2 * 2
             # There are more options you can set on the video stream; the full demo uses some of those.
 
             # Count how many frames we're capturing, so we can log the FPS later.
