@@ -71,6 +71,11 @@ def main() -> None:
     with mss.mss() as sct:
         monitor = sct.monitors[1]
 
+        # Because of how H.264 video stores color information, libx264 requires the video size to be a multiple of
+        # two.        
+        monitor["width"] = (monitor["width"] // 2) * 2
+        monitor["height"] = (monitor["height"] // 2) * 2
+
         with av.open(FILENAME, "w") as avmux:
             # The "avmux" object we get back from "av.open" represents the MP4 file.  That's a container that holds
             # the video, as well as possibly audio and more.  These are each called "streams".  We only create one

@@ -398,6 +398,12 @@ def main() -> None:
         help="region to capture as comma-separated coordinates",
     )
     parser.add_argument(
+        "-2",
+        "--region-crop-to-multiple-of-two",
+        action=argparse.BooleanOptionalAction,
+        help="crop the capture region to a multiple of two, as required by some codecs (default: only for libx264 and libx265)",
+    )
+    parser.add_argument(
         "-c",
         "--codec",
         default="libx264",
@@ -426,6 +432,7 @@ def main() -> None:
     codec = args.codec
     filename = args.output
     duration_secs = args.duration_secs
+    region_crop_to_multiple_of_two = args.region_crop_to_multiple_of_two
 
     with mss.mss() as sct:
         if args.region:
@@ -438,6 +445,17 @@ def main() -> None:
             }
         else:
             monitor = sct.monitors[args.monitor]
+
+        # Some codecs, such as libx264, require the region to be a multiple of 2, to get the chroma subsampling right.
+        # Others, such as h264_nvenc, do not; they'll pad to get the subsampling region, and add flags to the stream
+        # to tell the viewer to crop accordingly.
+        if region_crop_to_multiple_of_two is None:
+            # The user didn't specify; choose the default.  We haven't tested many codecs, but we know these require
+            # it (at least, when using 4:2:0 subsampling).
+            region_crop_to_multiple_of_two = codec in {"libx264", "libx265"}
+        if region_crop_to_multiple_of_two:
+            monitor["width"] = (monitor["width"] // 2) * 2
+            monitor["height"] = (monitor["height"] // 2) * 2
 
         # We don't pass the container format to av.open here, so it will choose it based on the extension: .mp4, .mkv,
         # etc.
