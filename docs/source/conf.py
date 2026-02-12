@@ -45,6 +45,8 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
+# Suppress duplicate target warnings for re-exported classes
+suppress_warnings = ["ref.python"]
 
 # Monkey-patch WINFUNCTYPE and WinError into ctypes, so that we can
 # import mss.windows while building the documentation.
