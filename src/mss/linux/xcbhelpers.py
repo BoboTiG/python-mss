@@ -100,7 +100,13 @@ class Connection(Structure):
 
 
 class XID(c_uint32):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, XID):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class GenericErrorStructure(Structure):

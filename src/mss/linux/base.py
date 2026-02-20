@@ -66,7 +66,7 @@ class MSSXCBBase(MSSBase):
         # we'll have to ask the server for its depth and visual.
         assert self.root == self.drawable  # noqa: S101
         self.drawable_depth = self.pref_screen.root_depth
-        self.drawable_visual_id = self.pref_screen.root_visual.value
+        self.drawable_visual_id = self.pref_screen.root_visual
         # Server image byte order
         if xcb_setup.image_byte_order != xcb.ImageOrder.LSBFirst:
             msg = "Only X11 servers using LSB-First images are supported."
@@ -103,7 +103,7 @@ class MSSXCBBase(MSSBase):
             msg = "Internal error: drawable's depth not found in screen's supported depths"
             raise ScreenShotError(msg)
         for visual_info in xcb.depth_visuals(xcb_depth):
-            if visual_info.visual_id.value == self.drawable_visual_id:
+            if visual_info.visual_id == self.drawable_visual_id:
                 break
         else:
             msg = "Internal error: drawable's visual not found in screen's supported visuals"
@@ -277,11 +277,11 @@ class MSSXCBBase(MSSBase):
         # Copy this into a new bytearray, so that it will persist after we clear the image structure.
         img_data = bytearray(img_data_arr)
 
-        if img_reply.depth != self.drawable_depth or img_reply.visual.value != self.drawable_visual_id:
+        if img_reply.depth != self.drawable_depth or img_reply.visual != self.drawable_visual_id:
             # This should never happen; a window can't change its visual.
             msg = (
                 "Server returned an image with a depth or visual different than it initially reported: "
-                f"expected {self.drawable_depth},{hex(self.drawable_visual_id)}, "
+                f"expected {self.drawable_depth},{hex(self.drawable_visual_id.value)}, "
                 f"got {img_reply.depth},{hex(img_reply.visual.value)}"
             )
             raise ScreenShotError(msg)

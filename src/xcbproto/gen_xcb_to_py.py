@@ -37,6 +37,7 @@ import re
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
+from textwrap import dedent, indent
 from typing import TYPE_CHECKING
 
 from lxml import etree as ET  # noqa: N812 (traditional name)
@@ -703,7 +704,7 @@ class CodeWriter:
 
     def write(self, line: str = "") -> None:
         if line:
-            self._fh.write("    " * self._indent + line + "\n")
+            self._fh.write(indent(line, "    " * self._indent) + "\n")
         else:
             self._fh.write("\n")
 
@@ -899,7 +900,17 @@ def emit_typedef(writer: CodeWriter, registry: ProtocolRegistry, entry: TypedefD
     writer.write()
     writer.write(f"class {class_name}({base}):")
     with writer.indent():
-        writer.write("pass")
+        writer.write(
+            dedent(f"""
+            def __eq__(self, other: object) -> bool:
+                if isinstance(other, {class_name}):
+                    return self.value == other.value
+                return NotImplemented
+
+            def __hash__(self) -> int:
+                return hash(self.value)
+        """)
+        )
 
 
 # Struct-like types

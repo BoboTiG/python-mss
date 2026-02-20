@@ -96,7 +96,13 @@ class Drawable(XID):
 
 
 class Keycode(c_uint8):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Keycode):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class Format(Structure):
@@ -117,7 +123,13 @@ class Colormap(XID):
 
 
 class Visualid(c_uint32):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Visualid):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class Visualtype(Structure):
@@ -261,7 +273,13 @@ class RandrQueryVersionReply(Structure):
 
 
 class Timestamp(c_uint32):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Timestamp):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class RandrCrtc(XID):
