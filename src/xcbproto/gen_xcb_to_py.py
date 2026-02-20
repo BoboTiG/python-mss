@@ -364,11 +364,7 @@ class StructLikeDefn(LazyDefn):
                     )
                 )
             case "fd":
-                self.members.append(
-                    FdField(
-                        name=child.attrib["name"],
-                    )
-                )
+                self.members.append(FdField(name=child.attrib["name"]))
             case "pad":
                 self.members.append(parse_pad(child))
             case "list":
@@ -377,10 +373,7 @@ class StructLikeDefn(LazyDefn):
                 return
             case _:
                 msg = f"Unsupported member {child.tag} in {self.protocol}:{self.name}"
-                raise GenerationError(
-                    msg,
-                    element=child,
-                )
+                raise GenerationError(msg, element=child)
 
     def _parse(self) -> None:
         with parsing_note(f"while parsing {self.protocol}:{self.name}", self._element):
@@ -442,10 +435,7 @@ def parse_enum(protocol: str, elem: ET.Element) -> EnumDefn:
                 items.append(EnumerationItem(item.attrib["name"], 1 << int(bit.text, 0)))
             else:
                 msg = f"Unsupported enum item in {protocol}:{name}:{item}"
-                raise GenerationError(
-                    msg,
-                    element=item,
-                )
+                raise GenerationError(msg, element=item)
     return EnumDefn(protocol, name, items)
 
 
@@ -465,10 +455,7 @@ def parse_xidunion(protocol: str, elem: ET.Element) -> XidUnionDefn:
                 continue
             else:
                 msg = f"Unsupported xidunion member {child.tag} in {protocol}:{name}"
-                raise GenerationError(
-                    msg,
-                    element=child,
-                )
+                raise GenerationError(msg, element=child)
         if not members:
             msg = f"xidunion {protocol}:{name} must include at least one type"
             raise GenerationError(msg, element=elem)
@@ -508,52 +495,34 @@ def parse_protocol(path: Path) -> ProtocolModule:  # noqa: PLR0912, PLR0915
                 case "enum":
                     if child.attrib["name"] in module.enums:
                         msg = f"Duplicate enum {child.attrib['name']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.enums[child.attrib["name"]] = parse_enum(protocol, child)
                 case "typedef":
                     if child.attrib["newname"] in module.types:
                         msg = f"Duplicate type {child.attrib['newname']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.types[child.attrib["newname"]] = TypedefDefn(
                         protocol, child.attrib["newname"], child.attrib["oldname"]
                     )
                 case "xidtype":
                     if child.attrib["name"] in module.types:
                         msg = f"Duplicate type {child.attrib['name']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.types[child.attrib["name"]] = XidTypeDefn(protocol, child.attrib["name"])
                 case "xidunion":
                     if child.attrib["name"] in module.types:
                         msg = f"Duplicate type {child.attrib['name']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.types[child.attrib["name"]] = parse_xidunion(protocol, child)
                 case "struct":
                     if child.attrib["name"] in module.types:
                         msg = f"Duplicate type {child.attrib['name']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.types[child.attrib["name"]] = StructDefn(protocol, child.attrib["name"], child)
                 case "request":
                     if child.attrib["name"] in module.requests:
                         msg = f"Duplicate request {child.attrib['name']} in protocol {protocol}"
-                        raise GenerationError(
-                            msg,
-                            element=child,
-                        )
+                        raise GenerationError(msg, element=child)
                     module.requests[child.attrib["name"]] = RequestDefn(protocol, child.attrib["name"], child)
                 case "import":
                     # There's actually some leeway in how the imports are resolved.  We only require the imported
@@ -964,9 +933,7 @@ def emit_structlike(
             elif isinstance(member, Field):
                 if seen_list:
                     msg = f"Structure {entry.protocol}:{entry.name} has fields after lists, which is unsupported"
-                    raise GenerationError(
-                        msg,
-                    )
+                    raise GenerationError(msg)
                 name = format_field_name(member)
                 type_expr = python_type_for(registry, entry.protocol, member.type)
                 field_entries.append((name, type_expr))
@@ -975,9 +942,7 @@ def emit_structlike(
                     continue
                 if member.align is not None or member.bytes is None:
                     msg = f"Struct {entry.protocol}:{entry.name} uses align-based padding, which is unsupported"
-                    raise GenerationError(
-                        msg,
-                    )
+                    raise GenerationError(msg)
                 name = f"pad{pad_index}"
                 pad_index += 1
                 field_entries.append((name, f"c_uint8 * {member.bytes}"))
@@ -1091,9 +1056,7 @@ def emit_types(
                 rv += emit_reply(writer, registry, typ)
             else:
                 msg = f"Unsupported type kind {type(typ).__name__} for {typ.protocol}:{typ.name}"
-                raise GenerationError(
-                    msg,
-                )
+                raise GenerationError(msg)
     return rv
 
 
