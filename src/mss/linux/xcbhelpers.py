@@ -10,6 +10,7 @@ from ctypes import (
     Structure,
     _Pointer,
     addressof,
+    c_char,
     c_char_p,
     c_int,
     c_uint,
@@ -122,6 +123,18 @@ class GenericErrorStructure(Structure):
         ("pad0", c_uint8),
         ("pad", c_uint32 * 5),
         ("full_sequence", c_uint32),
+    )
+
+
+# We special-case InternAtom for convenience.
+class InternAtomReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("pad0", c_uint8 * 1),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        # This is actually an Atom, not a raw XID, but we handle the type conversion in intern_atom.
+        ("atom", XID),
     )
 
 
@@ -467,6 +480,14 @@ class LibContainer:
                 self.xcb.xcb_connect.restype = POINTER(Connection)
                 self.xcb.xcb_disconnect.argtypes = [POINTER(Connection)]
                 self.xcb.xcb_disconnect.restype = None
+
+                # We special-case InternAtom for convenience.
+                initialize_xcb_typed_func(
+                    LIB.xcb,
+                    "xcb_intern_atom",
+                    [POINTER(Connection), c_uint8, c_uint16, POINTER(c_char)],
+                    InternAtomReply,
+                )
 
                 libxcb_randr_so = ctypes.util.find_library("xcb-randr")
                 if libxcb_randr_so is None:
