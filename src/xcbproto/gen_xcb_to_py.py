@@ -68,6 +68,10 @@ REQUESTS: dict[str, list[str]] = {
         "GetScreenResources",
         "GetScreenResourcesCurrent",
         "GetCrtcInfo",
+        "GetOutputInfo",
+        "GetOutputPrimary",
+        "GetOutputProperty",
+        "GetMonitors",
     ],
     "render": [
         "QueryVersion",
