@@ -197,7 +197,7 @@ class MSSXCBBase(MSSBase):
         randr_version_data = xcb.randr_query_version(self.conn, xcb.RANDR_MAJOR_VERSION, xcb.RANDR_MINOR_VERSION)
         return (randr_version_data.major_version, randr_version_data.minor_version)
 
-    def _randr_get_primary_output(self, randr_version: tuple[int, int], /) -> xcb.RandrOutput:
+    def _randr_get_primary_output(self, randr_version: tuple[int, int], /) -> xcb.RandrOutput | None:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
@@ -205,7 +205,9 @@ class MSSXCBBase(MSSBase):
         if randr_version >= (1, 3):
             primary_output_data = xcb.randr_get_output_primary(self.conn, self.drawable)
             return primary_output_data.output
-        return xcb.RandrOutput(0)
+        # Python None means that there was no way to identify a primary output.  This is distinct from XCB_NONE (that
+        # is, xcb.RandROutput(0)), which means that there is not a primary monitor.
+        return None
 
     def _randr_get_edid_atom(self) -> xcb.Atom | None:
         if self.conn is None:
@@ -275,7 +277,7 @@ class MSSXCBBase(MSSBase):
         return rv
 
     @staticmethod
-    def _choose_randr_output(outputs: Array[xcb.RandrOutput], primary_output: xcb.RandrOutput, /) -> xcb.RandrOutput:
+    def _choose_randr_output(outputs: Array[xcb.RandrOutput], primary_output: xcb.RandrOutput | None, /) -> xcb.RandrOutput:
         if len(outputs) == 0:
             msg = "No RandR outputs available"
             raise ScreenShotError(msg)
@@ -283,7 +285,7 @@ class MSSXCBBase(MSSBase):
             return primary_output
         return outputs[0]
 
-    def _monitors_from_randr_monitors(self, primary_output: xcb.RandrOutput, edid_atom: xcb.Atom | None, /) -> None:
+    def _monitors_from_randr_monitors(self, primary_output: xcb.RandrOutput | None, edid_atom: xcb.Atom | None, /) -> None:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
@@ -297,8 +299,11 @@ class MSSXCBBase(MSSBase):
                 "width": randr_monitor.width,
                 "height": randr_monitor.height,
             }
-            if randr_monitor.primary:
-                monitor["is_primary"] = True
+            # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor will
+            # return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR that
+            # all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't have
+            # any information about primary monitors.)
+            monitor["is_primary"] = bool(randr_monitor.primary)
 
             if randr_monitor.nOutput > 0:
                 outputs = xcb.randr_monitor_info_outputs(randr_monitor)
@@ -310,7 +315,7 @@ class MSSXCBBase(MSSBase):
     def _monitors_from_randr_crtcs(
         self,
         randr_version: tuple[int, int],
-        primary_output: xcb.RandrOutput,
+        primary_output: xcb.RandrOutput | None,
         edid_atom: xcb.Atom | None,
         /,
     ) -> None:
@@ -341,8 +346,11 @@ class MSSXCBBase(MSSBase):
             outputs = xcb.randr_get_crtc_info_outputs(crtc_info)
             chosen_output = self._choose_randr_output(outputs, primary_output)
             monitor |= self._randr_output_ids(chosen_output, timestamp, edid_atom)
-            if chosen_output == primary_output:
-                monitor["is_primary"] = True
+            # The concept of primary outputs was added in XRandR 1.3.  We distinguish between "all the monitors are
+            # not primary" (RRGetOutputPrimary returned XCB_NONE, a valid case) and "we have no way to get
+            # information about the primary monitor": in the latter case, we don't populate "is_primary".
+            if primary_output is not None:
+                monitor["is_primary"] = chosen_output == primary_output
 
             self._monitors.append(monitor)
 
