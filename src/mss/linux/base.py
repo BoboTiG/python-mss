@@ -254,23 +254,21 @@ class MSSXCBBase(MSSBase):
             if edid_prop.type_.value != 0:
                 edid_block = bytes(xcb.randr_get_output_property_data(edid_prop))
                 edid_data = parse_edid(edid_block)
-                if "display_name" in edid_data:
-                    rv["name"] = edid_data["display_name"]
+                if (display_name := edid_data.get("display_name")) is not None:
+                    rv["name"] = display_name
 
                 edid_params: dict[str, str] = {}
-                if "id_legacy" in edid_data:
-                    edid_params["model"] = edid_data["id_legacy"]
-                if "serial_number" in edid_data:
-                    edid_params["serial"] = str(edid_data["serial_number"])
-                if "manufacture_year" in edid_data:
-                    if "manufacture_week" in edid_data:
-                        edid_params["mfr_date"] = (
-                            f"{edid_data['manufacture_year']:04d}W{edid_data['manufacture_week']:02d}"
-                        )
+                if (id_legacy := edid_data.get("id_legacy")) is not None:
+                    edid_params["model"] = id_legacy
+                if (serial_number := edid_data.get("serial_number")) is not None:
+                    edid_params["serial"] = str(serial_number)
+                if (manufacture_year := edid_data.get("manufacture_year")) is not None:
+                    if (manufacture_week := edid_data.get("manufacture_week")) is not None:
+                        edid_params["mfr_date"] = f"{manufacture_year:04d}W{manufacture_week:02d}"
                     else:
-                        edid_params["mfr_date"] = f"{edid_data['manufacture_year']:04d}"
-                if "model_year" in edid_data:
-                    edid_params["model_year"] = f"{edid_data['model_year']:04d}"
+                        edid_params["mfr_date"] = f"{manufacture_year:04d}"
+                if (model_year := edid_data.get("model_year")) is not None:
+                    edid_params["model_year"] = f"{model_year:04d}"
                 if edid_params:
                     rv["unique_id"] = urlencode(edid_params)
 
@@ -281,7 +279,7 @@ class MSSXCBBase(MSSBase):
         if len(outputs) == 0:
             msg = "No RandR outputs available"
             raise ScreenShotError(msg)
-        if any(o == primary_output for o in outputs):
+        if primary_output in outputs:
             return primary_output
         return outputs[0]
 
