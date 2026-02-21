@@ -97,6 +97,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/test_issue_220.py",
         f"mss-{__version__}/src/tests/test_leaks.py",
         f"mss-{__version__}/src/tests/test_macos.py",
+        f"mss-{__version__}/src/tests/test_primary_monitor.py",
         f"mss-{__version__}/src/tests/test_save.py",
         f"mss-{__version__}/src/tests/test_setup.py",
         f"mss-{__version__}/src/tests/test_tools.py",

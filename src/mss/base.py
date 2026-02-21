@@ -214,11 +214,37 @@ class MSSBase(metaclass=ABCMeta):
         - ``top``: the y-coordinate of the upper-left corner
         - ``width``: the width
         - ``height``: the height
+        - ``is_primary``: (optional) true if this is the primary monitor
+        - ``name``: (optional) human-readable device name
+        - ``unique_id``: (optional) platform-specific stable identifier for the monitor
+        - ``output``: (optional, Linux only) monitor output name, compatible with xrandr
         """
         with self._lock:
             if not self._monitors:
                 self._monitors_impl()
             return self._monitors
+
+    @property
+    def primary_monitor(self) -> Monitor:
+        """Get the primary monitor.
+
+        Returns the monitor marked as primary. If no monitor is marked as primary
+        (or the platform doesn't support primary monitor detection), returns the
+        first monitor (at index 1).
+
+        :raises ScreenShotError: If no monitors are available.
+
+        .. versionadded:: 10.2.0
+        """
+        monitors = self.monitors
+        if len(monitors) <= 1:  # Only the "all monitors" entry or empty
+            raise ScreenShotError("No monitor found.")
+
+        for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
+            if monitor.get("is_primary", False):
+                return monitor
+        # Fallback to the first monitor if no primary is found
+        return monitors[1]
 
     def save(
         self,

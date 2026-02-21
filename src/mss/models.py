@@ -1,9 +1,12 @@
 # This is part of the MSS Python's module.
 # Source: https://github.com/BoboTiG/python-mss.
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple
 
-Monitor = dict[str, int]
+# TODO @BoboTiG: https://github.com/BoboTiG/python-mss/issues/470
+# Change this to a proper Monitor class in next major release.
+Monitor = dict[str, Any]
 Monitors = list[Monitor]
 
 Pixel = tuple[int, int, int]

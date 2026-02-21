@@ -171,6 +171,7 @@ ignore = [
   "C90",      # complexity
   "COM812",   # conflict
   "D",        # TODO
+  "FIX002",   # Line contains TODO
   "ISC001",   # conflict
   "T201",     # `print()`
 ]
