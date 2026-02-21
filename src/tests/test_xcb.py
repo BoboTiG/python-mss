@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import gc
+import platform
 from ctypes import (
     POINTER,
     Structure,
@@ -15,7 +16,6 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Callable
 from unittest.mock import Mock
 from weakref import finalize
-import platform
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -30,7 +30,6 @@ from mss.linux.xcbhelpers import (
     depends_on,
     list_from_xcb,
 )
-
 
 if platform.system().lower() != "linux":
     pytestmark = pytest.mark.skip

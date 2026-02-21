@@ -277,15 +277,22 @@ class MSSXCBBase(MSSBase):
         return rv
 
     @staticmethod
-    def _choose_randr_output(outputs: Array[xcb.RandrOutput], primary_output: xcb.RandrOutput | None, /) -> xcb.RandrOutput:
+    def _choose_randr_output(
+        outputs: Array[xcb.RandrOutput], primary_output: xcb.RandrOutput | None, /
+    ) -> xcb.RandrOutput:
         if len(outputs) == 0:
             msg = "No RandR outputs available"
             raise ScreenShotError(msg)
+        if primary_output is None:
+            # We don't want to use the `in` check if this could be None, according to MyPy.
+            return outputs[0]
         if primary_output in outputs:
             return primary_output
         return outputs[0]
 
-    def _monitors_from_randr_monitors(self, primary_output: xcb.RandrOutput | None, edid_atom: xcb.Atom | None, /) -> None:
+    def _monitors_from_randr_monitors(
+        self, primary_output: xcb.RandrOutput | None, edid_atom: xcb.Atom | None, /
+    ) -> None:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
