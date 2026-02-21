@@ -3,6 +3,7 @@
 See Git commit messages for full history.
 
 ## 10.2.0.dev0 (2026-xx-xx)
+- Linux: add primary monitor detection, monitor device name, unique device interface name, and output name using XRandR (#153)
 - Windows: switch from `GetDIBits` to more memory efficient `CreateDIBSection` for `MSS.grab` implementation (#449)
 - Windows: fix gdi32.GetDIBits() failed after a couple of minutes of recording (#268)
 - Linux: check the server for Xrandr support version (#417)
