@@ -7,6 +7,7 @@ See Git commit messages for full history.
 - Add `primary_monitor` property to MSS base class for easy access to the primary monitor (#153)
 - Windows: add primary monitor detection using `GetMonitorInfoW` API (#153)
 - Windows: add monitor device name and unique device interface name using `EnumDisplayDevicesW` API (#153)
+- Linux: add primary monitor detection, monitor device name, unique device interface name, and output name using XRandR (#153)
 - Windows: switch from `GetDIBits` to more memory efficient `CreateDIBSection` for `MSS.grab` implementation (#449)
 - Windows: fix gdi32.GetDIBits() failed after a couple of minutes of recording (#268)
 - Linux: check the server for Xrandr support version (#417)

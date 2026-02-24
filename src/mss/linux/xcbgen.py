@@ -41,6 +41,12 @@ XFIXES_MINOR_VERSION = 0
 # Enum classes
 
 
+class RandrConnection(IntEnum):
+    Connected = 0
+    Disconnected = 1
+    Unknown = 2
+
+
 class RandrSetConfig(IntEnum):
     Success = 0
     InvalidConfigTime = 1
@@ -96,7 +102,13 @@ class Drawable(XID):
 
 
 class Keycode(c_uint8):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Keycode):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class Format(Structure):
@@ -117,7 +129,13 @@ class Colormap(XID):
 
 
 class Visualid(c_uint32):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Visualid):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class Visualtype(Structure):
@@ -261,7 +279,13 @@ class RandrQueryVersionReply(Structure):
 
 
 class Timestamp(c_uint32):
-    pass
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Timestamp):
+            return self.value == other.value
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self.value)
 
 
 class RandrCrtc(XID):
@@ -342,6 +366,81 @@ class RandrGetCrtcInfoReply(Structure):
         ("rotations", c_uint16),
         ("num_outputs", c_uint16),
         ("num_possible_outputs", c_uint16),
+    )
+
+
+class RandrGetOutputInfoReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("status", c_uint8),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("timestamp", Timestamp),
+        ("crtc", RandrCrtc),
+        ("mm_width", c_uint32),
+        ("mm_height", c_uint32),
+        ("connection", c_uint8),
+        ("subpixel_order", c_uint8),
+        ("num_crtcs", c_uint16),
+        ("num_modes", c_uint16),
+        ("num_preferred", c_uint16),
+        ("num_clones", c_uint16),
+        ("name_len", c_uint16),
+    )
+
+
+class RandrGetOutputPrimaryReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("pad0", c_uint8 * 1),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("output", RandrOutput),
+    )
+
+
+class RandrGetOutputPropertyReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("format_", c_uint8),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("type_", Atom),
+        ("bytes_after", c_uint32),
+        ("num_items", c_uint32),
+        ("pad0", c_uint8 * 12),
+    )
+
+
+class RandrMonitorInfo(Structure):
+    _fields_ = (
+        ("name", Atom),
+        ("primary", c_uint8),
+        ("automatic", c_uint8),
+        ("nOutput", c_uint16),
+        ("x", c_int16),
+        ("y", c_int16),
+        ("width", c_uint16),
+        ("height", c_uint16),
+        ("width_in_millimeters", c_uint32),
+        ("height_in_millimeters", c_uint32),
+    )
+
+
+class RandrMonitorInfoIterator(Structure):
+    _fields_ = (("data", POINTER(RandrMonitorInfo)), ("rem", c_int), ("index", c_int))
+
+
+class RandrGetMonitorsReply(Structure):
+    _fields_ = (
+        ("response_type", c_uint8),
+        ("pad0", c_uint8 * 1),
+        ("sequence", c_uint16),
+        ("length", c_uint32),
+        ("timestamp", Timestamp),
+        ("nMonitors", c_uint32),
+        ("nOutputs", c_uint32),
+        ("pad1", c_uint8 * 12),
     )
 
 
@@ -597,6 +696,42 @@ def randr_get_crtc_info_possible(r: RandrGetCrtcInfoReply) -> Array[RandrOutput]
     )
 
 
+def randr_get_output_info_crtcs(r: RandrGetOutputInfoReply) -> Array[RandrCrtc]:
+    return array_from_xcb(
+        LIB.randr.xcb_randr_get_output_info_crtcs, LIB.randr.xcb_randr_get_output_info_crtcs_length, r
+    )
+
+
+def randr_get_output_info_modes(r: RandrGetOutputInfoReply) -> Array[RandrMode]:
+    return array_from_xcb(
+        LIB.randr.xcb_randr_get_output_info_modes, LIB.randr.xcb_randr_get_output_info_modes_length, r
+    )
+
+
+def randr_get_output_info_clones(r: RandrGetOutputInfoReply) -> Array[RandrOutput]:
+    return array_from_xcb(
+        LIB.randr.xcb_randr_get_output_info_clones, LIB.randr.xcb_randr_get_output_info_clones_length, r
+    )
+
+
+def randr_get_output_info_name(r: RandrGetOutputInfoReply) -> Array[c_uint8]:
+    return array_from_xcb(LIB.randr.xcb_randr_get_output_info_name, LIB.randr.xcb_randr_get_output_info_name_length, r)
+
+
+def randr_get_output_property_data(r: RandrGetOutputPropertyReply) -> Array[c_uint8]:
+    return array_from_xcb(
+        LIB.randr.xcb_randr_get_output_property_data, LIB.randr.xcb_randr_get_output_property_data_length, r
+    )
+
+
+def randr_monitor_info_outputs(r: RandrMonitorInfo) -> Array[RandrOutput]:
+    return array_from_xcb(LIB.randr.xcb_randr_monitor_info_outputs, LIB.randr.xcb_randr_monitor_info_outputs_length, r)
+
+
+def randr_get_monitors_monitors(r: RandrGetMonitorsReply) -> list[RandrMonitorInfo]:
+    return list_from_xcb(LIB.randr.xcb_randr_get_monitors_monitors_iterator, LIB.randr.xcb_randr_monitor_info_next, r)
+
+
 def render_pictdepth_visuals(r: RenderPictdepth) -> Array[RenderPictvisual]:
     return array_from_xcb(LIB.render.xcb_render_pictdepth_visuals, LIB.render.xcb_render_pictdepth_visuals_length, r)
 
@@ -686,6 +821,33 @@ def randr_get_crtc_info(c: Connection, crtc: RandrCrtc, config_timestamp: Timest
     return LIB.randr.xcb_randr_get_crtc_info(c, crtc, config_timestamp).reply(c)
 
 
+def randr_get_output_info(c: Connection, output: RandrOutput, config_timestamp: Timestamp) -> RandrGetOutputInfoReply:
+    return LIB.randr.xcb_randr_get_output_info(c, output, config_timestamp).reply(c)
+
+
+def randr_get_output_primary(c: Connection, window: Window) -> RandrGetOutputPrimaryReply:
+    return LIB.randr.xcb_randr_get_output_primary(c, window).reply(c)
+
+
+def randr_get_output_property(
+    c: Connection,
+    output: RandrOutput,
+    property_: Atom,
+    type_: Atom,
+    long_offset: c_uint32 | int,
+    long_length: c_uint32 | int,
+    delete: c_uint8 | int,
+    pending: c_uint8 | int,
+) -> RandrGetOutputPropertyReply:
+    return LIB.randr.xcb_randr_get_output_property(
+        c, output, property_, type_, long_offset, long_length, delete, pending
+    ).reply(c)
+
+
+def randr_get_monitors(c: Connection, window: Window, get_active: c_uint8 | int) -> RandrGetMonitorsReply:
+    return LIB.randr.xcb_randr_get_monitors(c, window, get_active).reply(c)
+
+
 def render_query_version(
     c: Connection, client_major_version: c_uint32 | int, client_minor_version: c_uint32 | int
 ) -> RenderQueryVersionReply:
@@ -746,6 +908,8 @@ def initialize() -> None:  # noqa: PLR0915
     LIB.xcb.xcb_screen_next.restype = None
     LIB.xcb.xcb_setup_next.argtypes = (POINTER(SetupIterator),)
     LIB.xcb.xcb_setup_next.restype = None
+    LIB.randr.xcb_randr_monitor_info_next.argtypes = (POINTER(RandrMonitorInfoIterator),)
+    LIB.randr.xcb_randr_monitor_info_next.restype = None
     LIB.render.xcb_render_pictdepth_next.argtypes = (POINTER(RenderPictdepthIterator),)
     LIB.render.xcb_render_pictdepth_next.restype = None
     LIB.render.xcb_render_pictscreen_next.argtypes = (POINTER(RenderPictscreenIterator),)
@@ -822,6 +986,32 @@ def initialize() -> None:  # noqa: PLR0915
     LIB.randr.xcb_randr_get_crtc_info_possible.restype = POINTER(RandrOutput)
     LIB.randr.xcb_randr_get_crtc_info_possible_length.argtypes = (POINTER(RandrGetCrtcInfoReply),)
     LIB.randr.xcb_randr_get_crtc_info_possible_length.restype = c_int
+    LIB.randr.xcb_randr_get_output_info_crtcs.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_crtcs.restype = POINTER(RandrCrtc)
+    LIB.randr.xcb_randr_get_output_info_crtcs_length.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_crtcs_length.restype = c_int
+    LIB.randr.xcb_randr_get_output_info_modes.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_modes.restype = POINTER(RandrMode)
+    LIB.randr.xcb_randr_get_output_info_modes_length.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_modes_length.restype = c_int
+    LIB.randr.xcb_randr_get_output_info_clones.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_clones.restype = POINTER(RandrOutput)
+    LIB.randr.xcb_randr_get_output_info_clones_length.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_clones_length.restype = c_int
+    LIB.randr.xcb_randr_get_output_info_name.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_name.restype = POINTER(c_uint8)
+    LIB.randr.xcb_randr_get_output_info_name_length.argtypes = (POINTER(RandrGetOutputInfoReply),)
+    LIB.randr.xcb_randr_get_output_info_name_length.restype = c_int
+    LIB.randr.xcb_randr_get_output_property_data.argtypes = (POINTER(RandrGetOutputPropertyReply),)
+    LIB.randr.xcb_randr_get_output_property_data.restype = POINTER(c_uint8)
+    LIB.randr.xcb_randr_get_output_property_data_length.argtypes = (POINTER(RandrGetOutputPropertyReply),)
+    LIB.randr.xcb_randr_get_output_property_data_length.restype = c_int
+    LIB.randr.xcb_randr_monitor_info_outputs.argtypes = (POINTER(RandrMonitorInfo),)
+    LIB.randr.xcb_randr_monitor_info_outputs.restype = POINTER(RandrOutput)
+    LIB.randr.xcb_randr_monitor_info_outputs_length.argtypes = (POINTER(RandrMonitorInfo),)
+    LIB.randr.xcb_randr_monitor_info_outputs_length.restype = c_int
+    LIB.randr.xcb_randr_get_monitors_monitors_iterator.argtypes = (POINTER(RandrGetMonitorsReply),)
+    LIB.randr.xcb_randr_get_monitors_monitors_iterator.restype = RandrMonitorInfoIterator
     LIB.render.xcb_render_pictdepth_visuals.argtypes = (POINTER(RenderPictdepth),)
     LIB.render.xcb_render_pictdepth_visuals.restype = POINTER(RenderPictvisual)
     LIB.render.xcb_render_pictdepth_visuals_length.argtypes = (POINTER(RenderPictdepth),)
@@ -842,10 +1032,7 @@ def initialize() -> None:  # noqa: PLR0915
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image.restype = POINTER(c_uint32)
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.argtypes = (POINTER(XfixesGetCursorImageReply),)
     LIB.xfixes.xcb_xfixes_get_cursor_image_cursor_image_length.restype = c_int
-    LIB.shm.xcb_shm_create_segment_reply_fds.argtypes = (
-        POINTER(Connection),
-        POINTER(ShmCreateSegmentReply),
-    )
+    LIB.shm.xcb_shm_create_segment_reply_fds.argtypes = (POINTER(Connection), POINTER(ShmCreateSegmentReply))
     LIB.shm.xcb_shm_create_segment_reply_fds.restype = POINTER(c_int)
     initialize_xcb_typed_func(LIB.xcb, "xcb_get_geometry", [POINTER(Connection), Drawable], GetGeometryReply)
     initialize_xcb_typed_func(
@@ -878,6 +1065,21 @@ def initialize() -> None:  # noqa: PLR0915
         LIB.randr, "xcb_randr_get_crtc_info", [POINTER(Connection), RandrCrtc, Timestamp], RandrGetCrtcInfoReply
     )
     initialize_xcb_typed_func(
+        LIB.randr, "xcb_randr_get_output_info", [POINTER(Connection), RandrOutput, Timestamp], RandrGetOutputInfoReply
+    )
+    initialize_xcb_typed_func(
+        LIB.randr, "xcb_randr_get_output_primary", [POINTER(Connection), Window], RandrGetOutputPrimaryReply
+    )
+    initialize_xcb_typed_func(
+        LIB.randr,
+        "xcb_randr_get_output_property",
+        [POINTER(Connection), RandrOutput, Atom, Atom, c_uint32, c_uint32, c_uint8, c_uint8],
+        RandrGetOutputPropertyReply,
+    )
+    initialize_xcb_typed_func(
+        LIB.randr, "xcb_randr_get_monitors", [POINTER(Connection), Window, c_uint8], RandrGetMonitorsReply
+    )
+    initialize_xcb_typed_func(
         LIB.render, "xcb_render_query_version", [POINTER(Connection), c_uint32, c_uint32], RenderQueryVersionReply
     )
     initialize_xcb_typed_func(
@@ -890,20 +1092,12 @@ def initialize() -> None:  # noqa: PLR0915
         [POINTER(Connection), Drawable, c_int16, c_int16, c_uint16, c_uint16, c_uint32, c_uint8, ShmSeg, c_uint32],
         ShmGetImageReply,
     )
-    LIB.shm.xcb_shm_attach_fd_checked.argtypes = (
-        POINTER(Connection),
-        ShmSeg,
-        c_int,
-        c_uint8,
-    )
+    LIB.shm.xcb_shm_attach_fd_checked.argtypes = (POINTER(Connection), ShmSeg, c_int, c_uint8)
     LIB.shm.xcb_shm_attach_fd_checked.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.shm, "xcb_shm_create_segment", [POINTER(Connection), ShmSeg, c_uint32, c_uint8], ShmCreateSegmentReply
     )
-    LIB.shm.xcb_shm_detach_checked.argtypes = (
-        POINTER(Connection),
-        ShmSeg,
-    )
+    LIB.shm.xcb_shm_detach_checked.argtypes = (POINTER(Connection), ShmSeg)
     LIB.shm.xcb_shm_detach_checked.restype = VoidCookie
     initialize_xcb_typed_func(
         LIB.xfixes, "xcb_xfixes_query_version", [POINTER(Connection), c_uint32, c_uint32], XfixesQueryVersionReply
