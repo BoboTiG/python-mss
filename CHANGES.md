@@ -2,6 +2,13 @@
 
 ## 10.2.0 (2026-xx-xx)
 
+### base.py
+- Added `primary_monitor` property to return the primary monitor (or first monitor as fallback).
+
+### models.py
+- Changed `Monitor` type from `dict[str, int]` to `dict[str, Any]` to support new `is_primary` (bool, optional), `name` (str, optional), and `unique_id` (str, optional) fields.
+- Added TODO comment for future Monitor class implementation (#470).
+
 ### windows.py
 - Added `MONITORINFOEXW` structure for extended monitor information.
 - Added `DISPLAY_DEVICEW` structure for device information.

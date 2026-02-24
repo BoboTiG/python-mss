@@ -74,7 +74,7 @@ dev = [
   "build==1.4.0",
   "lxml==6.0.2",
   "mypy==1.19.1",
-  "ruff==0.15.1",
+  "ruff==0.15.2",
   "twine==6.2.0",
 ]
 docs = [
@@ -171,6 +171,7 @@ ignore = [
   "C90",      # complexity
   "COM812",   # conflict
   "D",        # TODO
+  "FIX002",   # Line contains TODO
   "ISC001",   # conflict
   "T201",     # `print()`
 ]
