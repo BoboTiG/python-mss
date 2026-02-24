@@ -166,7 +166,7 @@ class MSS(MSSXCBBase):
 
         img_reply = xcb.shm_get_image(
             self.conn,
-            self.drawable.value,
+            self.drawable,
             monitor["left"],
             monitor["top"],
             monitor["width"],
@@ -177,11 +177,11 @@ class MSS(MSSXCBBase):
             0,
         )
 
-        if img_reply.depth != self.drawable_depth or img_reply.visual.value != self.drawable_visual_id:
+        if img_reply.depth != self.drawable_depth or img_reply.visual != self.drawable_visual_id:
             # This should never happen; a window can't change its visual.
             msg = (
                 "Server returned an image with a depth or visual different than it initially reported: "
-                f"expected {self.drawable_depth},{hex(self.drawable_visual_id)}, "
+                f"expected {self.drawable_depth},{hex(self.drawable_visual_id.value)}, "
                 f"got {img_reply.depth},{hex(img_reply.visual.value)}"
             )
             raise ScreenShotError(msg)

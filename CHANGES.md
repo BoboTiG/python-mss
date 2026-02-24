@@ -17,6 +17,31 @@
 - Added `EnumDisplayDevicesW` to `CFUNCTIONS` for querying device details.
 - Modified `_monitors_impl()` callback to extract primary monitor flag, device names, and device interface name (unique_id) using Win32 APIs; `unique_id` uses `EDD_GET_DEVICE_INTERFACE_NAME` when available.
 
+### linux/base.py
+- Reworked `_monitors_impl()` to prefer XRandR 1.5+ `GetMonitors` when available, falling back to enumerating active CRTCs.
+- Added monitor identification fields from RandR + EDID where available: `is_primary`, `output`, `name`, and `unique_id`.
+- Added EDID lookup via RandR `EDID`/`EdidData` output property and parsing via `mss.tools.parse_edid()`.
+
+### linux/xcb.py
+- Added `intern_atom()` helper with per-connection caching and support for predefined atoms.
+- Added `XCB_NONE` constant (`Atom(0)`).
+- Added additional XRandR request wrappers used for monitor identification (`GetMonitors`, `GetOutputInfo`, `GetOutputPrimary`, `GetOutputProperty`).
+
+### linux/xcbhelpers.py
+- Added `InternAtomReply` structure and typed binding for `xcb_intern_atom`.
+- Added `__eq__()`/`__hash__()` to `XID` for value-based comparisons.
+
+### xcbproto/gen_xcb_to_py.py
+- Extended the generator to include additional XRandR requests used by the XCB backends (`GetOutputInfo`, `GetOutputPrimary`, `GetOutputProperty`, `GetMonitors`).
+- Updated typedef generation to emit value-based `__eq__()`/`__hash__()` implementations.
+- Refactored code generation helpers and formatting (use `textwrap.indent`/`dedent`).
+
+### tools.py
+- Added `parse_edid()` helper for extracting identifying fields (legacy model id, serial number, manufacture/model year, and display name) from EDID blocks.
+
+### linux/xshmgetimage.py
+- Fixed XID type handling for `drawable`/`visual` (avoid mixing raw `.value` with typed IDs).
+
 ## 10.1.1 (2025-xx-xx)
 
 ### linux/__init__.py
