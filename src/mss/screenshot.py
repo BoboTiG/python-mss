@@ -3,13 +3,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
 from mss.exception import ScreenShotError
 from mss.models import Monitor, Pixel, Pixels, Pos, Size
 
 if TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Iterator
+
+    import numpy as np
+    import PIL.Image
+    import tensorflow as tf
+    import torch
+
+Channels: TypeAlias = Literal["BGRA", "BGR", "RGB", "RGBA"]
+Layout: TypeAlias = Literal["HWC", "CHW"]
 
 
 class ScreenShot:
@@ -126,6 +134,165 @@ class ScreenShot:
             self.__rgb = bytes(rgb)
 
         return self.__rgb
+
+    def to_pil(self, mode: str = "RGB") -> PIL.Image.Image:
+        """Convert the screenshot to a Pillow image.
+
+        Args:
+            mode: The requested image mode.  Must be ``"RGB"``
+                (default) or ``"RGBA"``.
+
+        Returns:
+            A :class:`PIL.Image.Image` instance.
+
+        Notes:
+            When requesting ``"RGBA"``, the alpha channel may not be
+            meaningful on all platforms/backends.
+
+            Use ``channels="BGR"`` for OpenCV, and ``channels="RGB"``
+            (the default) for scikit-image and most other frameworks.
+        """
+        mode = mode.upper()
+        if mode not in {"RGB", "RGBA"}:
+            msg = "Mode must be 'RGB' or 'RGBA'"
+            raise ValueError(msg)
+
+        from PIL import Image  # noqa: PLC0415
+
+        raw_mode = "BGRX" if mode == "RGB" else "BGRA"
+        return Image.frombuffer(mode, self.size, self.raw, "raw", raw_mode, 0, 1)
+
+    def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> np.ndarray:
+        """Convert the screenshot to a NumPy array.
+
+        Args:
+            channels: The requested channel order.  Must be
+                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
+                ``"RGBA"``.
+            layout: The requested layout.  Must be ``"HWC"`` (default)
+                or ``"CHW"``.
+
+        Returns:
+            A NumPy array of dtype ``uint8``.
+
+        Notes:
+            When requesting ``"RGBA"``, the alpha channel may not be
+            meaningful on all platforms/backends.
+        """
+        channels = cast("Channels", channels.upper())
+        layout = cast("Layout", layout.upper())
+
+        if channels not in {"BGRA", "BGR", "RGB", "RGBA"}:
+            msg = "Channels must be 'BGRA', 'BGR', 'RGB', or 'RGBA'"
+            raise ValueError(msg)
+        if layout not in {"HWC", "CHW"}:
+            msg = "Layout must be 'HWC' or 'CHW'"
+            raise ValueError(msg)
+
+        import numpy as np  # noqa: PLC0415
+
+        frame = np.frombuffer(self.raw, dtype=np.uint8).reshape((self.height, self.width, 4))
+        if channels == "BGRA":
+            data = frame
+        elif channels == "BGR":
+            data = frame[:, :, :3]
+        elif channels == "RGB":
+            data = frame[:, :, [2, 1, 0]]
+        else:  # RGBA
+            data = frame[:, :, [2, 1, 0, 3]]
+
+        if layout == "CHW":
+            data = np.transpose(data, (2, 0, 1))
+
+        return data
+
+    def to_torch(
+        self,
+        channels: Channels = "RGB",
+        layout: Layout = "CHW",
+        dtype: torch.dtype | None = None,
+    ) -> torch.Tensor:
+        """Convert the screenshot to a PyTorch tensor.
+
+        Args:
+            channels: The requested channel order.  Must be
+                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
+                ``"RGBA"``.
+            layout: The requested layout.  Must be ``"CHW"`` (default)
+                or ``"HWC"``.
+            dtype: The requested dtype as a ``torch.dtype``.  Defaults to
+                ``torch.float32``.
+
+        Returns:
+            A PyTorch tensor.
+
+        Notes:
+            The default layout is ``"CHW"`` because it is more
+            commonly used in PyTorch models.  This is different than
+            in :py:meth:`to_numpy` or :py:meth:`to_tensorflow`, which
+            default to ``"HWC"``.
+
+            When requesting ``"RGBA"``, the alpha channel may not be
+            meaningful on all platforms/backends.
+
+            Floating point dtypes are scaled to the ``[0, 1]`` range.
+        """
+        import torch  # noqa: PLC0415
+
+        frame = self.to_numpy(channels=channels, layout=layout)
+
+        if dtype is None:
+            dtype = torch.float32
+        elif not isinstance(dtype, torch.dtype):
+            msg = "Dtype must be a torch dtype"
+            raise ValueError(msg)
+
+        tensor = torch.from_numpy(frame)
+        tensor = tensor.to(dtype=dtype)
+        if dtype.is_floating_point:
+            tensor = tensor / 255.0
+        return tensor
+
+    def to_tensorflow(
+        self,
+        channels: Channels = "RGB",
+        layout: Layout = "HWC",
+        dtype: tf.DType | str = "float32",
+    ) -> tf.Tensor:
+        """Convert the screenshot to a TensorFlow tensor.
+
+        Args:
+            channels: The requested channel order.  Must be
+                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
+                ``"RGBA"``.
+            layout: The requested layout.  Must be ``"HWC"`` (default)
+                or ``"CHW"``.
+            dtype: The requested dtype.  Can be a string like
+                ``"float32"`` (default) or a ``tf.DType``.
+
+        Returns:
+            A TensorFlow tensor.
+
+        Notes:
+            When requesting ``"RGBA"``, the alpha channel may not be
+            meaningful on all platforms/backends.
+
+            Floating point dtypes are scaled to the ``[0, 1]`` range.
+        """
+        import tensorflow as tf  # noqa: PLC0415
+
+        frame = self.to_numpy(channels=channels, layout=layout)
+
+        try:
+            tf_dtype = tf.as_dtype(dtype)
+        except (TypeError, ValueError) as exc:
+            msg = "Dtype must be a TensorFlow DType or valid string"
+            raise ValueError(msg) from exc
+
+        tensor = tf.convert_to_tensor(frame, dtype=tf_dtype)
+        if tf_dtype.is_floating:
+            tensor = tensor / tf.constant(255.0, dtype=tf_dtype)
+        return tensor
 
     @property
     def top(self) -> int:

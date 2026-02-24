@@ -7,7 +7,6 @@ OpenCV/Numpy example.
 import time
 
 import cv2
-import numpy as np
 
 import mss
 
@@ -18,15 +17,15 @@ with mss.mss() as sct:
     while "Screen capturing":
         last_time = time.time()
 
-        # Get raw pixels from the screen, save it to a Numpy array
-        img = np.array(sct.grab(monitor))
+        # Get raw pixels from the screen, save it to a NumPy array
+        img = sct.grab(monitor).to_numpy(channels="BGR")
 
         # Display the picture
         cv2.imshow("OpenCV/Numpy normal", img)
 
         # Display the picture in grayscale
         # cv2.imshow('OpenCV/Numpy grayscale',
-        #            cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY))
+        #            cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
 
         print(f"fps: {1 / (time.time() - last_time)}")
 

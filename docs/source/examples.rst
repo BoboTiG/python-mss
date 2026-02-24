@@ -123,7 +123,7 @@ PIL
 ===
 
 You can use the Python Image Library (aka Pillow) to do whatever you want with raw pixels.
-This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.frombytes>`_:
+This is an example using :py:meth:`mss.screenshot.ScreenShot.to_pil`:
 
 .. literalinclude:: examples/pil.py
     :lines: 7-
@@ -133,7 +133,7 @@ This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/re
 Playing with pixels
 -------------------
 
-This is an example using `putdata() <https://github.com/python-pillow/Pillow/blob/b9b5d39f2b32cec75b9cf96b882acb7a77a4ed4b/PIL/Image.py#L1523>`_:
+This is an example using :py:meth:`mss.screenshot.ScreenShot.to_pil` and direct pixel edits:
 
 .. literalinclude:: examples/pil_pixels.py
     :lines: 7-
@@ -146,6 +146,10 @@ OpenCV/Numpy
 See how fast you can record the screen.
 You can easily view a HD movie with VLC and see it too in the OpenCV window.
 And with __no__ lag please.
+
+When using :py:meth:`mss.screenshot.ScreenShot.to_numpy`, pass ``channels="BGR"``
+for OpenCV, and use ``channels="RGB"`` (the default) for scikit-image and most
+other frameworks.
 
 .. literalinclude:: examples/opencv_numpy.py
     :lines: 7-

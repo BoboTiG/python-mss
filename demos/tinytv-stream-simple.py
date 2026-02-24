@@ -97,7 +97,7 @@ def main() -> None:
                     # The next step is to resize the image to fit the TinyTV's screen.  There's a great image
                     # manipulation library called PIL, or Pillow, that can do that.  Let's transfer the raw pixels in
                     # the ScreenShot object into a PIL Image.
-                    original_image = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+                    original_image = screenshot.to_pil("RGB")
 
                     # Now, we can resize it.  The resize method may stretch the image to make it match the TinyTV's
                     # screen; the advanced demo gives other options.  Using a reducing gap is optional, but speeds up
