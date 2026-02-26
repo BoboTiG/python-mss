@@ -238,7 +238,8 @@ class MSSBase(metaclass=ABCMeta):
         """
         monitors = self.monitors
         if len(monitors) <= 1:  # Only the "all monitors" entry or empty
-            raise ScreenShotError("No monitor found.")
+            msg = "No monitor found."
+            raise ScreenShotError(msg)
 
         for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
             if monitor.get("is_primary", False):
