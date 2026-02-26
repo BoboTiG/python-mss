@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from mss.exception import ScreenShotError
 from mss.models import Monitor, Pixel, Pixels, Pos, Size
@@ -16,8 +16,8 @@ if TYPE_CHECKING:  # pragma: nocover
     import tensorflow as tf
     import torch
 
-Channels: TypeAlias = Literal["BGRA", "BGR", "RGB", "RGBA"]
-Layout: TypeAlias = Literal["HWC", "CHW"]
+Channels = Literal["BGRA", "BGR", "RGB", "RGBA"]
+Layout = Literal["HWC", "CHW"]
 
 
 class ScreenShot:
