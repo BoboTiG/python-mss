@@ -1,10 +1,8 @@
 """This is part of the MSS Python's module.
 Source: https://github.com/BoboTiG/python-mss.
 
-PIL example using frombytes().
+PIL example using ScreenShot.to_pil().
 """
-
-from PIL import Image
 
 import mss
 
@@ -15,9 +13,7 @@ with mss.mss() as sct:
         sct_img = sct.grab(monitor)
 
         # Create the Image
-        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-        # The same, but less efficient:
-        # img = Image.frombytes('RGB', sct_img.size, sct_img.rgb)
+        img = sct_img.to_pil("RGB")
 
         # And save it!
         output = f"monitor-{num}.png"

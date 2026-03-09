@@ -227,20 +227,19 @@ def video_process(
         # Many Python objects expose their underlying memory via the "buffer protocol".  A buffer is just a view of
         # raw bytes that other libraries can interpret without copying.
         #
-        # Common buffer objects include: `bytes`, `bytearray`, `memoryview`, and `array.array`.  `screenshot.bgra` is
-        # also a buffer (currently it is a `bytes` object, though that detail may change in the future).
+        # Common buffer objects include: `bytes`, `bytearray`, `memoryview`, and `array.array`.  A ScreenShot object
+        # stores its pixel data in a buffer.
         #
         # Minimum-copy path: ScreenShot -> NumPy -> VideoFrame
         # ----------------------------------------------------
         #
         # `np.frombuffer()` creates an ndarray *view* of an existing buffer (no copy).  Reshaping also stays as a
-        # view.
+        # view.  `ScreenShot.to_numpy()` uses the same approach internally and keeps the zero-copy behavior.
         #
         # PyAV's `VideoFrame.from_ndarray()` always copies the data into a new frame-owned buffer.  For this demo we
         # use the undocumented `VideoFrame.from_numpy_buffer()`, which creates a `VideoFrame` that shares memory with
         # the ndarray.
-        ndarray = np.frombuffer(screenshot.bgra, dtype=np.uint8)
-        ndarray = ndarray.reshape(screenshot.height, screenshot.width, 4)
+        ndarray = screenshot.to_numpy(channels="BGRA")
         frame = av.VideoFrame.from_numpy_buffer(ndarray, format="bgra")
 
         # Set the PTS and time base for the frame.
