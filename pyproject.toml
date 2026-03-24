@@ -78,17 +78,17 @@ dev = [
   "twine==6.2.0",
 ]
 docs = [
-  "shibuya==2025.10.21",
-  "sphinx==8.2.3",
+  "shibuya==2026.1.9",
+  "sphinx==9.1.0",
   "sphinx-copybutton==0.5.2",
-  "sphinx-new-tab-link==0.8.0",
+  "sphinx-new-tab-link==0.8.1",
 ]
 tests = [
-  "numpy==2.2.4 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pillow==11.3.0 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pytest==8.4.2",
+  "numpy==2.4.3 ; sys_platform == 'linux' and python_version == '3.13'",
+  "pillow==12.1.1 ; sys_platform == 'linux' and python_version == '3.13'",
+  "pytest==9.0.2",
   "pytest-cov==7.1.0",
-  "pytest-rerunfailures==16.0.1",
+  "pytest-rerunfailures==16.1",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
 ]
 
