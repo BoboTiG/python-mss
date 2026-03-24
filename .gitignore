@@ -4,6 +4,7 @@
 .DS_Store
 *.orig
 *.jpg
+*.mp4
 /*.png
 *.png.old
 *.pickle
