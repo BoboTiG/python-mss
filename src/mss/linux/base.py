@@ -5,10 +5,9 @@ from urllib.parse import urlencode
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+from mss.linux import xcb
+from mss.linux.xcb import LIB
 from mss.tools import parse_edid
-
-from . import xcb
-from .xcb import LIB
 
 if TYPE_CHECKING:
     from ctypes import Array

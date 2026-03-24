@@ -4,11 +4,11 @@ import contextlib
 from ctypes import _Pointer, addressof, c_int
 from typing import Literal, overload
 
-from . import xcbgen
+from mss.linux import xcbgen
 
 # We import these just so they're re-exported to our users.
 # ruff: noqa: F401
-from .xcbgen import (
+from mss.linux.xcbgen import (
     RANDR_MAJOR_VERSION,
     RANDR_MINOR_VERSION,
     RENDER_MAJOR_VERSION,
@@ -129,7 +129,7 @@ from .xcbgen import (
 )
 
 # These are also here to re-export.
-from .xcbhelpers import LIB, XID, Connection, InternAtomReply, QueryExtensionReply, XcbExtension, XError
+from mss.linux.xcbhelpers import LIB, XID, Connection, InternAtomReply, QueryExtensionReply, XcbExtension, XError
 
 XCB_CONN_ERROR = 1
 XCB_CONN_CLOSED_EXT_NOTSUPPORTED = 2

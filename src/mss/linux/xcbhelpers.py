@@ -429,7 +429,7 @@ class LibContainer:
 
     def initialize(self, callbacks: Iterable[Callable[[], None]] = frozenset()) -> None:  # noqa: PLR0915
         # We'll need a couple of generated types, but we have to load them late, since xcbgen requires this library.
-        from .xcbgen import Setup  # noqa: PLC0415
+        from mss.linux.xcbgen import Setup  # noqa: PLC0415
 
         with self._lock:
             if self.initialized:

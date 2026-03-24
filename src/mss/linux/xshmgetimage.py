@@ -20,9 +20,8 @@ from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.linux import xcb
+from mss.linux.base import ALL_PLANES, MSSXCBBase
 from mss.linux.xcbhelpers import LIB, XProtoError
-
-from .base import ALL_PLANES, MSSXCBBase
 
 if TYPE_CHECKING:
     from mss.models import Monitor
