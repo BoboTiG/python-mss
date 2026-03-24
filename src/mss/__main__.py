@@ -18,15 +18,15 @@ def _backend_cli_choices() -> list[str]:
     if os_name == "darwin":
         from mss import darwin  # noqa: PLC0415
 
-        return list(darwin.BACKENDS)
+        return darwin.BACKENDS
     if os_name == "linux":
         from mss import linux  # noqa: PLC0415
 
-        return list(linux.BACKENDS)
+        return linux.BACKENDS
     if os_name == "windows":
         from mss import windows  # noqa: PLC0415
 
-        return list(windows.BACKENDS)
+        return windows.BACKENDS
     return ["default"]
 
 
