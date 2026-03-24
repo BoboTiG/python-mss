@@ -102,9 +102,7 @@ class Connection(Structure):
 
 class XID(c_uint32):
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, XID):
-            return self.value == other.value
-        return NotImplemented
+        return self.value == other.value if isinstance(other, XID) else NotImplemented
 
     def __hash__(self) -> int:
         return hash(self.value)

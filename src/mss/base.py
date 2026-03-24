@@ -241,11 +241,14 @@ class MSSBase(metaclass=ABCMeta):
             msg = "No monitor found."
             raise ScreenShotError(msg)
 
-        for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
-            if monitor.get("is_primary", False):
-                return monitor
-        # Fallback to the first monitor if no primary is found
-        return monitors[1]
+        return next(
+            (
+                monitor
+                for monitor in monitors[1:]  # Skip the "all monitors" entry at index 0
+                if monitor.get("is_primary", False)
+            ),
+            monitors[1],  # Fallback to the first monitor if no primary is found
+        )
 
     def save(
         self,

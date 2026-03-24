@@ -359,10 +359,7 @@ def connect(display: str | bytes | None = None) -> tuple[Connection, int]:
         LIB.xcb.xcb_disconnect(conn_p)
         msg = "Cannot connect to display: "
         conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
-        if conn_errmsg:
-            msg += conn_errmsg
-        else:
-            msg += f"error code {conn_err}"
+        msg += conn_errmsg or f"error code {conn_err}"
         raise XError(msg)
 
     # Prefetch extension data for all extensions we support to populate XCB's internal cache.
@@ -391,8 +388,5 @@ def disconnect(xcb_conn: Connection | _Pointer[Connection]) -> None:
     if conn_err != 0:
         msg = "Connection to X server closed: "
         conn_errmsg = XCB_CONN_ERRMSG.get(conn_err)
-        if conn_errmsg:
-            msg += conn_errmsg
-        else:
-            msg += f"error code {conn_err}"
+        msg += conn_errmsg or f"error code {conn_err}"
         raise XError(msg)
