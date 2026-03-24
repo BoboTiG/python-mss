@@ -2,7 +2,7 @@
 Who Uses it?
 ============
 
-This is a non exhaustive list where MSS is integrated or has inspired.
+This is a non `exhaustive list <https://github.com/BoboTiG/python-mss/network/dependents>`_ where MSS is integrated or has inspired.
 Do not hesitate to `say Hello! <https://github.com/BoboTiG/python-mss/issues>`_ if you are using MSS too.
 
 - Nvidia;

@@ -60,6 +60,7 @@ html_theme_options = {
     "accent_color": "lime",
     "globaltoc_expand_depth": 1,
     "toctree_titles_only": False,
+    "show_ai_links": False,
 }
 html_favicon = "../icon.png"
 html_context = {
