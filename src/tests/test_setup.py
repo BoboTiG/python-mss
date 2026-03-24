@@ -42,6 +42,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/PKG-INFO",
         f"mss-{__version__}/README.md",
         f"mss-{__version__}/docs/source/api.rst",
+        f"mss-{__version__}/docs/source/changelog.rst",
         f"mss-{__version__}/docs/source/conf.py",
         f"mss-{__version__}/docs/source/developers.rst",
         f"mss-{__version__}/docs/source/examples.rst",
