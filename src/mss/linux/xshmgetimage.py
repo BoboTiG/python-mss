@@ -20,9 +20,8 @@ from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.linux import xcb
+from mss.linux.base import ALL_PLANES, MSSXCBBase
 from mss.linux.xcbhelpers import LIB, XProtoError
-
-from .base import ALL_PLANES, MSSXCBBase
 
 if TYPE_CHECKING:
     from mss.models import Monitor
@@ -101,18 +100,13 @@ class MSS(MSSXCBBase):
             try:
                 self._memfd = os.memfd_create("mss-shm-buf", flags=os.MFD_CLOEXEC)  # type: ignore[attr-defined]
             except OSError as e:
-                self._shm_report_issue("memfd_create failed", e)
-                self._shutdown_shm()
-                return ShmStatus.UNAVAILABLE
+                return self._shm_unavailable("memfd_create failed", e)
             os.ftruncate(self._memfd, self._bufsize)
 
             try:
                 self._buf = mmap(self._memfd, self._bufsize, prot=PROT_READ)  # type: ignore[call-arg]
             except OSError as e:
-                self._shm_report_issue("mmap failed", e)
-                self._shutdown_shm()
-                return ShmStatus.UNAVAILABLE
-
+                return self._shm_unavailable("mmap failed", e)
             self._shmseg = xcb.ShmSeg(xcb.generate_id(self.conn).value)
             try:
                 # This will normally be what raises an exception if you're on a remote connection.
@@ -122,15 +116,17 @@ class MSS(MSSXCBBase):
                 finally:
                     self._memfd = None
             except xcb.XError as e:
-                self._shm_report_issue("Cannot attach MIT-SHM segment", e)
-                self._shutdown_shm()
-                return ShmStatus.UNAVAILABLE
-
+                return self._shm_unavailable("Cannot attach MIT-SHM segment", e)
         except Exception:
             self._shutdown_shm()
             raise
 
         return ShmStatus.UNKNOWN
+
+    def _shm_unavailable(self, msg: str, exc: Exception) -> ShmStatus:
+        self._shm_report_issue(msg, exc)
+        self._shutdown_shm()
+        return ShmStatus.UNAVAILABLE
 
     def _close_impl(self) -> None:
         self._shutdown_shm()

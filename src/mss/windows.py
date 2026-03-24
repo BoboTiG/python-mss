@@ -28,12 +28,14 @@ from ctypes.wintypes import (
     UINT,
     WORD,
 )
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
+    from typing import Any, Callable
+
     from mss.models import CFunctionsErrChecked, Monitor
     from mss.screenshot import ScreenShot
 

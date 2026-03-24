@@ -3,13 +3,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from mss.exception import ScreenShotError
 from mss.models import Monitor, Pixel, Pixels, Pos, Size
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from collections.abc import Iterator
+    from typing import Any
 
 
 class ScreenShot:

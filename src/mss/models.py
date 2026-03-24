@@ -2,7 +2,7 @@
 # Source: https://github.com/BoboTiG/python-mss.
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 # TODO @BoboTiG: https://github.com/BoboTiG/python-mss/issues/470
 # Change this to a proper Monitor class in next major release.
@@ -13,6 +13,8 @@ Pixel = tuple[int, int, int]
 Pixels = list[tuple[Pixel, ...]]
 
 if TYPE_CHECKING:
+    from typing import Callable
+
     CFunctions = dict[str, tuple[str, list[Any], Any]]
     CFunctionsErrChecked = dict[str, tuple[str, list[Any], Any, Callable | None]]
 

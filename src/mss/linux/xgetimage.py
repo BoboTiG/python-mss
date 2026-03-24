@@ -9,10 +9,9 @@ backend.
 .. versionadded:: 10.2.0
 """
 
+from mss.linux.base import MSSXCBBase
 from mss.models import Monitor
 from mss.screenshot import ScreenShot
-
-from .base import MSSXCBBase
 
 
 class MSS(MSSXCBBase):

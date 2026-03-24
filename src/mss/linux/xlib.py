@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING, Any
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from mss.models import CFunctions, Monitor
     from mss.screenshot import ScreenShot
 

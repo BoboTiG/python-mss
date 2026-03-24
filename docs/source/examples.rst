@@ -214,7 +214,7 @@ Different possibilities to convert raw BGRA values to RGB::
 Demos
 =====
 
-In addition to these simple examples, there are full demos of more complex use cases in the ``demos/`` directory of the
+In addition to these simple examples, there are full demos of more complex use cases in the `demos <https://github.com/BoboTiG/python-mss/tree/main/demos>`_ directory of the
 source code.  The demos are not installed with the package, but you can run them directly from the source tree after
 cloning the repository.
 
@@ -223,6 +223,7 @@ not only how to invoke MSS, but also some of the techniques for using the captur
 scenarios.
 
 These include:
+
 - MP4 video capture with encoding using PyAV (FFmpeg bindings)
 - Live streaming to a TinyTV as MJPEG
 - Detect images of cats on the screen

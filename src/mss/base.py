@@ -12,7 +12,7 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
     from mss.models import Monitor, Monitors
@@ -20,15 +20,15 @@ if TYPE_CHECKING:  # pragma: nocover
     # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
     try:
         from typing import Self
-    except ImportError:  # pragma: nocover
+    except ImportError:
         try:
             from typing_extensions import Self
-        except ImportError:  # pragma: nocover
+        except ImportError:
             Self = Any  # type: ignore[assignment]
 
 try:
     from datetime import UTC
-except ImportError:  # pragma: nocover
+except ImportError:
     # Python < 3.11
     from datetime import timezone
 
@@ -241,11 +241,14 @@ class MSSBase(metaclass=ABCMeta):
             msg = "No monitor found."
             raise ScreenShotError(msg)
 
-        for monitor in monitors[1:]:  # Skip the "all monitors" entry at index 0
-            if monitor.get("is_primary", False):
-                return monitor
-        # Fallback to the first monitor if no primary is found
-        return monitors[1]
+        return next(
+            (
+                monitor
+                for monitor in monitors[1:]  # Skip the "all monitors" entry at index 0
+                if monitor.get("is_primary", False)
+            ),
+            monitors[1],  # Fallback to the first monitor if no primary is found
+        )
 
     def save(
         self,
