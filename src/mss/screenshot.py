@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from mss.exception import ScreenShotError
 from mss.models import Monitor, Pixel, Pixels, Pos, Size
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from collections.abc import Iterator
 
 

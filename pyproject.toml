@@ -112,6 +112,13 @@ packages = [
   "src/mss",
 ]
 
+[tool.coverage.report]
+exclude_also = [
+  "except ImportError:",
+  "if TYPE_CHECKING:",
+  'if __name__ == "__main__":',
+]
+
 [tool.mypy]
 # Ensure we know what we do
 warn_redundant_casts = true
