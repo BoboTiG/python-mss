@@ -12,7 +12,7 @@ from mss.factory import mss
 
 __version__ = "10.2.0.dev0"
 __author__ = "Mickaël Schoentgen"
-__date__ = "2013-2025"
+__date__ = "2013-2026"
 __copyright__ = f"""
 Copyright (c) {__date__}, {__author__}
 
