@@ -20,13 +20,17 @@ import mss
 # -- General configuration ------------------------------------------------
 
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
     "sphinx_copybutton",
     "sphinx.ext.intersphinx",
     "sphinx_new_tab_link",
 ]
 templates_path = ["_templates"]
-source_suffix = {".rst": "restructuredtext"}
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 master_doc = "index"
 new_tab_link_show_external_link_icon = True
 
