@@ -175,7 +175,7 @@ class MSSImplDarwin(MSSImplementation):
             cfactory(attrs[attr], func, argtypes, restype)
 
     def monitors(self) -> Monitors:
-        """Get positions of monitors. It will populate self._monitors."""
+        """Get positions of monitors."""
         int_ = int
         core = self.core
 

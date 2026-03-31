@@ -56,6 +56,8 @@ class MSSImplXCBBase(MSSImplementation):
         # Get the connection setup information that was included when we connected.
         xcb_setup = xcb.get_setup(self.conn)
         screens = xcb.setup_roots(xcb_setup)
+        # pref_screen_num is the screen object corresponding to the screen number, e.g., 1 if DISPLAY=":0.1".  It's
+        # almost always the only screen (screen 0); nobody uses separate screens (in the X sense) anymore.
         self.pref_screen = screens[pref_screen_num]
         self.root = self.drawable = self.pref_screen.root
 
@@ -136,9 +138,10 @@ class MSSImplXCBBase(MSSImplementation):
     def monitors(self) -> Monitors:
         """Populate monitor geometry information.
 
-        Detects and appends monitor rectangles to ``self._monitors``. The first
-        entry represents the entire X11 root screen; subsequent entries, when
-        available, represent individual monitors reported by XRandR.
+        Detects and returns monitor rectangles. The first entry
+        represents the entire X11 root screen; subsequent entries,
+        when available, represent individual monitors reported by
+        XRandR.
         """
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"

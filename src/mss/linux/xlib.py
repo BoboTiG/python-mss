@@ -527,7 +527,7 @@ class MSSImplXlib(MSSImplementation):
                 cfactory(attrs[attr], func, argtypes, restype, errcheck=errcheck)
 
     def monitors(self) -> Monitors:
-        """Get positions of monitors. It will populate self._monitors."""
+        """Get positions of monitors."""
         display = self._handles.display
         int_ = int
         xrandr = self.xrandr
