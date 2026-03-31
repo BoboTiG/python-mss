@@ -4,7 +4,6 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-import os
 import platform
 import sys
 import threading
@@ -144,7 +143,7 @@ class TestEntryPoint:
         for opt in ("-o", "--out"):
             self._run_main(with_cursor, opt, fmt)
             captured = capsys.readouterr()
-            with mss.MSS(display=os.getenv("DISPLAY")) as sct:
+            with mss.MSS() as sct:
                 for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
                     filename = Path(fmt.format(mon=mon, **monitor))
                     assert line.endswith(filename.name)
