@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import ctypes
 import sys
+import warnings
 from ctypes import POINTER, WINFUNCTYPE, Structure, WinError, _Pointer
 from ctypes.wintypes import (
     BOOL,
@@ -30,18 +31,34 @@ from ctypes.wintypes import (
 )
 from typing import TYPE_CHECKING
 
-from mss.base import MSSBase
+from mss.base import MSS as _MSS
+from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 
 if TYPE_CHECKING:
     from typing import Any, Callable
 
-    from mss.models import CFunctionsErrChecked, Monitor
-    from mss.screenshot import ScreenShot
+    from mss.models import CFunctionsErrChecked, Monitor, Monitors
 
 __all__ = ("MSS",)
 
 BACKENDS = ["default"]
+
+
+class MSS(_MSS):
+    """Deprecated Windows compatibility constructor.
+
+    Use :class:`mss.MSS` instead.
+    """
+
+    def __init__(self, /, **kwargs: Any) -> None:
+        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
+        warnings.warn(
+            "mss.windows.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**kwargs)
 
 
 LPCRECT = POINTER(RECT)  # Actually a const pointer, but ctypes has no const.
@@ -165,7 +182,7 @@ CFUNCTIONS: CFunctionsErrChecked = {
 }
 
 
-class MSS(MSSBase):
+class MSSImplWindows(MSSImplementation):
     """Multiple ScreenShots implementation for Microsoft Windows.
 
     This implementation uses CreateDIBSection for direct memory access to pixel data,
@@ -176,7 +193,7 @@ class MSS(MSSBase):
 
     .. seealso::
 
-        :py:class:`mss.base.MSSBase`
+        :py:class:`mss.MSS`
             Lists constructor parameters.
     """
 
@@ -192,8 +209,13 @@ class MSS(MSSBase):
         "user32",
     }
 
-    def __init__(self, /, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, backend: str = "default", **kwargs: Any) -> None:
+        kwargs.pop("with_cursor", None)
+        super().__init__(with_cursor=False, **kwargs)
+
+        if backend != "default":
+            msg = 'The only valid backend on this platform is "default".'
+            raise ScreenShotError(msg)
 
         # user32 and gdi32 should not be changed after initialization.
         self.user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -211,7 +233,7 @@ class MSS(MSSBase):
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
-        # biWidth and biHeight are set in _grab_impl().
+        # biWidth and biHeight are set in grab().
         bmi.bmiHeader.biPlanes = 1  # Always 1
         bmi.bmiHeader.biBitCount = 32  # 32-bit RGBX
         bmi.bmiHeader.biCompression = 0  # 0 = BI_RGB (no compression)
@@ -222,7 +244,7 @@ class MSS(MSSBase):
         bmi.bmiHeader.biClrImportant = 0
         self._bmi = bmi
 
-    def _close_impl(self) -> None:
+    def close(self) -> None:
         # Clean-up
         if self._dib:
             self.gdi32.DeleteObject(self._dib)
@@ -260,14 +282,15 @@ class MSS(MSSBase):
             # Windows Vista, 7, 8, and Server 2012
             self.user32.SetProcessDPIAware()
 
-    def _monitors_impl(self) -> None:
-        """Get positions of monitors. It will populate self._monitors."""
+    def monitors(self) -> Monitors:
         int_ = int
         user32 = self.user32
         get_system_metrics = user32.GetSystemMetrics
 
+        monitors = []
+
         # All monitors
-        self._monitors.append(
+        monitors.append(
             {
                 "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
                 "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
@@ -326,12 +349,14 @@ class MSS(MSSBase):
                 mon_dict["name"] = device_string
             if unique_id is not None:
                 mon_dict["unique_id"] = unique_id
-            self._monitors.append(mon_dict)
+            monitors.append(mon_dict)
             return True
 
         user32.EnumDisplayMonitors(0, None, callback, 0)
 
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
+        return monitors
+
+    def grab(self, monitor: Monitor, /) -> bytearray:
         """Retrieve all pixels from a monitor using CreateDIBSection.
 
         CreateDIBSection creates a DIB with system-managed memory backing,
@@ -384,8 +409,8 @@ class MSS(MSSBase):
 
         # Read directly from DIB memory via the cached array view
         assert self._dib_array is not None  # noqa: S101  for type checker
-        return self.cls_image(bytearray(self._dib_array), monitor)
+        return bytearray(self._dib_array)
 
-    def _cursor_impl(self) -> ScreenShot | None:
+    def cursor(self) -> None:
         """Retrieve all cursor data. Pixels have to be RGB."""
-        return None
+        return

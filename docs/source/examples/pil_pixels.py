@@ -8,7 +8,7 @@ from PIL import Image
 
 import mss
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # Get a screenshot of the 1st monitor
     sct_img = sct.grab(sct.monitors[1])
 

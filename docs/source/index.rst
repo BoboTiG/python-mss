@@ -11,10 +11,10 @@ Welcome to Python MSS's documentation!
 
 .. code-block:: python
 
-    from mss import mss
+    from mss import MSS
 
     # The simplest use, save a screenshot of the 1st monitor
-    with mss() as sct:
+    with MSS() as sct:
         sct.shot()
 
 

@@ -49,23 +49,23 @@ def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
     if version < 10.16:
         monkeypatch.setattr(ctypes.util, "find_library", lambda _: None)
         with pytest.raises(ScreenShotError):
-            mss.mss()
+            mss.MSS()
         monkeypatch.undo()
 
-    with mss.mss() as sct:
-        assert isinstance(sct, mss.darwin.MSS)  # For Mypy
+    with mss.MSS() as sct:
+        assert isinstance(sct._impl, mss.darwin.MSSImplDarwin)  # For Mypy
 
         # Test monitor's rotation
         original = sct.monitors[1]
-        monkeypatch.setattr(sct.core, "CGDisplayRotation", lambda _: -90.0)
-        sct._monitors = []
+        monkeypatch.setattr(sct._impl.core, "CGDisplayRotation", lambda _: -90.0)
+        sct._monitors = None
         modified = sct.monitors[1]
         assert original["width"] == modified["height"]
         assert original["height"] == modified["width"]
         monkeypatch.undo()
 
         # Test bad data retrieval
-        monkeypatch.setattr(sct.core, "CGWindowListCreateImage", lambda *_: None)
+        monkeypatch.setattr(sct._impl.core, "CGWindowListCreateImage", lambda *_: None)
         with pytest.raises(ScreenShotError):
             sct.grab(sct.monitors[1])
 
@@ -75,7 +75,7 @@ def test_scaling_on() -> None:
     # Grab a 1x1 screenshot
     region = {"top": 0, "left": 0, "width": 1, "height": 1}
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         # Nominal resolution, i.e.: scaling is off
         assert sct.grab(region).size[0] == 1
 

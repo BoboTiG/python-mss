@@ -9,6 +9,7 @@ from __future__ import annotations
 import ctypes
 import ctypes.util
 import sys
+import warnings
 from ctypes import (
     POINTER,
     Structure,
@@ -22,14 +23,17 @@ from ctypes import (
     c_void_p,
 )
 from platform import mac_ver
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from mss.base import MSSBase
+from mss.base import MSS as _MSS
+from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
-from mss.screenshot import ScreenShot, Size
+from mss.screenshot import Size
 
 if TYPE_CHECKING:
-    from mss.models import CFunctions, Monitor
+    from typing import Any
+
+    from mss.models import CFunctions, Monitor, Monitors
 
 __all__ = ("IMAGE_OPTIONS", "MSS")
 
@@ -43,6 +47,22 @@ kCGWindowImageShouldBeOpaque = 1 << 1  # noqa: N816
 #: For advanced users: as a note, you can set ``IMAGE_OPTIONS = 0`` to turn on scaling; see issue #257 for more
 #: information.
 IMAGE_OPTIONS: int = kCGWindowImageBoundsIgnoreFraming | kCGWindowImageShouldBeOpaque | kCGWindowImageNominalResolution
+
+
+class MSS(_MSS):
+    """Deprecated macOS compatibility constructor.
+
+    Use :class:`mss.MSS` instead.
+    """
+
+    def __init__(self, /, **kwargs: Any) -> None:
+        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
+        warnings.warn(
+            "mss.darwin.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**kwargs)
 
 
 def cgfloat() -> type[c_double | c_float]:
@@ -102,7 +122,7 @@ CFUNCTIONS: CFunctions = {
 }
 
 
-class MSS(MSSBase):
+class MSSImplDarwin(MSSImplementation):
     """Multiple ScreenShots implementation for macOS.
     It uses intensively the CoreGraphics library.
 
@@ -111,18 +131,23 @@ class MSS(MSSBase):
 
     .. seealso::
 
-        :py:class:`mss.base.MSSBase`
+        :py:class:`mss.MSS`
             Lists other parameters.
     """
 
     __slots__ = {"core", "max_displays"}
 
-    def __init__(self, /, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, backend: str = "default", max_displays: int = 32, **kwargs: Any) -> None:
+        kwargs.pop("with_cursor", None)
+        super().__init__(with_cursor=False, **kwargs)
 
-        # max_displays is only used by _monitors_impl, while the lock is held.
+        if backend != "default":
+            msg = 'The only valid backend on this platform is "default".'
+            raise ScreenShotError(msg)
+
+        # max_displays is only used by monitors(), while the lock is held.
         #: Maximum number of displays to handle.
-        self.max_displays = kwargs.get("max_displays", 32)
+        self.max_displays = max_displays
 
         self._init_library()
         self._set_cfunctions()
@@ -149,16 +174,18 @@ class MSS(MSSBase):
         for func, (attr, argtypes, restype) in CFUNCTIONS.items():
             cfactory(attrs[attr], func, argtypes, restype)
 
-    def _monitors_impl(self) -> None:
+    def monitors(self) -> Monitors:
         """Get positions of monitors. It will populate self._monitors."""
         int_ = int
         core = self.core
+
+        monitors: Monitors = []
 
         # All monitors
         # We need to update the value with every single monitor found
         # using CGRectUnion.  Else we will end with infinite values.
         all_monitors = CGRect()
-        self._monitors.append({})
+        monitors.append({})
 
         # Each monitor
         display_count = c_uint32(0)
@@ -176,7 +203,7 @@ class MSS(MSSBase):
             if core.CGDisplayRotation(display) in {90.0, -90.0}:
                 width, height = height, width
 
-            self._monitors.append(
+            monitors.append(
                 {
                     "left": int_(rect.origin.x),
                     "top": int_(rect.origin.y),
@@ -189,14 +216,16 @@ class MSS(MSSBase):
             all_monitors = core.CGRectUnion(all_monitors, rect)
 
         # Set the AiO monitor's values
-        self._monitors[0] = {
+        monitors[0] = {
             "left": int_(all_monitors.origin.x),
             "top": int_(all_monitors.origin.y),
             "width": int_(all_monitors.size.width),
             "height": int_(all_monitors.size.height),
         }
 
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
+        return monitors
+
+    def grab(self, monitor: Monitor, /) -> tuple[bytearray, Size]:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
         core = self.core
         rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
@@ -234,8 +263,8 @@ class MSS(MSSBase):
                 core.CFRelease(copy_data)
             core.CFRelease(image_ref)
 
-        return self.cls_image(data, monitor, size=Size(width, height))
+        return data, Size(width, height)
 
-    def _cursor_impl(self) -> ScreenShot | None:
+    def cursor(self) -> None:
         """Retrieve all cursor data. Pixels have to be RGB."""
-        return None
+        return

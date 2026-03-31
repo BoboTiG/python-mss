@@ -35,14 +35,14 @@ from ctypes.util import find_library
 from threading import Lock, current_thread, local
 from typing import TYPE_CHECKING, Any
 
-from mss.base import MSSBase
+from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:
-    from mss.models import CFunctions, Monitor
-    from mss.screenshot import ScreenShot
+    from mss.models import CFunctions, Monitor, Monitors
 
-__all__ = ("MSS",)
+__all__ = ()
 
 
 # Global lock protecting access to Xlib calls.
@@ -387,7 +387,7 @@ CFUNCTIONS: CFunctions = {
 }
 
 
-class MSS(MSSBase):
+class MSSImplXlib(MSSImplementation):
     """Multiple ScreenShots implementation for GNU/Linux.
     It uses intensively the Xlib and its Xrandr extension.
 
@@ -404,14 +404,16 @@ class MSS(MSSBase):
         different threads simultaneously may still cause problems.
 
     .. seealso::
-        :py:class:`mss.base.MSSBase`
+        :py:class:`mss.MSS`
             Lists other parameters.
     """
 
     __slots__ = {"_handles", "xfixes", "xlib", "xrandr"}
 
-    def __init__(self, /, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, /, display: bytes | str = b"", **kwargs: Any) -> None:
+        requested_with_cursor = bool(kwargs.pop("with_cursor", False))
+        effective_with_cursor = requested_with_cursor and bool(_XFIXES)
+        super().__init__(with_cursor=effective_with_cursor, **kwargs)
 
         # Available thread-specific variables
         self._handles = local()
@@ -420,7 +422,6 @@ class MSS(MSSBase):
         self._handles.original_error_handler = None
         self._handles.root = None
 
-        display = kwargs.get("display", b"")
         if not display:
             try:
                 display = os.environ["DISPLAY"].encode("utf-8")
@@ -447,12 +448,10 @@ class MSS(MSSBase):
         #: :meta private:
         self.xrandr = cdll.LoadLibrary(_XRANDR)
 
-        if self.with_cursor:
-            if _XFIXES:
-                #: :meta private:
-                self.xfixes = cdll.LoadLibrary(_XFIXES)
-            else:
-                self.with_cursor = False
+        if effective_with_cursor:
+            # MyPy doesn't quite realize that won't be called if _XFIXES is None.
+            #: :meta private:
+            self.xfixes = cdll.LoadLibrary(_XFIXES) if _XFIXES is not None else None
 
         self._set_cfunctions()
 
@@ -472,7 +471,7 @@ class MSS(MSSBase):
             msg = "Xrandr not enabled."
             raise ScreenShotError(msg)
 
-    def _close_impl(self) -> None:
+    def close(self) -> None:
         # Clean-up
         if self._handles.display:
             with _lock:
@@ -527,11 +526,12 @@ class MSS(MSSBase):
                 errcheck = None if func == "XSetErrorHandler" else _validate_x11
                 cfactory(attrs[attr], func, argtypes, restype, errcheck=errcheck)
 
-    def _monitors_impl(self) -> None:
+    def monitors(self) -> Monitors:
         """Get positions of monitors. It will populate self._monitors."""
         display = self._handles.display
         int_ = int
         xrandr = self.xrandr
+        monitors = []
 
         with _lock:
             xrandr_major = c_int(0)
@@ -541,7 +541,7 @@ class MSS(MSSBase):
             # All monitors
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
-            self._monitors.append(
+            monitors.append(
                 {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
             )
 
@@ -564,7 +564,7 @@ class MSS(MSSBase):
                     xrandr.XRRFreeCrtcInfo(crtc)
                     continue
 
-                self._monitors.append(
+                monitors.append(
                     {
                         "left": int_(crtc.x),
                         "top": int_(crtc.y),
@@ -575,7 +575,9 @@ class MSS(MSSBase):
                 xrandr.XRRFreeCrtcInfo(crtc)
             xrandr.XRRFreeScreenResources(mon)
 
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
+        return monitors
+
+    def grab(self, monitor: Monitor, /) -> bytearray:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
 
         with _lock:
@@ -606,10 +608,13 @@ class MSS(MSSBase):
             with _lock:
                 self.xlib.XDestroyImage(ximage)
 
-        return self.cls_image(data, monitor)
+        return data
 
-    def _cursor_impl(self) -> ScreenShot:
+    def cursor(self) -> ScreenShot | None:
         """Retrieve all cursor data. Pixels have to be RGB."""
+        if self.xfixes is None:
+            return None
+
         # Read data of cursor/mouse-pointer
         with _lock:
             ximage = self.xfixes.XFixesGetCursorImage(self._handles.display)
@@ -634,4 +639,4 @@ class MSS(MSSBase):
         data[1::4] = raw[1::8]
         data[::4] = raw[::8]
 
-        return self.cls_image(data, region)
+        return ScreenShot(data, region)

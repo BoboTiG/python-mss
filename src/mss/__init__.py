@@ -7,6 +7,7 @@
 using ctypes.
 """
 
+from mss.base import MSS, ScreenShot
 from mss.exception import ScreenShotError
 from mss.factory import mss
 
@@ -23,4 +24,4 @@ and that both that copyright notice and this permission notice appear
 in supporting documentation or portions thereof, including
 modifications, that you make.
 """
-__all__ = ("ScreenShotError", "mss")
+__all__ = ("MSS", "ScreenShot", "ScreenShotError", "mss")

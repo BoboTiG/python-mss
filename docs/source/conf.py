@@ -9,11 +9,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 import ctypes
 
 # Monkey-patch PROT_READ into mmap if missing (Windows), so that we can
-# import mss.linux.xshmgetimage while building the documentation.
+# import the Linux shared-memory backend implementation while building the
+# documentation.
 import mmap
 
 if not hasattr(mmap, "PROT_READ"):
-    mmap.PROT_READ = 1  # type:ignore[attr-defined]
+    mmap.PROT_READ = 1
 
 import mss
 

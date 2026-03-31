@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 import pytest
 
+from mss import MSS
 from mss.exception import ScreenShotError
 from mss.linux import base, xcb, xgetimage
 from mss.linux.xcbhelpers import (
@@ -304,9 +305,10 @@ def test_atom_cache_lifecycle() -> None:
 
 def test_xgetimage_visual_validation_accepts_default_setup(visual_validation_env: _VisualValidationHarness) -> None:
     visual_validation_env.reset()
-    mss_instance = xgetimage.MSS()
+    mss_instance = MSS(backend="xgetimage")
     try:
-        assert isinstance(mss_instance, xgetimage.MSS)
+        assert isinstance(mss_instance, MSS)
+        assert isinstance(mss_instance._impl, xgetimage.MSSImplXGetImage)
     finally:
         mss_instance.close()
 
@@ -332,4 +334,4 @@ def test_xgetimage_visual_validation_failures(
 ) -> None:
     mutator(visual_validation_env)
     with pytest.raises(ScreenShotError, match=message):
-        xgetimage.MSS()
+        MSS(backend="xgetimage")

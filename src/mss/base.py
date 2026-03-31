@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+import platform
+from abc import ABC, abstractmethod
 from datetime import datetime
 from threading import Lock
 from typing import TYPE_CHECKING, Any
@@ -15,7 +16,8 @@ from mss.tools import to_png
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from mss.models import Monitor, Monitors
+    from mss.linux.xshmgetimage import ShmStatus
+    from mss.models import Monitor, Monitors, Size
 
     # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
     try:
@@ -46,20 +48,122 @@ lock = Lock()
 OPAQUE = 255
 
 
-class MSSBase(metaclass=ABCMeta):
-    """Base class for all Multiple ScreenShots implementations.
+__all__ = ()
+
+
+class MSSImplementation(ABC):
+    """Base class for internal platform/backend implementations.
+
+    Only one of these methods will be called at a time; the containing
+    MSS object will hold a lock during these calls.
+    """
+
+    __slots__ = ("with_cursor",)
+
+    with_cursor: bool
+
+    def __init__(self, /, *, with_cursor: bool = False) -> None:
+        # We put with_cursor on the MSSImplementation because the Xlib
+        # backend will turn it off if the library isn't installed.
+        # (It's not a separate library under XCB.)  So, we need to let
+        # the backend mutate it.
+
+        # We should remove this expectation in 11.0.  It seems
+        # unlikely to be practically useful, Xlib is legacy, and just
+        # complicates things.
+        self.with_cursor = with_cursor
+
+    @abstractmethod
+    def cursor(self) -> ScreenShot | None:
+        """Retrieve all cursor data. Pixels have to be RGB."""
+
+    @abstractmethod
+    def grab(self, monitor: Monitor, /) -> bytearray | tuple[bytearray, Size]:
+        """Retrieve all pixels from a monitor. Pixels have to be RGB.
+
+        If the monitor size is not in pixel units, include a Size in
+        pixels (see issue #23).
+        """
+
+    @abstractmethod
+    def monitors(self) -> Monitors:
+        """Return positions of monitors."""
+
+    def close(self) -> None:  # noqa: B027 - intentionally empty
+        """Clean up.
+
+        This will be called at most once.
+
+        It's not necessary for subclasses to implement this if they
+        have nothing to clean up.
+        """
+
+    @staticmethod
+    def _cfactory(
+        attr: Any,
+        func: str,
+        argtypes: list[Any],
+        restype: Any,
+        /,
+        errcheck: Callable | None = None,
+    ) -> None:
+        """Factory to create a ctypes function and automatically manage errors."""
+        meth = getattr(attr, func)
+        meth.argtypes = argtypes
+        meth.restype = restype
+        if errcheck:
+            meth.errcheck = errcheck
+
+
+def _choose_impl(**kwargs: Any) -> MSSImplementation:
+    """Return the backend implementation for the current platform.
+
+    Detects the platform we are running on and instantiates the
+    appropriate internal implementation class.
+
+    .. seealso::
+        - :class:`mss.MSS`
+        - :class:`mss.darwin.MSS`
+        - :class:`mss.linux.MSS`
+        - :class:`mss.windows.MSS`
+    """
+    os_ = platform.system().lower()
+
+    if os_ == "darwin":
+        from mss.darwin import MSSImplDarwin  # noqa: PLC0415
+
+        return MSSImplDarwin(**kwargs)
+
+    if os_ == "linux":
+        from mss.linux import choose_impl as choose_impl_linux  # noqa: PLC0415
+
+        # Linux has its own factory to choose the backend.
+        return choose_impl_linux(**kwargs)
+
+    if os_ == "windows":
+        from mss.windows import MSSImplWindows  # noqa: PLC0415
+
+        return MSSImplWindows(**kwargs)
+
+    msg = f"System {os_!r} not (yet?) implemented."
+    raise ScreenShotError(msg)
+
+
+# Does this belong here?
+class MSS:
+    """Multiple ScreenShots class
 
     :param backend: Backend selector, for platforms with multiple backends.
     :param compression_level: PNG compression level.
     :param with_cursor: Include the mouse cursor in screenshots.
     :param display: X11 display name (GNU/Linux only).
+    :type display: bytes | str, optional (default :envvar:`$DISPLAY`)
     :param max_displays: Maximum number of displays to enumerate (macOS only).
+    :type max_displays: int, optional (default 32)
 
     .. versionadded:: 8.0.0
         ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
     """
-
-    __slots__ = {"_closed", "_lock", "_monitors", "cls_image", "compression_level", "with_cursor"}
 
     def __init__(
         self,
@@ -67,12 +171,13 @@ class MSSBase(metaclass=ABCMeta):
         *,
         backend: str = "default",
         compression_level: int = 6,
-        with_cursor: bool = False,
-        # Linux only
-        display: bytes | str | None = None,  # noqa: ARG002
-        # Mac only
-        max_displays: int = 32,  # noqa: ARG002
+        **kwargs: Any,
     ) -> None:
+        self._impl: MSSImplementation = _choose_impl(
+            backend=backend,
+            **kwargs,
+        )
+
         # The cls_image is only used atomically, so does not require locking.
         self.cls_image: type[ScreenShot] = ScreenShot
         # The compression level is only used atomically, so does not require locking.
@@ -81,30 +186,14 @@ class MSSBase(metaclass=ABCMeta):
         #:
         #: .. versionadded:: 3.2.0
         self.compression_level = compression_level
-        # The with_cursor attribute is not meant to be changed after initialization.
-        #: Include the mouse cursor in screenshots.
-        #:
-        #: In some circumstances, it may not be possible to include the cursor.  In that case, MSS will automatically
-        #: change this to False when the object is created.
-        #:
-        #: This should not be changed after creating the object.
-        #:
-        #: .. versionadded:: 8.0.0
-        self.with_cursor = with_cursor
 
         # The attributes below are protected by self._lock.  The attributes above are user-visible, so we don't
         # control when they're modified.  Currently, we only make sure that they're safe to modify while locked, or
         # document that the user shouldn't change them.  We could also use properties protect them against changes, or
         # change them under the lock.
         self._lock = Lock()
-        self._monitors: Monitors = []
+        self._monitors: Monitors | None = None
         self._closed = False
-
-        # If there isn't a factory that removed the "backend" argument, make sure that it was set to "default".
-        # Factories that do backend-specific dispatch should remove that argument.
-        if backend != "default":
-            msg = 'The only valid backend on this platform is "default".'
-            raise ScreenShotError(msg)
 
     def __enter__(self) -> Self:
         """For the cool call `with MSS() as mss:`."""
@@ -113,38 +202,6 @@ class MSSBase(metaclass=ABCMeta):
     def __exit__(self, *_: object) -> None:
         """For the cool call `with MSS() as mss:`."""
         self.close()
-
-    @abstractmethod
-    def _cursor_impl(self) -> ScreenShot | None:
-        """Retrieve all cursor data. Pixels have to be RGB.
-
-        The object lock will be held when this method is called.
-        """
-
-    @abstractmethod
-    def _grab_impl(self, monitor: Monitor, /) -> ScreenShot:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB.
-
-        The object lock will be held when this method is called.
-        """
-
-    @abstractmethod
-    def _monitors_impl(self) -> None:
-        """Get positions of monitors.
-
-        It must populate self._monitors.
-
-        The object lock will be held when this method is called.
-        """
-
-    def _close_impl(self) -> None:  # noqa:B027
-        """Clean up.
-
-        This will be called at most once.
-
-        The object lock will be held when this method is called.
-        """
-        # It's not necessary for subclasses to implement this if they have nothing to clean up.
 
     def close(self) -> None:
         """Clean up.
@@ -158,13 +215,13 @@ class MSSBase(metaclass=ABCMeta):
         Rather than use :py:meth:`close` explicitly, we recommend you
         use the MSS object as a context manager::
 
-            with mss.mss() as sct:
+            with mss.MSS() as sct:
                 ...
         """
         with self._lock:
             if self._closed:
                 return
-            self._close_impl()
+            self._impl.close()
             self._closed = True
 
     def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
@@ -191,8 +248,14 @@ class MSSBase(metaclass=ABCMeta):
             raise ScreenShotError(msg)
 
         with self._lock:
-            screenshot = self._grab_impl(monitor)
-            if self.with_cursor and (cursor := self._cursor_impl()):
+            img_data_and_maybe_size = self._impl.grab(monitor)
+            if isinstance(img_data_and_maybe_size, tuple):
+                img_data, size = img_data_and_maybe_size
+                screenshot = self.cls_image(img_data, monitor, size=size)
+            else:
+                img_data = img_data_and_maybe_size
+                screenshot = self.cls_image(img_data, monitor)
+            if self._impl.with_cursor and (cursor := self._impl.cursor()):
                 return self._merge(screenshot, cursor)
             return screenshot
 
@@ -220,8 +283,9 @@ class MSSBase(metaclass=ABCMeta):
         - ``output``: (optional, Linux only) monitor output name, compatible with xrandr
         """
         with self._lock:
-            if not self._monitors:
-                self._monitors_impl()
+            if self._monitors is None:
+                self._monitors = self._impl.monitors()
+                assert self._monitors is not None  # noqa: S101
             return self._monitors
 
     @property
@@ -369,3 +433,71 @@ class MSSBase(metaclass=ABCMeta):
         meth.restype = restype
         if errcheck:
             meth.errcheck = errcheck
+
+    # Some backends may expose additional read-only attributes.  Those
+    # are implemented here, as properties.  By making them properties,
+    # instead of using __getattr__, they're also accessible to Sphinx
+    # and type checkers.
+    #
+    # Important: We need to be judicious in what we add here.  We
+    # really don't want these to proliferate.  Some, like
+    # max_displays, should probably be removed in 11.0.  with_cursor
+    # should probably be moved to MSS instead of MSSImplementation (as
+    # noted there).
+    #
+    # The shm_status is mostly a debugging field, and probably should
+    # be replaced with something different.  Ideas include a log
+    # message, an exception if the user explicitly requested
+    # xshmgetimage, or a platform-independent message attribute (for
+    # instance, if Windows has to fall back to GDI).
+
+    @property
+    def shm_status(self) -> ShmStatus:
+        """Whether we can use the MIT-SHM extensions for this connection.
+
+        Availability: GNU/Linux, when using the default XShmGetImage backend.
+
+        This will not be ``AVAILABLE`` until at least one capture has succeeded.
+        It may be set to ``UNAVAILABLE`` sooner.
+
+        .. versionadded:: 10.2.0
+        """
+        return self._impl.shm_status  # type: ignore[attr-defined]
+
+    @property
+    def shm_fallback_reason(self) -> str | None:
+        """If MIT-SHM is unavailable, the reason why (for debugging purposes).
+
+        Availability: GNU/Linux, when using the default XShmGetImage backend.
+
+        .. versionadded:: 10.2.0
+        """
+        return self._impl.shm_fallback_reason  # type: ignore[attr-defined]
+
+    @property
+    def max_displays(self) -> int:
+        """Maximum number of displays to handle.
+
+        Availability: macOS
+
+        .. versionadded:: 8.0.0
+        """
+        return self._impl.max_displays  # type: ignore[attr-defined]
+
+    @property
+    def with_cursor(self) -> bool:
+        """Include the mouse cursor in screenshots.
+
+        In some circumstances, it may not be possible to include the
+        cursor.  In that case, MSS will automatically change this to
+        False when the object is created.
+
+        This cannot be changed after creating the object.
+
+        .. versionadded:: 8.0.0
+        """
+        return self._impl.with_cursor
+
+
+# TODO(jholveck): #493 Remove compatibility alias after 10.x transition period.
+MSSBase = MSS

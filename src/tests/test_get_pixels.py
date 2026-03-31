@@ -7,11 +7,11 @@ from collections.abc import Callable
 
 import pytest
 
-from mss.base import MSSBase, ScreenShot
+from mss import MSS, ScreenShot
 from mss.exception import ScreenShotError
 
 
-def test_grab_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+def test_grab_monitor(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         for mon in sct.monitors:
             image = sct.grab(mon)
@@ -20,7 +20,7 @@ def test_grab_monitor(mss_impl: Callable[..., MSSBase]) -> None:
             assert isinstance(image.rgb, bytes)
 
 
-def test_grab_part_of_screen(mss_impl: Callable[..., MSSBase]) -> None:
+def test_grab_part_of_screen(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         for width, height in itertools.product(range(1, 42), range(1, 42)):
             monitor = {"top": 160, "left": 160, "width": width, "height": height}

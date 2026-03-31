@@ -8,12 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from mss.base import MSSBase
+from mss import MSS
 
 Image = pytest.importorskip("PIL.Image", reason="PIL module not available.")
 
 
-def test_pil(mss_impl: Callable[..., MSSBase]) -> None:
+def test_pil(mss_impl: Callable[..., MSS]) -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss_impl() as sct:
@@ -31,7 +31,7 @@ def test_pil(mss_impl: Callable[..., MSSBase]) -> None:
     assert output.is_file()
 
 
-def test_pil_bgra(mss_impl: Callable[..., MSSBase]) -> None:
+def test_pil_bgra(mss_impl: Callable[..., MSS]) -> None:
     width, height = 16, 16
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss_impl() as sct:
@@ -49,7 +49,7 @@ def test_pil_bgra(mss_impl: Callable[..., MSSBase]) -> None:
     assert output.is_file()
 
 
-def test_pil_not_16_rounded(mss_impl: Callable[..., MSSBase]) -> None:
+def test_pil_not_16_rounded(mss_impl: Callable[..., MSS]) -> None:
     width, height = 10, 10
     box = {"top": 0, "left": 0, "width": width, "height": height}
     with mss_impl() as sct:

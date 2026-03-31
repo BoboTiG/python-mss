@@ -342,7 +342,7 @@ def capture_image(
         'width', 'height'.
     :yields: PIL Image objects from the captured monitor.
     """
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         rect = capture_area if capture_area is not None else sct.monitors[monitor]
         LOGGER.debug("Capture area: %i,%i, %ix%i", rect["left"], rect["top"], rect["width"], rect["height"])
 

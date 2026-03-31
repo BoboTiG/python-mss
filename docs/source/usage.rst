@@ -5,34 +5,33 @@ Usage
 Import
 ======
 
-MSS can be used as simply as::
+MSS can be used simply as::
 
-    from mss import mss
+    from mss import MSS
 
-Or import the good one based on your operating system::
+    with MSS() as sct:
+        # ...
+
+For compatibility with existing code, :py:func:`mss.mss` is still available in
+10.2, but deprecated::
+
+    import mss
+
+    with mss.mss() as sct:  # Deprecated in 10.2
+        # ...
+
+For compatibility with existing code, platform-specific class names are also
+still available in 10.2::
 
     # GNU/Linux
-    from mss.linux import MSS as mss
+    from mss.linux import MSS
 
     # macOS
-    from mss.darwin import MSS as mss
+    from mss.darwin import MSS
 
     # Microsoft Windows
-    from mss.windows import MSS as mss
+    from mss.windows import MSS
 
-On GNU/Linux you can also import a specific backend (see :ref:`backends`)
-directly when you need a particular implementation, for example::
-
-    from mss.linux.xshmgetimage import MSS as mss
-
-
-Instance
-========
-
-So the module can be used as simply as::
-
-    with mss() as sct:
-        # ...
 
 Intensive Use
 =============
@@ -42,12 +41,12 @@ If you plan to integrate MSS inside your own module or software, pay attention t
 This is a bad usage::
 
     for _ in range(100):
-        with mss() as sct:
+        with MSS() as sct:
             sct.shot()
 
 This is a much better usage, memory efficient::
 
-    with mss() as sct:
+    with MSS() as sct:
         for _ in range(100):
             sct.shot()
 
@@ -60,18 +59,19 @@ Multithreading
 MSS is thread-safe and can be used from multiple threads.
 
 **Sharing one MSS object**: You can use the same MSS object from multiple threads.  Calls to
-:py:meth:`mss.base.MSSBase.grab` (and other capture methods) are serialized automatically, meaning only one thread
+:py:meth:`mss.MSS.grab` (and other capture methods) are serialized automatically, meaning only one thread
 will capture at a time.  This may be relaxed in a future version if it can be done safely.
 
 **Using separate MSS objects**: You can also create different MSS objects in different threads.  Whether these run
 concurrently or are serialized by the OS depends on the platform.
 
 Custom :py:class:`mss.screenshot.ScreenShot` classes (see :ref:`custom_cls_image`) must **not** call
-:py:meth:`mss.base.MSSBase.grab` in their constructor.
+:py:meth:`mss.MSS.grab` in their constructor.
 
 .. danger::
-    These guarantees do not apply to the obsolete Xlib backend, :py:mod:`mss.linux.xlib`.  That backend is only used
-    if you specifically request it, so you won't be caught off-guard.
+    These guarantees do not apply to the obsolete Xlib backend.  That backend
+    is only used if you specifically request it, so you won't be caught
+    off-guard.
 
 .. versionadded:: 10.2.0
     Prior to this version, on some operating systems, the MSS object could only be used on the thread on which it was
@@ -82,18 +82,14 @@ Custom :py:class:`mss.screenshot.ScreenShot` classes (see :ref:`custom_cls_image
 Backends
 ========
 
-Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:func:`mss`
-functions will normally autodetect which one is appropriate for your situation, but you can override this if you want.
+Some platforms have multiple ways to take screenshots.  In MSS, these are known as *backends*.  The :py:class:`mss.MSS`
+constructor will normally autodetect which one is appropriate for your situation, but you can override this if you want.
 For instance, you may know that your specific situation requires a particular backend.
 
-If you want to choose a particular backend, you can use the :py:attr:`backend` keyword to :py:func:`mss`::
+If you want to choose a particular backend, you can pass the ``backend`` keyword to :py:class:`mss.MSS`::
 
-    with mss(backend="xgetimage") as sct:
+    with MSS(backend="xgetimage") as sct:
         ...
-
-Alternatively, you can also directly import the backend you want to use::
-
-    from mss.linux.xgetimage import MSS as mss
 
 Currently, only the GNU/Linux implementation has multiple backends.  These are described in their own section below.
 
@@ -113,7 +109,7 @@ On GNU/Linux, the default display is taken from the :envvar:`DISPLAY` environmen
 Backends
 ^^^^^^^^
 
-The GNU/Linux implementation has multiple backends (see :ref:`backends`), or ways it can take screenshots.  The :py:func:`mss.mss` and :py:func:`mss.linux.mss` functions will normally autodetect which one is appropriate, but you can override this if you want.
+The GNU/Linux implementation has multiple backends (see :ref:`backends`), or ways it can take screenshots.  The :py:class:`mss.MSS` constructor will normally autodetect which one is appropriate, but you can override this if you want.
 
 There are three available backends.
 

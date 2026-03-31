@@ -7,9 +7,8 @@ import platform
 import sys
 from argparse import ArgumentError, ArgumentParser
 
-from mss import __version__
+from mss import MSS, __version__
 from mss.exception import ScreenShotError
-from mss.factory import mss
 from mss.tools import to_png
 
 
@@ -91,7 +90,7 @@ def main(*args: str) -> int:
             kwargs["output"] = "sct-{top}x{left}_{width}x{height}.png"
 
     try:
-        with mss(with_cursor=options.with_cursor, backend=options.backend) as sct:
+        with MSS(with_cursor=options.with_cursor, backend=options.backend) as sct:
             if options.coordinates:
                 output = kwargs["output"].format(**kwargs["mon"])
                 sct_img = sct.grab(kwargs["mon"])

@@ -4,9 +4,9 @@ Source: https://github.com/BoboTiG/python-mss.
 Select the XShmGetImage backend explicitly and inspect its status.
 """
 
-from mss.linux.xshmgetimage import MSS as mss
+from mss import MSS
 
-with mss() as sct:
+with MSS(backend="xshmgetimage") as sct:
     screenshot = sct.grab(sct.monitors[1])
     print(f"Captured screenshot dimensions: {screenshot.size.width}x{screenshot.size.height}")
 

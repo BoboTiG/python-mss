@@ -11,8 +11,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from mss import mss
-from mss.base import MSSBase
+from mss import MSS
 from mss.linux import xcb, xlib
 
 
@@ -76,10 +75,10 @@ def backend(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture
-def mss_impl(backend: str) -> Callable[..., MSSBase]:
+def mss_impl(backend: str) -> Callable[..., MSS]:
     # We can't just use partial here, since it will read $DISPLAY at the wrong time.  This can cause problems,
     # depending on just how the fixtures get run.
-    return lambda *args, **kwargs: mss(*args, display=os.getenv("DISPLAY"), backend=backend, **kwargs)
+    return lambda *args, **kwargs: MSS(*args, display=os.getenv("DISPLAY"), backend=backend, **kwargs)
 
 
 @pytest.fixture(autouse=True, scope="session")
