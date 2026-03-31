@@ -209,9 +209,8 @@ class MSSImplWindows(MSSImplementation):
         "user32",
     }
 
-    def __init__(self, backend: str = "default", **kwargs: Any) -> None:
-        kwargs.pop("with_cursor", None)
-        super().__init__(with_cursor=False, **kwargs)
+    def __init__(self, *, backend: str = "default") -> None:
+        super().__init__()
 
         if backend != "default":
             msg = 'The only valid backend on this platform is "default".'

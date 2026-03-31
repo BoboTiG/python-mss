@@ -42,8 +42,8 @@ class MSSImplXCBBase(MSSImplementation):
             Lists other parameters.
     """
 
-    def __init__(self, /, display: str | bytes | None = None, **kwargs: Any) -> None:  # noqa: PLR0912
-        super().__init__(**kwargs)
+    def __init__(self, *, display: str | bytes | None = None, with_cursor: bool = False) -> None:  # noqa: PLR0912
+        super().__init__(with_cursor=with_cursor)
 
         if not display:
             display = None

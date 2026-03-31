@@ -137,9 +137,8 @@ class MSSImplDarwin(MSSImplementation):
 
     __slots__ = {"core", "max_displays"}
 
-    def __init__(self, backend: str = "default", max_displays: int = 32, **kwargs: Any) -> None:
-        kwargs.pop("with_cursor", None)
-        super().__init__(with_cursor=False, **kwargs)
+    def __init__(self, *, backend: str = "default", max_displays: int = 32) -> None:
+        super().__init__()
 
         if backend != "default":
             msg = 'The only valid backend on this platform is "default".'

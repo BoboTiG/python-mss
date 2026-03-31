@@ -45,8 +45,8 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             Lists constructor parameters.
     """
 
-    def __init__(self, /, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *, display: str | bytes | None = None, with_cursor: bool = False) -> None:
+        super().__init__(display=display, with_cursor=with_cursor)
 
         # These are the objects we need to clean up when we shut down.  They are created in _setup_shm.
         self._memfd: int | None = None

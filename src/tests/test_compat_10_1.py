@@ -157,16 +157,11 @@ def test_deprecated_factory_accepts_documented_kwargs() -> None:
         "display": getenv("DISPLAY"),  # None on non-Linux
     }
 
-    with pytest.warns(DeprecationWarning) as caught:  # noqa: PT030 (we test the contents below)
+    with (
+        pytest.warns(DeprecationWarning, match=r"^mss\.mss is deprecated"),
+        pytest.warns(DeprecationWarning, match=r"is only available on"),
+    ):
         context = mss.mss(**kwargs)
-
-    expected_messages = {"mss.mss is deprecated", "is only used on"}
-
-    assert any("mss.mss is deprecated" in str(w.message) for w in caught)
-    assert any("is only used on" in str(w.message) for w in caught)
-    assert all(any(expected in str(w.message) for expected in expected_messages) for w in caught), (
-        f"Unexpected warnings: {[str(w.message) for w in caught]}"
-    )
 
     with context as sct:
         assert isinstance(sct, MSSBase)

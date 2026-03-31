@@ -49,6 +49,21 @@ lock = Lock()
 OPAQUE = 255
 
 
+# A sentinel value to indicate that a parameter was not passed, as opposed to being passed with a value of None.  This
+# is used in the MSS constructor to distinguish between the user not passing a parameter, and the user explicitly
+# passing None (which is the default for some parameters).  This allows us to preserve the existing behavior of ignoring
+# certain parameters on certain platforms, while still allowing users to explicitly set those parameters on platforms
+# where they are supported.
+class _PlatformSpecific:
+    def __init__(self, sphinx_repr: Any) -> None:
+        self.sphinx_repr = str(sphinx_repr)
+
+    def __repr__(self) -> str:
+        # This is used to get Sphinx to show a useful default when it shows the default in the summary, rather than
+        # an opaque object.
+        return self.sphinx_repr
+
+
 __all__ = ()
 
 
@@ -64,14 +79,12 @@ class MSSImplementation(ABC):
     with_cursor: bool
 
     def __init__(self, /, *, with_cursor: bool = False) -> None:
-        # We put with_cursor on the MSSImplementation because the Xlib
-        # backend will turn it off if the library isn't installed.
-        # (It's not a separate library under XCB.)  So, we need to let
-        # the backend mutate it.
-
-        # We should remove this expectation in 11.0.  It seems
-        # unlikely to be practically useful, Xlib is legacy, and just
-        # complicates things.
+        # We put with_cursor on the MSSImplementation because the Xlib backend will turn it off if the library isn't
+        # installed.  (It's not a separate library under XCB.)  So, we need to let the backend mutate it.  Note that
+        # the other platforms don't support with_cursor, and don't pass it to us.
+        #
+        # TODO(jholveck): #493 We should remove this expectation in 11.0.  It seems unlikely to be practically useful,
+        # Xlib is legacy, and just complicates things.
         self.with_cursor = with_cursor
 
     @abstractmethod
@@ -156,7 +169,8 @@ class MSS:
 
     :param backend: Backend selector, for platforms with multiple backends.
     :param compression_level: PNG compression level.
-    :param with_cursor: Include the mouse cursor in screenshots.
+    :param with_cursor: Include the mouse cursor in screenshots (GNU/Linux only)
+    :type display: bool, optional (default False)
     :param display: X11 display name (GNU/Linux only).
     :type display: bytes | str, optional (default :envvar:`$DISPLAY`)
     :param max_displays: Maximum number of displays to enumerate (macOS only).
@@ -164,7 +178,23 @@ class MSS:
 
     .. versionadded:: 8.0.0
         ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
+
+    .. versionadded:: 10.2.0
+        ``backend`` keyword argument.
     """
+
+    # We want to:
+    # * Let Sphinx, IDEs, and code-checkers know all the possible kwargs.
+    # * Know if a user explicitly passed an unsupported platform-dependent keyword, so we can warn.
+    # * Show a meaningful default in the Sphinx doc's summary string
+    #
+    # To accomplish this:
+    # * We list the possibilities explicitly in the __init__ kwargs.
+    # * We use a sentinel value, so we can tell whether or not the user actually gave us a value.
+    # * We represent the "default value" sentinel object with something different, so Sphinx formats it usefully.
+    _PD_WITH_CURSOR = _PlatformSpecific(False)  # noqa: FBT003
+    _PD_DISPLAY = _PlatformSpecific(None)
+    _PD_MAX_DISPLAYS = _PlatformSpecific(32)
 
     def __init__(
         self,
@@ -172,27 +202,34 @@ class MSS:
         *,
         backend: str = "default",
         compression_level: int = 6,
-        **kwargs: Any,
+        with_cursor: bool | _PlatformSpecific = _PD_WITH_CURSOR,
+        display: bytes | str | None | _PlatformSpecific = _PD_DISPLAY,
+        max_displays: int | _PlatformSpecific = _PD_MAX_DISPLAYS,
     ) -> None:
-        # TODO(jholveck): #493 Accept platform-specific kwargs on all platforms for migration ease.  Foreign kwargs
-        # are silently stripped with a warning.
-        platform_only: dict[str, str] = {
-            "display": "linux",
-            "max_displays": "darwin",
-        }
-        os_ = platform.system().lower()
-        for kwarg_name, target_platform in platform_only.items():
-            if kwarg_name in kwargs and os_ != target_platform:
-                kwargs.pop(kwarg_name)
+        impl_kwargs = {}
+
+        system = platform.system().lower()
+        for name, value, supported_platform in [
+            ("with_cursor", with_cursor, "Linux"),
+            ("display", display, "Linux"),
+            ("max_displays", max_displays, "Darwin"),
+        ]:
+            if isinstance(value, _PlatformSpecific):
+                continue
+            if system != supported_platform.lower():
+                # TODO(jholveck): #493 Accept platform-specific kwargs on all platforms for migration ease.  Foreign
+                # kwargs are silently stripped with a warning.
                 warnings.warn(
-                    f"{kwarg_name} is only used on {target_platform}. This will be an error in the future.",
+                    f"{name} is only available on {supported_platform}. This will be an error in the future.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
+            else:
+                impl_kwargs[name] = value
 
         self._impl: MSSImplementation = _choose_impl(
             backend=backend,
-            **kwargs,
+            **impl_kwargs,
         )
 
         # The cls_image is only used atomically, so does not require locking.
