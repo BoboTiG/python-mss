@@ -144,21 +144,29 @@ def test_factory_and_platform_constructor_are_compatible_types() -> None:
 
 
 def test_deprecated_factory_accepts_documented_kwargs() -> None:
-    os_ = platform.system().lower()
-    kwargs: dict[str, object] = {"compression_level": 1, "with_cursor": True}
+    """Verify that kwargs are accepted, even if not relevant.
 
-    if os_ == "linux":
-        display = getenv("DISPLAY")
-        assert display
-        kwargs["display"] = display
-    elif os_ == "darwin":
-        kwargs["max_displays"] = 1
-    elif os_ != "windows":
-        msg = f"Unsupported platform for compatibility test: {os_!r}"
-        raise AssertionError(msg)
+    All 10.1-documented kwargs were accepted on every platform, even
+    if only meaningful on one.  Verify that still works via the
+    deprecated factory.
+    """
+    kwargs = {
+        "compression_level": 1,
+        "with_cursor": True,
+        "max_displays": 1,
+        "display": getenv("DISPLAY"),  # None on non-Linux
+    }
 
-    with pytest.warns(DeprecationWarning, match=r"^mss\.mss is deprecated"):
+    with pytest.warns(DeprecationWarning) as caught:  # noqa: PT030 (we test the contents below)
         context = mss.mss(**kwargs)
+
+    expected_messages = {"mss.mss is deprecated", "is only used on"}
+
+    assert any("mss.mss is deprecated" in str(w.message) for w in caught)
+    assert any("is only used on" in str(w.message) for w in caught)
+    assert all(any(expected in str(w.message) for expected in expected_messages) for w in caught), (
+        f"Unexpected warnings: {[str(w.message) for w in caught]}"
+    )
 
     with context as sct:
         assert isinstance(sct, MSSBase)

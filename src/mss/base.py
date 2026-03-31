@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import platform
+import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime
 from threading import Lock
@@ -173,6 +174,22 @@ class MSS:
         compression_level: int = 6,
         **kwargs: Any,
     ) -> None:
+        # TODO(jholveck): #493 Accept platform-specific kwargs on all platforms for migration ease.  Foreign kwargs
+        # are silently stripped with a warning.
+        platform_only: dict[str, str] = {
+            "display": "linux",
+            "max_displays": "darwin",
+        }
+        os_ = platform.system().lower()
+        for kwarg_name, target_platform in platform_only.items():
+            if kwarg_name in kwargs and os_ != target_platform:
+                kwargs.pop(kwarg_name)
+                warnings.warn(
+                    f"{kwarg_name} is only used on {target_platform}. This will be an error in the future.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
         self._impl: MSSImplementation = _choose_impl(
             backend=backend,
             **kwargs,

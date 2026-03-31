@@ -7,6 +7,7 @@ from collections.abc import Callable, Generator
 from hashlib import sha256
 from pathlib import Path
 from platform import system
+from typing import Any
 from zipfile import ZipFile
 
 import pytest
@@ -78,7 +79,14 @@ def backend(request: pytest.FixtureRequest) -> str:
 def mss_impl(backend: str) -> Callable[..., MSS]:
     # We can't just use partial here, since it will read $DISPLAY at the wrong time.  This can cause problems,
     # depending on just how the fixtures get run.
-    return lambda *args, **kwargs: MSS(*args, display=os.getenv("DISPLAY"), backend=backend, **kwargs)
+    def impl(*args: Any, **kwargs: Any) -> MSS:
+        # I'm not really sure if adding an explicit display is needed anymore.  It was in a lot of existing code that
+        # mss_impl replaced, but it should now be the default at this point.  I'll have to investigate.
+        if system() == "Linux":
+            kwargs = {"display": os.getenv("DISPLAY")} | kwargs
+        return MSS(*args, backend=backend, **kwargs)
+
+    return impl
 
 
 @pytest.fixture(autouse=True, scope="session")
