@@ -29,7 +29,7 @@ def _backend_cli_choices() -> list[str]:
     return ["default"]
 
 
-def main(*args: str) -> int:
+def main(*args: str) -> int:  # noqa: PLR0912
     """Main logic."""
     backend_choices = _backend_cli_choices()
 
@@ -51,7 +51,7 @@ def main(*args: str) -> int:
     )
     cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screenshot")
     cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
-    cli_args.add_argument("--with-cursor", default=False, action="store_true", help="include the cursor")
+    cli_args.add_argument("--with-cursor", action="store_true", help="include the cursor")
     cli_args.add_argument(
         "-q",
         "--quiet",
@@ -72,7 +72,7 @@ def main(*args: str) -> int:
         cli_args.print_usage(sys.stderr)
         print(f"{cli_args.prog}: error: {e}", file=sys.stderr)
         return 2
-    kwargs = {"mon": options.monitor, "output": options.output}
+    grab_kwargs = {"mon": options.monitor, "output": options.output}
     if options.coordinates:
         try:
             top, left, width, height = options.coordinates.split(",")
@@ -80,25 +80,34 @@ def main(*args: str) -> int:
             print("Coordinates syntax: top, left, width, height")
             return 2
 
-        kwargs["mon"] = {
+        grab_kwargs["mon"] = {
             "top": int(top),
             "left": int(left),
             "width": int(width),
             "height": int(height),
         }
         if options.output == "monitor-{mon}.png":
-            kwargs["output"] = "sct-{top}x{left}_{width}x{height}.png"
+            grab_kwargs["output"] = "sct-{top}x{left}_{width}x{height}.png"
+
+    if options.with_cursor is not None and platform.system().lower() != "linux":
+        if not options.quiet:
+            print("[WARNING] --with-cursor is only supported on Linux; ignoring.")
+        options.with_cursor = None
+
+    mss_kwargs = {"backend": options.backend}
+    if options.with_cursor is not None:
+        mss_kwargs["with_cursor"] = options.with_cursor
 
     try:
-        with MSS(with_cursor=options.with_cursor, backend=options.backend) as sct:
+        with MSS(**mss_kwargs) as sct:
             if options.coordinates:
-                output = kwargs["output"].format(**kwargs["mon"])
-                sct_img = sct.grab(kwargs["mon"])
+                output = grab_kwargs["output"].format(**grab_kwargs["mon"])
+                sct_img = sct.grab(grab_kwargs["mon"])
                 to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)
                 if not options.quiet:
                     print(os.path.realpath(output))
             else:
-                for file_name in sct.save(**kwargs):
+                for file_name in sct.save(**grab_kwargs):
                     if not options.quiet:
                         print(os.path.realpath(file_name))
             return 0
