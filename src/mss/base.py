@@ -213,19 +213,18 @@ class MSS:
     ) -> None:
         impl_kwargs = {}
 
-        system = platform.system().lower()
-        for name, value, supported_platform in [
-            ("with_cursor", with_cursor, "Linux"),
-            ("display", display, "Linux"),
-            ("max_displays", max_displays, "Darwin"),
+        system = platform.system()
+        for name, value, supported_platforms in [
+            ("with_cursor", with_cursor, ["Linux"]),
+            ("display", display, ["Linux"]),
+            ("max_displays", max_displays, ["Darwin"]),
         ]:
             if isinstance(value, _PlatformSpecific):
                 continue
-            if system != supported_platform.lower():
-                # TODO(jholveck): #493 Accept platform-specific kwargs on all platforms for migration ease.  Foreign
-                # kwargs are silently stripped with a warning.
+            if system not in supported_platforms:
+                # Foreign kwargs are silently stripped with a warning.
                 warnings.warn(
-                    f"{name} is only available on {supported_platform}. This will be an error in the future.",
+                    f"{name} is only available on {', '.join(supported_platforms)}. This will be an error in the future.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
