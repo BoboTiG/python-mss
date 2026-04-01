@@ -5,7 +5,7 @@ cases. However, it will not work over remote X connections, such as over ssh.
 
 This implementation prefers shared-memory captures for performance and will
 fall back to XGetImage when the MIT-SHM extension is unavailable or fails at
-runtime. The fallback reason is exposed via ``shm_fallback_reason`` to aid
+runtime. The fallback reason is exposed via ``performance_status`` to aid
 debugging.
 
 .. versionadded:: 10.2.0
@@ -61,8 +61,6 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         #: This will not be ``AVAILABLE`` until at least one capture has succeeded.
         #: It may be set to ``UNAVAILABLE`` sooner.
         self.shm_status: ShmStatus = self._setup_shm()
-        #: If MIT-SHM is unavailable, the reason why (for debugging purposes).
-        self.shm_fallback_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:
         """Debugging hook for troubleshooting MIT-SHM issues.
@@ -73,7 +71,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         full_msg = msg
         if args:
             full_msg += " | " + ", ".join(str(arg) for arg in args)
-        self.shm_fallback_reason = full_msg
+        self.performance_status.append(full_msg)
 
     def _setup_shm(self) -> ShmStatus:  # noqa: PLR0911
         assert self.conn is not None  # noqa: S101
@@ -200,7 +198,9 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         # The usual path is just the next few lines.
         try:
             rv = self._grab_xshmgetimage(monitor)
-            self.shm_status = ShmStatus.AVAILABLE
+            if self.shm_status != ShmStatus.AVAILABLE:
+                self.shm_status = ShmStatus.AVAILABLE
+                self.performance_status.append("MIT-SHM is working correctly.")
         except XProtoError as e:
             if self.shm_status != ShmStatus.UNKNOWN:
                 # We know XShmGetImage works, because it worked earlier.  Reraise the error.

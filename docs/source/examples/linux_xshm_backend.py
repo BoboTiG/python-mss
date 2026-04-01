@@ -10,8 +10,6 @@ with MSS(backend="xshmgetimage") as sct:
     screenshot = sct.grab(sct.monitors[1])
     print(f"Captured screenshot dimensions: {screenshot.size.width}x{screenshot.size.height}")
 
-    print(f"shm_status: {sct.shm_status.name}")
-    if sct.shm_fallback_reason:
-        print(f"Falling back to XGetImage because: {sct.shm_fallback_reason}")
-    else:
-        print("MIT-SHM capture active.")
+    print("Did MIT-SHM work:")
+    for message in sct.performance_status:
+        print(message)

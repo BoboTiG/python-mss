@@ -17,7 +17,6 @@ from mss.tools import to_png
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
-    from mss.linux.xshmgetimage import ShmStatus
     from mss.models import Monitor, Monitors, Size
 
     # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
@@ -74,7 +73,7 @@ class MSSImplementation(ABC):
     MSS object will hold a lock during these calls.
     """
 
-    __slots__ = ("with_cursor",)
+    __slots__ = ("performance_status", "with_cursor")
 
     with_cursor: bool
 
@@ -86,6 +85,10 @@ class MSSImplementation(ABC):
         # TODO(jholveck): #493 We should remove this expectation in 11.0.  It seems unlikely to be practically useful,
         # Xlib is legacy, and just complicates things.
         self.with_cursor = with_cursor
+
+        # Any notes the backend needs to give the user for debugging purposes, like why it had to fall back to a
+        # slower implementation.
+        self.performance_status: list[str] = []
 
     @abstractmethod
     def cursor(self) -> ScreenShot | None:
@@ -169,7 +172,8 @@ class MSS:
 
     :param backend: Backend selector, for platforms with multiple backends.
     :param compression_level: PNG compression level.
-    :param with_cursor: Include the mouse cursor in screenshots (GNU/Linux only)
+    :param with_cursor: Include the mouse cursor in screenshots
+        (GNU/Linux only)
     :type display: bool, optional (default False)
     :param display: X11 display name (GNU/Linux only).
     :type display: bytes | str, optional (default :envvar:`$DISPLAY`)
@@ -177,7 +181,8 @@ class MSS:
     :type max_displays: int, optional (default 32)
 
     .. versionadded:: 8.0.0
-        ``compression_level``, ``display``, ``max_displays``, and ``with_cursor`` keyword arguments.
+        ``compression_level``, ``display``, ``max_displays``, and
+        ``with_cursor`` keyword arguments.
 
     .. versionadded:: 10.2.0
         ``backend`` keyword argument.
@@ -498,35 +503,23 @@ class MSS:
     # max_displays, should probably be removed in 11.0.  with_cursor
     # should probably be moved to MSS instead of MSSImplementation (as
     # noted there).
-    #
-    # The shm_status is mostly a debugging field, and probably should
-    # be replaced with something different.  Ideas include a log
-    # message, an exception if the user explicitly requested
-    # xshmgetimage, or a platform-independent message attribute (for
-    # instance, if Windows has to fall back to GDI).
 
     @property
-    def shm_status(self) -> ShmStatus:
-        """Whether we can use the MIT-SHM extensions for this connection.
+    def performance_status(self) -> list[str]:
+        """Implementation-specific notes that might affect performance.
 
-        Availability: GNU/Linux, when using the default XShmGetImage backend.
+        For instance, on GNU/Linux, when using the default XShmGetImage
+        backend, this will include a note if the MIT-SHM extension is
+        not usable.
 
-        This will not be ``AVAILABLE`` until at least one capture has succeeded.
-        It may be set to ``UNAVAILABLE`` sooner.
+        This may not be ready until one screenshot has been taken.
+
+        This is meant only for debugging purposes; the contents are
+        subject to change at any time.
 
         .. versionadded:: 10.2.0
         """
-        return self._impl.shm_status  # type: ignore[attr-defined]
-
-    @property
-    def shm_fallback_reason(self) -> str | None:
-        """If MIT-SHM is unavailable, the reason why (for debugging purposes).
-
-        Availability: GNU/Linux, when using the default XShmGetImage backend.
-
-        .. versionadded:: 10.2.0
-        """
-        return self._impl.shm_fallback_reason  # type: ignore[attr-defined]
+        return self._impl.performance_status
 
     @property
     def max_displays(self) -> int:
