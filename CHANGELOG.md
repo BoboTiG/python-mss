@@ -4,6 +4,7 @@ See Git commit messages for full history.
 
 ## v10.2.0.dev0
 (2026-xx-xx)
+- Add Versioning chapter to docs (#496)
 - Add `is_primary`, `name`, and `unique_id` keys to Monitor dicts for primary monitor detection, device names, and stable per-monitor identification (#153)
 - Add `primary_monitor` property to MSS base class for easy access to the primary monitor (#153)
 - Windows: add primary monitor detection using `GetMonitorInfoW` API (#153)
