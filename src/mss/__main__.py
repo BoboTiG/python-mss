@@ -51,7 +51,7 @@ def main(*args: str) -> int:  # noqa: PLR0912
     )
     cli_args.add_argument("-m", "--monitor", default=0, type=int, help="the monitor to screenshot")
     cli_args.add_argument("-o", "--output", default="monitor-{mon}.png", help="the output file name")
-    cli_args.add_argument("--with-cursor", action="store_true", help="include the cursor")
+    cli_args.add_argument("--with-cursor", default=None, action="store_true", help="include the cursor")
     cli_args.add_argument(
         "-q",
         "--quiet",
@@ -91,7 +91,7 @@ def main(*args: str) -> int:  # noqa: PLR0912
 
     if options.with_cursor is not None and platform.system().lower() != "linux":
         if not options.quiet:
-            print("[WARNING] --with-cursor is only supported on Linux; ignoring.")
+            print("[WARNING] --with-cursor is only supported on Linux; ignoring.", file=sys.stderr)
         options.with_cursor = None
 
     mss_kwargs = {"backend": options.backend}
