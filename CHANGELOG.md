@@ -5,6 +5,7 @@ See Git commit messages for full history.
 ## v10.2.0.dev0
 (2026-xx-xx)
 - Introduce a new API, mss.MSS, that we can keep stable as we continue to improve MSS.  The previous documented API is deprecated, but still available, in 10.2.  Some parts of the existing API (such as certain type names and internal variables) may be removed in 11.0, but the most important parts will remain available for as long as can be reasonably supported. (#486, #494)
+- Add Versioning chapter to docs (#496)
 - Add `is_primary`, `name`, and `unique_id` keys to Monitor dicts for primary monitor detection, device names, and stable per-monitor identification (#153)
 - Add `primary_monitor` property to MSS base class for easy access to the primary monitor (#153)
 - Windows: add primary monitor detection using `GetMonitorInfoW` API (#153)

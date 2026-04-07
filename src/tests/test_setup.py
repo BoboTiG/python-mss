@@ -63,6 +63,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/docs/source/installation.rst",
         f"mss-{__version__}/docs/source/support.rst",
         f"mss-{__version__}/docs/source/usage.rst",
+        f"mss-{__version__}/docs/source/versioning.rst",
         f"mss-{__version__}/docs/source/where.rst",
         f"mss-{__version__}/pyproject.toml",
         f"mss-{__version__}/src/mss/__init__.py",
