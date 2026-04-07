@@ -5,10 +5,9 @@ from urllib.parse import urlencode
 
 from mss.base import MSSBase
 from mss.exception import ScreenShotError
+from mss.linux import xcb
+from mss.linux.xcb import LIB
 from mss.tools import parse_edid
-
-from . import xcb
-from .xcb import LIB
 
 if TYPE_CHECKING:
     from ctypes import Array
@@ -286,9 +285,7 @@ class MSSXCBBase(MSSBase):
         if primary_output is None:
             # We don't want to use the `in` check if this could be None, according to MyPy.
             return outputs[0]
-        if primary_output in outputs:
-            return primary_output
-        return outputs[0]
+        return primary_output if primary_output in outputs else outputs[0]
 
     def _monitors_from_randr_monitors(
         self, primary_output: xcb.RandrOutput | None, edid_atom: xcb.Atom | None, /
@@ -305,12 +302,12 @@ class MSSXCBBase(MSSBase):
                 "top": randr_monitor.y,
                 "width": randr_monitor.width,
                 "height": randr_monitor.height,
+                # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor
+                # will return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR
+                # that all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't
+                # have any information about primary monitors.)
+                "is_primary": bool(randr_monitor.primary),
             }
-            # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor will
-            # return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR that
-            # all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't have
-            # any information about primary monitors.)
-            monitor["is_primary"] = bool(randr_monitor.primary)
 
             if randr_monitor.nOutput > 0:
                 outputs = xcb.randr_monitor_info_outputs(randr_monitor)

@@ -4,6 +4,7 @@
 .DS_Store
 *.orig
 *.jpg
+*.mp4
 /*.png
 *.png.old
 *.pickle
@@ -13,6 +14,7 @@
 build/
 .cache/
 dist/
+docs/__intersphinx_cache__/
 docs_out/
 *.egg-info/
 .idea/

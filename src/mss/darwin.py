@@ -28,7 +28,7 @@ from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot, Size
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from mss.models import CFunctions, Monitor
 
 __all__ = ("IMAGE_OPTIONS", "MSS")

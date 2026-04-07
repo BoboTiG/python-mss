@@ -22,7 +22,7 @@ from mss.base import MSSBase
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
