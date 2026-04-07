@@ -225,7 +225,8 @@ class MSS:
                 # TODO(jholveck): #493 Accept platform-specific kwargs on all platforms for migration ease.  Foreign
                 # kwargs are silently stripped with a warning.
                 warnings.warn(
-                    f"{name} is only available on {', '.join(supported_platforms)}. This will be an error in the future.",
+                    f"{name} is only available on {', '.join(supported_platforms)}. "
+                    "This will be an error in the future.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
