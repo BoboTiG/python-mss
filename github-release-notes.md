@@ -2,13 +2,40 @@
 
 This is **version 10.2.0 of Python-MSS**, the ultra-fast cross-platform multiple screenshots module.
 
-This release improves **performance, reliability, and multithreaded behavior**, and introduces several new features for working with multi-monitor systems. It also lays groundwork for upcoming improvements planned for **MSS 11.0**, while remaining fully backward-compatible.
+This release lays the groundwork for upcoming improvements planned for **MSS 11.0**, while remaining fully backward-compatible. It also improves **performance, reliability, and multithreaded behavior**, and introduces several new features for working with multi-monitor systems. 
 
 If your code works with previous versions of MSS, **it should continue to work unchanged in 10.2.0.**
 
 ---
 
 # Highlights
+
+## New API
+
+In 10.2, MSS introduces a **new API**.  The new design lets the MSS project introduce more significant internal changes, without introducing compatibility problems.
+
+Programs using the old API will continue to work in 10.2.0, and most of them will continue to work with 11.0 and beyond.
+
+Previously, MSS would provide the user with an OS-specific MSS class.  In the new API, the user always sees a single class: `mss.MSS`.
+
+**The existing `mss.mss` factory function will continue to work** in 11.0, and will continue to work for as long as is reasonable.  However, the `mss.MSS` constructor is preferred for new code.
+
+**The existing `mss.{platform}.MSS` types are deprecated in 10.2.0.**  (This means the `mss.darwin.MSS`, `mss.linux.MSS`, and `mss.windows.MSS` classes.)  They will continue to work.  In 11.0, MSS will remove these _classes_, but to help with backwards compatibility, they will become deprecated _factory functions_, returning an instance of `mss.MSS`.  Users who use `mss.{platform}.MSS` as _functions_ can continue to do so.  Users who use these as _type declarations_ may update their code to use `mss.MSS` in 10.2, and may be required to do so in 11.0.
+
+Speaking of types, **the `MSSBase` class is deprecated in 10.2.0**.  Most users won’t care about that, some type declarations may need to change to `mss.MSS`.
+
+Where possible, deprecated functionality emits a `DeprecationWarning`.  However, note that these are ignored by default, unless triggered by code in `__main__`.  If you want to see these `DeprecationWarning` messages, you may run your program under `python -Wd`, or with the environment variable `PYTHONWARNINGS=default` (or `error`).  See [the Python documentation chapter “Warning Control”](https://docs.python.org/3/library/warnings.html) for more details.
+
+Many of the API docs are removed, since this change removes much of the API surface.  However, they are still in available for backwards-compatibility.
+
+Again, **existing working code will continue to work in 10.2 unchanged.**  However, **we recommend that users change the code and type declarations to use `mss.MSS`**.
+
+Summary of deprecations:
+* `mss.mss`: Change to `mss.MSS`.  Will continue to work in 11.0.
+* `mss.{platform}.MSS`: Change to `mss.MSS`.  Code will continue to work in 11.0.  Types will need to be changed by 11.0.
+* `mss.base.MSSBase`: (Only valid as a type)  Change to `mss.MSS` by 11.0.
+
+With this change, we are also documenting the [MSS versioning policy](https://python-mss.readthedocs.io/latest/versioning.html).  MSS has always used Semantic Versioning, but the new policy clearly spells out the details.
 
 ## Demo Applications
 
