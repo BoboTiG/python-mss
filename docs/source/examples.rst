@@ -83,7 +83,7 @@ Get PNG bytes, no file output
 You can get the bytes of the PNG image:
 ::
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         # The monitor or screen part to capture
         monitor = sct.monitors[1]  # or a region
 
@@ -203,7 +203,7 @@ Different possibilities to convert raw BGRA values to RGB::
         return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
 
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         im = sct.grab(sct.monitors[1])
         rgb = pil_frombytes(im)
         ...

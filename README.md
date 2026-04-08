@@ -11,10 +11,10 @@
 > [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/mschoentgen)
 
 ```python
-from mss import mss
+from mss import MSS
 
 # The simplest use, save a screenshot of the 1st monitor
-with mss() as sct:
+with MSS() as sct:
     sct.shot()
 ```
 

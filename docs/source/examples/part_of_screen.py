@@ -7,7 +7,7 @@ Example to capture part of the screen.
 import mss
 import mss.tools
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # The screen part to capture
     monitor = {"top": 160, "left": 160, "width": 160, "height": 135}
     output = "sct-{top}x{left}_{width}x{height}.png".format(**monitor)

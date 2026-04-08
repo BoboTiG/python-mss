@@ -79,7 +79,7 @@ def main() -> None:
         # Note that we use the same MSS object the whole time.  We don't try to keep creating a new MSS object each
         # time we take a new screenshot.  That's because the MSS object has a lot of stuff that it sets up and
         # remembers, and creating a new MSS object each time would mean that it has to repeat that setup constantly.
-        with mss.mss() as sct:
+        with mss.MSS() as sct:
             # It's time to get the monitor that we're going to capture.  In this demo, we just capture the first
             # monitor.  (We could also use monitors[0] for all the monitors combined.)
             monitor = sct.monitors[1]

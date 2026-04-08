@@ -1,14 +1,49 @@
 """GNU/Linux backend dispatcher for X11 screenshot implementations."""
 
+import warnings
 from typing import Any
 
-from mss.base import MSSBase
+from mss.base import MSS as _MSS
+from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+
+# TODO(jholveck): #493 Remove these legacy symbol re-exports after 10.x transition period.
+from mss.linux.xlib import (  # noqa: F401
+    CFUNCTIONS,
+    PLAINMASK,
+    ZPIXMAP,
+    Display,
+    XErrorEvent,
+    XFixesCursorImage,
+    XImage,
+    XRRCrtcInfo,
+    XRRModeInfo,
+    XRRScreenResources,
+    XWindowAttributes,
+)
+
+__all__ = ["MSS"]
 
 BACKENDS = ["default", "xlib", "xgetimage", "xshmgetimage"]
 
 
-def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
+class MSS(_MSS):
+    """Deprecated GNU/Linux compatibility constructor.
+
+    Use :class:`mss.MSS` instead.
+    """
+
+    def __init__(self, /, **kwargs: Any) -> None:
+        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
+        warnings.warn(
+            "mss.linux.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(**kwargs)
+
+
+def choose_impl(backend: str = "default", **kwargs: Any) -> MSSImplementation:
     """Return a backend-specific MSS implementation for GNU/Linux.
 
     Selects and instantiates the appropriate X11 backend based on the
@@ -18,14 +53,13 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
 
         - ``"default"`` or ``"xshmgetimage"`` (default): XCB-based backend
           using XShmGetImage with automatic fallback to XGetImage when MIT-SHM
-          is unavailable; see :py:class:`mss.linux.xshmgetimage.MSS`.
-        - ``"xgetimage"``: XCB-based backend using XGetImage;
-          see :py:class:`mss.linux.xgetimage.MSS`.
+          is unavailable.
+        - ``"xgetimage"``: XCB-based backend using XGetImage.
         - ``"xlib"``: Legacy Xlib-based backend retained for environments
-          without working XCB libraries; see :py:class:`mss.linux.xlib.MSS`.
+          without working XCB libraries.
 
         .. versionadded:: 10.2.0 Prior to this version, the
-            :class:`mss.linux.xlib.MSS` implementation was the only available
+            legacy Xlib implementation was the only available
             backend.
 
     :param display: Optional keyword argument.  Specifies an X11 display
@@ -36,35 +70,25 @@ def mss(backend: str = "default", **kwargs: Any) -> MSSBase:
     :returns: An MSS backend implementation.
 
     .. versionadded:: 10.2.0 Prior to this version, this didn't exist:
-         the :func:`mss.linux.MSS` was a class equivalent to the current
-         :class:`mss.linux.xlib.MSS` implementation.
+          GNU/Linux had a single implementation selected through
+          :class:`mss.linux.MSS`.
     """
     backend = backend.lower()
     if backend == "xlib":
-        from mss.linux import xlib  # noqa: PLC0415
+        from mss.linux.xlib import MSSImplXlib  # noqa: PLC0415
 
-        return xlib.MSS(**kwargs)
+        return MSSImplXlib(**kwargs)
     if backend == "xgetimage":
-        from mss.linux import xgetimage  # noqa: PLC0415
+        from mss.linux.xgetimage import MSSImplXGetImage  # noqa: PLC0415
 
         # Note that the xshmgetimage backend will automatically fall back to XGetImage calls if XShmGetImage isn't
         # available.  The only reason to use the xgetimage backend is if the user already knows that XShmGetImage
         # isn't going to be supported.
-        return xgetimage.MSS(**kwargs)
+        return MSSImplXGetImage(**kwargs)
     if backend in {"default", "xshmgetimage"}:
-        from mss.linux import xshmgetimage  # noqa: PLC0415
+        from mss.linux.xshmgetimage import MSSImplXShmGetImage  # noqa: PLC0415
 
-        return xshmgetimage.MSS(**kwargs)
+        return MSSImplXShmGetImage(**kwargs)
     assert backend not in BACKENDS  # noqa: S101
     msg = f"Backend {backend!r} not (yet?) implemented."
     raise ScreenShotError(msg)
-
-
-# Alias in upper-case for backward compatibility.  This is a supported name in the docs.
-def MSS(*args, **kwargs) -> MSSBase:  # type: ignore[no-untyped-def] # noqa: N802, ANN002, ANN003
-    """Alias for :func:`mss.linux.mss.mss` for backward compatibility.
-
-    .. versionchanged:: 10.2.0 Prior to this version, this was a class.
-    .. deprecated:: 10.2.0 Use :func:`mss.linux.mss` instead.
-    """
-    return mss(*args, **kwargs)

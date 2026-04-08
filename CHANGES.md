@@ -3,6 +3,7 @@
 ## 10.2.0 (2026-xx-xx)
 
 ### base.py
+- (This affected almost every file in some respect, but base.py was the most affected.)  Introduced a new API, mss.MSS.  This class can be used instead of the previous various MSSBase subclasses, so that the user can work with a consistent class regardless of implementation details.  The methods implemented by MSSBase subclasses were renamed, and moved to MSSImplementation subclasses.  The mss.MSS class now holds an MSSImplementation instance as an instance variable. (#486, #494)
 - Added `primary_monitor` property to return the primary monitor (or first monitor as fallback).
 
 ### models.py

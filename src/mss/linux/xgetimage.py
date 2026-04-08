@@ -9,12 +9,13 @@ backend.
 .. versionadded:: 10.2.0
 """
 
-from mss.linux.base import MSSXCBBase
+from mss.linux.base import MSSImplXCBBase
 from mss.models import Monitor
-from mss.screenshot import ScreenShot
+
+__all__ = ()
 
 
-class MSS(MSSXCBBase):
+class MSSImplXGetImage(MSSImplXCBBase):
     """XCB backend using XGetImage requests on GNU/Linux.
 
     .. seealso::
@@ -22,6 +23,6 @@ class MSS(MSSXCBBase):
             Lists constructor parameters.
     """
 
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def grab(self, monitor: Monitor) -> bytearray:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
-        return super()._grab_impl_xgetimage(monitor)
+        return super()._grab_xgetimage(monitor)

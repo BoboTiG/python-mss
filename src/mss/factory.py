@@ -1,49 +1,22 @@
 # This is part of the MSS Python's module.
 # Source: https://github.com/BoboTiG/python-mss.
 
-import platform
+import warnings
 from typing import Any
 
-from mss.base import MSSBase
-from mss.exception import ScreenShotError
+from mss.base import MSS
 
 
-def mss(**kwargs: Any) -> MSSBase:
-    """Factory returning a proper MSS class instance.
+def mss(**kwargs: Any) -> MSS:
+    """Create an :class:`mss.MSS` instance for the current platform.
 
-    It detects the platform we are running on
-    and chooses the most adapted mss_class to take
-    screenshots.
-
-    It then proxies its arguments to the class for
-    instantiation.
-
-    .. seealso::
-        - :class:`mss.darwin.MSS`
-        - :class:`mss.linux.MSS`
-        - :class:`mss.windows.MSS`
-        - :func:`mss.linux.mss`
-        - :class:`mss.linux.xshmgetimage.MSS`
-        - :class:`mss.linux.xgetimage.MSS`
-        - :class:`mss.linux.xlib.MSS`
+    .. deprecated:: 10.2.0
+        Use :class:`mss.MSS` directly.
     """
-    os_ = platform.system().lower()
-
-    if os_ == "darwin":
-        from mss import darwin  # noqa: PLC0415
-
-        return darwin.MSS(**kwargs)
-
-    if os_ == "linux":
-        from mss import linux  # noqa: PLC0415
-
-        # Linux has its own factory to choose the backend.
-        return linux.mss(**kwargs)
-
-    if os_ == "windows":
-        from mss import windows  # noqa: PLC0415
-
-        return windows.MSS(**kwargs)
-
-    msg = f"System {os_!r} not (yet?) implemented."
-    raise ScreenShotError(msg)
+    # TODO(jholveck): #493 Remove compatibility deprecation path once 10.x transition period ends.
+    warnings.warn(
+        "mss.mss is deprecated and will be removed in a future release; use mss.MSS instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return MSS(**kwargs)

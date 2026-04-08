@@ -18,6 +18,6 @@ def on_exists(fname: str) -> None:
         file.rename(newfile)
 
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     filename = sct.shot(output="mon-{mon}.png", callback=on_exists)
     print(filename)
