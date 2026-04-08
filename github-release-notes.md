@@ -185,6 +185,12 @@ Most users will **not need to change anything immediately**.
 
 If you are unsure whether you are affected, search your codebase for the names mentioned below.
 
+## Python 3.9 EOL
+
+Python 3.9 reached [end-of-life](https://devguide.python.org/developer-workflow/development-cycle/index.html#end-of-life-branches) on [October 31, 2025](https://devguide.python.org/versions/).  It is no longer receiving any updates, even security updates.
+
+The MSS project has chosen to end support for Python 3.9, in order to focus our resources on current versions of Python.  Python 3.9 is still supported in the MSS 10.2 release, but **MSS 11 will require Python 3.10 or later**.
+
 ## Deprecated Attribute
 
 ### `mss.ScreenShot.raw`
