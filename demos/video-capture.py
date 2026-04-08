@@ -164,7 +164,7 @@ LOGGER = logging.getLogger("video-capture")
 
 def video_capture(
     fps: int,
-    sct: mss.base.MSSBase,
+    sct: mss.MSS,
     monitor: mss.models.Monitor,
     shutdown_requested: Event,
 ) -> Generator[tuple[mss.screenshot.ScreenShot, float], None, None]:
@@ -434,7 +434,7 @@ def main() -> None:
     duration_secs = args.duration_secs
     region_crop_to_multiple_of_two = args.region_crop_to_multiple_of_two
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         if args.region:
             left, top, right, bottom = args.region
             monitor = {

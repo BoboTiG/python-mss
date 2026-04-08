@@ -240,7 +240,7 @@ def main() -> None:
     model_labels = weights.meta["categories"]
     cat_label = model_labels.index("cat")
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         monitor = sct.monitors[1]
 
         # Compute the minimum size, in square pixels, that we'll consider reliable.

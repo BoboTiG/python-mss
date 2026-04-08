@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import platform
+import sys
 import tarfile
 from subprocess import STDOUT, check_call, check_output
 from zipfile import ZipFile
@@ -17,9 +18,9 @@ if platform.system().lower() != "linux":
 pytest.importorskip("build")
 pytest.importorskip("twine")
 
-SDIST = ["python", "-m", "build", "--sdist"]
-WHEEL = ["python", "-m", "build", "--wheel"]
-CHECK = ["twine", "check", "--strict"]
+SDIST = [sys.executable, "-m", "build", "--sdist"]
+WHEEL = [sys.executable, "-m", "build", "--wheel"]
+CHECK = [sys.executable, "-m", "twine", "check", "--strict"]
 
 
 def test_sdist() -> None:
@@ -92,6 +93,9 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/res/monitor-1024x768.raw.zip",
         f"mss-{__version__}/src/tests/test_bgra_to_rgb.py",
         f"mss-{__version__}/src/tests/test_cls_image.py",
+        f"mss-{__version__}/src/tests/test_compat_10_1.py",
+        f"mss-{__version__}/src/tests/test_compat_exports.py",
+        f"mss-{__version__}/src/tests/test_compat_linux_api.py",
         f"mss-{__version__}/src/tests/test_find_monitors.py",
         f"mss-{__version__}/src/tests/test_get_pixels.py",
         f"mss-{__version__}/src/tests/test_gnu_linux.py",

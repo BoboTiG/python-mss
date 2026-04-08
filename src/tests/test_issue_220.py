@@ -26,7 +26,7 @@ def root() -> tkinter.Tk:  # type: ignore[name-defined]
 
 def take_screenshot(*, backend: str) -> None:
     region = {"top": 370, "left": 1090, "width": 80, "height": 390}
-    with mss.mss(backend=backend) as sct:
+    with mss.MSS(backend=backend) as sct:
         sct.grab(region)
 
 

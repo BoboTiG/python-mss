@@ -36,26 +36,26 @@ import mss.tools
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mss.base import MSSBase
+    from mss import MSS
     from mss.screenshot import ScreenShot
 
 
-def grab(sct: MSSBase) -> ScreenShot:
+def grab(sct: MSS) -> ScreenShot:
     monitor = {"top": 144, "left": 80, "width": 1397, "height": 782}
     return sct.grab(monitor)
 
 
-def access_rgb(sct: MSSBase) -> bytes:
+def access_rgb(sct: MSS) -> bytes:
     im = grab(sct)
     return im.rgb
 
 
-def output(sct: MSSBase, filename: str | None = None) -> None:
+def output(sct: MSS, filename: str | None = None) -> None:
     rgb = access_rgb(sct)
     mss.tools.to_png(rgb, (1397, 782), output=filename)
 
 
-def save(sct: MSSBase) -> None:
+def save(sct: MSS) -> None:
     output(sct, filename="screenshot.png")
 
 
@@ -63,7 +63,7 @@ def benchmark(func: Callable) -> None:
     count = 0
     start = time()
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         while (time() - start) % 60 < 10:
             count += 1
             func(sct)

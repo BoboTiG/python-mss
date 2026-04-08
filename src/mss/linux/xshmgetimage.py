@@ -5,7 +5,7 @@ cases. However, it will not work over remote X connections, such as over ssh.
 
 This implementation prefers shared-memory captures for performance and will
 fall back to XGetImage when the MIT-SHM extension is unavailable or fails at
-runtime. The fallback reason is exposed via ``shm_fallback_reason`` to aid
+runtime. The fallback reason is exposed via ``performance_status`` to aid
 debugging.
 
 .. versionadded:: 10.2.0
@@ -20,12 +20,13 @@ from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
 from mss.linux import xcb
-from mss.linux.base import ALL_PLANES, MSSXCBBase
+from mss.linux.base import ALL_PLANES, MSSImplXCBBase
 from mss.linux.xcbhelpers import LIB, XProtoError
 
 if TYPE_CHECKING:
     from mss.models import Monitor
-    from mss.screenshot import ScreenShot
+
+__all__ = ()
 
 
 class ShmStatus(enum.Enum):
@@ -36,16 +37,16 @@ class ShmStatus(enum.Enum):
     UNAVAILABLE = enum.auto()  # We know SHM GetImage is unusable; always use XGetImage.
 
 
-class MSS(MSSXCBBase):
+class MSSImplXShmGetImage(MSSImplXCBBase):
     """XCB backend using XShmGetImage with an automatic XGetImage fallback.
 
     .. seealso::
-        :py:class:`mss.linux.base.MSSXCBBase`
+        :py:class:`mss.linux.base.MSSImplXCBBase`
             Lists constructor parameters.
     """
 
-    def __init__(self, /, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *, display: str | bytes | None = None, with_cursor: bool = False) -> None:
+        super().__init__(display=display, with_cursor=with_cursor)
 
         # These are the objects we need to clean up when we shut down.  They are created in _setup_shm.
         self._memfd: int | None = None
@@ -60,8 +61,6 @@ class MSS(MSSXCBBase):
         #: This will not be ``AVAILABLE`` until at least one capture has succeeded.
         #: It may be set to ``UNAVAILABLE`` sooner.
         self.shm_status: ShmStatus = self._setup_shm()
-        #: If MIT-SHM is unavailable, the reason why (for debugging purposes).
-        self.shm_fallback_reason: str | None = None
 
     def _shm_report_issue(self, msg: str, *args: Any) -> None:
         """Debugging hook for troubleshooting MIT-SHM issues.
@@ -72,7 +71,7 @@ class MSS(MSSXCBBase):
         full_msg = msg
         if args:
             full_msg += " | " + ", ".join(str(arg) for arg in args)
-        self.shm_fallback_reason = full_msg
+        self.performance_status.append(full_msg)
 
     def _setup_shm(self) -> ShmStatus:  # noqa: PLR0911
         assert self.conn is not None  # noqa: S101
@@ -128,9 +127,9 @@ class MSS(MSSXCBBase):
         self._shutdown_shm()
         return ShmStatus.UNAVAILABLE
 
-    def _close_impl(self) -> None:
+    def close(self) -> None:
         self._shutdown_shm()
-        super()._close_impl()
+        super().close()
 
     def _shutdown_shm(self) -> None:
         # It would be nice to also try to tell the server to detach the shmseg, but we might be in an error path
@@ -143,7 +142,7 @@ class MSS(MSSXCBBase):
             os.close(self._memfd)
             self._memfd = None
 
-    def _grab_impl_xshmgetimage(self, monitor: Monitor) -> ScreenShot:
+    def _grab_xshmgetimage(self, monitor: Monitor) -> bytearray:
         if self.conn is None:
             msg = "Cannot take screenshot while the connection is closed"
             raise ScreenShotError(msg)
@@ -189,19 +188,19 @@ class MSS(MSSXCBBase):
         # open memoryview if an exception happens, since that will prevent us from closing self._buf during the stack
         # unwind.
         with memoryview(self._buf) as img_mv:
-            img_data = bytearray(img_mv[:new_size])
+            return bytearray(img_mv[:new_size])
 
-        return self.cls_image(img_data, monitor)
-
-    def _grab_impl(self, monitor: Monitor) -> ScreenShot:
+    def grab(self, monitor: Monitor) -> bytearray:
         """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
         if self.shm_status == ShmStatus.UNAVAILABLE:
-            return super()._grab_impl_xgetimage(monitor)
+            return super()._grab_xgetimage(monitor)
 
         # The usual path is just the next few lines.
         try:
-            rv = self._grab_impl_xshmgetimage(monitor)
-            self.shm_status = ShmStatus.AVAILABLE
+            rv = self._grab_xshmgetimage(monitor)
+            if self.shm_status != ShmStatus.AVAILABLE:
+                self.shm_status = ShmStatus.AVAILABLE
+                self.performance_status.append("MIT-SHM is working correctly.")
         except XProtoError as e:
             if self.shm_status != ShmStatus.UNKNOWN:
                 # We know XShmGetImage works, because it worked earlier.  Reraise the error.
@@ -213,7 +212,7 @@ class MSS(MSSXCBBase):
             # altogether: security-hardened servers, for instance, or some XPrint servers.  But let's make sure, by
             # testing the same request through XGetImage.
             try:
-                rv = super()._grab_impl_xgetimage(monitor)
+                rv = super()._grab_xgetimage(monitor)
             except XProtoError:  # noqa: TRY203
                 # The XGetImage also failed, so we don't know anything about whether XShmGetImage is usable.  Maybe
                 # the user sent an out-of-bounds request.  Maybe it's a security-hardened server.  We're not sure what

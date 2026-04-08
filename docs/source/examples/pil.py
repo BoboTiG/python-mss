@@ -8,7 +8,7 @@ from PIL import Image
 
 import mss
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # Get rid of the first, as it represents the "All in One" monitor:
     for num, monitor in enumerate(sct.monitors[1:], 1):
         # Get raw pixels from the screen

@@ -4,7 +4,6 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-import os
 import platform
 import sys
 import threading
@@ -18,7 +17,7 @@ import pytest
 
 import mss
 from mss.__main__ import main as entry_point
-from mss.base import MSSBase
+from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor
+    from mss.models import Monitor, Monitors
 
 try:
     from datetime import UTC
@@ -37,37 +36,36 @@ except ImportError:
     UTC = timezone.utc
 
 
-class MSS0(MSSBase):
+class MSS0(MSSImplementation):
     """Nothing implemented."""
 
 
-class MSS1(MSSBase):
+class MSS1(MSSImplementation):
     """Only `grab()` implemented."""
 
     def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
         pass
 
 
-class MSS2(MSSBase):
+class MSS2(MSSImplementation):
     """Only `monitor` implemented."""
 
-    @property
-    def monitors(self) -> list:
+    def monitors(self) -> Monitors:
         return []
 
 
 @pytest.mark.parametrize("cls", [MSS0, MSS1, MSS2])
-def test_incomplete_class(cls: type[MSSBase]) -> None:
+def test_incomplete_class(cls: type[MSSImplementation]) -> None:
     with pytest.raises(TypeError):
         cls()
 
 
-def test_bad_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct, pytest.raises(ScreenShotError):
         sct.shot(mon=222)
 
 
-def test_repr(mss_impl: Callable[..., MSSBase]) -> None:
+def test_repr(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss_impl() as sct:
@@ -77,19 +75,19 @@ def test_repr(mss_impl: Callable[..., MSSBase]) -> None:
 
 
 def test_factory_no_backend() -> None:
-    with mss.mss() as sct:
-        assert isinstance(sct, MSSBase)
+    with mss.MSS() as sct:
+        assert isinstance(sct, MSS)
 
 
 def test_factory_current_system(backend: str) -> None:
-    with mss.mss(backend=backend) as sct:
-        assert isinstance(sct, MSSBase)
+    with mss.MSS(backend=backend) as sct:
+        assert isinstance(sct, MSS)
 
 
 def test_factory_unknown_system(backend: str, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(platform, "system", lambda: "Chuck Norris")
     with pytest.raises(ScreenShotError) as exc:
-        mss.mss(backend=backend)
+        mss.MSS(backend=backend)
     monkeypatch.undo()
 
     error = exc.value.args[0]
@@ -145,7 +143,7 @@ class TestEntryPoint:
         for opt in ("-o", "--out"):
             self._run_main(with_cursor, opt, fmt)
             captured = capsys.readouterr()
-            with mss.mss(display=os.getenv("DISPLAY")) as sct:
+            with mss.MSS() as sct:
                 for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
                     filename = Path(fmt.format(mon=mon, **monitor))
                     assert line.endswith(filename.name)
@@ -197,7 +195,7 @@ class TestEntryPoint:
 
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
-@patch("mss.base.MSSBase.monitors", new=[])
+@patch("mss.base.MSS.monitors", new=[])
 @pytest.mark.parametrize("quiet", [False, True])
 def test_entry_point_error(quiet: bool, capsys: pytest.CaptureFixture) -> None:
     def main(*args: str) -> int:
@@ -230,7 +228,7 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     assert "usage: mss" in captured.out
 
 
-def test_grab_with_tuple(mss_impl: Callable[..., MSSBase]) -> None:
+def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
     left = 100
     top = 100
     right = 500
@@ -252,7 +250,7 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSSBase]) -> None:
         assert im.rgb == im2.rgb
 
 
-def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSSBase]) -> None:
+def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         # Remember that rect tuples are PIL-style: (left, top, right, bottom)
         # Negative left/top coordinates are valid for multi-monitor setups
@@ -269,7 +267,7 @@ def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSSBase]) -> None:
             sct.grab(negative_box)
 
 
-def test_grab_with_tuple_percents(mss_impl: Callable[..., MSSBase]) -> None:
+def test_grab_with_tuple_percents(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
         left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
@@ -319,7 +317,7 @@ class TestThreadSafety:
         """Regression test for issue #169."""
 
         def do_grab() -> None:
-            with mss.mss(backend=backend) as sct:
+            with mss.MSS(backend=backend) as sct:
                 sct.grab(sct.monitors[1])
 
         self.run_test(do_grab)
@@ -332,5 +330,5 @@ class TestThreadSafety:
         """
         if backend == "xlib":
             pytest.skip("The xlib backend does not support this ability")
-        with mss.mss(backend=backend) as sct:
+        with mss.MSS(backend=backend) as sct:
             self.run_test(lambda: sct.grab(sct.monitors[1]))

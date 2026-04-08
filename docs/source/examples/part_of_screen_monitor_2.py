@@ -7,7 +7,7 @@ Example to capture part of the screen of the monitor 2.
 import mss
 import mss.tools
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # Get information of monitor 2
     monitor_number = 2
     mon = sct.monitors[monitor_number]
