@@ -1,4 +1,4 @@
-"""Windows GDI-based backend for MSS.
+"""GDI-based backend for MSS on Microsoft Windows.
 
 Uses user32/gdi32 APIs to capture the desktop and enumerate monitors.
 This implementation uses CreateDIBSection for direct memory access to pixel data.
@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import ctypes
 import sys
-import warnings
 from ctypes import POINTER, WINFUNCTYPE, Structure, WinError, _Pointer
 from ctypes.wintypes import (
     BOOL,
@@ -31,7 +30,6 @@ from ctypes.wintypes import (
 )
 from typing import TYPE_CHECKING
 
-from mss.base import MSS as _MSS
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 
@@ -40,25 +38,7 @@ if TYPE_CHECKING:
 
     from mss.models import CFunctionsErrChecked, Monitor, Monitors
 
-__all__ = ("MSS",)
-
-BACKENDS = ["default"]
-
-
-class MSS(_MSS):
-    """Deprecated Windows compatibility constructor.
-
-    Use :class:`mss.MSS` instead.
-    """
-
-    def __init__(self, /, **kwargs: Any) -> None:
-        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
-        warnings.warn(
-            "mss.windows.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(**kwargs)
+__all__ = ("MSSImplWindows",)
 
 
 LPCRECT = POINTER(RECT)  # Actually a const pointer, but ctypes has no const.
@@ -128,7 +108,7 @@ class DISPLAY_DEVICEW(Structure):  # noqa: N801
 MONITORNUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
 
 
-def _errcheck(result: BOOL | _Pointer, func: Callable, arguments: tuple) -> tuple:
+def _errcheck(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
     """If the result is zero, raise an exception."""
     if not result:
         # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes
@@ -183,13 +163,14 @@ CFUNCTIONS: CFunctionsErrChecked = {
 
 
 class MSSImplWindows(MSSImplementation):
-    """Multiple ScreenShots implementation for Microsoft Windows.
+    """Multiple ScreenShots implementation for Microsoft Windows (GDI backend).
 
     This implementation uses CreateDIBSection for direct memory access to pixel data,
     which eliminates the need for GetDIBits. The DIB pixel data is written directly
     to system-managed memory that we can read from.
 
-    This has no Windows-specific constructor parameters.
+    This backend is selected by ``backend="default"`` and has no Windows-specific
+    constructor parameters.
 
     .. seealso::
 
@@ -209,12 +190,8 @@ class MSSImplWindows(MSSImplementation):
         "user32",
     }
 
-    def __init__(self, *, backend: str = "default") -> None:
+    def __init__(self) -> None:
         super().__init__()
-
-        if backend != "default":
-            msg = 'The only valid backend on this platform is "default".'
-            raise ScreenShotError(msg)
 
         # user32 and gdi32 should not be changed after initialization.
         self.user32 = ctypes.WinDLL("user32", use_last_error=True)

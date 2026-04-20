@@ -9,11 +9,20 @@ import threading
 import pytest
 
 import mss
+from mss.exception import ScreenShotError
 
 try:
     import mss.windows
 except ImportError:
     pytestmark = pytest.mark.skip
+
+
+def test_choose_impl_unknown_backend_raises() -> None:
+    """``choose_impl()`` must reject backends that are not registered in ``BACKENDS``."""
+    bogus = "definitely-not-a-real-backend"
+
+    with pytest.raises(ScreenShotError, match=bogus):
+        mss.windows.choose_impl(backend=bogus)
 
 
 def test_region_caching() -> None:
