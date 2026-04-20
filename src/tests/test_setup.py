@@ -84,7 +84,8 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/mss/py.typed",
         f"mss-{__version__}/src/mss/screenshot.py",
         f"mss-{__version__}/src/mss/tools.py",
-        f"mss-{__version__}/src/mss/windows.py",
+        f"mss-{__version__}/src/mss/windows/__init__.py",
+        f"mss-{__version__}/src/mss/windows/gdi.py",
         f"mss-{__version__}/src/tests/__init__.py",
         f"mss-{__version__}/src/tests/bench_bgra2rgb.py",
         f"mss-{__version__}/src/tests/bench_general.py",
@@ -157,5 +158,6 @@ def test_wheel() -> None:
         "mss/py.typed",
         "mss/screenshot.py",
         "mss/tools.py",
-        "mss/windows.py",
+        "mss/windows/__init__.py",
+        "mss/windows/gdi.py",
     ]

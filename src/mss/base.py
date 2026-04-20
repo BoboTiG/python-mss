@@ -158,9 +158,10 @@ def _choose_impl(**kwargs: Any) -> MSSImplementation:
         return choose_impl_linux(**kwargs)
 
     if os_ == "windows":
-        from mss.windows import MSSImplWindows  # noqa: PLC0415
+        from mss.windows import choose_impl as choose_impl_windows  # noqa: PLC0415
 
-        return MSSImplWindows(**kwargs)
+        # Windows has its own factory to choose the backend.
+        return choose_impl_windows(**kwargs)
 
     msg = f"System {os_!r} not (yet?) implemented."
     raise ScreenShotError(msg)
