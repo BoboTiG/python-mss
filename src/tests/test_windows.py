@@ -10,10 +10,10 @@ import pytest
 
 import mss
 from mss.exception import ScreenShotError
-from mss.windows.gdi import MSSImplGdi
 
 try:
     import mss.windows
+    from mss.windows.gdi import MSSImplGdi
 except ImportError:
     pytestmark = pytest.mark.skip
 
