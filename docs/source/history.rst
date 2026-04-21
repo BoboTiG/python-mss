@@ -1,0 +1,50 @@
+History
+=======
+
+.. toctree::
+
+   release-history/v10.2.0.md
+   release-history/v10.1.0.md
+   release-history/v10.0.0.md
+   release-history/v9.0.2.md
+   release-history/v9.0.1.md
+   release-history/v9.0.0.md
+   release-history/v8.0.3.md
+   release-history/v8.0.2.md
+   release-history/v8.0.1.md
+   release-history/v8.0.0.md
+   release-history/v7.0.1.md
+   release-history/v7.0.0.md
+   release-history/v6.1.0.md
+   release-history/v6.0.0.md
+   release-history/v5.1.0.md
+   release-history/v5.0.0.md
+   release-history/v4.0.2.md
+   release-history/v4.0.1.md
+   release-history/v4.0.0.md
+   release-history/v3.3.2.md
+   release-history/v3.3.1.md
+   release-history/v3.3.0.md
+   release-history/v3.2.1.md
+   release-history/v3.2.0.md
+   release-history/v3.1.2.md
+   release-history/v3.1.1.md
+   release-history/v3.1.0.md
+   release-history/v3.0.1.md
+   release-history/v3.0.0.md
+   release-history/v2.0.22.md
+   release-history/v2.0.18.md
+   release-history/v2.0.0.md
+   release-history/v1.0.2.md
+   release-history/v1.0.1.md
+   release-history/v1.0.0.md
+   release-history/v0.1.1.md
+   release-history/v0.1.0.md
+   release-history/v0.0.8.md
+   release-history/v0.0.7.md
+   release-history/v0.0.6.md
+   release-history/v0.0.5.md
+   release-history/v0.0.4.md
+   release-history/v0.0.3.md
+   release-history/v0.0.2.md
+   release-history/v0.0.1.md

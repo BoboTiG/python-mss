@@ -24,11 +24,6 @@ WHEEL = [sys.executable, "-m", "build", "--wheel"]
 CHECK = [sys.executable, "-m", "twine", "check", "--strict"]
 
 
-def build_release_history_files() -> list[str]:
-    prefix = f"mss-{__version__}"
-    return [f"{prefix}/{path.as_posix()}" for path in sorted(Path("docs/source/release-history").glob("*.md"))]
-
-
 def test_sdist() -> None:
     output = check_output(SDIST, stderr=STDOUT, text=True)
     file = f"mss-{__version__}.tar.gz"
@@ -40,6 +35,7 @@ def test_sdist() -> None:
     with tarfile.open(f"dist/{file}", mode="r:gz") as fh:
         files = sorted(fh.getnames())
 
+    changelogs = sorted((Path(__file__).parent.parent.parent / "docs" / "source" / "release-history").glob("*.md"))
     assert files == [
         f"mss-{__version__}/.gitignore",
         f"mss-{__version__}/CONTRIBUTORS.md",
@@ -65,7 +61,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/docs/source/examples/pil_pixels.py",
         f"mss-{__version__}/docs/source/index.rst",
         f"mss-{__version__}/docs/source/installation.rst",
-        *build_release_history_files(),
+        *[f"mss-{__version__}/docs/source/release-history/{changelog.name}" for changelog in changelogs],
         f"mss-{__version__}/docs/source/support.rst",
         f"mss-{__version__}/docs/source/usage.rst",
         f"mss-{__version__}/docs/source/versioning.rst",
