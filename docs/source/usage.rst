@@ -91,7 +91,8 @@ If you want to choose a particular backend, you can pass the ``backend`` keyword
     with MSS(backend="xgetimage") as sct:
         ...
 
-Currently, only the GNU/Linux implementation has multiple backends.  These are described in their own section below.
+GNU/Linux has multiple backend implementations. Windows also exposes the named ``gdi`` backend, which is currently the
+same as ``default``. The GNU/Linux backends are described in their own section below.
 
 
 GNU/Linux
@@ -152,7 +153,7 @@ Or via direct call from Python::
                           the output file name
     -b, --backend BACKEND
                           platform-specific backend to use
-                          (Linux: default/xlib/xgetimage/xshmgetimage; macOS/Windows: default)
+                          (Linux: default/xlib/xgetimage/xshmgetimage; macOS: default; Windows: default/gdi)
     --with-cursor         include the cursor
     -q, --quiet           do not print created files
     -v, --version         show program's version number and exit
