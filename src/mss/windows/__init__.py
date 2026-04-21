@@ -11,7 +11,7 @@ from mss.exception import ScreenShotError
 
 __all__ = ["MSS"]
 
-BACKENDS = ["default"]
+BACKENDS = ["default", "gdi"]
 
 
 class MSS(_MSS):
