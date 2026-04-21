@@ -103,8 +103,6 @@ skip-excluded-dirs = true
 
 [tool.hatch.build.targets.sdist]
 only-include = [
-  "CHANGELOG.md",
-  "CHANGES.md",
   "CONTRIBUTORS.md",
   "docs/source",
   "src",

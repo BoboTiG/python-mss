@@ -5,6 +5,7 @@ Source: https://github.com/BoboTiG/python-mss.
 import platform
 import sys
 import tarfile
+from pathlib import Path
 from subprocess import STDOUT, check_call, check_output
 from zipfile import ZipFile
 
@@ -34,10 +35,9 @@ def test_sdist() -> None:
     with tarfile.open(f"dist/{file}", mode="r:gz") as fh:
         files = sorted(fh.getnames())
 
+    changelogs = sorted((Path(__file__).parent.parent.parent / "docs" / "source" / "release-history").glob("*.md"))
     assert files == [
         f"mss-{__version__}/.gitignore",
-        f"mss-{__version__}/CHANGELOG.md",
-        f"mss-{__version__}/CHANGES.md",
         f"mss-{__version__}/CONTRIBUTORS.md",
         f"mss-{__version__}/LICENSE.txt",
         f"mss-{__version__}/PKG-INFO",
@@ -61,6 +61,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/docs/source/examples/pil_pixels.py",
         f"mss-{__version__}/docs/source/index.rst",
         f"mss-{__version__}/docs/source/installation.rst",
+        *[f"mss-{__version__}/docs/source/release-history/{changelog.name}" for changelog in changelogs],
         f"mss-{__version__}/docs/source/support.rst",
         f"mss-{__version__}/docs/source/usage.rst",
         f"mss-{__version__}/docs/source/versioning.rst",
