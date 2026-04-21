@@ -117,6 +117,7 @@ def benchmark_raw_bitblt() -> None:
         # Force region setup
         sct.grab(monitor)
 
+        assert isinstance(sct._impl, mss.windows.gdi.MSSImplGdi)
         srcdc = sct._impl._srcdc
         memdc = sct._impl._memdc
 
