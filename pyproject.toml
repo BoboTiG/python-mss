@@ -60,7 +60,7 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "https://github.com/BoboTiG/python-mss"
 Documentation = "https://python-mss.readthedocs.io"
-Changelog = "https://github.com/BoboTiG/python-mss/blob/main/CHANGELOG.md"
+Changelog = "https://python-mss.readthedocs.io/latest/history.html"
 Source = "https://github.com/BoboTiG/python-mss"
 Sponsor = "https://github.com/sponsors/BoboTiG"
 Tracker = "https://github.com/BoboTiG/python-mss/issues"

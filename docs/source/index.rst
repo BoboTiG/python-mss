@@ -44,7 +44,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
 |   api                   |
 |   developers            |
 |   versioning            |
-|   changelog             |
+|   history               |
 |   where                 |
 +-------------------------+
 
