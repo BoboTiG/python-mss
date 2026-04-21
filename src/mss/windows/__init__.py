@@ -9,10 +9,6 @@ from mss.base import MSS as _MSS
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 
-# Re-export the GDI implementation so existing code that references
-# ``mss.windows.MSSImplWindows`` keeps working.
-from mss.windows.gdi import MSSImplWindows
-
 __all__ = ["MSS"]
 
 BACKENDS = ["default"]
@@ -42,22 +38,26 @@ def choose_impl(backend: str = "default", **kwargs: Any) -> MSSImplementation:
 
     :param backend: Backend selector. Valid values:
 
-        - ``"default"`` (default): GDI-based backend using ``BitBlt`` and
-          ``CreateDIBSection`` for direct memory access to pixel data.
+        - ``"default"`` or ``"gdi"`` (default): GDI-based backend using
+          ``BitBlt`` and ``CreateDIBSection`` for direct memory access to pixel
+          data.
 
-        .. versionadded:: 10.3.0 Prior to this version, Windows had a single
-            implementation selected through :class:`mss.windows.MSS`.
+        .. versionadded:: 10.2.0 Prior to this version, this didn't exist:
+            Windows had a single implementation selected through
+            :class:`mss.windows.MSS`.
 
     :param kwargs: Additional keyword arguments passed to the backend class.
     :returns: An MSS backend implementation.
 
-    .. versionadded:: 10.3.0 Prior to this version, this didn't exist:
+    .. versionadded:: 10.2.0 Prior to this version, this didn't exist:
           Windows had a single implementation selected through
           :class:`mss.windows.MSS`.
     """
     backend = backend.lower()
-    if backend == "default":
-        return MSSImplWindows(**kwargs)
+    if backend in {"default", "gdi"}:
+        from mss.windows.gdi import MSSImplGdi  # noqa: PLC0415
+
+        return MSSImplGdi(**kwargs)
     assert backend not in BACKENDS  # noqa: S101
     msg = f"Backend {backend!r} not (yet?) implemented."
     raise ScreenShotError(msg)
