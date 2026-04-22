@@ -42,10 +42,6 @@ def choose_impl(backend: str = "default", **kwargs: Any) -> MSSImplementation:
           ``BitBlt`` and ``CreateDIBSection`` for direct memory access to pixel
           data.
 
-        .. versionadded:: 10.2.0 Prior to this version, this didn't exist:
-            Windows had a single implementation selected through
-            :class:`mss.windows.MSS`.
-
     :param kwargs: Additional keyword arguments passed to the backend class.
     :returns: An MSS backend implementation.
 
