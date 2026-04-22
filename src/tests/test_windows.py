@@ -13,6 +13,7 @@ from mss.exception import ScreenShotError
 
 try:
     import mss.windows
+    from mss.windows.gdi import MSSImplGdi
 except ImportError:
     pytestmark = pytest.mark.skip
 
@@ -25,11 +26,18 @@ def test_choose_impl_unknown_backend_raises() -> None:
         mss.windows.choose_impl(backend=bogus)
 
 
+def test_factory_gdi_backend() -> None:
+    """``mss.MSS()`` and ``mss.MSS(backend="gdi")`` must select the GDI backend on Windows."""
+    with mss.MSS() as default_sct, mss.MSS(backend="gdi") as gdi_sct:
+        assert type(default_sct._impl) is MSSImplGdi
+        assert type(gdi_sct._impl) is MSSImplGdi
+
+
 def test_region_caching() -> None:
     """The region to grab is cached, ensure this is well-done."""
     with mss.MSS() as sct:
         assert isinstance(sct, mss.MSS)
-        assert isinstance(sct._impl, mss.windows.MSSImplWindows)
+        assert isinstance(sct._impl, MSSImplGdi)
 
         # Grab the area 1
         region1 = {"top": 0, "left": 0, "width": 200, "height": 200}
@@ -55,8 +63,8 @@ def test_region_not_caching() -> None:
 
     assert isinstance(grab1, mss.MSS)  # For Mypy
     assert isinstance(grab2, mss.MSS)  # For Mypy
-    assert isinstance(grab1._impl, mss.windows.MSSImplWindows)
-    assert isinstance(grab2._impl, mss.windows.MSSImplWindows)
+    assert isinstance(grab1._impl, MSSImplGdi)
+    assert isinstance(grab2._impl, MSSImplGdi)
 
     region1 = {"top": 0, "left": 0, "width": 100, "height": 100}
     region2 = {"top": 0, "left": 0, "width": 50, "height": 1}

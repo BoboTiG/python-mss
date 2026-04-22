@@ -110,7 +110,6 @@ def benchmark_raw_bitblt() -> None:
     captureblt = 0x40000000
 
     with mss.MSS() as sct:
-        assert isinstance(sct._impl, mss.windows.MSSImplWindows)
         monitor = sct.monitors[1]
         width, height = monitor["width"], monitor["height"]
         left, top = monitor["left"], monitor["top"]
@@ -118,6 +117,7 @@ def benchmark_raw_bitblt() -> None:
         # Force region setup
         sct.grab(monitor)
 
+        assert isinstance(sct._impl, mss.windows.gdi.MSSImplGdi)
         srcdc = sct._impl._srcdc
         memdc = sct._impl._memdc
 

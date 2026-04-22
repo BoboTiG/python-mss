@@ -78,11 +78,11 @@ dev = [
   "twine==6.2.0",
 ]
 docs = [
-  "myst-parser==5.0.0",
-  "shibuya==2026.1.9",
-  "sphinx==9.1.0",
-  "sphinx-copybutton==0.5.2",
-  "sphinx-new-tab-link==0.8.1",
+  "myst-parser==5.0.0 ; python_version >= '3.12'",
+  "shibuya==2026.1.9 ; python_version >= '3.12'",
+  "sphinx==9.1.0 ; python_version >= '3.12'",
+  "sphinx-copybutton==0.5.2 ; python_version >= '3.12'",
+  "sphinx-new-tab-link==0.8.1 ; python_version >= '3.12'",
 ]
 tests = [
   "numpy==2.4.3 ; sys_platform == 'linux' and python_version == '3.13'",

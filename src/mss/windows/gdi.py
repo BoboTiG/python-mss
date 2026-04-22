@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
     from mss.models import CFunctionsErrChecked, Monitor, Monitors
 
-__all__ = ("MSSImplWindows",)
+__all__ = ()
 
 
 LPCRECT = POINTER(RECT)  # Actually a const pointer, but ctypes has no const.
@@ -162,7 +162,7 @@ CFUNCTIONS: CFunctionsErrChecked = {
 }
 
 
-class MSSImplWindows(MSSImplementation):
+class MSSImplGdi(MSSImplementation):
     """Multiple ScreenShots implementation for Microsoft Windows (GDI backend).
 
     This implementation uses CreateDIBSection for direct memory access to pixel data,
