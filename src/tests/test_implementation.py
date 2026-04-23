@@ -131,7 +131,7 @@ class TestEntryPoint:
             filename.unlink()
 
         assert filename is not None
-        for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"]):
+        for opts in zip(["-m 1", "--monitor=1"], ["-q", "--quiet"], strict=False):
             self._run_main(with_cursor, *opts)
             captured = capsys.readouterr()
             assert not captured.out
@@ -144,7 +144,10 @@ class TestEntryPoint:
             self._run_main(with_cursor, opt, fmt)
             captured = capsys.readouterr()
             with mss.MSS() as sct:
-                for mon, (monitor, line) in enumerate(zip(sct.monitors[1:], captured.out.splitlines()), 1):
+                for mon, (monitor, line) in enumerate(
+                    zip(sct.monitors[1:], captured.out.splitlines(), strict=False),
+                    1,
+                ):
                     filename = Path(fmt.format(mon=mon, **monitor))
                     assert line.endswith(filename.name)
                     assert filename.is_file()
