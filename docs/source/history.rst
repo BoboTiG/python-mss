@@ -3,7 +3,7 @@ History
 
 .. toctree::
 
-   release-history/unreleased.md
+   release-history/v11.0.0.md
    release-history/v10.2.0.md
    release-history/v10.1.0.md
    release-history/v10.0.0.md
