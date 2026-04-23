@@ -13,7 +13,7 @@ Pixel = tuple[int, int, int]
 Pixels = list[tuple[Pixel, ...]]
 
 if TYPE_CHECKING:
-    from typing import Callable
+    from collections.abc import Callable
 
     CFunctions = dict[str, tuple[str, list[Any], Any]]
     CFunctionsErrChecked = dict[str, tuple[str, list[Any], Any, Callable | None]]

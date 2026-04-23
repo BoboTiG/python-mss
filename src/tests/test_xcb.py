@@ -13,12 +13,12 @@ from ctypes import (
     sizeof,
 )
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock
 from weakref import finalize
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
 import pytest
 

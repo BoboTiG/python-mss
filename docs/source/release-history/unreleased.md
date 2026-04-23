@@ -4,3 +4,12 @@ This is **version 11.0.0 of Python-MSS**, the ultra-fast cross-platform multiple
 
 Release date: 2026-xx-x
 
+---
+
+## Highlights
+
+### Python 3.9 EOL
+
+Python 3.9 reached [end-of-life](https://devguide.python.org/developer-workflow/development-cycle/index.html#end-of-life-branches) on [October 31, 2025](https://devguide.python.org/versions/).  It is no longer receiving any updates, even security updates.
+
+The MSS project has chosen to end support for Python 3.9, in order to focus our resources on current versions of Python.

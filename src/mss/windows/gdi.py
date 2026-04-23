@@ -34,7 +34,8 @@ from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 
 if TYPE_CHECKING:
-    from typing import Any, Callable
+    from collections.abc import Callable
+    from typing import Any
 
     from mss.models import CFunctionsErrChecked, Monitor, Monitors
 
