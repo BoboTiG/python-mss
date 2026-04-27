@@ -70,7 +70,7 @@ mss = "mss.__main__:main"
 
 [project.optional-dependencies]
 dev = [
-  "build==1.4.3",
+  "build==1.4.4",
   "lxml==6.1.0",
   "mypy==1.19.1",
   "ruff==0.15.12",
