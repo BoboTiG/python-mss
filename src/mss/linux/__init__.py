@@ -7,21 +7,6 @@ from mss.base import MSS as _MSS
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 
-# TODO(jholveck): #493 Remove these legacy symbol re-exports after 10.x transition period.
-from mss.linux.xlib import (  # noqa: F401
-    CFUNCTIONS,
-    PLAINMASK,
-    ZPIXMAP,
-    Display,
-    XErrorEvent,
-    XFixesCursorImage,
-    XImage,
-    XRRCrtcInfo,
-    XRRModeInfo,
-    XRRScreenResources,
-    XWindowAttributes,
-)
-
 __all__ = ["MSS"]
 
 BACKENDS = ["default", "xlib", "xgetimage", "xshmgetimage"]
@@ -34,9 +19,9 @@ class MSS(_MSS):
     """
 
     def __init__(self, /, **kwargs: Any) -> None:
-        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
+        # TODO(jholveck): #517 Remove compatibility path once 10.x transition period ends.
         warnings.warn(
-            "mss.linux.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
+            "mss.linux.MSS is deprecated and will be removed in a future release; use mss.MSS instead",
             DeprecationWarning,
             stacklevel=2,
         )

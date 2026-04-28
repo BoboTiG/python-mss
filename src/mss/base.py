@@ -546,7 +546,3 @@ class MSS:
         .. versionadded:: 8.0.0
         """
         return self._impl.with_cursor
-
-
-# TODO(jholveck): #493 Remove compatibility alias after 10.x transition period.
-MSSBase = MSS

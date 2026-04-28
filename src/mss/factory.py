@@ -13,7 +13,7 @@ def mss(**kwargs: Any) -> MSS:
     .. deprecated:: 10.2.0
         Use :class:`mss.MSS` directly.
     """
-    # TODO(jholveck): #493 Remove compatibility deprecation path once 10.x transition period ends.
+    # TODO(jholveck): #517 Remove compatibility path once 10.x transition period ends.
     warnings.warn(
         "mss.mss is deprecated and will be removed in a future release; use mss.MSS instead",
         DeprecationWarning,
