@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor, Monitors
+    from mss.models import Monitor, Monitors, Size
 
 try:
     from datetime import UTC
@@ -64,8 +64,8 @@ class MSSCloseRaises(MSSImplementation):
     def cursor(self) -> None:
         pass
 
-    def grab(self, monitor: Monitor) -> None:
-        pass
+    def grab(self, _: Monitor) -> bytearray | tuple[bytearray, Size]:
+        return bytearray()
 
     def monitors(self) -> Monitors:
         return []
