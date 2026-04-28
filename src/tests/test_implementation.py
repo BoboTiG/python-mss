@@ -54,10 +54,53 @@ class MSS2(MSSImplementation):
         return []
 
 
+class MSSCloseRaises(MSSImplementation):
+    """Implementation whose cleanup fails."""
+
+    def __init__(self, close_error: Exception) -> None:
+        super().__init__()
+        self.close_error = close_error
+
+    def cursor(self) -> None:
+        pass
+
+    def grab(self, monitor: Monitor) -> None:
+        pass
+
+    def monitors(self) -> Monitors:
+        return []
+
+    def close(self) -> None:
+        raise self.close_error
+
+
 @pytest.mark.parametrize("cls", [MSS0, MSS1, MSS2])
 def test_incomplete_class(cls: type[MSSImplementation]) -> None:
     with pytest.raises(TypeError):
         cls()
+
+
+def test_context_manager_keeps_body_exception_when_close_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    body_error = RuntimeError("body failed")
+    close_error = RuntimeError("close failed")
+    impl = MSSCloseRaises(close_error)
+    monkeypatch.setattr("mss.base._choose_impl", lambda **_kwargs: impl)
+
+    with pytest.raises(RuntimeError, match="body failed") as exc, MSS():
+        raise body_error
+
+    assert exc.value is body_error
+
+
+def test_context_manager_reports_close_failure_after_clean_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    close_error = RuntimeError("close failed")
+    impl = MSSCloseRaises(close_error)
+    monkeypatch.setattr("mss.base._choose_impl", lambda **_kwargs: impl)
+
+    with pytest.raises(RuntimeError, match="close failed") as exc, MSS():
+        pass
+
+    assert exc.value is close_error
 
 
 def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:

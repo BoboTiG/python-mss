@@ -109,23 +109,39 @@ class DISPLAY_DEVICEW(Structure):  # noqa: N801
 MONITORNUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
 
 
-def _errcheck(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
-    """If the result is zero, raise an exception."""
+def _check_result(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
+    """Raise if ``result`` is 0/NULL for functions that do not document GetLastError."""
     if not result:
-        # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes
-        # instead.
-        winerror = WinError()
         details = {
             "func": func.__name__,
             "args": arguments,
-            "error_code": winerror.winerror,
-            "error_msg": winerror.strerror,
+            "error_msg": "The function returned a failure value.",
         }
-        if winerror.winerror == 0:
-            # Some functions return NULL/0 on failure without setting last error.  (Example: CreateDIBSection
-            # with an invalid HDC.)
-            msg = f"Windows graphics function failed (no error provided): {func.__name__}"
+        msg = f"Windows graphics function returned failure: {func.__name__}"
+        raise ScreenShotError(msg, details=details)
+    return arguments
+
+
+def _check_result_with_last_error(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
+    """Raise if ``result`` is 0/NULL for functions that document GetLastError."""
+    if not result:
+        error_code = ctypes.get_last_error()
+        details = {
+            "func": func.__name__,
+            "args": arguments,
+            "error_code": error_code,
+        }
+        if error_code == 0:
+            # Do not use WinError(0) here: its message is "The operation completed successfully", which makes the
+            # failure look like a success.
+            details["error_msg"] = (
+                "The function returned a failure value, but no Windows last-error code was available."
+            )
+            msg = f"Windows graphics function returned failure but no last-error code was available: {func.__name__}"
             raise ScreenShotError(msg, details=details)
+        # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes instead.
+        winerror = WinError(error_code)
+        details["error_msg"] = winerror.strerror
         msg = f"Windows graphics function failed: {func.__name__}: {winerror.strerror}"
         raise ScreenShotError(msg, details=details) from winerror
     return arguments
@@ -138,15 +154,20 @@ def _errcheck(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctionsErrChecked = {
     # Syntax: cfunction: (attr, argtypes, restype, errcheck)
-    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _errcheck),
-    "CreateCompatibleDC": ("gdi32", [HDC], HDC, _errcheck),
+    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _check_result_with_last_error),
+    "CreateCompatibleDC": ("gdi32", [HDC], HDC, _check_result),
     # CreateDIBSection: ppvBits (4th param) receives a pointer to the DIB pixel data.
     # hSection is NULL and offset is 0 to have the system allocate the memory.
-    "CreateDIBSection": ("gdi32", [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD], HBITMAP, _errcheck),
-    "DeleteDC": ("gdi32", [HDC], HDC, _errcheck),
-    "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _errcheck),
+    "CreateDIBSection": (
+        "gdi32",
+        [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD],
+        HBITMAP,
+        _check_result_with_last_error,
+    ),
+    "DeleteDC": ("gdi32", [HDC], BOOL, _check_result),
+    "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _check_result),
     "EnumDisplayDevicesW": ("user32", [POINTER(WORD), DWORD, POINTER(DISPLAY_DEVICEW), DWORD], BOOL, None),
-    "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _errcheck),
+    "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _check_result),
     # GdiFlush flushes the calling thread's current batch of GDI operations.
     # This ensures DIB memory is fully updated before reading.
     "GdiFlush": ("gdi32", [], BOOL, None),
@@ -154,12 +175,12 @@ CFUNCTIONS: CFunctionsErrChecked = {
     # parameter is valid but the value is actually 0 (e.g., SM_CLEANBOOT on a normal boot).  Thus, we do not attach an
     # errcheck function here.
     "GetSystemMetrics": ("user32", [INT], INT, None),
-    "GetMonitorInfoW": ("user32", [HMONITOR, POINTER(MONITORINFOEXW)], BOOL, _errcheck),
-    "GetWindowDC": ("user32", [HWND], HDC, _errcheck),
-    "ReleaseDC": ("user32", [HWND, HDC], INT, _errcheck),
+    "GetMonitorInfoW": ("user32", [HMONITOR, POINTER(MONITORINFOEXW)], BOOL, _check_result),
+    "GetWindowDC": ("user32", [HWND], HDC, _check_result),
+    "ReleaseDC": ("user32", [HWND, HDC], INT, _check_result),
     # SelectObject returns NULL on error the way we call it.  If it's called to select a region, it returns HGDI_ERROR
     # on error.
-    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ, _errcheck),
+    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ, _check_result),
 }
 
 
