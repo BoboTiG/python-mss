@@ -20,6 +20,7 @@ from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
+from tests.thread_helpers import run_threads
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -346,17 +347,8 @@ class TestThreadSafety:
 
             checkpoint[threading.current_thread()] = True
 
-        checkpoint: dict = {}
-        t1 = threading.Thread(target=record)
-        t2 = threading.Thread(target=record)
-
-        t1.start()
-        time.sleep(0.5)
-        t2.start()
-
-        t1.join()
-        t2.join()
-
+        checkpoint: dict[threading.Thread, bool] = {}
+        run_threads(record, record, start_delay=0.5)
         assert len(checkpoint) == 2
 
     def test_issue_169(self, backend: str) -> None:

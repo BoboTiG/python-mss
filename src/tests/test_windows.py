@@ -5,12 +5,12 @@ Source: https://github.com/BoboTiG/python-mss.
 from __future__ import annotations
 
 import ctypes
-import threading
 
 import pytest
 
 import mss
 from mss.exception import ScreenShotError
+from tests.thread_helpers import run_threads
 
 try:
     import mss.windows
@@ -157,12 +157,7 @@ def test_thread_safety() -> None:
     The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
     # Let thread 1 finished ahead of thread 2
-    thread1 = threading.Thread(target=run_child_thread, args=(30,))
-    thread2 = threading.Thread(target=run_child_thread, args=(50,))
-    thread1.start()
-    thread2.start()
-    thread1.join()
-    thread2.join()
+    run_threads(lambda: run_child_thread(30), lambda: run_child_thread(50))
 
 
 def run_child_thread_bbox(loops: int, bbox: tuple[int, int, int, int]) -> None:
@@ -176,9 +171,7 @@ def test_thread_safety_regions() -> None:
 
     The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
-    thread1 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 100, 100)))
-    thread2 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 50, 1)))
-    thread1.start()
-    thread2.start()
-    thread1.join()
-    thread2.join()
+    run_threads(
+        lambda: run_child_thread_bbox(100, (0, 0, 100, 100)),
+        lambda: run_child_thread_bbox(100, (0, 0, 50, 1)),
+    )
