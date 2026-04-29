@@ -145,6 +145,25 @@ def test_region_not_caching() -> None:
     assert dib1 != dib2
 
 
+def test_monitors_without_grab() -> None:
+    """Regression test for issue #509.
+
+    Constructing ``MSS`` and reading ``sct.monitors`` must not call
+    ``GetWindowDC(0)``.  Device contexts are only needed for ``grab()``.
+    """
+    with mss.MSS() as sct:
+        impl = sct._impl
+        assert isinstance(impl, MSSImplGdi)
+
+        # DCs are no longer instance attributes.
+        assert not hasattr(impl, "_srcdc")
+        assert not hasattr(impl, "_memdc")
+
+        monitors = sct.monitors
+        assert len(monitors) >= 1
+        assert "width" in monitors[0]
+
+
 def run_child_thread(loops: int) -> None:
     for _ in range(loops):
         with mss.MSS() as sct:  # New sct for every loop

@@ -205,9 +205,7 @@ class MSSImplGdi(MSSImplementation):
         "_dib",
         "_dib_array",
         "_dib_bits",
-        "_memdc",
         "_region_width_height",
-        "_srcdc",
         "gdi32",
         "user32",
     }
@@ -226,8 +224,6 @@ class MSSImplGdi(MSSImplementation):
         self._dib: HBITMAP | None = None
         self._dib_bits: LPVOID = LPVOID()  # Pointer to DIB pixel data
         self._dib_array: ctypes.Array[ctypes.c_char] | None = None  # Cached array view of DIB memory
-        self._srcdc = self.user32.GetWindowDC(0)
-        self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -243,18 +239,9 @@ class MSSImplGdi(MSSImplementation):
         self._bmi = bmi
 
     def close(self) -> None:
-        # Clean-up
         if self._dib:
             self.gdi32.DeleteObject(self._dib)
             self._dib = None
-
-        if self._memdc:
-            self.gdi32.DeleteDC(self._memdc)
-            self._memdc = None
-
-        if self._srcdc:
-            self.user32.ReleaseDC(0, self._srcdc)
-            self._srcdc = None
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -357,9 +344,10 @@ class MSSImplGdi(MSSImplementation):
     def grab(self, monitor: Monitor, /) -> bytearray:
         """Retrieve all pixels from a monitor using CreateDIBSection.
 
-        CreateDIBSection creates a DIB with system-managed memory backing,
-        allowing BitBlt to write directly to memory we can read. This eliminates
-        the need for a separate GetDIBits call.
+        Device contexts (srcdc / memdc) are acquired and released within each
+        call.  This avoids holding GDI resources across threads and allows
+        ``MSS()`` construction to succeed even when ``GetWindowDC(0)`` would
+        fail (locked screen, UAC, RDP).  See issue #509.
 
         Note on biHeight: A bottom-up DIB is specified by setting the height to a
         positive number, while a top-down DIB is specified by setting the height
@@ -367,47 +355,55 @@ class MSSImplGdi(MSSImplementation):
         https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
         https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createdibsection
         """
-        srcdc, memdc = self._srcdc, self._memdc
         gdi = self.gdi32
-        width, height = monitor["width"], monitor["height"]
+        srcdc = self.user32.GetWindowDC(0)
+        try:
+            memdc = gdi.CreateCompatibleDC(srcdc)
+            try:
+                width, height = monitor["width"], monitor["height"]
 
-        if self._region_width_height != (width, height):
-            self._region_width_height = (width, height)
-            self._bmi.bmiHeader.biWidth = width
-            self._bmi.bmiHeader.biHeight = -height  # Negative for top-down DIB
+                if self._region_width_height != (width, height):
+                    self._region_width_height = (width, height)
+                    self._bmi.bmiHeader.biWidth = width
+                    self._bmi.bmiHeader.biHeight = -height  # Negative for top-down DIB
 
-            if self._dib:
-                gdi.DeleteObject(self._dib)
-                self._dib = None
+                    if self._dib:
+                        gdi.DeleteObject(self._dib)
+                        self._dib = None
 
-            # CreateDIBSection creates the DIB and returns a pointer to the pixel data
-            self._dib_bits = LPVOID()
-            self._dib = gdi.CreateDIBSection(
-                memdc,
-                self._bmi,
-                DIB_RGB_COLORS,
-                ctypes.byref(self._dib_bits),
-                None,  # hSection = NULL (system allocates memory)
-                0,  # offset = 0
-            )
-            gdi.SelectObject(memdc, self._dib)
+                    # CreateDIBSection creates the DIB and returns a pointer to the pixel data
+                    self._dib_bits = LPVOID()
+                    self._dib = gdi.CreateDIBSection(
+                        memdc,
+                        self._bmi,
+                        DIB_RGB_COLORS,
+                        ctypes.byref(self._dib_bits),
+                        None,  # hSection = NULL (system allocates memory)
+                        0,  # offset = 0
+                    )
 
-            # Create a ctypes array type that maps directly to the DIB memory.
-            # This avoids the overhead of ctypes.string_at() creating an intermediate bytes object.
-            size = width * height * 4
-            array_type = ctypes.c_char * size
-            self._dib_array = ctypes.cast(self._dib_bits, POINTER(array_type)).contents
+                    # Create a ctypes array type that maps directly to the DIB memory.
+                    # This avoids the overhead of ctypes.string_at() creating an intermediate bytes object.
+                    size = width * height * 4
+                    array_type = ctypes.c_char * size
+                    self._dib_array = ctypes.cast(self._dib_bits, POINTER(array_type)).contents
 
-        # BitBlt copies screen content directly into the DIB's memory
-        gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
+                # Select the cached DIB into the per-call memdc so BitBlt writes into it.
+                gdi.SelectObject(memdc, self._dib)
 
-        # Flush GDI operations to ensure DIB memory is fully updated before reading.
-        # This ensures the BitBlt has completed before we access the memory.
-        gdi.GdiFlush()
+                # BitBlt copies screen content directly into the DIB's memory
+                gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
 
-        # Read directly from DIB memory via the cached array view
-        assert self._dib_array is not None  # noqa: S101  for type checker
-        return bytearray(self._dib_array)
+                # Flush GDI operations to ensure DIB memory is fully updated before reading.
+                gdi.GdiFlush()
+
+                # Read directly from DIB memory via the cached array view
+                assert self._dib_array is not None  # noqa: S101  for type checker
+                return bytearray(self._dib_array)
+            finally:
+                gdi.DeleteDC(memdc)
+        finally:
+            self.user32.ReleaseDC(0, srcdc)
 
     def cursor(self) -> None:
         """Retrieve all cursor data. Pixels have to be RGB."""
