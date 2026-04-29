@@ -4,16 +4,17 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-import threading
+import ctypes
 
 import pytest
 
 import mss
 from mss.exception import ScreenShotError
+from tests.thread_helpers import run_threads
 
 try:
     import mss.windows
-    from mss.windows.gdi import MSSImplGdi
+    from mss.windows.gdi import MSSImplGdi, _check_result, _check_result_with_last_error
 except ImportError:
     pytestmark = pytest.mark.skip
 
@@ -31,6 +32,70 @@ def test_factory_gdi_backend() -> None:
     with mss.MSS() as default_sct, mss.MSS(backend="gdi") as gdi_sct:
         assert type(default_sct._impl) is MSSImplGdi
         assert type(gdi_sct._impl) is MSSImplGdi
+
+
+def test_check_result_with_last_error_zero_is_not_reported_as_success() -> None:
+    """A failed Windows API call may leave ``GetLastError()`` set to 0."""
+
+    def fake_func() -> int:
+        return 0
+
+    previous_last_error = ctypes.get_last_error()
+    try:
+        ctypes.set_last_error(0)
+        with pytest.raises(ScreenShotError, match="returned failure but no last-error code was available") as exc:
+            _check_result_with_last_error(0, fake_func, ())
+    finally:
+        ctypes.set_last_error(previous_last_error)
+
+    assert exc.value.details["error_code"] == 0
+    assert exc.value.details["error_msg"] == (
+        "The function returned a failure value, but no Windows last-error code was available."
+    )
+
+
+def test_check_result_with_last_error_reports_error_code() -> None:
+    """A failed Windows API call should report a non-zero ``GetLastError()`` value."""
+
+    def fake_func() -> int:
+        return 0
+
+    error_code = 8
+    previous_last_error = ctypes.get_last_error()
+    try:
+        ctypes.set_last_error(error_code)
+        with pytest.raises(ScreenShotError, match="Windows graphics function failed: fake_func:") as exc:
+            _check_result_with_last_error(0, fake_func, ())
+    finally:
+        ctypes.set_last_error(previous_last_error)
+
+    assert exc.value.details["func"] == "fake_func"
+    assert exc.value.details["args"] == ()
+    assert exc.value.details["error_code"] == error_code
+    assert exc.value.details["error_msg"]
+    assert isinstance(exc.value.__cause__, OSError)
+    assert exc.value.__cause__.winerror == error_code
+
+
+def test_check_result_ignores_stale_last_error() -> None:
+    """Some Windows APIs do not document ``GetLastError()`` diagnostics."""
+
+    def fake_func() -> None:
+        pass
+
+    previous_last_error = ctypes.get_last_error()
+    try:
+        ctypes.set_last_error(8)
+        with pytest.raises(ScreenShotError, match="Windows graphics function returned failure: fake_func") as exc:
+            _check_result(0, fake_func, ())
+    finally:
+        ctypes.set_last_error(previous_last_error)
+
+    assert exc.value.details == {
+        "func": "fake_func",
+        "args": (),
+        "error_msg": "The function returned a failure value.",
+    }
 
 
 def test_region_caching() -> None:
@@ -92,12 +157,7 @@ def test_thread_safety() -> None:
     The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
     # Let thread 1 finished ahead of thread 2
-    thread1 = threading.Thread(target=run_child_thread, args=(30,))
-    thread2 = threading.Thread(target=run_child_thread, args=(50,))
-    thread1.start()
-    thread2.start()
-    thread1.join()
-    thread2.join()
+    run_threads(lambda: run_child_thread(30), lambda: run_child_thread(50))
 
 
 def run_child_thread_bbox(loops: int, bbox: tuple[int, int, int, int]) -> None:
@@ -111,9 +171,7 @@ def test_thread_safety_regions() -> None:
 
     The following code will throw a ScreenShotError exception if thread-safety is not guaranteed.
     """
-    thread1 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 100, 100)))
-    thread2 = threading.Thread(target=run_child_thread_bbox, args=(100, (0, 0, 50, 1)))
-    thread1.start()
-    thread2.start()
-    thread1.join()
-    thread2.join()
+    run_threads(
+        lambda: run_child_thread_bbox(100, (0, 0, 100, 100)),
+        lambda: run_child_thread_bbox(100, (0, 0, 50, 1)),
+    )

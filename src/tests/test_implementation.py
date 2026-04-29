@@ -20,12 +20,13 @@ from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
+from tests.thread_helpers import run_threads
 
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor, Monitors
+    from mss.models import Monitor, Monitors, Size
 
 try:
     from datetime import UTC
@@ -54,10 +55,53 @@ class MSS2(MSSImplementation):
         return []
 
 
+class MSSCloseRaises(MSSImplementation):
+    """Implementation whose cleanup fails."""
+
+    def __init__(self, close_error: Exception) -> None:
+        super().__init__()
+        self.close_error = close_error
+
+    def cursor(self) -> None:
+        pass
+
+    def grab(self, _: Monitor) -> bytearray | tuple[bytearray, Size]:
+        return bytearray()
+
+    def monitors(self) -> Monitors:
+        return []
+
+    def close(self) -> None:
+        raise self.close_error
+
+
 @pytest.mark.parametrize("cls", [MSS0, MSS1, MSS2])
 def test_incomplete_class(cls: type[MSSImplementation]) -> None:
     with pytest.raises(TypeError):
         cls()
+
+
+def test_context_manager_keeps_body_exception_when_close_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    body_error = RuntimeError("body failed")
+    close_error = RuntimeError("close failed")
+    impl = MSSCloseRaises(close_error)
+    monkeypatch.setattr("mss.base._choose_impl", lambda **_kwargs: impl)
+
+    with pytest.raises(RuntimeError, match="body failed") as exc, MSS():
+        raise body_error
+
+    assert exc.value is body_error
+
+
+def test_context_manager_reports_close_failure_after_clean_exit(monkeypatch: pytest.MonkeyPatch) -> None:
+    close_error = RuntimeError("close failed")
+    impl = MSSCloseRaises(close_error)
+    monkeypatch.setattr("mss.base._choose_impl", lambda **_kwargs: impl)
+
+    with pytest.raises(RuntimeError, match="close failed") as exc, MSS():
+        pass
+
+    assert exc.value is close_error
 
 
 def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
@@ -303,17 +347,8 @@ class TestThreadSafety:
 
             checkpoint[threading.current_thread()] = True
 
-        checkpoint: dict = {}
-        t1 = threading.Thread(target=record)
-        t2 = threading.Thread(target=record)
-
-        t1.start()
-        time.sleep(0.5)
-        t2.start()
-
-        t1.join()
-        t2.join()
-
+        checkpoint: dict[threading.Thread, bool] = {}
+        run_threads(record, record, start_delay=0.5)
         assert len(checkpoint) == 2
 
     def test_issue_169(self, backend: str) -> None:

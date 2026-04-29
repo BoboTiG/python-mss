@@ -16,6 +16,7 @@ from mss.tools import to_png
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from types import TracebackType
 
     from mss.models import Monitor, Monitors, Size
 
@@ -260,9 +261,21 @@ class MSS:
         """For the cool call `with MSS() as mss:`."""
         return self
 
-    def __exit__(self, *_: object) -> None:
+    def __exit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
         """For the cool call `with MSS() as mss:`."""
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            # This extra work is needed so that exceptions generated during __exit__
+            # will not swallow exceptions that caused the __exit__ to be called
+            if exc_value is not None:
+                return
+            raise
 
     def close(self) -> None:
         """Clean up.
