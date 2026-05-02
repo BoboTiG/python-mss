@@ -145,6 +145,32 @@ def test_region_not_caching() -> None:
     assert dib1 != dib2
 
 
+def test_monitors_work_when_getwindowdc_fails() -> None:
+    """Regression test for issue #509.
+
+    ``GetWindowDC(0)`` can fail (locked screen, UAC, RDP, GDI pressure).
+    Enumerating monitors must still work because it only needs
+    ``EnumDisplayMonitors`` / ``GetMonitorInfoW``.
+    """
+    with mss.MSS() as sct:
+        impl = sct._impl
+        assert isinstance(impl, MSSImplGdi)
+
+        # Simulate GetWindowDC failing — grab() should raise, but
+        # monitors must remain accessible.
+        original = impl.user32.GetWindowDC
+        impl.user32.GetWindowDC = lambda _hwnd: 0  # type: ignore[attr-defined]
+        try:
+            monitors = sct.monitors
+            assert len(monitors) >= 1
+            assert "width" in monitors[0]
+
+            with pytest.raises(ScreenShotError):
+                sct.grab(monitors[1])
+        finally:
+            impl.user32.GetWindowDC = original  # type: ignore[attr-defined]
+
+
 def run_child_thread(loops: int) -> None:
     for _ in range(loops):
         with mss.MSS() as sct:  # New sct for every loop
