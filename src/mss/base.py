@@ -18,16 +18,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from types import TracebackType
 
-    from mss.models import Monitor, Monitors, Size
+    from typing_extensions import Self
 
-    # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
-    try:
-        from typing import Self
-    except ImportError:
-        try:
-            from typing_extensions import Self
-        except ImportError:
-            Self = Any  # type: ignore[assignment]
+    from mss.models import Monitor, Monitors, Size
 
 try:
     from datetime import UTC
@@ -460,8 +453,8 @@ class MSS:
         if not overlap:
             return screenshot
 
-        screen_raw = screenshot.raw
-        cursor_raw = cursor.raw
+        screen_raw = screenshot._raw  # noqa: SLF001
+        cursor_raw = cursor.bgra
 
         cy, cy2 = (cy - y) * 4, (cy2 - y2) * 4
         cx, cx2 = (cx - x) * 4, (cx2 - x2) * 4

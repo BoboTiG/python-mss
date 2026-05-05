@@ -281,7 +281,7 @@ def main() -> None:
             # We transfer the image from MSS to PyTorch via a Pillow Image.  Faster approaches exist (see
             # screenshot_to_tensor), but PIL is more readable.  The bulk of the time in this program is spent doing
             # the AI work, so we just use the most convenient mechanism.
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
             # We explicitly convert it to a tensor here, even though Torchvision can also convert it in the preprocess
             # step.  This is so that we send it to the GPU before we do the preprocessing: PIL Images are always on

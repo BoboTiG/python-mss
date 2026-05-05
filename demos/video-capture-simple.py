@@ -129,7 +129,7 @@ def main() -> None:
                 # use PIL: you can create an Image from the screenshot, and create a VideoFrame from that.  That said,
                 # if you want to boost the fps rate by about 50%, check out the full demo, and search for
                 # from_numpy_buffer.
-                img = Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
+                img = Image.frombuffer("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
                 frame = av.VideoFrame.from_image(img)
 
                 # When we encode frames, we get back a list of packets.  Often, we'll get no packets at first: the

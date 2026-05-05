@@ -123,7 +123,7 @@ PIL
 ===
 
 You can use the Python Image Library (aka Pillow) to do whatever you want with raw pixels.
-This is an example using `frombytes() <http://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.frombytes>`_:
+This is an example using `frombuffer() <http://pillow.readthedocs.io/en/latest/reference/Image.html#PIL.Image.frombuffer>`_:
 
 .. literalinclude:: examples/pil.py
     :lines: 7-
@@ -188,7 +188,7 @@ Different possibilities to convert raw BGRA values to RGB::
 
 
     def numpy_flip(im):
-        """ Most efficient Numpy version as of now. """
+        """ Most efficient Numpy version as of MSS 10.1. """
         frame = numpy.array(im, dtype=numpy.uint8)
         return numpy.flip(frame[:, :, :3], 2).tobytes()
 
@@ -198,14 +198,14 @@ Different possibilities to convert raw BGRA values to RGB::
         return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
 
 
-    def pil_frombytes(im):
+    def pil_frombuffer(im):
         """ Efficient Pillow version. """
-        return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
+        return Image.frombuffer('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
 
 
     with mss.MSS() as sct:
         im = sct.grab(sct.monitors[1])
-        rgb = pil_frombytes(im)
+        rgb = pil_frombuffer(im)
         ...
 
 .. versionadded:: 3.2.0
