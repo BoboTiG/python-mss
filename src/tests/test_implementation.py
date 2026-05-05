@@ -114,7 +114,7 @@ def test_repr(mss_impl: Callable[..., MSS]) -> None:
     expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss_impl() as sct:
         img = sct.grab(box)
-    ref = ScreenShot(bytearray(b"42"), expected_box)
+    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_box)
     assert repr(img) == repr(ref)
 
 

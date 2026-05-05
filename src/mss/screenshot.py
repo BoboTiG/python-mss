@@ -12,31 +12,42 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Any
 
+    from typing_extensions import Buffer
+
 
 class ScreenShot:
     """Screenshot object.
 
     .. note::
-
-        A better name would have  been *Image*, but to prevent collisions
+        A better name would have been *Image*, but to prevent collisions
         with PIL.Image, it has been decided to use *ScreenShot*.
     """
 
-    __slots__ = {"__pixels", "__rgb", "pos", "raw", "size"}
+    __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
-    def __init__(self, data: bytearray, monitor: Monitor, /, *, size: Size | None = None) -> None:
+    def __init__(self, data: Buffer, monitor: Monitor, /, *, size: Size | None = None) -> None:
+        self.__bgra: memoryview | None = None
         self.__pixels: Pixels | None = None
-        self.__rgb: bytes | None = None
-
-        #: Bytearray of the raw BGRA pixels retrieved by ctypes
-        #: OS independent implementations.
-        self.raw: bytearray = data
+        self.__rgb: memoryview | None = None
 
         #: NamedTuple of the screenshot coordinates.
         self.pos: Pos = Pos(monitor["left"], monitor["top"])
 
         #: NamedTuple of the screenshot size.
         self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
+
+        # Buffer of the raw BGRA pixels, retrieved by the
+        # platform-specific implementations.  This is kept read-write
+        # if it was originally so, in order for _merge to work.
+        # However, it should be made read-only before returning to the
+        # user (via bgra), so that the cached values for __pixels and
+        # __rgb aren't potentially inconsistent if the user changes
+        # data.
+        self._raw: memoryview = memoryview(data)
+        assert self._raw.nbytes == self.size.width * self.size.height * 4, (  # noqa: S101
+            "Data size does not match screenshot dimensions."
+        )
+        assert self._raw.format == "B", "Data format is not bytes."  # noqa: S101
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} pos={self.left},{self.top} size={self.width}x{self.height}>"
@@ -63,28 +74,38 @@ class ScreenShot:
             "version": 3,
             "shape": (self.height, self.width, 4),
             "typestr": "|u1",
-            "data": self.raw,
+            "data": self.bgra,
         }
 
     @classmethod
-    def from_size(cls: type[ScreenShot], data: bytearray, width: int, height: int, /) -> ScreenShot:
+    def from_size(cls: type[ScreenShot], data: Buffer, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
         monitor = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, monitor)
 
     @property
-    def bgra(self) -> bytes:
+    def bgra(self) -> memoryview:
         """BGRx values from the BGRx raw pixels.
 
-        The format is a bytes object with BGRxBGRx... sequence.  A specific
-        pixel can be accessed as
+        The format is a memoryview object of bytes.  These are in a
+        BGRxBGRx... sequence.  A specific pixel can be accessed as
         ``bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
+        The memoryview is read-only.  PyTorch will issue a warning
+        when given a read-only buffer, but will still work.  However,
+        actually modifying the data may cause undefined behavior.
+
         .. note::
-            While the name is ``bgra``, the alpha channel may or may not be
-            valid.
+            While the name is ``bgra``, the alpha channel may or may
+            not be valid.
         """
-        return bytes(self.raw)
+        # Making a read-only copy of a memoryview is very cheap.  But
+        # we still always return the same memoryview: somebody using a
+        # property may expect it to be identical (under the `is`
+        # operator) every time.
+        if self.__bgra is None:
+            self.__bgra = self._raw.toreadonly()
+        return self.__bgra
 
     @property
     def pixels(self) -> Pixels:
@@ -93,8 +114,8 @@ class ScreenShot:
         The format is a list of rows.  Each row is a list of pixels.
         Each pixel is a tuple of (R, G, B).
         """
-        if not self.__pixels:
-            rgb_tuples: Iterator[Pixel] = zip(self.raw[2::4], self.raw[1::4], self.raw[::4], strict=False)
+        if self.__pixels is None:
+            rgb_tuples: Iterator[Pixel] = zip(self._raw[2::4], self._raw[1::4], self._raw[::4], strict=False)
             self.__pixels = list(zip(*[iter(rgb_tuples)] * self.width, strict=False))
 
         return self.__pixels
@@ -111,20 +132,29 @@ class ScreenShot:
             raise ScreenShotError(msg) from exc
 
     @property
-    def rgb(self) -> bytes:
+    def rgb(self) -> memoryview:
         """Compute RGB values from the BGRA raw pixels.
 
-        The format is a bytes object with BGRBGR... sequence.  A specific
-        pixel can be accessed as
-        ``rgb[(y * width + x) * 3:(y * width + x) * 3 + 3]``.
+        The format is a memoryview object of bytes.  These are in a
+        RGBRGB... sequence.  A specific pixel can be accessed as
+        ``rgb[(y * width + x) * 4:(y * width + x) * 4 + 4].``
+
+        The memoryview is read-only.  PyTorch will issue a warning
+        when given a read-only buffer, but will still work.  However,
+        actually modifying the data may cause undefined behavior.
+
+        :: note::
+            This is a computed property.  If possible, using the
+            :py:attr:`bgra` property directly is usually more
+            efficient.
         """
-        if not self.__rgb:
+        if self.__rgb is None:
             rgb = bytearray(self.height * self.width * 3)
-            raw = self.raw
+            raw = self._raw
             rgb[::3] = raw[2::4]
             rgb[1::3] = raw[1::4]
             rgb[2::3] = raw[::4]
-            self.__rgb = bytes(rgb)
+            self.__rgb = memoryview(rgb).toreadonly()
 
         return self.__rgb
 

@@ -75,6 +75,7 @@ dev = [
   "mypy==1.20.2",
   "ruff==0.15.12",
   "twine==6.2.0",
+  "typing_extensions==4.15.0",
 ]
 docs = [
   "myst-parser==5.0.0 ; python_version >= '3.12'",
