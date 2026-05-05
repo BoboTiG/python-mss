@@ -12,7 +12,6 @@ import pytest
 
 import mss
 from mss import MSS
-from mss.base import MSSBase
 
 
 class PlatformModule(Protocol):
@@ -81,25 +80,14 @@ def _platform_factory_from_import_style() -> type[MSS]:
         _factory_from_module_style,
     ],
 )
-def test_mss_factory_documented_styles_return_mssbase(factory_getter: MSSFactoryGetter) -> None:
+def test_mss_factory_documented_styles_return_mss(factory_getter: MSSFactoryGetter) -> None:
     factory = factory_getter()
 
     with pytest.warns(DeprecationWarning, match=r"^mss\.mss is deprecated"):
         context = factory()
 
     with context as sct:
-        assert isinstance(sct, MSSBase)
         assert isinstance(sct, MSS)
-
-
-def test_documented_style_platform_import_mss() -> None:
-    mss_factory = _platform_factory_from_import_style()
-
-    with pytest.warns(DeprecationWarning, match=r"^mss\..*\.MSS is deprecated"):
-        context = mss_factory()
-
-    with context as sct:
-        assert isinstance(sct, MSSBase)
 
 
 def test_direct_mss_constructor_has_no_deprecation_warning() -> None:
@@ -110,11 +98,6 @@ def test_direct_mss_constructor_has_no_deprecation_warning() -> None:
     assert not [warning for warning in captured if issubclass(warning.category, DeprecationWarning)]
 
 
-def test_mssbase_alias_stays_compatible() -> None:
-    # 10.1-compatible typing/import path.
-    assert MSSBase is MSS
-
-
 def test_platform_mss_constructor_works_on_current_platform() -> None:
     mss_platform = _platform_module()
 
@@ -123,7 +106,6 @@ def test_platform_mss_constructor_works_on_current_platform() -> None:
 
     with sct_context as sct:
         assert isinstance(sct, mss_platform.MSS)
-        assert isinstance(sct, MSSBase)
         assert isinstance(sct, MSS)
 
 
@@ -140,7 +122,6 @@ def test_factory_and_platform_constructor_are_compatible_types() -> None:
         assert type(from_factory) is MSS
         assert type(from_platform) is mss_platform.MSS
         assert isinstance(from_platform, MSS)
-        assert isinstance(from_platform, MSSBase)
 
 
 def test_deprecated_factory_accepts_documented_kwargs() -> None:
@@ -164,4 +145,4 @@ def test_deprecated_factory_accepts_documented_kwargs() -> None:
         context = mss.mss(**kwargs)
 
     with context as sct:
-        assert isinstance(sct, MSSBase)
+        assert isinstance(sct, MSS)

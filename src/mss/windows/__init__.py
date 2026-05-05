@@ -21,9 +21,9 @@ class MSS(_MSS):
     """
 
     def __init__(self, /, **kwargs: Any) -> None:
-        # TODO(jholveck): #493 Remove compatibility constructor after 10.x transition period.
+        # TODO(jholveck): #517 Remove compatibility path once 10.x transition period ends.
         warnings.warn(
-            "mss.windows.MSS is deprecated and will be removed in 11.0; use mss.MSS instead",
+            "mss.windows.MSS is deprecated and will be removed in a future release; use mss.MSS instead",
             DeprecationWarning,
             stacklevel=2,
         )
