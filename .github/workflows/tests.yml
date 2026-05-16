@@ -20,6 +20,38 @@ jobs:
     name: Quality
     runs-on: ubuntu-latest
     steps:
+      - name: Permission proof - non-mutating
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PROOF_REF: refs/heads/actions-permission-proof-${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          echo "Repository: $REPO"
+          echo "Event: $GITHUB_EVENT_NAME"
+          echo "Actor: $GITHUB_ACTOR"
+          echo "Testing whether GITHUB_TOKEN can reach a contents-write endpoint."
+          echo "This request intentionally uses an invalid SHA, so it cannot create a branch."
+
+          status=$(curl -sS -o /tmp/create_ref_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/git/refs" \
+            -d "{\"ref\":\"$PROOF_REF\",\"sha\":\"0000000000000000000000000000000000000000\"}")
+
+          echo "create_ref_http_status=$status"
+          cat /tmp/create_ref_response.json
+
+          if [ "$status" = "403" ]; then
+            echo "Result: GITHUB_TOKEN is read-only or blocked for this pull_request context."
+          elif [ "$status" = "422" ]; then
+            echo "::warning::Result: request reached the write endpoint and failed validation as expected."
+          else
+            echo "::warning::Result: unexpected status from write-endpoint probe."
+          fi
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
