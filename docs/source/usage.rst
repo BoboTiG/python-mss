@@ -52,6 +52,21 @@ This is a much better usage, memory efficient::
 
 Also, it is a good thing to save the MSS instance inside an attribute of your class and calling it when needed.
 
+Direct Screenshot Buffers
+=========================
+
+On supported platforms, MSS can expose screenshot data directly from operating system buffers instead of copying it into
+a separate Python-owned buffer. This reduces memory copying and can improve performance when processing screenshots with
+libraries that support the Python buffer protocol, such as NumPy and OpenCV.
+
+This optimization is enabled automatically and does not require any changes to application code.
+
+Requirements:
+
+- Python 3.12 or later
+- GNU/Linux
+
+Support for additional operating systems is planned.
 
 Multithreading
 ==============

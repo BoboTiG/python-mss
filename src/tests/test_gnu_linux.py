@@ -4,9 +4,9 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from __future__ import annotations
 
-import builtins
 import ctypes.util
 import platform
+import threading
 from ctypes import CFUNCTYPE, POINTER, _Pointer, c_int
 from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, NonCallableMock, patch
@@ -14,8 +14,8 @@ from unittest.mock import Mock, NonCallableMock, patch
 import pytest
 
 import mss
+import mss.buffer
 import mss.linux
-import mss.linux.xcb
 import mss.linux.xlib
 from mss import MSS
 from mss.exception import ScreenShotError
@@ -323,30 +323,176 @@ def test_shm_fallback() -> None:
         assert sct._impl.shm_status == mss.linux.xshmgetimage.ShmStatus.UNAVAILABLE
 
 
-def test_exception_while_holding_memoryview(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Verify that an exception at a particular point doesn't prevent cleanup.
+def test_finalizing_buffer_releases_shm_slot(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that the returned buffer releases its SHM slot when finalized."""
 
-    The particular point is the window when the XShmGetImage's mmapped
-    buffer has a memoryview still outstanding, and the pixel data is
-    being copied into a bytearray.  This can take a few milliseconds.
-    """
-    # Force an exception during bytearray(img_mv)
-    real_bytearray = builtins.bytearray
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        release_spy = spy_and_patch(monkeypatch, sct._impl, "_release_shm_slot")
 
-    def boom(*args: list, **kwargs: dict[str, Any]) -> bytearray:
-        # Only explode when called with the memoryview (the code path we care about).
-        if len(args) > 0 and isinstance(args[0], memoryview):
-            # We still need to eliminate args from the stack frame, just like the fix.
-            del args, kwargs
+        screenshot = sct.grab(sct.monitors[0])
+
+        if mss.buffer.FAST_PATH_AVAILABLE:
+            assert release_spy.call_count == 0
+
+        screenshot._raw.release()
+
+    release_spy.assert_called_once()
+
+
+def test_exception_while_wrapping_finalizing_buffer_releases_shm_slot(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify wrapping failures still release the in-use SHM slot."""
+
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        release_spy = spy_and_patch(monkeypatch, sct._impl, "_release_shm_slot")
+
+        def boom(_data: memoryview, _finalizer: Any) -> memoryview:
             msg = "Boom!"
             raise RuntimeError(msg)
-        return real_bytearray(*args, **kwargs)
 
-    # We have to be careful about the order in which we catch things.  If we were to catch and discard the exception
-    # before the MSS object closes, it won't trigger the bug.  That's why we have the pytest.raises outside the
-    # mss.MSS block.  In addition, we do as much as we can before patching bytearray, to limit its scope.
-    with pytest.raises(RuntimeError, match="Boom!"), mss.MSS(backend="xshmgetimage") as sct:  # noqa: PT012
-        monitor = sct.monitors[0]
         with monkeypatch.context() as m:
-            m.setattr(builtins, "bytearray", boom)
-            sct.grab(monitor)
+            m.setattr(mss.linux.xshmgetimage, "finalizing_buffer", boom)
+            with pytest.raises(RuntimeError, match="Boom!"):
+                sct.grab(sct.monitors[0])
+
+        release_spy.assert_called_once()
+
+
+@pytest.mark.skipif(
+    not mss.buffer.FAST_PATH_AVAILABLE,
+    reason="Tests post-3.12 behavior: finalization after close",
+)
+def test_finalizer_after_close_destroys_shm_slot(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that a live buffer finalized after close destroys its SHM slot."""
+
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        destroy_spy = spy_and_patch(monkeypatch, sct._impl, "_destroy_shm_slot")
+
+        screenshot = sct.grab(sct.monitors[0])
+
+    destroyed_before_release = destroy_spy.call_count
+
+    screenshot._raw.release()
+
+    assert destroy_spy.call_count == destroyed_before_release + 1
+
+
+@pytest.mark.skipif(
+    not mss.buffer.FAST_PATH_AVAILABLE,
+    reason="Tests post-3.12 behavior: threaded release during close",
+)
+def test_release_thread_during_close_does_not_detach(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify release from another thread during close does not call shm_detach."""
+
+    disconnect_started = threading.Event()
+    allow_disconnect = threading.Event()
+    release_started = threading.Event()
+
+    real_disconnect = mss.linux.xcb.disconnect
+    detach_spy = Mock(wraps=mss.linux.xcb.shm_detach)
+
+    def blocking_disconnect(conn: Any) -> None:
+        disconnect_started.set()
+        assert allow_disconnect.wait(timeout=5), "Timed out waiting to unblock disconnect"
+        real_disconnect(conn)
+
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        screenshot = sct.grab(sct.monitors[0])
+
+        monkeypatch.setattr(mss.linux.xcb, "disconnect", blocking_disconnect)
+        monkeypatch.setattr(mss.linux.xcb, "shm_detach", detach_spy)
+
+        close_error: list[BaseException] = []
+        release_error: list[BaseException] = []
+
+        def close_target() -> None:
+            try:
+                sct.close()
+            except BaseException as exc:  # noqa: BLE001
+                close_error.append(exc)
+
+        def release_target() -> None:
+            try:
+                release_started.set()
+                screenshot._raw.release()
+            except BaseException as exc:  # noqa: BLE001
+                release_error.append(exc)
+
+        close_thread = threading.Thread(target=close_target)
+        release_thread = threading.Thread(target=release_target)
+
+        close_thread.start()
+        assert disconnect_started.wait(timeout=5), "Timed out waiting for close to reach disconnect"
+
+        release_thread.start()
+        assert release_started.wait(timeout=5), "Timed out waiting for release thread to start"
+
+        allow_disconnect.set()
+
+        close_thread.join(timeout=5)
+        release_thread.join(timeout=5)
+
+        assert not close_thread.is_alive(), "close thread did not finish"
+        assert not release_thread.is_alive(), "release thread did not finish"
+        assert not close_error
+        assert not release_error
+        detach_spy.assert_not_called()
+
+
+@pytest.mark.skipif(
+    mss.buffer.FAST_PATH_AVAILABLE,
+    reason="Covers behavior only present prior to Python 3.12",
+)
+def test_finalizer_before_close_releases_shm_slot_immediately(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify that the slow path finalizes the SHM slot before close."""
+
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        release_spy = spy_and_patch(monkeypatch, sct._impl, "_release_shm_slot")
+        destroy_spy = spy_and_patch(monkeypatch, sct._impl, "_destroy_shm_slot")
+
+        screenshot = sct.grab(sct.monitors[0])
+
+        # In slow-path environments, the buffer is finalized and released (returned to the pool) immediately.
+        assert release_spy.call_count == 1
+        assert destroy_spy.call_count == 0
+
+    # At this point, the buffer should have been destroyed at close, since the slow path made a copy.
+    assert release_spy.call_count == 1
+    assert destroy_spy.call_count == 1
+
+    screenshot._raw.release()
+
+    assert release_spy.call_count == 1
+    assert destroy_spy.call_count == 1
+
+
+@pytest.mark.skipif(not mss.buffer.FAST_PATH_AVAILABLE, reason="Tests post-3.12 behavior: dynamic pool growth")
+def test_dynamic_shm_growth_allocation_failure_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify dynamic pool growth failure raises instead of switching backends."""
+
+    with mss.MSS(backend="xshmgetimage") as sct:
+        assert isinstance(sct._impl, mss.linux.xshmgetimage.MSSImplXShmGetImage)  # For Mypy
+        monitor = sct.monitors[0]
+
+        first = sct.grab(monitor)
+        second = sct.grab(monitor)
+
+        # Ensure we are in normal SHM operation before inducing a growth failure.
+        assert sct._impl.shm_status == mss.linux.xshmgetimage.ShmStatus.AVAILABLE
+
+        def fail_growth(_size: int) -> Any:
+            msg = "Cannot allocate MIT-SHM buffer"
+            raise ScreenShotError(msg)
+
+        with monkeypatch.context() as m:
+            m.setattr(sct._impl, "_create_shm_slot", fail_growth)
+            with pytest.raises(ScreenShotError, match="Cannot allocate MIT-SHM buffer"):
+                sct.grab(monitor)
+
+        # Keep references alive until after the third grab attempt.
+        assert first.width > 0
+        assert second.width > 0
