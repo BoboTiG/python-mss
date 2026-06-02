@@ -102,9 +102,7 @@ class Connection(Structure):
 
 class XID(c_uint32):
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, XID):
-            return self.value == other.value
-        return NotImplemented
+        return self.value == other.value if isinstance(other, XID) else NotImplemented
 
     def __hash__(self) -> int:
         return hash(self.value)
@@ -431,7 +429,7 @@ class LibContainer:
 
     def initialize(self, callbacks: Iterable[Callable[[], None]] = frozenset()) -> None:  # noqa: PLR0915
         # We'll need a couple of generated types, but we have to load them late, since xcbgen requires this library.
-        from .xcbgen import Setup  # noqa: PLC0415
+        from mss.linux.xcbgen import Setup  # noqa: PLC0415
 
         with self._lock:
             if self.initialized:

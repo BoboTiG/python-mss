@@ -59,7 +59,7 @@ def pil_frombytes(im: ScreenShot) -> bytes:
 
 
 def benchmark() -> None:
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         im = sct.grab(sct.monitors[0])
         for func in (
             pil_frombytes,

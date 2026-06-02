@@ -3,18 +3,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
-from mss.base import MSSBase
+from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.linux import xcb
+from mss.linux.xcb import LIB
+from mss.screenshot import ScreenShot
 from mss.tools import parse_edid
-
-from . import xcb
-from .xcb import LIB
 
 if TYPE_CHECKING:
     from ctypes import Array
 
-    from mss.models import Monitor
-    from mss.screenshot import ScreenShot
+    from mss.models import Monitor, Monitors
+
+__all__ = ()
 
 SUPPORTED_DEPTHS = {24, 32}
 SUPPORTED_BITS_PER_PIXEL = 32
@@ -24,7 +25,7 @@ SUPPORTED_BLUE_MASK = 0x0000FF
 ALL_PLANES = 0xFFFFFFFF  # XCB doesn't define AllPlanes
 
 
-class MSSXCBBase(MSSBase):
+class MSSImplXCBBase(MSSImplementation):
     """Base class for XCB-based screenshot implementations.
 
     Provides common XCB initialization and monitor detection logic that can be
@@ -37,14 +38,13 @@ class MSSXCBBase(MSSBase):
     :type display: str | bytes | None
 
     .. seealso::
-        :py:class:`mss.base.MSSBase`
+        :py:class:`mss.MSS`
             Lists other parameters.
     """
 
-    def __init__(self, /, **kwargs: Any) -> None:  # noqa: PLR0912
-        super().__init__(**kwargs)
+    def __init__(self, *, display: str | bytes | None = None, with_cursor: bool = False) -> None:  # noqa: PLR0912
+        super().__init__(with_cursor=with_cursor)
 
-        display = kwargs.get("display", b"")
         if not display:
             display = None
         elif isinstance(display, str):
@@ -56,6 +56,8 @@ class MSSXCBBase(MSSBase):
         # Get the connection setup information that was included when we connected.
         xcb_setup = xcb.get_setup(self.conn)
         screens = xcb.setup_roots(xcb_setup)
+        # pref_screen_num is the screen object corresponding to the screen number, e.g., 1 if DISPLAY=":0.1".  It's
+        # almost always the only screen (screen 0); nobody uses separate screens (in the X sense) anymore.
         self.pref_screen = screens[pref_screen_num]
         self.root = self.drawable = self.pref_screen.root
 
@@ -127,28 +129,31 @@ class MSSXCBBase(MSSBase):
             msg = "Only visuals with BGRx ordering are supported"
             raise ScreenShotError(msg)
 
-    def _close_impl(self) -> None:
+    def close(self) -> None:
         """Close the XCB connection."""
         if self.conn is not None:
             xcb.disconnect(self.conn)
         self.conn = None
 
-    def _monitors_impl(self) -> None:
+    def monitors(self) -> Monitors:
         """Populate monitor geometry information.
 
-        Detects and appends monitor rectangles to ``self._monitors``. The first
-        entry represents the entire X11 root screen; subsequent entries, when
-        available, represent individual monitors reported by XRandR.
+        Detects and returns monitor rectangles. The first entry
+        represents the entire X11 root screen; subsequent entries,
+        when available, represent individual monitors reported by
+        XRandR.
         """
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
 
-        self._append_root_monitor()
+        monitors = []
+
+        monitors.append(self._root_monitor())
 
         randr_version = self._randr_get_version()
         if randr_version is None or randr_version < (1, 2):
-            return
+            return monitors
 
         # XRandR terminology (very abridged, but enough for this code):
         # - X screen / framebuffer: the overall drawable area for this root.
@@ -166,24 +171,24 @@ class MSSXCBBase(MSSBase):
         edid_atom = self._randr_get_edid_atom()
 
         if randr_version >= (1, 5):
-            self._monitors_from_randr_monitors(primary_output, edid_atom)
+            monitors += self._monitors_from_randr_monitors(primary_output, edid_atom)
         else:
-            self._monitors_from_randr_crtcs(randr_version, primary_output, edid_atom)
+            monitors += self._monitors_from_randr_crtcs(randr_version, primary_output, edid_atom)
 
-    def _append_root_monitor(self) -> None:
+        return monitors
+
+    def _root_monitor(self) -> Monitor:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
 
         root_geom = xcb.get_geometry(self.conn, self.root)
-        self._monitors.append(
-            {
-                "left": root_geom.x,
-                "top": root_geom.y,
-                "width": root_geom.width,
-                "height": root_geom.height,
-            }
-        )
+        return {
+            "left": root_geom.x,
+            "top": root_geom.y,
+            "width": root_geom.width,
+            "height": root_geom.height,
+        }
 
     def _randr_get_version(self) -> tuple[int, int] | None:
         if self.conn is None:
@@ -286,16 +291,16 @@ class MSSXCBBase(MSSBase):
         if primary_output is None:
             # We don't want to use the `in` check if this could be None, according to MyPy.
             return outputs[0]
-        if primary_output in outputs:
-            return primary_output
-        return outputs[0]
+        return primary_output if primary_output in outputs else outputs[0]
 
     def _monitors_from_randr_monitors(
         self, primary_output: xcb.RandrOutput | None, edid_atom: xcb.Atom | None, /
-    ) -> None:
+    ) -> Monitors:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
+
+        monitors = []
 
         monitors_reply = xcb.randr_get_monitors(self.conn, self.drawable, 1)
         timestamp = monitors_reply.timestamp
@@ -305,19 +310,21 @@ class MSSXCBBase(MSSBase):
                 "top": randr_monitor.y,
                 "width": randr_monitor.width,
                 "height": randr_monitor.height,
+                # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor
+                # will return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR
+                # that all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't
+                # have any information about primary monitors.)
+                "is_primary": bool(randr_monitor.primary),
             }
-            # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor will
-            # return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR that
-            # all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't have
-            # any information about primary monitors.)
-            monitor["is_primary"] = bool(randr_monitor.primary)
 
             if randr_monitor.nOutput > 0:
                 outputs = xcb.randr_monitor_info_outputs(randr_monitor)
                 chosen_output = self._choose_randr_output(outputs, primary_output)
                 monitor |= self._randr_output_ids(chosen_output, timestamp, edid_atom)
 
-            self._monitors.append(monitor)
+            monitors.append(monitor)
+
+        return monitors
 
     def _monitors_from_randr_crtcs(
         self,
@@ -325,10 +332,12 @@ class MSSXCBBase(MSSBase):
         primary_output: xcb.RandrOutput | None,
         edid_atom: xcb.Atom | None,
         /,
-    ) -> None:
+    ) -> Monitors:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
+
+        monitors = []
 
         screen_resources: xcb.RandrGetScreenResourcesReply | xcb.RandrGetScreenResourcesCurrentReply
         if hasattr(LIB.randr, "xcb_randr_get_screen_resources_current") and randr_version >= (1, 3):
@@ -359,9 +368,11 @@ class MSSXCBBase(MSSBase):
             if primary_output is not None:
                 monitor["is_primary"] = chosen_output == primary_output
 
-            self._monitors.append(monitor)
+            monitors.append(monitor)
 
-    def _cursor_impl_check_xfixes(self) -> bool:
+        return monitors
+
+    def _cursor_check_xfixes(self) -> bool:
         """Check XFixes availability and version.
 
         :returns: ``True`` if the server provides XFixes with a compatible
@@ -380,7 +391,7 @@ class MSSXCBBase(MSSBase):
         # everything these days is much more modern.
         return (reply.major_version, reply.minor_version) >= (2, 0)
 
-    def _cursor_impl(self) -> ScreenShot:
+    def cursor(self) -> ScreenShot:
         """Capture the current cursor image.
 
         Pixels are returned in BGRA ordering.
@@ -393,7 +404,7 @@ class MSSXCBBase(MSSBase):
             raise ScreenShotError(msg)
 
         if self._xfixes_ready is None:
-            self._xfixes_ready = self._cursor_impl_check_xfixes()
+            self._xfixes_ready = self._cursor_check_xfixes()
         if not self._xfixes_ready:
             msg = "Server does not have XFixes, or the version is too old."
             raise ScreenShotError(msg)
@@ -411,9 +422,9 @@ class MSSXCBBase(MSSBase):
         # We don't need to do the same array slice-and-dice work as the Xlib-based implementation: Xlib has an
         # unfortunate historical accident that makes it have to return the cursor image in a different format.
 
-        return self.cls_image(data, region)
+        return ScreenShot(data, region)
 
-    def _grab_impl_xgetimage(self, monitor: Monitor, /) -> ScreenShot:
+    def _grab_xgetimage(self, monitor: Monitor, /) -> bytearray:
         """Retrieve pixels from a monitor using ``GetImage``.
 
         Used by the XGetImage backend and by the XShmGetImage backend in
@@ -453,4 +464,4 @@ class MSSXCBBase(MSSBase):
             )
             raise ScreenShotError(msg)
 
-        return self.cls_image(img_data, monitor)
+        return img_data

@@ -40,7 +40,7 @@ def screen_record_efficient() -> int:
 
     title = "[MSS] FPS benchmark"
     fps = 0
-    sct = mss.mss()
+    sct = mss.MSS()
     last_time = time.time()
 
     while time.time() - last_time < 1:

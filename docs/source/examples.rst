@@ -83,7 +83,7 @@ Get PNG bytes, no file output
 You can get the bytes of the PNG image:
 ::
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         # The monitor or screen part to capture
         monitor = sct.monitors[1]  # or a region
 
@@ -192,7 +192,7 @@ Different possibilities to convert raw BGRA values to RGB::
 
 
     def numpy_flip(im):
-        """ Most efficient Numpy version as of now. """
+        """ Most efficient Numpy version as of MSS 10.1. """
         frame = numpy.array(im, dtype=numpy.uint8)
         return numpy.flip(frame[:, :, :3], 2).tobytes()
 
@@ -202,14 +202,14 @@ Different possibilities to convert raw BGRA values to RGB::
         return numpy.array(im, dtype=numpy.uint8)[..., [2, 1, 0]].tobytes()
 
 
-    def pil_frombytes(im):
+    def pil_frombuffer(im):
         """ Efficient Pillow version. """
-        return Image.frombytes('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
+        return Image.frombuffer('RGB', im.size, im.bgra, 'raw', 'BGRX').tobytes()
 
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         im = sct.grab(sct.monitors[1])
-        rgb = pil_frombytes(im)
+        rgb = pil_frombuffer(im)
         ...
 
 .. versionadded:: 3.2.0
@@ -218,7 +218,7 @@ Different possibilities to convert raw BGRA values to RGB::
 Demos
 =====
 
-In addition to these simple examples, there are full demos of more complex use cases in the ``demos/`` directory of the
+In addition to these simple examples, there are full demos of more complex use cases in the `demos <https://github.com/BoboTiG/python-mss/tree/main/demos>`_ directory of the
 source code.  The demos are not installed with the package, but you can run them directly from the source tree after
 cloning the repository.
 
@@ -227,6 +227,7 @@ not only how to invoke MSS, but also some of the techniques for using the captur
 scenarios.
 
 These include:
+
 - MP4 video capture with encoding using PyAV (FFmpeg bindings)
 - Live streaming to a TinyTV as MJPEG
 - Detect images of cats on the screen

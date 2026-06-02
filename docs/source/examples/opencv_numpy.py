@@ -10,7 +10,7 @@ import cv2
 
 import mss
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # Part of the screen to capture
     monitor = {"top": 40, "left": 0, "width": 800, "height": 640}
 

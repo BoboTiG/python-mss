@@ -24,7 +24,7 @@ def benchmark_grab() -> tuple[float, float]:
 
     Returns (avg_ms, fps) for comparison.
     """
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         monitor = sct.monitors[1]  # Primary monitor
         width, height = monitor["width"], monitor["height"]
 
@@ -65,7 +65,7 @@ def benchmark_grab_varying_sizes() -> None:
     print("\nVarying size benchmark:")
     print("-" * 50)
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         for width, height in sizes:
             monitor = {"top": 0, "left": 0, "width": width, "height": height}
 
@@ -109,43 +109,47 @@ def benchmark_raw_bitblt() -> None:
     srccopy = 0x00CC0020
     captureblt = 0x40000000
 
-    with mss.mss() as sct:
-        assert isinstance(sct, mss.windows.MSS)
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+
+    with mss.MSS() as sct:
         monitor = sct.monitors[1]
         width, height = monitor["width"], monitor["height"]
         left, top = monitor["left"], monitor["top"]
 
-        # Force region setup
-        sct.grab(monitor)
-
-        srcdc = sct._srcdc
-        memdc = sct._memdc
+        # Acquire DCs directly for raw benchmarking (the impl no longer
+        # holds them as instance state — they are per-grab now).
+        srcdc = user32.GetWindowDC(0)
+        memdc = gdi32.CreateCompatibleDC(srcdc)
 
         print(f"Raw BitBlt benchmark ({width}x{height})")
         print("=" * 50)
 
-        # Test with CAPTUREBLT
-        start = perf_counter()
-        for _ in range(ITERATIONS):
-            bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy | captureblt)
-            gdiflush()
-        elapsed = perf_counter() - start
-        print(f"With CAPTUREBLT:    {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
+        try:
+            # Test with CAPTUREBLT
+            start = perf_counter()
+            for _ in range(ITERATIONS):
+                bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy | captureblt)
+                gdiflush()
+            elapsed = perf_counter() - start
+            print(f"With CAPTUREBLT:    {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
 
-        # Test without CAPTUREBLT
-        start = perf_counter()
-        for _ in range(ITERATIONS):
-            bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy)
-            gdiflush()
-        elapsed = perf_counter() - start
-        print(f"Without CAPTUREBLT: {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
+            # Test without CAPTUREBLT
+            start = perf_counter()
+            for _ in range(ITERATIONS):
+                bitblt(memdc, 0, 0, width, height, srcdc, left, top, srccopy)
+                gdiflush()
+            elapsed = perf_counter() - start
+            print(f"Without CAPTUREBLT: {elapsed / ITERATIONS * 1000:.2f}ms ({ITERATIONS / elapsed:.1f} FPS)")
+        finally:
+            gdi32.DeleteDC(memdc)
+            user32.ReleaseDC(0, srcdc)
 
 
 def analyze_frame_timing() -> None:
     """Analyze individual frame timing to detect VSync/DWM patterns."""
     num_samples = 200
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         monitor = sct.monitors[1]
         width, height = monitor["width"], monitor["height"]
 

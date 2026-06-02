@@ -7,7 +7,7 @@ Use PIL bbox style and percent values.
 import mss
 import mss.tools
 
-with mss.mss() as sct:
+with mss.MSS() as sct:
     # Use the 1st monitor
     monitor = sct.monitors[1]
 

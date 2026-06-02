@@ -6,12 +6,12 @@ from collections.abc import Callable
 
 import pytest
 
-from mss.base import MSSBase
+from mss import MSS
 
 np = pytest.importorskip("numpy", reason="Numpy module not available.")
 
 
-def test_numpy(mss_impl: Callable[..., MSSBase]) -> None:
+def test_numpy(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss_impl() as sct:
         img = np.array(sct.grab(box))

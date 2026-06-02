@@ -68,7 +68,7 @@ def main() -> None:
     # If we don't enable PyAV's own logging, a lot of important error messages from libav won't be shown.
     av.logging.set_level(av.logging.VERBOSE)
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         monitor = sct.monitors[1]
 
         # Because of how H.264 video stores color information, libx264 requires the video size to be a multiple of

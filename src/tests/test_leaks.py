@@ -43,12 +43,12 @@ def monitor_func() -> Callable[[], int]:
 
 def bound_instance_without_cm(*, backend: str) -> None:
     # Will always leak
-    sct = mss.mss(backend=backend)
+    sct = mss.MSS(backend=backend)
     sct.shot()
 
 
 def bound_instance_without_cm_but_use_close(*, backend: str) -> None:
-    sct = mss.mss(backend=backend)
+    sct = mss.MSS(backend=backend)
     sct.shot()
     sct.close()
     # Calling .close() twice should be possible
@@ -57,17 +57,17 @@ def bound_instance_without_cm_but_use_close(*, backend: str) -> None:
 
 def unbound_instance_without_cm(*, backend: str) -> None:
     # Will always leak
-    mss.mss(backend=backend).shot()
+    mss.MSS(backend=backend).shot()
 
 
 def with_context_manager(*, backend: str) -> None:
-    with mss.mss(backend=backend) as sct:
+    with mss.MSS(backend=backend) as sct:
         sct.shot()
 
 
 def regression_issue_128(*, backend: str) -> None:
     """Regression test for issue #128: areas overlap."""
-    with mss.mss(backend=backend) as sct:
+    with mss.MSS(backend=backend) as sct:
         area1 = {"top": 50, "left": 7, "width": 400, "height": 320, "mon": 1}
         sct.grab(area1)
         area2 = {"top": 200, "left": 200, "width": 320, "height": 320, "mon": 1}
@@ -76,7 +76,7 @@ def regression_issue_128(*, backend: str) -> None:
 
 def regression_issue_135(*, backend: str) -> None:
     """Regression test for issue #135: multiple areas."""
-    with mss.mss(backend=backend) as sct:
+    with mss.MSS(backend=backend) as sct:
         bounding_box_notes = {"top": 0, "left": 0, "width": 100, "height": 100}
         sct.grab(bounding_box_notes)
         bounding_box_test = {"top": 220, "left": 220, "width": 100, "height": 100}
@@ -89,10 +89,10 @@ def regression_issue_210(*, backend: str) -> None:
     """Regression test for issue #210: multiple X servers."""
     pyvirtualdisplay = pytest.importorskip("pyvirtualdisplay")
 
-    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24), mss.mss(backend=backend):
+    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24), mss.MSS(backend=backend):
         pass
 
-    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24), mss.mss(backend=backend):
+    with pyvirtualdisplay.Display(size=(1920, 1080), color_depth=24), mss.MSS(backend=backend):
         pass
 
 

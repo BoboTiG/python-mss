@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from mss.base import MSSBase
+from mss import MSS
 
 try:
     from datetime import UTC
@@ -19,12 +19,12 @@ except ImportError:
     UTC = timezone.utc
 
 
-def test_at_least_2_monitors(mss_impl: Callable[..., MSSBase]) -> None:
+def test_at_least_2_monitors(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         assert list(sct.save(mon=0))
 
 
-def test_files_exist(mss_impl: Callable[..., MSSBase]) -> None:
+def test_files_exist(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         for filename in sct.save():
             assert Path(filename).is_file()
@@ -35,7 +35,7 @@ def test_files_exist(mss_impl: Callable[..., MSSBase]) -> None:
         assert Path("fullscreen.png").is_file()
 
 
-def test_callback(mss_impl: Callable[..., MSSBase]) -> None:
+def test_callback(mss_impl: Callable[..., MSS]) -> None:
     def on_exists(fname: str) -> None:
         file = Path(fname)
         if Path(file).is_file():
@@ -49,14 +49,14 @@ def test_callback(mss_impl: Callable[..., MSSBase]) -> None:
         assert Path(filename).is_file()
 
 
-def test_output_format_simple(mss_impl: Callable[..., MSSBase]) -> None:
+def test_output_format_simple(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         filename = sct.shot(mon=1, output="mon-{mon}.png")
     assert filename == "mon-1.png"
     assert Path(filename).is_file()
 
 
-def test_output_format_positions_and_sizes(mss_impl: Callable[..., MSSBase]) -> None:
+def test_output_format_positions_and_sizes(mss_impl: Callable[..., MSS]) -> None:
     fmt = "sct-{top}x{left}_{width}x{height}.png"
     with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)
@@ -64,7 +64,7 @@ def test_output_format_positions_and_sizes(mss_impl: Callable[..., MSSBase]) -> 
     assert Path(filename).is_file()
 
 
-def test_output_format_date_simple(mss_impl: Callable[..., MSSBase]) -> None:
+def test_output_format_date_simple(mss_impl: Callable[..., MSS]) -> None:
     fmt = "sct_{mon}-{date}.png"
     with mss_impl() as sct:
         try:
@@ -75,7 +75,7 @@ def test_output_format_date_simple(mss_impl: Callable[..., MSSBase]) -> None:
             pytest.mark.xfail("Default date format contains ':' which is not allowed.")
 
 
-def test_output_format_date_custom(mss_impl: Callable[..., MSSBase]) -> None:
+def test_output_format_date_custom(mss_impl: Callable[..., MSS]) -> None:
     fmt = "sct_{date:%Y-%m-%d}.png"
     with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)

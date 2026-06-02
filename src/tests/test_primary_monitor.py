@@ -7,10 +7,10 @@ from collections.abc import Callable
 
 import pytest
 
-from mss.base import MSSBase
+from mss import MSS
 
 
-def test_primary_monitor(mss_impl: Callable[..., MSSBase]) -> None:
+def test_primary_monitor(mss_impl: Callable[..., MSS]) -> None:
     """Test that primary_monitor property works correctly."""
     with mss_impl() as sct:
         primary = sct.primary_monitor
@@ -38,7 +38,7 @@ def test_primary_monitor_coordinates_windows() -> None:
     """Test that on Windows, the primary monitor has coordinates at (0, 0)."""
     import mss  # noqa: PLC0415
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         primary = sct.primary_monitor
         if primary.get("is_primary", False):
             # On Windows, the primary monitor is at (0, 0)

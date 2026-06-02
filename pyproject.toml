@@ -1,12 +1,12 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.29.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "mss"
 description = "An ultra fast cross-platform multiple screenshots module in pure python using ctypes."
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 authors = [
   { name = "Mickaël Schoentgen", email="contact@tiger-222.fr" },
 ]
@@ -31,7 +31,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -60,7 +59,7 @@ dynamic = ["version"]
 [project.urls]
 Homepage = "https://github.com/BoboTiG/python-mss"
 Documentation = "https://python-mss.readthedocs.io"
-Changelog = "https://github.com/BoboTiG/python-mss/blob/main/CHANGELOG.md"
+Changelog = "https://python-mss.readthedocs.io/latest/history.html"
 Source = "https://github.com/BoboTiG/python-mss"
 Sponsor = "https://github.com/sponsors/BoboTiG"
 Tracker = "https://github.com/BoboTiG/python-mss/issues"
@@ -71,24 +70,26 @@ mss = "mss.__main__:main"
 
 [project.optional-dependencies]
 dev = [
-  "build==1.4.0",
-  "lxml==6.0.2",
-  "mypy==1.19.1",
-  "ruff==0.15.2",
+  "build==1.5.0",
+  "lxml==6.1.1",
+  "mypy==1.20.2",
+  "ruff==0.15.14",
   "twine==6.2.0",
+  "typing_extensions==4.15.0",
 ]
 docs = [
-  "shibuya==2025.10.21",
-  "sphinx==8.2.3",
-  "sphinx-copybutton==0.5.2",
-  "sphinx-new-tab-link==0.8.0",
+  "myst-parser==5.0.0 ; python_version >= '3.12'",
+  "shibuya==2026.5.19 ; python_version >= '3.12'",
+  "sphinx==9.1.0 ; python_version >= '3.12'",
+  "sphinx-copybutton==0.5.2 ; python_version >= '3.12'",
+  "sphinx-new-tab-link==0.8.1 ; python_version >= '3.12'",
 ]
 tests = [
-  "numpy==2.2.4 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pillow==11.3.0 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pytest==8.4.2",
-  "pytest-cov==7.0.0",
-  "pytest-rerunfailures==16.0.1",
+  "numpy==2.4.3 ; sys_platform == 'linux' and python_version == '3.13'",
+  "pillow==12.2.0 ; sys_platform == 'linux' and python_version == '3.13'",
+  "pytest==9.0.3",
+  "pytest-cov==7.1.0",
+  "pytest-rerunfailures==16.3",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
 ]
 
@@ -100,8 +101,6 @@ skip-excluded-dirs = true
 
 [tool.hatch.build.targets.sdist]
 only-include = [
-  "CHANGELOG.md",
-  "CHANGES.md",
   "CONTRIBUTORS.md",
   "docs/source",
   "src",
@@ -110,6 +109,13 @@ only-include = [
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/mss",
+]
+
+[tool.coverage.report]
+exclude_also = [
+  "except ImportError:",
+  "if TYPE_CHECKING:",
+  'if __name__ == "__main__":',
 ]
 
 [tool.mypy]
@@ -155,7 +161,7 @@ exclude = [
 ]
 line-length = 120
 indent-width = 4
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.format]
 quote-style = "double"

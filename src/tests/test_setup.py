@@ -3,7 +3,9 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import platform
+import sys
 import tarfile
+from pathlib import Path
 from subprocess import STDOUT, check_call, check_output
 from zipfile import ZipFile
 
@@ -17,9 +19,9 @@ if platform.system().lower() != "linux":
 pytest.importorskip("build")
 pytest.importorskip("twine")
 
-SDIST = ["python", "-m", "build", "--sdist"]
-WHEEL = ["python", "-m", "build", "--wheel"]
-CHECK = ["twine", "check", "--strict"]
+SDIST = [sys.executable, "-m", "build", "--sdist"]
+WHEEL = [sys.executable, "-m", "build", "--wheel"]
+CHECK = [sys.executable, "-m", "twine", "check", "--strict"]
 
 
 def test_sdist() -> None:
@@ -33,10 +35,9 @@ def test_sdist() -> None:
     with tarfile.open(f"dist/{file}", mode="r:gz") as fh:
         files = sorted(fh.getnames())
 
+    changelogs = sorted((Path(__file__).parent.parent.parent / "docs" / "source" / "release-history").glob("*.md"))
     assert files == [
         f"mss-{__version__}/.gitignore",
-        f"mss-{__version__}/CHANGELOG.md",
-        f"mss-{__version__}/CHANGES.md",
         f"mss-{__version__}/CONTRIBUTORS.md",
         f"mss-{__version__}/LICENSE.txt",
         f"mss-{__version__}/PKG-INFO",
@@ -57,10 +58,13 @@ def test_sdist() -> None:
         f"mss-{__version__}/docs/source/examples/part_of_screen_monitor_2.py",
         f"mss-{__version__}/docs/source/examples/pil.py",
         f"mss-{__version__}/docs/source/examples/pil_pixels.py",
+        f"mss-{__version__}/docs/source/history.rst",
         f"mss-{__version__}/docs/source/index.rst",
         f"mss-{__version__}/docs/source/installation.rst",
+        *[f"mss-{__version__}/docs/source/release-history/{changelog.name}" for changelog in changelogs],
         f"mss-{__version__}/docs/source/support.rst",
         f"mss-{__version__}/docs/source/usage.rst",
+        f"mss-{__version__}/docs/source/versioning.rst",
         f"mss-{__version__}/docs/source/where.rst",
         f"mss-{__version__}/pyproject.toml",
         f"mss-{__version__}/src/mss/__init__.py",
@@ -81,7 +85,8 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/mss/py.typed",
         f"mss-{__version__}/src/mss/screenshot.py",
         f"mss-{__version__}/src/mss/tools.py",
-        f"mss-{__version__}/src/mss/windows.py",
+        f"mss-{__version__}/src/mss/windows/__init__.py",
+        f"mss-{__version__}/src/mss/windows/gdi.py",
         f"mss-{__version__}/src/tests/__init__.py",
         f"mss-{__version__}/src/tests/bench_bgra2rgb.py",
         f"mss-{__version__}/src/tests/bench_general.py",
@@ -90,6 +95,9 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/res/monitor-1024x768.raw.zip",
         f"mss-{__version__}/src/tests/test_bgra_to_rgb.py",
         f"mss-{__version__}/src/tests/test_cls_image.py",
+        f"mss-{__version__}/src/tests/test_compat_10_1.py",
+        f"mss-{__version__}/src/tests/test_compat_exports.py",
+        f"mss-{__version__}/src/tests/test_compat_linux_api.py",
         f"mss-{__version__}/src/tests/test_find_monitors.py",
         f"mss-{__version__}/src/tests/test_get_pixels.py",
         f"mss-{__version__}/src/tests/test_gnu_linux.py",
@@ -110,6 +118,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/third_party/test_pil_method.py",
         f"mss-{__version__}/src/tests/third_party/test_tensorflow_method.py",
         f"mss-{__version__}/src/tests/third_party/test_torch_method.py",
+        f"mss-{__version__}/src/tests/thread_helpers.py",
         f"mss-{__version__}/src/xcbproto/README.md",
         f"mss-{__version__}/src/xcbproto/gen_xcb_to_py.py",
         f"mss-{__version__}/src/xcbproto/randr.xml",
@@ -155,5 +164,6 @@ def test_wheel() -> None:
         "mss/py.typed",
         "mss/screenshot.py",
         "mss/tools.py",
-        "mss/windows.py",
+        "mss/windows/__init__.py",
+        "mss/windows/gdi.py",
     ]

@@ -14,7 +14,7 @@ import mss.tools
 def grab(queue: Queue) -> None:
     rect = {"top": 0, "left": 0, "width": 600, "height": 800}
 
-    with mss.mss() as sct:
+    with mss.MSS() as sct:
         for _ in range(1_000):
             queue.put(sct.grab(rect))
 

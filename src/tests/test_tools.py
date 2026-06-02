@@ -16,7 +16,7 @@ from mss.tools import parse_edid, to_png
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mss.base import MSSBase
+    from mss import MSS
 
 WIDTH = 10
 HEIGHT = 10
@@ -32,7 +32,7 @@ def assert_is_valid_png(*, raw: bytes | None = None, file: Path | None = None) -
         pytest.fail(reason="invalid PNG data")
 
 
-def test_bad_compression_level(mss_impl: Callable[..., MSSBase]) -> None:
+def test_bad_compression_level(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl(compression_level=42) as sct, pytest.raises(Exception, match="Bad compression level"):
         sct.shot()
 
