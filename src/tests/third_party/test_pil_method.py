@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from mss.screenshot import ScreenShot
+from mss import ScreenShot
 
 pytest.importorskip("PIL.Image")
 

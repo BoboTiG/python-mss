@@ -12,12 +12,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Any
 
-    from typing_extensions import Buffer
-
     import numpy as np
     import PIL.Image
     import tensorflow as tf
     import torch
+    from typing_extensions import Buffer
 
 Channels = Literal["BGRA", "BGR", "RGB", "RGBA"]
 Layout = Literal["HWC", "CHW"]
@@ -191,7 +190,7 @@ class ScreenShot:
         from PIL import Image  # noqa: PLC0415
 
         raw_mode = "BGRX" if mode == "RGB" else "BGRA"
-        return Image.frombuffer(mode, self.size, self.raw, "raw", raw_mode, 0, 1)
+        return Image.frombuffer(mode, self.size, self._raw, "raw", raw_mode, 0, 1)
 
     def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> np.ndarray:
         """Convert the screenshot to a NumPy array.
@@ -222,7 +221,7 @@ class ScreenShot:
 
         import numpy as np  # noqa: PLC0415
 
-        frame = np.frombuffer(self.raw, dtype=np.uint8).reshape((self.height, self.width, 4))
+        frame = np.frombuffer(self._raw, dtype=np.uint8).reshape((self.height, self.width, 4))
         if channels == "BGRA":
             data = frame
         elif channels == "BGR":
