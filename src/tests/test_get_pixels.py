@@ -2,6 +2,7 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+import ctypes
 import itertools
 from collections.abc import Callable
 
@@ -17,7 +18,6 @@ def test_grab_monitor(mss_impl: Callable[..., MSS]) -> None:
             image = sct.grab(mon)
             assert isinstance(image, ScreenShot)
             assert isinstance(image.bgra, memoryview)
-            assert image.bgra.readonly
 
 
 def test_grab_part_of_screen(mss_impl: Callable[..., MSS]) -> None:
@@ -45,3 +45,18 @@ def test_get_pixel(raw: bytes) -> None:
 
     with pytest.raises(ScreenShotError):
         image.pixel(image.width + 1, 12)
+
+
+def test_ctypes_pointers_from_bgra(raw: bytes) -> None:
+    image = ScreenShot.from_size(bytearray(raw), 1024, 768)
+    assert image.bgra.readonly is False
+
+    bgra_array = (ctypes.c_uint8 * len(image.bgra)).from_buffer(image.bgra)
+    void_ptr = ctypes.c_void_p(ctypes.addressof(bgra_array))
+    uint8_ptr = ctypes.cast(void_ptr, ctypes.POINTER(ctypes.c_uint8))
+
+    assert void_ptr.value is not None
+    assert uint8_ptr[0] == raw[0]
+    assert uint8_ptr[1] == raw[1]
+    assert uint8_ptr[2] == raw[2]
+    assert uint8_ptr[3] == raw[3]
