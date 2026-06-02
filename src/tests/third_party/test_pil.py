@@ -37,7 +37,7 @@ def test_pil_bgra(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         sct_img = sct.grab(box)
 
-    img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+    img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX", 0, 1)
     assert img.mode == "RGB"
     assert img.size == sct_img.size
 
