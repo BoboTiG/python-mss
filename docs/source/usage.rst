@@ -13,7 +13,7 @@ MSS can be used simply as::
         # ...
 
 For compatibility with existing code, :py:func:`mss.mss` is still available in
-10.2, but deprecated::
+11.0, but deprecated::
 
     import mss
 
@@ -21,7 +21,7 @@ For compatibility with existing code, :py:func:`mss.mss` is still available in
         # ...
 
 For compatibility with existing code, platform-specific class names are also
-still available in 10.2::
+still available in 11.0, but are also deprecated::
 
     # GNU/Linux
     from mss.linux import MSS
@@ -91,8 +91,7 @@ If you want to choose a particular backend, you can pass the ``backend`` keyword
     with MSS(backend="xgetimage") as sct:
         ...
 
-GNU/Linux has multiple backend implementations. Windows also exposes the named ``gdi`` backend, which is currently the
-same as ``default``. The GNU/Linux backends are described in their own section below.
+GNU/Linux has multiple backend implementations. Windows also exposes the named ``gdi`` backend, which is currently the same as ``default``. The GNU/Linux backends are described in their own section below.
 
 
 GNU/Linux

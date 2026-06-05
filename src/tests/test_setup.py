@@ -97,7 +97,6 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/test_cls_image.py",
         f"mss-{__version__}/src/tests/test_compat_10_1.py",
         f"mss-{__version__}/src/tests/test_compat_exports.py",
-        f"mss-{__version__}/src/tests/test_compat_linux_api.py",
         f"mss-{__version__}/src/tests/test_find_monitors.py",
         f"mss-{__version__}/src/tests/test_get_pixels.py",
         f"mss-{__version__}/src/tests/test_gnu_linux.py",
