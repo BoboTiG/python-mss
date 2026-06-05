@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 from mss.exception import ScreenShotError
@@ -26,7 +27,6 @@ class ScreenShot:
     __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
     def __init__(self, data: Buffer, monitor: Monitor, /, *, size: Size | None = None) -> None:
-        self.__bgra: memoryview | None = None
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
@@ -36,13 +36,10 @@ class ScreenShot:
         #: NamedTuple of the screenshot size.
         self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
 
-        # Buffer of the raw BGRA pixels, retrieved by the
-        # platform-specific implementations.  This is kept read-write
-        # if it was originally so, in order for _merge to work.
-        # However, it should be made read-only before returning to the
-        # user (via bgra), so that the cached values for __pixels and
-        # __rgb aren't potentially inconsistent if the user changes
-        # data.
+        # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.  This is kept read-write if
+        # it was originally so, in order for _merge to work, and so it can be used with ctypes.  However, it should not
+        # be modified once __pixels or __rgb have been accessed, so that the cached values for __pixels and __rgb aren't
+        # potentially inconsistent if the user changes data.
         self._raw: memoryview = memoryview(data)
         assert self._raw.nbytes == self.size.width * self.size.height * 4, (  # noqa: S101
             "Data size does not match screenshot dimensions."
@@ -57,13 +54,17 @@ class ScreenShot:
         """NumPy array interface support.
 
         This is used by NumPy, many SciPy projects, CuPy, PyTorch (via
-        ``torch.from_numpy``), TensorFlow (via ``tf.convert_to_tensor``),
-        JAX (via ``jax.numpy.asarray``), Pandas, scikit-learn, Matplotlib,
+        :py:func:`torch.from_numpy`), TensorFlow (via
+        :py:func:`tf.convert_to_tensor`), JAX (via
+        :py:func:`jax.numpy.asarray`), Pandas, scikit-learn, Matplotlib,
         some OpenCV functions, and others.  This allows you to pass a
         :class:`ScreenShot` instance directly to these libraries without
         needing to convert it first.
 
         This is in HWC order, with 4 channels (BGRA).
+
+        The array is read-write, for maximum compatibility.  However,
+        actually modifying the data may cause undefined behavior.
 
         .. seealso::
 
@@ -74,7 +75,7 @@ class ScreenShot:
             "version": 3,
             "shape": (self.height, self.width, 4),
             "typestr": "|u1",
-            "data": self.bgra,
+            "data": self._raw,
         }
 
     @classmethod
@@ -91,21 +92,43 @@ class ScreenShot:
         BGRxBGRx... sequence.  A specific pixel can be accessed as
         ``bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
-        The memoryview is read-only.  PyTorch will issue a warning
-        when given a read-only buffer, but will still work.  However,
-        actually modifying the data may cause undefined behavior.
+        The memoryview is read-write, for compatibility with ctypes'
+        :py:func:`from_buffer`.  However, actually modifying the data
+        may cause undefined behavior.
 
         .. note::
             While the name is ``bgra``, the alpha channel may or may
             not be valid.
+
+        .. version-changed:: 11.0.0
+            Prior to this version, this was a :py:class:`bytes` object.
+            It was changed to a memoryview for improved performance.
+            Most practical uses are unaffected by this change, as
+            ``memoryview`` supports most of the same operations as
+            ``bytes``.  If needed, you can use
+            :py:meth:`memoryview.tobytes` to get a ``bytes`` object.
         """
-        # Making a read-only copy of a memoryview is very cheap.  But
-        # we still always return the same memoryview: somebody using a
-        # property may expect it to be identical (under the `is`
-        # operator) every time.
-        if self.__bgra is None:
-            self.__bgra = self._raw.toreadonly()
-        return self.__bgra
+        return self._raw
+
+    @property
+    def raw(self) -> memoryview:
+        """Deprecated alias for :py:attr:`bgra`.
+
+        .. version-deprecated:: 10.2.0
+            Use :py:attr:`bgra` instead.  This alias will be removed in
+            a future version.
+
+        .. version-changed:: 11.0.0
+            Prior to this version, this was a :py:class:`bytearray`.
+            This :py:attr:`raw` alias is retained, although as a
+            :py:class:`memoryview`, for backwards compatibility: most
+            existing uses are not affected, as ``memoryview`` supports
+            most of the same operations as ``bytearray``.  If needed,
+            you can use ``bytearray(raw)`` to get a ``bytearray``
+            object.
+        """
+        warnings.warn("The raw property is deprecated.  Use bgra instead.", DeprecationWarning, stacklevel=2)
+        return self._raw
 
     @property
     def pixels(self) -> Pixels:
@@ -139,14 +162,21 @@ class ScreenShot:
         RGBRGB... sequence.  A specific pixel can be accessed as
         ``rgb[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
-        The memoryview is read-only.  PyTorch will issue a warning
-        when given a read-only buffer, but will still work.  However,
-        actually modifying the data may cause undefined behavior.
+        The memoryview is read-write, for compatibility with ctypes'
+        :py:func:`from_buffer`.  However, actually modifying the data
+        may cause undefined behavior.
 
-        :: note::
+        .. note::
             This is a computed property.  If possible, using the
-            :py:attr:`bgra` property directly is usually more
-            efficient.
+            :py:attr:`bgra` property directly is usually more efficient.
+
+        .. version-changed:: 11.0.0
+            Prior to this version, this was a :py:class:`bytes` object.
+            It was changed to a memoryview for improved performance.
+            Most practical uses are unaffected by this change, as
+            ``memoryview`` supports most of the same operations as
+            ``bytes``.  If needed, you can use
+            :py:meth:`memoryview.tobytes` to get a ``bytes`` object.
         """
         if self.__rgb is None:
             rgb = bytearray(self.height * self.width * 3)
@@ -154,7 +184,11 @@ class ScreenShot:
             rgb[::3] = raw[2::4]
             rgb[1::3] = raw[1::4]
             rgb[2::3] = raw[::4]
-            self.__rgb = memoryview(rgb).toreadonly()
+            # We could just return the bytearray directly.  However, we would rather give ourselves the flexibility to
+            # use other buffer types in the future.  Rather than declaring our return type as just generically Buffer
+            # (which doesn't guarantee the indexing behavior of memoryview), we always return a memoryview, which is
+            # cheap.
+            self.__rgb = memoryview(rgb)
 
         return self.__rgb
 
