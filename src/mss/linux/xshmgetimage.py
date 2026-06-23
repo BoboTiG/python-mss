@@ -171,9 +171,11 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         * By the finalizer, if the slot is released after the MSS object
           is closed
 
-        If the connection is being closed (rather than just falling back
-        to XGetImage), then we also tell the server that we're done with
-        the memory region.
+        If the connection is not being closed (so we're in the path to
+        fallback to XGetImage), we also tell the server that we're done
+        with the memory region.  Conversely, during connection close, we
+        skip explicit detach and let the server clean up the SHM
+        resources when the connection is closed.
         """
         if slot.buf is None:
             return
