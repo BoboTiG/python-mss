@@ -20,12 +20,9 @@ with mss.MSS() as sct:
     # But you can set individual pixels too (slower)
     """
     pixels = img.load()
-    max_x = min(100, sct_img.width)
-    max_y = min(100, sct_img.height)
-    for x in range(max_x):
-        for y in range(max_y):
-            r, g, b = pixels[x, y]
-            pixels[x, y] = (255 - r, 255 - g, 255 - b)
+    for x in range(sct_img.width):
+        for y in range(sct_img.height):
+            pixels[x, y] = sct_img.pixel(x, y)
     """
 
     # Show it!
