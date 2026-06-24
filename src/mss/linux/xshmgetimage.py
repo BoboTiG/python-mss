@@ -198,7 +198,11 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         with self._shm_lock:
             assert not self._shm_closed, "SHM pool has already been closed"  # noqa: S101
 
-            for idx, slot in enumerate(self._free_shm_slots):
+            # We traverse these in reverse order, so that the most recently used buffers are reused first.  This is a
+            # heuristic to keep the memory usage down a bit; in the best case, the second preallocated buffer may never
+            # get physical mapping pages assigned.
+            for idx in range(len(self._free_shm_slots) - 1, -1, -1):
+                slot = self._free_shm_slots[idx]
                 if slot.buf is not None and slot.size >= required_size:
                     self._free_shm_slots.pop(idx)
                     return slot
