@@ -40,6 +40,8 @@ from mss.exception import ScreenShotError
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:
+    from threading import Thread
+
     from mss.models import CFunctions, Monitor, Monitors
 
 __all__ = ()
@@ -259,7 +261,7 @@ class XWindowAttributes(Structure):
     )
 
 
-_ERROR = {}
+_ERROR: dict[Thread, dict[str, Any]] = {}
 _X11 = find_library("X11")
 _XFIXES = find_library("Xfixes")
 _XRANDR = find_library("Xrandr")

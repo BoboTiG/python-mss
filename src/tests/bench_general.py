@@ -45,7 +45,7 @@ def grab(sct: MSS) -> ScreenShot:
     return sct.grab(monitor)
 
 
-def access_rgb(sct: MSS) -> bytes:
+def access_rgb(sct: MSS) -> memoryview:
     im = grab(sct)
     return im.rgb
 

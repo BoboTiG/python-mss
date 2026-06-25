@@ -37,7 +37,7 @@ import mss
 from mss.screenshot import ScreenShot
 
 
-def mss_rgb(im: ScreenShot) -> bytes:
+def mss_rgb(im: ScreenShot) -> memoryview:
     return im.rgb
 
 

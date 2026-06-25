@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
     from types import TracebackType
 
-    from typing_extensions import Self
+    from typing_extensions import Buffer, Self
 
     from mss.models import Monitor, Monitors, Size
 
@@ -89,7 +89,7 @@ class MSSImplementation(ABC):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
-    def grab(self, monitor: Monitor, /) -> bytearray | tuple[bytearray, Size]:
+    def grab(self, monitor: Monitor, /) -> Buffer | tuple[Buffer, Size]:
         """Retrieve all pixels from a monitor. Pixels have to be RGB.
 
         If the monitor size is not in pixel units, include a Size in
@@ -552,7 +552,3 @@ class MSS:
         .. versionadded:: 8.0.0
         """
         return self._impl.with_cursor
-
-
-# TODO(jholveck): #493 Remove compatibility alias after 10.x transition period.
-MSSBase = MSS
