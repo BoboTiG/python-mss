@@ -109,23 +109,39 @@ class DISPLAY_DEVICEW(Structure):  # noqa: N801
 MONITORNUMPROC = WINFUNCTYPE(BOOL, HMONITOR, HDC, POINTER(RECT), LPARAM)
 
 
-def _errcheck(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
-    """If the result is zero, raise an exception."""
+def _check_result(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
+    """Raise if ``result`` is 0/NULL for functions that do not document GetLastError."""
     if not result:
-        # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes
-        # instead.
-        winerror = WinError()
         details = {
             "func": func.__name__,
             "args": arguments,
-            "error_code": winerror.winerror,
-            "error_msg": winerror.strerror,
+            "error_msg": "The function returned a failure value.",
         }
-        if winerror.winerror == 0:
-            # Some functions return NULL/0 on failure without setting last error.  (Example: CreateDIBSection
-            # with an invalid HDC.)
-            msg = f"Windows graphics function failed (no error provided): {func.__name__}"
+        msg = f"Windows graphics function returned failure: {func.__name__}"
+        raise ScreenShotError(msg, details=details)
+    return arguments
+
+
+def _check_result_with_last_error(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple:
+    """Raise if ``result`` is 0/NULL for functions that document GetLastError."""
+    if not result:
+        error_code = ctypes.get_last_error()
+        details = {
+            "func": func.__name__,
+            "args": arguments,
+            "error_code": error_code,
+        }
+        if error_code == 0:
+            # Do not use WinError(0) here: its message is "The operation completed successfully", which makes the
+            # failure look like a success.
+            details["error_msg"] = (
+                "The function returned a failure value, but no Windows last-error code was available."
+            )
+            msg = f"Windows graphics function returned failure but no last-error code was available: {func.__name__}"
             raise ScreenShotError(msg, details=details)
+        # Notably, the errno that is in winerror may not be relevant.  Use the winerror and strerror attributes instead.
+        winerror = WinError(error_code)
+        details["error_msg"] = winerror.strerror
         msg = f"Windows graphics function failed: {func.__name__}: {winerror.strerror}"
         raise ScreenShotError(msg, details=details) from winerror
     return arguments
@@ -138,15 +154,20 @@ def _errcheck(result: int | _Pointer, func: Callable, arguments: tuple) -> tuple
 # Note: keep it sorted by cfunction.
 CFUNCTIONS: CFunctionsErrChecked = {
     # Syntax: cfunction: (attr, argtypes, restype, errcheck)
-    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _errcheck),
-    "CreateCompatibleDC": ("gdi32", [HDC], HDC, _errcheck),
+    "BitBlt": ("gdi32", [HDC, INT, INT, INT, INT, HDC, INT, INT, DWORD], BOOL, _check_result_with_last_error),
+    "CreateCompatibleDC": ("gdi32", [HDC], HDC, _check_result),
     # CreateDIBSection: ppvBits (4th param) receives a pointer to the DIB pixel data.
     # hSection is NULL and offset is 0 to have the system allocate the memory.
-    "CreateDIBSection": ("gdi32", [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD], HBITMAP, _errcheck),
-    "DeleteDC": ("gdi32", [HDC], HDC, _errcheck),
-    "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _errcheck),
+    "CreateDIBSection": (
+        "gdi32",
+        [HDC, POINTER(BITMAPINFO), UINT, POINTER(LPVOID), HANDLE, DWORD],
+        HBITMAP,
+        _check_result_with_last_error,
+    ),
+    "DeleteDC": ("gdi32", [HDC], BOOL, _check_result),
+    "DeleteObject": ("gdi32", [HGDIOBJ], BOOL, _check_result),
     "EnumDisplayDevicesW": ("user32", [POINTER(WORD), DWORD, POINTER(DISPLAY_DEVICEW), DWORD], BOOL, None),
-    "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _errcheck),
+    "EnumDisplayMonitors": ("user32", [HDC, LPCRECT, MONITORNUMPROC, LPARAM], BOOL, _check_result),
     # GdiFlush flushes the calling thread's current batch of GDI operations.
     # This ensures DIB memory is fully updated before reading.
     "GdiFlush": ("gdi32", [], BOOL, None),
@@ -154,12 +175,12 @@ CFUNCTIONS: CFunctionsErrChecked = {
     # parameter is valid but the value is actually 0 (e.g., SM_CLEANBOOT on a normal boot).  Thus, we do not attach an
     # errcheck function here.
     "GetSystemMetrics": ("user32", [INT], INT, None),
-    "GetMonitorInfoW": ("user32", [HMONITOR, POINTER(MONITORINFOEXW)], BOOL, _errcheck),
-    "GetWindowDC": ("user32", [HWND], HDC, _errcheck),
-    "ReleaseDC": ("user32", [HWND, HDC], INT, _errcheck),
+    "GetMonitorInfoW": ("user32", [HMONITOR, POINTER(MONITORINFOEXW)], BOOL, _check_result),
+    "GetWindowDC": ("user32", [HWND], HDC, _check_result),
+    "ReleaseDC": ("user32", [HWND, HDC], INT, _check_result),
     # SelectObject returns NULL on error the way we call it.  If it's called to select a region, it returns HGDI_ERROR
     # on error.
-    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ, _errcheck),
+    "SelectObject": ("gdi32", [HDC, HGDIOBJ], HGDIOBJ, _check_result),
 }
 
 
@@ -184,9 +205,7 @@ class MSSImplGdi(MSSImplementation):
         "_dib",
         "_dib_array",
         "_dib_bits",
-        "_memdc",
         "_region_width_height",
-        "_srcdc",
         "gdi32",
         "user32",
     }
@@ -205,8 +224,6 @@ class MSSImplGdi(MSSImplementation):
         self._dib: HBITMAP | None = None
         self._dib_bits: LPVOID = LPVOID()  # Pointer to DIB pixel data
         self._dib_array: ctypes.Array[ctypes.c_char] | None = None  # Cached array view of DIB memory
-        self._srcdc = self.user32.GetWindowDC(0)
-        self._memdc = self.gdi32.CreateCompatibleDC(self._srcdc)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize = ctypes.sizeof(BITMAPINFOHEADER)
@@ -222,18 +239,9 @@ class MSSImplGdi(MSSImplementation):
         self._bmi = bmi
 
     def close(self) -> None:
-        # Clean-up
         if self._dib:
             self.gdi32.DeleteObject(self._dib)
             self._dib = None
-
-        if self._memdc:
-            self.gdi32.DeleteDC(self._memdc)
-            self._memdc = None
-
-        if self._srcdc:
-            self.user32.ReleaseDC(0, self._srcdc)
-            self._srcdc = None
 
     def _set_cfunctions(self) -> None:
         """Set all ctypes functions and attach them to attributes."""
@@ -336,9 +344,10 @@ class MSSImplGdi(MSSImplementation):
     def grab(self, monitor: Monitor, /) -> bytearray:
         """Retrieve all pixels from a monitor using CreateDIBSection.
 
-        CreateDIBSection creates a DIB with system-managed memory backing,
-        allowing BitBlt to write directly to memory we can read. This eliminates
-        the need for a separate GetDIBits call.
+        Device contexts (srcdc / memdc) are acquired and released within each
+        call.  This avoids holding GDI resources across threads and allows
+        ``MSS()`` construction to succeed even when ``GetWindowDC(0)`` would
+        fail (locked screen, UAC, RDP).  See issue #509.
 
         Note on biHeight: A bottom-up DIB is specified by setting the height to a
         positive number, while a top-down DIB is specified by setting the height
@@ -346,47 +355,55 @@ class MSSImplGdi(MSSImplementation):
         https://learn.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
         https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-createdibsection
         """
-        srcdc, memdc = self._srcdc, self._memdc
         gdi = self.gdi32
-        width, height = monitor["width"], monitor["height"]
+        srcdc = self.user32.GetWindowDC(0)
+        try:
+            memdc = gdi.CreateCompatibleDC(srcdc)
+            try:
+                width, height = monitor["width"], monitor["height"]
 
-        if self._region_width_height != (width, height):
-            self._region_width_height = (width, height)
-            self._bmi.bmiHeader.biWidth = width
-            self._bmi.bmiHeader.biHeight = -height  # Negative for top-down DIB
+                if self._region_width_height != (width, height):
+                    self._region_width_height = (width, height)
+                    self._bmi.bmiHeader.biWidth = width
+                    self._bmi.bmiHeader.biHeight = -height  # Negative for top-down DIB
 
-            if self._dib:
-                gdi.DeleteObject(self._dib)
-                self._dib = None
+                    if self._dib:
+                        gdi.DeleteObject(self._dib)
+                        self._dib = None
 
-            # CreateDIBSection creates the DIB and returns a pointer to the pixel data
-            self._dib_bits = LPVOID()
-            self._dib = gdi.CreateDIBSection(
-                memdc,
-                self._bmi,
-                DIB_RGB_COLORS,
-                ctypes.byref(self._dib_bits),
-                None,  # hSection = NULL (system allocates memory)
-                0,  # offset = 0
-            )
-            gdi.SelectObject(memdc, self._dib)
+                    # CreateDIBSection creates the DIB and returns a pointer to the pixel data
+                    self._dib_bits = LPVOID()
+                    self._dib = gdi.CreateDIBSection(
+                        memdc,
+                        self._bmi,
+                        DIB_RGB_COLORS,
+                        ctypes.byref(self._dib_bits),
+                        None,  # hSection = NULL (system allocates memory)
+                        0,  # offset = 0
+                    )
 
-            # Create a ctypes array type that maps directly to the DIB memory.
-            # This avoids the overhead of ctypes.string_at() creating an intermediate bytes object.
-            size = width * height * 4
-            array_type = ctypes.c_char * size
-            self._dib_array = ctypes.cast(self._dib_bits, POINTER(array_type)).contents
+                    # Create a ctypes array type that maps directly to the DIB memory.
+                    # This avoids the overhead of ctypes.string_at() creating an intermediate bytes object.
+                    size = width * height * 4
+                    array_type = ctypes.c_char * size
+                    self._dib_array = ctypes.cast(self._dib_bits, POINTER(array_type)).contents
 
-        # BitBlt copies screen content directly into the DIB's memory
-        gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
+                # Select the cached DIB into the per-call memdc so BitBlt writes into it.
+                gdi.SelectObject(memdc, self._dib)
 
-        # Flush GDI operations to ensure DIB memory is fully updated before reading.
-        # This ensures the BitBlt has completed before we access the memory.
-        gdi.GdiFlush()
+                # BitBlt copies screen content directly into the DIB's memory
+                gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
 
-        # Read directly from DIB memory via the cached array view
-        assert self._dib_array is not None  # noqa: S101  for type checker
-        return bytearray(self._dib_array)
+                # Flush GDI operations to ensure DIB memory is fully updated before reading.
+                gdi.GdiFlush()
+
+                # Read directly from DIB memory via the cached array view
+                assert self._dib_array is not None  # noqa: S101  for type checker
+                return bytearray(self._dib_array)
+            finally:
+                gdi.DeleteDC(memdc)
+        finally:
+            self.user32.ReleaseDC(0, srcdc)
 
     def cursor(self) -> None:
         """Retrieve all cursor data. Pixels have to be RGB."""

@@ -16,8 +16,8 @@ def test_grab_monitor(mss_impl: Callable[..., MSS]) -> None:
         for mon in sct.monitors:
             image = sct.grab(mon)
             assert isinstance(image, ScreenShot)
-            assert isinstance(image.raw, bytearray)
-            assert isinstance(image.rgb, bytes)
+            assert isinstance(image.bgra, memoryview)
+            assert image.bgra.readonly
 
 
 def test_grab_part_of_screen(mss_impl: Callable[..., MSS]) -> None:

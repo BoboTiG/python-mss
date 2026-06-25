@@ -16,7 +16,7 @@ with mss.MSS() as sct:
     img = Image.new("RGB", sct_img.size)
 
     # Best solution: create a list(tuple(R, G, B), ...) for putdata()
-    pixels = zip(sct_img.raw[2::4], sct_img.raw[1::4], sct_img.raw[::4], strict=False)
+    pixels = zip(sct_img.bgra[2::4], sct_img.bgra[1::4], sct_img.bgra[::4], strict=False)
     img.putdata(list(pixels))
 
     # But you can set individual pixels too (slower)

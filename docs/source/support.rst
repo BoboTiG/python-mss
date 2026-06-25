@@ -5,7 +5,9 @@ Support
 Feel free to try MSS on a system we had not tested, and let us know by creating an `issue <https://github.com/BoboTiG/python-mss/issues>`_.
 
     - OS: GNU/Linux, macOS, and Windows
-    - Python: 3.10 and newer
+    - Python: CPython 3.10 and newer
+
+Python implementations other than CPython are unlikely to ever be supported, due to MSS's extensive use of ctypes.
 
 
 Future
@@ -18,8 +20,9 @@ Future
 Others
 ======
 
-Tested successfully on Pypy 5.1.0 on Windows, but speed is terrible.
-
+Previous version of MSS were tested successfully on PyPy 5.1.0 on Windows, but speed is terrible.  In general, PyPy
+support is not a priority, but if you want to help, please create an
+`issue <https://github.com/BoboTiG/python-mss/issues>`_.
 
 Abandoned
 =========

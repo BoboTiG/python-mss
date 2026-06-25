@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling==1.30.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -70,15 +70,16 @@ mss = "mss.__main__:main"
 
 [project.optional-dependencies]
 dev = [
-  "build==1.4.4",
-  "lxml==6.1.0",
+  "build==1.5.0",
+  "lxml==6.1.1",
   "mypy==1.20.2",
-  "ruff==0.15.12",
+  "ruff==0.15.18",
   "twine==6.2.0",
+  "typing_extensions==4.15.0",
 ]
 docs = [
   "myst-parser==5.0.0 ; python_version >= '3.12'",
-  "shibuya==2026.1.9 ; python_version >= '3.12'",
+  "shibuya==2026.5.19 ; python_version >= '3.12'",
   "sphinx==9.1.0 ; python_version >= '3.12'",
   "sphinx-copybutton==0.5.2 ; python_version >= '3.12'",
   "sphinx-new-tab-link==0.8.1 ; python_version >= '3.12'",
@@ -86,9 +87,9 @@ docs = [
 tests = [
   "numpy==2.4.3 ; sys_platform == 'linux' and python_version == '3.13'",
   "pillow==12.2.0 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pytest==9.0.3",
+  "pytest==9.1.1",
   "pytest-cov==7.1.0",
-  "pytest-rerunfailures==16.1",
+  "pytest-rerunfailures==16.3",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
 ]
 

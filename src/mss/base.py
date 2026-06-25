@@ -16,17 +16,11 @@ from mss.tools import to_png
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from types import TracebackType
+
+    from typing_extensions import Self
 
     from mss.models import Monitor, Monitors, Size
-
-    # Prior to 3.11, Python didn't have the Self type.  typing_extensions does, but we don't want to depend on it.
-    try:
-        from typing import Self
-    except ImportError:
-        try:
-            from typing_extensions import Self
-        except ImportError:
-            Self = Any  # type: ignore[assignment]
 
 try:
     from datetime import UTC
@@ -260,9 +254,21 @@ class MSS:
         """For the cool call `with MSS() as mss:`."""
         return self
 
-    def __exit__(self, *_: object) -> None:
+    def __exit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        _traceback: TracebackType | None,
+    ) -> None:
         """For the cool call `with MSS() as mss:`."""
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            # This extra work is needed so that exceptions generated during __exit__
+            # will not swallow exceptions that caused the __exit__ to be called
+            if exc_value is not None:
+                return
+            raise
 
     def close(self) -> None:
         """Clean up.
@@ -447,8 +453,8 @@ class MSS:
         if not overlap:
             return screenshot
 
-        screen_raw = screenshot.raw
-        cursor_raw = cursor.raw
+        screen_raw = screenshot._raw  # noqa: SLF001
+        cursor_raw = cursor.bgra
 
         cy, cy2 = (cy - y) * 4, (cy2 - y2) * 4
         cx, cx2 = (cx - x) * 4, (cx2 - x2) * 4
