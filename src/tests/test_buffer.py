@@ -28,7 +28,7 @@ def test_finalizer_runs_once() -> None:
     ("buffer_class", "readonly"),
     [
         (bytearray, False),
-        (bytes, True),  # type: ignore[list-item]
+        (bytes, True),
     ],
 )
 def test_finalizing_buffer_preserves_readonly(buffer_class: type, readonly: bool) -> None:
