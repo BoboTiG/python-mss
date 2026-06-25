@@ -142,7 +142,9 @@ def parse_edid(edid_data: bytes) -> dict:
     return rv
 
 
-def to_png(data: bytes, size: tuple[int, int], /, *, level: int = 6, output: Path | str | None = None) -> bytes | None:
+def to_png(
+    data: bytes | memoryview[int], size: tuple[int, int], /, *, level: int = 6, output: Path | str | None = None
+) -> bytes | None:
     """Dump data to a PNG file.  If `output` is `None`, create no file but return
     the whole PNG data.
 
