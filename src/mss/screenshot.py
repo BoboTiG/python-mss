@@ -160,7 +160,7 @@ class ScreenShot:
 
         The format is a memoryview object of bytes.  These are in a
         RGBRGB... sequence.  A specific pixel can be accessed as
-        ``rgb[(y * width + x) * 4:(y * width + x) * 4 + 4].``
+        ``rgb[(y * width + x) * 3:(y * width + x) * 3 + 3].``
 
         The memoryview is read-write, for compatibility with ctypes'
         :py:func:`from_buffer`.  However, actually modifying the data
