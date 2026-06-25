@@ -67,7 +67,7 @@ class ScreenShot:
         ``torch.from_numpy``), TensorFlow (via ``tf.convert_to_tensor``),
         JAX (via ``jax.numpy.asarray``), Pandas, scikit-learn, Matplotlib,
         some OpenCV functions, and others.  This allows you to pass a
-        :class:`ScreenShot` instance directly to these libraries without
+        :py:class:`ScreenShot` instance directly to these libraries without
         needing to convert it first.
 
         This is in HWC order, with 4 channels (BGRA).
@@ -102,9 +102,8 @@ class ScreenShot:
         when given a read-only buffer, but will still work.  However,
         actually modifying the data may cause undefined behavior.
 
-        .. note::
-            While the name is ``bgra``, the alpha channel may or may
-            not be valid.
+        While the name is ``bgra``, the alpha channel may not represent
+        meaningful transparency on all platforms/backends.
         """
         # Making a read-only copy of a memoryview is very cheap.  But
         # we still always return the same memoryview: somebody using a
@@ -150,7 +149,7 @@ class ScreenShot:
         when given a read-only buffer, but will still work.  However,
         actually modifying the data may cause undefined behavior.
 
-        :: note::
+        .. note::
             This is a computed property.  If possible, using the
             :py:attr:`bgra` property directly is usually more
             efficient.
@@ -168,19 +167,14 @@ class ScreenShot:
     def to_pil(self, mode: str = "RGB") -> PIL.Image.Image:
         """Convert the screenshot to a Pillow image.
 
-        Args:
-            mode: The requested image mode.  Must be ``"RGB"``
-                (default) or ``"RGBA"``.
+        :param mode: The requested image mode.  Must be ``"RGB"``
+            (default) or ``"RGBA"``.
 
-        Returns:
-            A :class:`PIL.Image.Image` instance.
+        When requesting ``"RGBA"``, the alpha channel may not represent
+        meaningful transparency on all platforms/backends.
 
-        Notes:
-            When requesting ``"RGBA"``, the alpha channel may not be
-            meaningful on all platforms/backends.
-
-            Use ``channels="BGR"`` for OpenCV, and ``channels="RGB"``
-            (the default) for scikit-image and most other frameworks.
+        TODO(jholveck): After #536 is resolved, add a note about the
+        buffer sharing semantics.
         """
         mode = mode.upper()
         if mode not in {"RGB", "RGBA"}:
@@ -195,19 +189,20 @@ class ScreenShot:
     def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> np.ndarray:
         """Convert the screenshot to a NumPy array.
 
-        Args:
-            channels: The requested channel order.  Must be
-                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
-                ``"RGBA"``.
-            layout: The requested layout.  Must be ``"HWC"`` (default)
-                or ``"CHW"``.
+        :param channels: The requested channel order.  Must be
+            ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or ``"RGBA"``.
+        :param layout: The requested layout.  Must be ``"HWC"``
+            (default) or ``"CHW"``.
+        :returns: A NumPy array of dtype ``uint8``.
 
-        Returns:
-            A NumPy array of dtype ``uint8``.
+        Use ``channels="BGR"`` for OpenCV, and ``channels="RGB"`` (the
+        default) for scikit-image and most other frameworks.
 
-        Notes:
-            When requesting ``"RGBA"``, the alpha channel may not be
-            meaningful on all platforms/backends.
+        When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
+        not represent meaningful transparency on all platforms/backends.
+
+        TODO(jholveck): After #536 is resolved, add a note about the
+        buffer sharing semantics.
         """
         channels = cast("Channels", channels.upper())
         layout = cast("Layout", layout.upper())
@@ -244,28 +239,25 @@ class ScreenShot:
     ) -> torch.Tensor:
         """Convert the screenshot to a PyTorch tensor.
 
-        Args:
-            channels: The requested channel order.  Must be
-                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
-                ``"RGBA"``.
-            layout: The requested layout.  Must be ``"CHW"`` (default)
-                or ``"HWC"``.
-            dtype: The requested dtype as a ``torch.dtype``.  Defaults to
-                ``torch.float32``.
+        :param channels: The requested channel order.  Must be
+            ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or ``"RGBA"``.
+        :param layout: The requested layout.  Must be ``"CHW"``
+            (default) or ``"HWC"``.
+        :param dtype: The requested dtype as a ``torch.dtype``.
+            Defaults to ``torch.float32``.
 
-        Returns:
-            A PyTorch tensor.
+        Floating point dtypes are scaled to the ``[0, 1]`` range.
 
-        Notes:
-            The default layout is ``"CHW"`` because it is more
-            commonly used in PyTorch models.  This is different than
-            in :py:meth:`to_numpy` or :py:meth:`to_tensorflow`, which
-            default to ``"HWC"``.
+        The default layout is ``"CHW"`` because it is more commonly used
+        in PyTorch models.  This is different than in
+        :py:meth:`to_numpy` or :py:meth:`to_tensorflow`, which default
+        to ``"HWC"``.
 
-            When requesting ``"RGBA"``, the alpha channel may not be
-            meaningful on all platforms/backends.
+        When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
+        not represent meaningful transparency on all platforms/backends.
 
-            Floating point dtypes are scaled to the ``[0, 1]`` range.
+        TODO(jholveck): After #536 is resolved, add a note about the
+        buffer sharing semantics.
         """
         import torch  # noqa: PLC0415
 
@@ -274,8 +266,8 @@ class ScreenShot:
         if dtype is None:
             dtype = torch.float32
         elif not isinstance(dtype, torch.dtype):
-            msg = "Dtype must be a torch dtype"
-            raise ValueError(msg)
+            msg = 'argument "dtype" must be a torch.dtype'
+            raise TypeError(msg)
 
         tensor = torch.from_numpy(frame)
         tensor = tensor.to(dtype=dtype)
@@ -287,40 +279,40 @@ class ScreenShot:
         self,
         channels: Channels = "RGB",
         layout: Layout = "HWC",
-        dtype: tf.DType | str = "float32",
+        dtype: tf.DType | np.dtype | int | str = "float32",
     ) -> tf.Tensor:
         """Convert the screenshot to a TensorFlow tensor.
 
-        Args:
-            channels: The requested channel order.  Must be
-                ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or
-                ``"RGBA"``.
-            layout: The requested layout.  Must be ``"HWC"`` (default)
-                or ``"CHW"``.
-            dtype: The requested dtype.  Can be a string like
-                ``"float32"`` (default) or a ``tf.DType``.
+        :param channels: The requested channel order.  Must be
+            ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or ``"RGBA"``.
+        :param layout: The requested layout.  Must be ``"HWC"``
+            (default) or ``"CHW"``.
+        :param dtype: The requested dtype.  Can be a string like
+            ``"float32"`` (default), a :py:class:``tf.DType``, an int
+            representing a TensorFlow ``DataClass`` enum value, or a
+            ``np.dtype``.
 
-        Returns:
-            A TensorFlow tensor.
+        Floating point dtypes are scaled to the ``[0, 1]`` range.
 
-        Notes:
-            When requesting ``"RGBA"``, the alpha channel may not be
-            meaningful on all platforms/backends.
+        When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
+        not represent meaningful transparency on all platforms/backends.
 
-            Floating point dtypes are scaled to the ``[0, 1]`` range.
+        Currently, the returned :py:class:`tf.Tensor` does not share
+        memory with the :py:class:`ScreenShot`.  This is expected to
+        change in the future.  TODO(jholveck): After #536 is resolved,
+        add a note about the expected buffer sharing semantics.
         """
         import tensorflow as tf  # noqa: PLC0415
 
         frame = self.to_numpy(channels=channels, layout=layout)
 
-        try:
-            tf_dtype = tf.as_dtype(dtype)
-        except (TypeError, ValueError) as exc:
-            msg = "Dtype must be a TensorFlow DType or valid string"
-            raise ValueError(msg) from exc
+        # TypeErrors from tf.as_dtype are passed up to the caller.
+        tf_dtype = tf.as_dtype(dtype)
 
         tensor = tf.convert_to_tensor(frame, dtype=tf_dtype)
         if tf_dtype.is_floating:
+            # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
+            # instead, by making a tf.constant.
             tensor = tensor / tf.constant(255.0, dtype=tf_dtype)
         return tensor
 
