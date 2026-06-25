@@ -453,6 +453,10 @@ class MSSImplXCBBase(MSSImplementation):
         # Now, save the image.  This is a reference into the img_reply structure.
         img_data_arr = xcb.get_image_data(img_reply)
         # Copy this into a new bytearray, so that it will persist after we clear the image structure.
+        #
+        # We might be able to hold onto img_reply in a finalizing_buffer finalizer, so that we can use the image data
+        # without copying.  That would be more efficient, but it would be a bit more complex, and presently the
+        # XGetImage implementation is already a slow and less-common path.
         img_data = bytearray(img_data_arr)
 
         if img_reply.depth != self.drawable_depth or img_reply.visual != self.drawable_visual_id:
