@@ -13,7 +13,7 @@ MSS can be used simply as::
         # ...
 
 For compatibility with existing code, :py:func:`mss.mss` is still available in
-10.2, but deprecated::
+11.0, but deprecated::
 
     import mss
 
@@ -21,7 +21,7 @@ For compatibility with existing code, :py:func:`mss.mss` is still available in
         # ...
 
 For compatibility with existing code, platform-specific class names are also
-still available in 10.2::
+still available in 11.0, but are also deprecated::
 
     # GNU/Linux
     from mss.linux import MSS
@@ -52,6 +52,21 @@ This is a much better usage, memory efficient::
 
 Also, it is a good thing to save the MSS instance inside an attribute of your class and calling it when needed.
 
+Direct Screenshot Buffers
+=========================
+
+On supported platforms, MSS can expose screenshot data directly from operating system buffers instead of copying it into
+a separate Python-owned buffer. This reduces memory copying and can improve performance when processing screenshots with
+libraries that support the Python buffer protocol, such as NumPy and OpenCV.
+
+This optimization is enabled automatically and does not require any changes to application code.
+
+Requirements:
+
+- Python 3.12 or later
+- GNU/Linux
+
+Support for additional operating systems is planned.
 
 Multithreading
 ==============
@@ -91,8 +106,7 @@ If you want to choose a particular backend, you can pass the ``backend`` keyword
     with MSS(backend="xgetimage") as sct:
         ...
 
-GNU/Linux has multiple backend implementations. Windows also exposes the named ``gdi`` backend, which is currently the
-same as ``default``. The GNU/Linux backends are described in their own section below.
+GNU/Linux has multiple backend implementations. Windows also exposes the named ``gdi`` backend, which is currently the same as ``default``. The GNU/Linux backends are described in their own section below.
 
 
 GNU/Linux

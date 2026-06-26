@@ -72,7 +72,7 @@ mss = "mss.__main__:main"
 dev = [
   "build==1.5.0",
   "lxml==6.1.1",
-  "mypy==1.20.2",
+  "mypy==2.1.0",
   "ruff==0.15.18",
   "twine==6.2.0",
   "typing_extensions==4.15.0",
@@ -85,8 +85,8 @@ docs = [
   "sphinx-new-tab-link==0.8.1 ; python_version >= '3.12'",
 ]
 tests = [
-  "numpy==2.4.3 ; sys_platform == 'linux' and python_version == '3.13'",
-  "pillow==12.2.0 ; sys_platform == 'linux' and python_version == '3.13'",
+  "numpy==2.4.3 ; python_version >= '3.12'",
+  "pillow==12.2.0 ; python_version >= '3.12'",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
   "pytest-rerunfailures==16.3",
