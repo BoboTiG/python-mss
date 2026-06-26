@@ -45,11 +45,8 @@ class ScreenShot:
         #: NamedTuple of the screenshot size.
         self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
 
-        # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.  This is kept read-write if
-        # it was originally so, in order for _merge to work, and so it can be used with ctypes.  However, it should not
-        # be modified once __pixels or __rgb have been accessed, so that the cached values for __pixels and __rgb aren't
-        # potentially inconsistent if the user changes data.
-        self._raw: memoryview = memoryview(data)
+        # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.
+        self._raw: memoryview[int] = memoryview(data)
         assert self._raw.nbytes == self.size.width * self.size.height * 4, (  # noqa: S101
             "Data size does not match screenshot dimensions."
         )
@@ -70,10 +67,7 @@ class ScreenShot:
         :py:class:`ScreenShot` instance directly to these libraries without
         needing to convert it first.
 
-        This is in HWC order, with 4 channels (BGRA).
-
-        The array is read-write, for maximum compatibility.  However,
-        actually modifying the data may cause undefined behavior.
+        This is in HWC order, with 4 channels in BGRA order.
 
         .. seealso::
 
@@ -94,7 +88,7 @@ class ScreenShot:
         return cls(data, monitor)
 
     @property
-    def bgra(self) -> memoryview:
+    def bgra(self) -> memoryview[int]:
         """BGRx values from the BGRx raw pixels.
 
         The format is a memoryview object of bytes.  These are in a
@@ -116,7 +110,7 @@ class ScreenShot:
         return self._raw
 
     @property
-    def raw(self) -> memoryview:
+    def raw(self) -> memoryview[int]:
         """Deprecated alias for :py:attr:`bgra`.
 
         .. version-deprecated:: 10.2.0
@@ -231,6 +225,11 @@ class ScreenShot:
 
         .. version-added:: 11.0.0
         """
+        # This is used as the channel and layout manipulation function for the other frameworks, too.  This is on the
+        # assumption that NumPy is probably going to be the fastest on CPU, although I haven't tested this.  It's also a
+        # prerequisite for the others, so we'd need to have a NumPy-only implementation anyway: the NumPy implementation
+        # shouldn't depend on PyTorch / TensorFlow, while the converse isn't true.
+
         channels = cast("Channels", channels.upper())
         layout = cast("Layout", layout.upper())
 
@@ -249,11 +248,17 @@ class ScreenShot:
         elif channels == "BGR":
             data = frame[:, :, :3]
         elif channels == "RGB":
-            data = frame[:, :, [2, 1, 0]]
+            # Using [2,1,0] instead of 2::-1 would copy, rather than creating a view.
+            data = frame[:, :, 2::-1]
         else:  # RGBA
+            # This can't be represented as a view, since the channels within a pixel are not ordered in a way that can
+            # be represented with a constant offset.  In other words, the way that NumPy strides work, you can only make
+            # a view if you can express the desired element order in a x:y:z style range relative to the base array's
+            # order.
             data = frame[:, :, [2, 1, 0, 3]]
 
         if layout == "CHW":
+            # This will always create a view.  (We're reordering the axes, not the elements.)
             data = np.transpose(data, (2, 0, 1))
 
         return data
@@ -271,7 +276,9 @@ class ScreenShot:
         :param layout: The requested layout.  Must be ``"CHW"``
             (default) or ``"HWC"``.
         :param dtype: The requested dtype as a :py:class:`torch.dtype`.
-            Defaults to ``torch.float32``.
+            Defaults to the current PyTorch default dtype, which is
+            usually ``torch.float32``; see
+            :py:func:`torch.get_default_dtype`.
 
         Floating point dtypes are scaled to the ``[0, 1]`` range.
 
@@ -290,15 +297,19 @@ class ScreenShot:
         frame = self.to_numpy(channels=channels, layout=layout)
 
         if dtype is None:
-            dtype = torch.float32
+            dtype = torch.get_default_dtype()
         elif not isinstance(dtype, torch.dtype):
             msg = 'argument "dtype" must be a torch.dtype'
             raise TypeError(msg)
 
+        # PyTorch doesn't support negative strides like NumPy does; we have to copy in that case.  This happens if the
+        # user requested a RGB layout.  (And no, we can't use [:,:,2::-1] in PyTorch either.)
+        if any(s < 0 for s in frame.strides):
+            frame = frame.copy()
         tensor = torch.from_numpy(frame)
         tensor = tensor.to(dtype=dtype)
         if dtype.is_floating_point:
-            tensor = tensor / 255.0
+            tensor.div_(255.0)
         return tensor
 
     def to_tensorflow(
@@ -333,6 +344,7 @@ class ScreenShot:
         # TypeErrors from tf.as_dtype are passed up to the caller.
         tf_dtype = tf.as_dtype(dtype)
 
+        # TODO(jholveck): Make sure that we can use convert_to_tensor if the source has negative strides.
         tensor = tf.convert_to_tensor(frame, dtype=tf_dtype)
         if tf_dtype.is_floating:
             # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
