@@ -32,6 +32,103 @@ still available in 11.0, but are also deprecated::
     # Microsoft Windows
     from mss.windows import MSS
 
+Accessing Pixel Data
+====================
+
+.. attention::
+    TODO(jholveck): We should have something documenting ``grab`` before this.
+
+Once you have the :py:class:`mss.ScreenShot` object, you'll want to use the pixel data.  You can get this from the
+:py:class:`mss.ScreenShot` object directly, using any of several methods:
+
+* :py:attr:`mss.ScreenShot.bgra`: (fastest) Direct access to the pixel data, as a :py:class:`memoryview` of
+  ``BGRABGRA...`` bytes.
+* :py:attr:`mss.ScreenShot.rgb`: A :py:class:`memoryview` of ``RGBRGB...`` bytes.
+* :py:attr:`mss.ScreenShot.pixels`: A 2d array (list of lists) of ``(R, G, B)`` tuples.
+* :py:meth:`mss.ScreenShot.pixel`: Access ``(R, G, B)`` tuples of a particular x, y coordinate.
+
+Often, though, you'll export screenshot data to a different framework.  You can often do this by passing the
+:py:attr:`mss.ScreenShot.bgra` data to the framework's appropriate function.  MSS also provides easy-to-use methods to
+work with many popular frameworks:
+
+* :py:meth:`mss.ScreenShot.to_pil`: Creates a :py:class:`PIL.Image.Image` for use with the popular Python Imaging
+  Library, `Pillow <https://pillow.readthedocs.io/>`_.
+* :py:meth:`mss.ScreenShot.to_numpy`: Creates a :py:class:`numpy.ndarray` for use with the high-speed NumPy scientific
+  computing library.  This is compatible with most other Python frameworks that have image manipulation capabilities,
+  such as `scikit-image <https://scikit-image.org/>`_ and `OpenCV <https://opencv.org/>`_.
+* :py:meth:`mss.ScreenShot.to_torch`: Creates a :py:class:`torch.Tensor` for use with
+  `PyTorch <https://pytorch.org/>`_, a popular deep learning framework.
+* :py:meth:`mss.ScreenShot.to_tensorflow`: Creates a :py:class:`tf.Tensor` for use with
+  `TensorFlow <https://www.tensorflow.org/>`_, another popular deep learning framework.
+
+NumPy Array Interface Protocol
+------------------------------
+
+Many libraries support the `NumPy array interface protocol
+<https://numpy.org/doc/stable/reference/arrays.interface.html>`_.  This allows them to accept a
+:py:class:`mss.ScreenShot` object directly to these libraries, without needing to convert it to a NumPy array first.
+Some examples include the following libraries:
+
+* Many `SciPy <https://scipy.org/>`_ projects
+* `CuPy <https://cupy.dev/>`_, a GPU-accelerated NumPy-like library
+* `JAX <https://jax.dev/>`_, a high-performance machine learning library
+* `Pandas <https://pandas.pydata.org/>`_, a popular data analysis library
+* `scikit-learn <https://scikit-learn.org/>`_, a popular machine learning library
+* `Matplotlib <https://matplotlib.org/>`_, a popular plotting library
+* Some functions from `OpenCV <https://opencv.org/>`_, a popular computer vision library
+
+When using the NumPy array interface protocol, the returned object is in HWC (height, width, channels) format, with the
+channels in BGRA order.
+
+Note that OpenCV uses RGB order, rather than the BGRA order used in this automatic conversion.  You may prefer to
+use the :py:meth:`mss.ScreenShot.to_numpy` method instead.
+
+Alpha Channel
+-------------
+
+The alpha channel is used for transparency in images.  However, it's also sometimes just used as a placeholder for an
+unused channel.  In the case of screenshots, the alpha channel is often not used for transparency, and may be filled
+with zeros.  If an image processing library interprets the alpha channel as transparency, this can make it think the
+image is transparent.
+
+For instance, if you use Matplotlib to display a screenshot, you might see nothing at all.  This happens if the OS has
+filled the alpha channel with zeros (which is common on many platforms).
+
+The methods described above, such as :py:meth:`mss.ScreenShot.to_numpy`, can convert the pixel data to BGR (or RGB)
+format, removing the alpha channel entirely.
+
+In other words, instead of ``plt.imshow(img)``, you can use ``plt.imshow(img.to_numpy(channels="RGB"))`` to display the
+screenshot correctly.
+
+In the future, MSS may provide an indicator of whether the alpha channel is meaningful or not, as well as whether it is
+premultiplied or straight alpha.  For now, you should assume that the alpha channel is not meaningful, and either ignore
+or remove it, unless you know that it's meaningful for your specific circumstances.
+
+Memory Sharing
+--------------
+
+There's a subtlety to be aware of in the following conditions:
+
+1. You are using any of the above methods (or properties, or the NumPy array interface protocol) to convert a
+   :py:class:`mss.ScreenShot` object to another format, *and*
+2. You use two different methods, or the same method twice, on the same :py:class:`mss.ScreenShot` object, *and*
+3. You modify the pixel data of the returned object (e.g., a NumPy array or a PIL image).
+
+When using any of the above methods, the returned object might (but does not always) share pixel memory with the
+original :py:class:`mss.ScreenShot` object.  This means that if you modify the returned object's pixels, it may also
+modify the original :py:class:`mss.ScreenShot` object, or other objects that share the same memory.
+
+For instance, if you use :py:meth:`mss.ScreenShot.to_numpy` to create a NumPy array, then use
+:py:meth:`mss.ScreenShot.to_pil` to create a PIL image, both objects may share the same memory.  If you modify the
+pixels of the NumPy array, it may also modify the pixels of the PIL image, and vice versa.
+
+Pixel memory is never guaranteed to be shared; it depends on many specifics.  Whether memory is shared or not is an
+implementation detail, and not part of the semantic versioning guarantees of MSS: it may change in future versions,
+or even when a program is run in different environments.
+
+If you want to ensure that memory is not shared, you can make a copy of the returned object.  For instance, if you
+want to ensure that a NumPy array does not share memory with the original :py:class:`mss.ScreenShot` object, you can
+use the :py:meth:`numpy.ndarray.copy` method to create a copy of the array.
 
 Intensive Use
 =============
@@ -140,7 +237,6 @@ There are three available backends.
 :py:mod:`xlib`
     The legacy backend powered by :c:func:`XGetImage`.  It is kept solely for systems where XCB libraries are
     unavailable and no new features are being added to it.
-
 
 Command Line
 ============

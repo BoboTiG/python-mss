@@ -12,12 +12,14 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Any
 
-    import numpy as np
+    # We don't import numpy as np, since their InterSphinx reference isn't set up with that shortcut.
+    import numpy  # noqa: ICN001
     import PIL.Image
     import tensorflow as tf
     import torch
     from typing_extensions import Buffer
 
+# Type checkers can see these, but they don't get into the Sphinx docs.  I'm not sure if we should do this differently.
 Channels = Literal["BGRA", "BGR", "RGB", "RGBA"]
 Layout = Literal["HWC", "CHW"]
 
@@ -98,10 +100,6 @@ class ScreenShot:
         BGRxBGRx... sequence.  A specific pixel can be accessed as
         ``bgra[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
-        The memoryview is read-only.  PyTorch will issue a warning
-        when given a read-only buffer, but will still work.  However,
-        actually modifying the data may cause undefined behavior.
-
         While the name is ``bgra``, the alpha channel may not represent
         meaningful transparency on all platforms/backends.
         """
@@ -145,10 +143,6 @@ class ScreenShot:
         RGBRGB... sequence.  A specific pixel can be accessed as
         ``rgb[(y * width + x) * 4:(y * width + x) * 4 + 4].``
 
-        The memoryview is read-only.  PyTorch will issue a warning
-        when given a read-only buffer, but will still work.  However,
-        actually modifying the data may cause undefined behavior.
-
         .. note::
             This is a computed property.  If possible, using the
             :py:attr:`bgra` property directly is usually more
@@ -173,8 +167,7 @@ class ScreenShot:
         When requesting ``"RGBA"``, the alpha channel may not represent
         meaningful transparency on all platforms/backends.
 
-        TODO(jholveck): After #536 is resolved, add a note about the
-        buffer sharing semantics.
+        .. version-added:: 11.0.0
         """
         mode = mode.upper()
         if mode not in {"RGB", "RGBA"}:
@@ -186,7 +179,7 @@ class ScreenShot:
         raw_mode = "BGRX" if mode == "RGB" else "BGRA"
         return Image.frombuffer(mode, self.size, self._raw, "raw", raw_mode, 0, 1)
 
-    def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> np.ndarray:
+    def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> numpy.ndarray:
         """Convert the screenshot to a NumPy array.
 
         :param channels: The requested channel order.  Must be
@@ -201,8 +194,7 @@ class ScreenShot:
         When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
         not represent meaningful transparency on all platforms/backends.
 
-        TODO(jholveck): After #536 is resolved, add a note about the
-        buffer sharing semantics.
+        .. version-added:: 11.0.0
         """
         channels = cast("Channels", channels.upper())
         layout = cast("Layout", layout.upper())
@@ -243,7 +235,7 @@ class ScreenShot:
             ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or ``"RGBA"``.
         :param layout: The requested layout.  Must be ``"CHW"``
             (default) or ``"HWC"``.
-        :param dtype: The requested dtype as a ``torch.dtype``.
+        :param dtype: The requested dtype as a :py:class:`torch.dtype`.
             Defaults to ``torch.float32``.
 
         Floating point dtypes are scaled to the ``[0, 1]`` range.
@@ -256,8 +248,7 @@ class ScreenShot:
         When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
         not represent meaningful transparency on all platforms/backends.
 
-        TODO(jholveck): After #536 is resolved, add a note about the
-        buffer sharing semantics.
+        .. version-added:: 11.0.0
         """
         import torch  # noqa: PLC0415
 
@@ -279,7 +270,7 @@ class ScreenShot:
         self,
         channels: Channels = "RGB",
         layout: Layout = "HWC",
-        dtype: tf.DType | np.dtype | int | str = "float32",
+        dtype: tf.dtypes.DType | numpy.dtype | int | str = "float32",
     ) -> tf.Tensor:
         """Convert the screenshot to a TensorFlow tensor.
 
@@ -288,19 +279,17 @@ class ScreenShot:
         :param layout: The requested layout.  Must be ``"HWC"``
             (default) or ``"CHW"``.
         :param dtype: The requested dtype.  Can be a string like
-            ``"float32"`` (default), a :py:class:``tf.DType``, an int
-            representing a TensorFlow ``DataClass`` enum value, or a
-            ``np.dtype``.
+            ``"float32"`` (default), a :py:class:`tf.DType
+            <tf.dtypes.DType>`, an int representing a TensorFlow
+            ``DataClass`` enum value, or a :py:class:`np.dtype
+            <numpy.dtype>`.
 
         Floating point dtypes are scaled to the ``[0, 1]`` range.
 
         When requesting ``"RGBA"`` or ``"BGRA"``, the alpha channel may
         not represent meaningful transparency on all platforms/backends.
 
-        Currently, the returned :py:class:`tf.Tensor` does not share
-        memory with the :py:class:`ScreenShot`.  This is expected to
-        change in the future.  TODO(jholveck): After #536 is resolved,
-        add a note about the expected buffer sharing semantics.
+        .. version-added:: 11.0.0
         """
         import tensorflow as tf  # noqa: PLC0415
 
