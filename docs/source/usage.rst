@@ -32,14 +32,39 @@ still available in 11.0, but are also deprecated::
     # Microsoft Windows
     from mss.windows import MSS
 
+Capturing Screenshots
+=====================
+
+If you simply need to capture one or more monitors to PNG files, the :ref:`examples` section has code ready for you to
+copy and paste.
+
+If instead you want to use the pixel data yourself, you can do so easily, with the :py:meth:`mss.MSS.grab` method.
+
+You'll first need to decide whether you want to capture all the monitors, a single monitor, or a specific region of the
+screen.  The :py:class:`mss.MSS` object has a :py:attr:`mss.MSS.monitors` attribute that is a list of all the monitors,
+starting from index 1, as well as the full virtual screen (all monitors combined) at index 0.
+
+Once you've decided what you want to capture, you can call :py:meth:`mss.MSS.grab` with the appropriate monitor or
+region.  This will return a :py:class:`mss.ScreenShot` object, which contains the pixel data and other information about
+the screenshot.
+
+For instance, you can capture the first monitor and get a :py:class:`mss.ScreenShot` object like this::
+
+    with MSS() as sct:
+        sct_img = sct.grab(sct.monitors[1])  # Capture the first monitor
+
+Ok, now you've got the :py:class:`mss.ScreenShot` object.  But what do
+you do with it?
+
 Accessing Pixel Data
 ====================
 
-.. attention::
-    TODO(jholveck): We should have something documenting ``grab`` before this.
+Once you have the :py:class:`mss.ScreenShot` object, you'll want to use the pixel data.  There are several ways,
+depending on what you want to do with it.  This is a quick overview of the options, with more details in the linked
+references.
 
-Once you have the :py:class:`mss.ScreenShot` object, you'll want to use the pixel data.  You can get this from the
-:py:class:`mss.ScreenShot` object directly, using any of several methods:
+If you want to examine individual pixels, you can get them from the :py:class:`mss.ScreenShot` object directly, using
+any of several methods:
 
 * :py:attr:`mss.ScreenShot.bgra`: (fastest) Direct access to the pixel data, as a :py:class:`memoryview` of
   ``BGRABGRA...`` bytes.
@@ -52,7 +77,8 @@ Often, though, you'll export screenshot data to a different framework.  You can 
 work with many popular frameworks:
 
 * :py:meth:`mss.ScreenShot.to_pil`: Creates a :py:class:`PIL.Image.Image` for use with the popular Python Imaging
-  Library, `Pillow <https://pillow.readthedocs.io/>`_.
+  Library, `Pillow <https://pillow.readthedocs.io/>`_.  This provides a wide range of image manipulation capabilities,
+  including saving to many different formats.
 * :py:meth:`mss.ScreenShot.to_numpy`: Creates a :py:class:`numpy.ndarray` for use with the high-speed NumPy scientific
   computing library.  This is compatible with most other Python frameworks that have image manipulation capabilities,
   such as `scikit-image <https://scikit-image.org/>`_ and `OpenCV <https://opencv.org/>`_.
@@ -116,7 +142,7 @@ There's a subtlety to be aware of in the following conditions:
 
 When using any of the above methods, the returned object might (but does not always) share pixel memory with the
 original :py:class:`mss.ScreenShot` object.  This means that if you modify the returned object's pixels, it may also
-modify the original :py:class:`mss.ScreenShot` object, or other objects that share the same memory.
+modify the pixels stored in the original :py:class:`mss.ScreenShot` object, or other objects that share the same memory.
 
 For instance, if you use :py:meth:`mss.ScreenShot.to_numpy` to create a NumPy array, then use
 :py:meth:`mss.ScreenShot.to_pil` to create a PIL image, both objects may share the same memory.  If you modify the
