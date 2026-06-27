@@ -344,7 +344,7 @@ class ScreenShot:
         # TypeErrors from tf.as_dtype are passed up to the caller.
         tf_dtype = tf.as_dtype(dtype)
 
-        # TODO(jholveck): Make sure that we can use convert_to_tensor if the source has negative strides.
+        # TensorFlow will always copy in convert_to_tensor.
         tensor = tf.convert_to_tensor(frame, dtype=tf_dtype)
         if tf_dtype.is_floating:
             # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
