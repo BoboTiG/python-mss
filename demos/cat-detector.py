@@ -278,27 +278,9 @@ def main() -> None:
             # Grab the screenshot.
             sct_img = sct.grab(monitor)
 
-            # We transfer the image from MSS to PyTorch via a Pillow Image.  Faster approaches exist (see
-            # screenshot_to_tensor), but PIL is more readable.  The bulk of the time in this program is spent doing
-            # the AI work, so we just use the most convenient mechanism.
-            img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX", 0, 1)
-
-            # We explicitly convert it to a tensor here, even though Torchvision can also convert it in the preprocess
-            # step.  This is so that we send it to the GPU before we do the preprocessing: PIL Images are always on
-            # the CPU, and doing the preprocessing on the GPU is much faster.
-            #
-            # Most image APIs, including MSS, use an array layout of [height, width, channels].  In MSS, the
-            # ScreenShot.bgra data follows this convention, even though it's exposed as a flat bytes object.
-            #
-            # In contrast, most AI frameworks expect images in [channels, height, width] order.  The pil_to_tensor
-            # helper performs this rearrangement for us.
-            img_tensor = torchvision.transforms.v2.functional.pil_to_tensor(img).to(device)
-
-            # An alternative to using PIL is shown in screenshot_to_tensor.  In one test, this saves about 20 ms per
-            # frame if using a GPU, and about 200 ms if using a CPU.  This would replace the "img=" and "img_tensor="
-            # lines above.
-            #
-            #img_tensor = screenshot_to_tensor(sct_img, device)
+            # Transfer the image from MSS to PyTorch.  This does the channel shuffling and reordering on the CPU.  For
+            # better performance, doing the shuffling on the GPU can be more efficient; see screenshot_to_tensor.
+            img_tensor = sct_img.to_torch().to(device)
 
             # Do the preprocessing stages that the trained model expects; see the comment where we define preprocess.
             # The traditional name for inputs to a neural net is "x", because AI programmers aren't terribly
