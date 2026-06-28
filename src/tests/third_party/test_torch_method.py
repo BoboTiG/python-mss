@@ -38,7 +38,7 @@ def test_to_torch_dtype_uint8() -> None:
 @pytest.mark.parametrize("cuda", [False, True])
 def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, layout: str, cuda: bool) -> None:
     """Test all permutations of channels and layouts."""
-    if cuda and not torch.cuda.is_available:
+    if cuda and not torch.cuda.is_available():
         # The CUDA versions won't be run in CI/CD, but it's still worth checking them on developers' machines if they
         # happen to have PyTorch with CUDA support.
         pytest.skip()
