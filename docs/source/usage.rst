@@ -106,8 +106,8 @@ Some examples include the following libraries:
 When using the NumPy array interface protocol, the returned object is in HWC (height, width, channels) format, with the
 channels in BGRA order.
 
-Note that OpenCV uses RGB order, rather than the BGRA order used in this automatic conversion.  You may prefer to
-use the :py:meth:`mss.ScreenShot.to_numpy` method instead.
+Note that most libraries do not expect the alpha channel to be present, or expect an order other than the BGRA order
+used in this automatic conversion.  You may prefer to use the :py:meth:`mss.ScreenShot.to_numpy` method instead.
 
 Alpha Channel
 -------------

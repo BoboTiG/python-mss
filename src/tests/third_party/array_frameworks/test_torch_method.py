@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 
 from mss import ScreenShot
-from tests.third_party.conftest import reordered_test_image
+from tests.third_party.array_frameworks.conftest import reordered_test_image
 
 np = pytest.importorskip("numpy")
 torch = pytest.importorskip("torch")
@@ -19,7 +19,7 @@ def test_to_torch_default() -> None:
 
     tensor = shot.to_torch()
     assert tuple(tensor.shape) == (3, 1, 1)
-    assert tensor.dtype == torch.float32
+    assert tensor.dtype == torch.get_default_dtype()
     expected = torch.tensor([3 / 255.0, 2 / 255.0, 1 / 255.0], dtype=torch.float32)
     assert torch.allclose(tensor[:, 0, 0], expected)
 

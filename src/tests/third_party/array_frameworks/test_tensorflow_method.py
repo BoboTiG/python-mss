@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 
 from mss import ScreenShot
-from tests.third_party.conftest import reordered_test_image
+from tests.third_party.array_frameworks.conftest import reordered_test_image
 
 np = pytest.importorskip("numpy")
 tf = pytest.importorskip("tensorflow")

@@ -6,9 +6,9 @@ from collections.abc import Callable
 
 import pytest
 
-from mss import MSS
+import numpy as np
 
-np = pytest.importorskip("numpy", reason="Numpy module not available.")
+from mss import MSS
 
 
 def test_numpy(mss_impl: Callable[..., MSS]) -> None:

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     # importorskip), but type checkers don't always know about importorskip.
     import numpy as np_typehints  # noqa: ICN001
 
+# This entire tree is skipped if NumPy isn't installed.
 np = pytest.importorskip("numpy")
 
 TEST_SIZE = (320, 240)

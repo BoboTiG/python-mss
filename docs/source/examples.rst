@@ -142,7 +142,7 @@ This is an example using :py:meth:`mss.ScreenShot.to_pil` and direct pixel edits
 
 .. versionadded:: 3.0.0
 
-OpenCV/Numpy
+OpenCV/NumPy
 ============
 
 See how fast you can record the screen.

@@ -17,11 +17,12 @@ with mss.MSS() as sct:
     while "Screen capturing":
         last_time = time.time()
 
-        # Get raw pixels from the screen, save it to a NumPy array
+        # Get raw pixels from the screen, save it to a NumPy array.
+        # Note that OpenCV expects colors in BGR order.
         img = sct.grab(monitor).to_numpy(channels="BGR")
 
         # Display the picture
-        cv2.imshow("OpenCV/Numpy normal", img)
+        cv2.imshow("OpenCV/NumPy normal", img)
 
         # Display the picture in grayscale
         # cv2.imshow('OpenCV/Numpy grayscale',
