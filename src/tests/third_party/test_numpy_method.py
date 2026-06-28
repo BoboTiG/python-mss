@@ -46,7 +46,7 @@ def test_to_numpy_bad_channels() -> None:
     raw = bytearray([0, 0, 0, 0])
     shot = ScreenShot.from_size(raw, 1, 1)
 
-    with pytest.raises(ValueError, match="Channels must be 'BGRA', 'BGR', 'RGB', or 'RGBA'"):
+    with pytest.raises(ValueError, match='Channels must be "BGRA", "BGR", "RGB", or "RGBA"'):
         shot.to_numpy(channels="gray")  # type: ignore[arg-type]
 
 
@@ -54,7 +54,7 @@ def test_to_numpy_bad_layout() -> None:
     raw = bytearray([0, 0, 0, 0])
     shot = ScreenShot.from_size(raw, 1, 1)
 
-    with pytest.raises(ValueError, match="Layout must be 'HWC' or 'CHW'"):
+    with pytest.raises(ValueError, match='Layout must be "HWC" or "CHW"'):
         shot.to_numpy(layout="NHWC")  # type: ignore[arg-type]
 
 

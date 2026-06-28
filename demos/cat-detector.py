@@ -128,26 +128,6 @@ SCORE_THRESH = 0.60
 MIN_AREA_FRAC = 0.001
 
 
-# This function is here for illustrative purposes: the demo doesn't currently call it, but there's a commented-out
-# line in the main loop that shows how you might use it.
-def screenshot_to_tensor(sct_img: mss.ScreenShot, device: str | torch.device) -> torch.Tensor:
-    """Convert an MSS ScreenShot to a CHW PyTorch tensor."""
-
-    # Get a 1d tensor of BGRA values.  PyTorch will issue a warning at this step: the ScreenShot's bgra object is
-    # read-only, but PyTorch doesn't support read-only tensors.  However, this is harmless in our case: we'll end up
-    # copying the data anyway.
-    img = torch.frombuffer(sct_img.bgra, dtype=torch.uint8)
-    # Bring everything to the desired device.  This is still just a linear buffer of BGRA bytes.
-    img = img.to(device)
-    # The next two steps will all just create views of the original tensor, without copying the data.
-    img = img.view(sct_img.height, sct_img.width, 4)  # Interpret as BGRA HWC
-    img = img.permute(2, 0, 1)  # Permute the axes: BGRA CHW
-    # This final step will create a copy.  Copying the data is required to reorder the channels.  This also has the
-    # advantage of also making the tensor contiguous, for more efficient access.
-    img = img[[2, 1, 0], ...]  # Reorder the channels: RGB CHW
-    return img
-
-
 def top_unique_labels(labels: torch.Tensor, scores: torch.Tensor) -> torch.Tensor:
     """Return the unique labels, ordered by descending score.
 
@@ -278,9 +258,8 @@ def main() -> None:
             # Grab the screenshot.
             sct_img = sct.grab(monitor)
 
-            # Transfer the image from MSS to PyTorch.  This does the channel shuffling and reordering on the CPU.  For
-            # better performance, doing the shuffling on the GPU can be more efficient; see screenshot_to_tensor.
-            img_tensor = sct_img.to_torch().to(device)
+            # Transfer the image from MSS to PyTorch.
+            img_tensor = sct_img.to_torch(device=device)
 
             # Do the preprocessing stages that the trained model expects; see the comment where we define preprocess.
             # The traditional name for inputs to a neural net is "x", because AI programmers aren't terribly

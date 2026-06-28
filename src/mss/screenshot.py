@@ -208,14 +208,19 @@ class ScreenShot:
         raw_mode = "BGRX" if mode == "RGB" else "BGRA"
         return Image.frombuffer(mode, self.size, self._raw, "raw", raw_mode, 0, 1)
 
-    def to_numpy(self, channels: Channels = "RGB", layout: Layout = "HWC") -> numpy.ndarray:
+    def to_numpy(
+        self, channels: Channels = "RGB", layout: Layout = "HWC", dtype: numpy.dtype | type | None = None
+    ) -> numpy.ndarray:
         """Convert the screenshot to a NumPy array.
 
         :param channels: The requested channel order.  Must be
             ``"BGRA"``, ``"BGR"``, ``"RGB"`` (default), or ``"RGBA"``.
         :param layout: The requested layout.  Must be ``"HWC"``
             (default) or ``"CHW"``.
-        :returns: A NumPy array of dtype ``uint8``.
+        :param dtype: The requested data type.  The default is
+            ``np.uint8``.
+
+        Floating point dtypes are scaled to the ``[0, 1]`` range.
 
         Use ``channels="BGR"`` for OpenCV, and ``channels="RGB"`` (the
         default) for scikit-image and most other frameworks.
@@ -225,49 +230,53 @@ class ScreenShot:
 
         .. version-added:: 11.0.0
         """
-        # This is used as the channel and layout manipulation function for the other frameworks, too.  This is on the
-        # assumption that NumPy is probably going to be the fastest on CPU, although I haven't tested this.  It's also a
-        # prerequisite for the others, so we'd need to have a NumPy-only implementation anyway: the NumPy implementation
-        # shouldn't depend on PyTorch / TensorFlow, while the converse isn't true.
-
         channels = cast("Channels", channels.upper())
         layout = cast("Layout", layout.upper())
 
-        if channels not in {"BGRA", "BGR", "RGB", "RGBA"}:
-            msg = "Channels must be 'BGRA', 'BGR', 'RGB', or 'RGBA'"
-            raise ValueError(msg)
-        if layout not in {"HWC", "CHW"}:
-            msg = "Layout must be 'HWC' or 'CHW'"
-            raise ValueError(msg)
-
         import numpy as np  # noqa: PLC0415
 
-        frame = np.frombuffer(self._raw, dtype=np.uint8).reshape((self.height, self.width, 4))
+        rv = np.frombuffer(self._raw, dtype=np.uint8).reshape((self.height, self.width, 4))
+
         if channels == "BGRA":
-            data = frame
+            pass
         elif channels == "BGR":
-            data = frame[:, :, :3]
+            rv = rv[:, :, :3]
         elif channels == "RGB":
             # Using [2,1,0] instead of 2::-1 would copy, rather than creating a view.
-            data = frame[:, :, 2::-1]
-        else:  # RGBA
+            rv = rv[:, :, 2::-1]
+        elif channels == "RGBA":
             # This can't be represented as a view, since the channels within a pixel are not ordered in a way that can
             # be represented with a constant offset.  In other words, the way that NumPy strides work, you can only make
             # a view if you can express the desired element order in a x:y:z style range relative to the base array's
             # order.
-            data = frame[:, :, [2, 1, 0, 3]]
+            rv = rv[:, :, [2, 1, 0, 3]]
+        else:
+            msg = 'Channels must be "BGRA", "BGR", "RGB", or "RGBA"'
+            raise ValueError(msg)
 
-        if layout == "CHW":
+        if layout == "HWC":
+            pass
+        elif layout == "CHW":
             # This will always create a view.  (We're reordering the axes, not the elements.)
-            data = np.transpose(data, (2, 0, 1))
+            rv = np.transpose(rv, (2, 0, 1))
+        else:
+            msg = 'Layout must be "HWC" or "CHW"'
+            raise ValueError(msg)
 
-        return data
+        dtype = np.uint8 if dtype is None else np.dtype(dtype)
+        if dtype != np.uint8:
+            rv = rv.astype(dtype)
+            if np.issubdtype(dtype, np.floating):
+                rv /= 255.0
+
+        return rv
 
     def to_torch(
         self,
         channels: Channels = "RGB",
         layout: Layout = "CHW",
         dtype: torch.dtype | None = None,
+        device: torch.device | str | None = None,
     ) -> torch.Tensor:
         """Convert the screenshot to a PyTorch tensor.
 
@@ -279,6 +288,10 @@ class ScreenShot:
             Defaults to the current PyTorch default dtype, which is
             usually ``torch.float32``; see
             :py:func:`torch.get_default_dtype`.
+        :param device: The requested destination device, as a
+            :py:class:`torch.device` or string.  Default is the current
+            default PyTorch device; see
+            :py:func:`torch.get_default_device`.
 
         Floating point dtypes are scaled to the ``[0, 1]`` range.
 
@@ -292,31 +305,65 @@ class ScreenShot:
 
         .. version-added:: 11.0.0
         """
+        channels = cast("Channels", channels.upper())
+        layout = cast("Layout", layout.upper())
+
         import torch  # noqa: PLC0415
 
-        frame = self.to_numpy(channels=channels, layout=layout)
-
         if dtype is None:
-            dtype = torch.get_default_dtype()
-        elif not isinstance(dtype, torch.dtype):
+            torch_dtype = torch.get_default_dtype()
+        elif isinstance(dtype, torch.dtype):
+            torch_dtype = dtype
+        else:
             msg = 'argument "dtype" must be a torch.dtype'
             raise TypeError(msg)
+        torch_device = torch.get_default_device() if device is None else torch.device(device)
 
-        # PyTorch doesn't support negative strides like NumPy does; we have to copy in that case.  This happens if the
-        # user requested a RGB layout.  (And no, we can't use [:,:,2::-1] in PyTorch either.)
-        if any(s < 0 for s in frame.strides):
-            frame = frame.copy()
-        tensor = torch.from_numpy(frame)
-        tensor = tensor.to(dtype=dtype)
-        if dtype.is_floating_point:
-            tensor.div_(255.0)
-        return tensor
+        # Build a new tensor from the raw bytes.  This is a view, not a copy.  The shape is HWC with 4 channels in BGRA
+        # order at this point.  The dtype here tells PyTorch how to interpret the data (unlike TensorFlow's
+        # convert_to_tensor with a memoryview).
+        rv = torch.frombuffer(self._raw, dtype=torch.uint8)
+        rv = rv.reshape((self.height, self.width, 4))
+
+        # Move the data to the desired device.  If no copy is needed, this is a no-op.  PyTorch using CUDA can do this
+        # transfer without blocking; the other devices can't.  (Well, they technically can, but then our subsequent ops
+        # may corrupt data unless we synchronize explicitly.)
+        rv = rv.to(device=torch_device, non_blocking=(torch_device.type == "cuda"))
+
+        if channels == "BGRA":
+            pass
+        elif channels == "BGR":
+            rv = rv[:, :, :3]
+        elif channels == "RGB":
+            # We can't use 2::-1 with PyTorch, since it doesn't support negative strides.  We always have to copy.
+            rv = rv[:, :, [2, 1, 0]]
+        elif channels == "RGBA":
+            # This can't be represented as a view; see the comment in the NumPy version.
+            rv = rv[:, :, [2, 1, 0, 3]]
+        else:
+            msg = 'Channels must be "BGRA", "BGR", "RGB", or "RGBA"'
+            raise ValueError(msg)
+
+        if layout == "HWC":
+            pass
+        elif layout == "CHW":
+            rv = rv.movedim((2, 0, 1), (0, 1, 2))
+        else:
+            msg = 'Layout must be "HWC" or "CHW"'
+            raise ValueError(msg)
+
+        # Do the conversion last to save memory bandwidth during channel shuffles.
+        rv = rv.to(dtype=torch_dtype)
+        if torch_dtype.is_floating_point:
+            rv.div_(255.0)
+
+        return rv
 
     def to_tensorflow(
         self,
         channels: Channels = "RGB",
         layout: Layout = "HWC",
-        dtype: tf.dtypes.DType | numpy.dtype | int | str = "float32",
+        dtype: tf.dtypes.DType | numpy.dtype | str = "float32",
     ) -> tf.Tensor:
         """Convert the screenshot to a TensorFlow tensor.
 
@@ -326,9 +373,9 @@ class ScreenShot:
             (default) or ``"CHW"``.
         :param dtype: The requested dtype.  Can be a string like
             ``"float32"`` (default), a :py:class:`tf.DType
-            <tf.dtypes.DType>`, an int representing a TensorFlow
-            ``DataClass`` enum value, or a :py:class:`np.dtype
-            <numpy.dtype>`.
+            <tf.dtypes.DType>`, or a :py:class:`np.dtype <numpy.dtype>`.
+
+        Device and stream management is handled by TensorFlow.
 
         Floating point dtypes are scaled to the ``[0, 1]`` range.
 
@@ -337,20 +384,49 @@ class ScreenShot:
 
         .. version-added:: 11.0.0
         """
-        import tensorflow as tf  # noqa: PLC0415
+        channels = cast("Channels", channels.upper())
+        layout = cast("Layout", layout.upper())
 
-        frame = self.to_numpy(channels=channels, layout=layout)
+        import tensorflow as tf  # noqa: PLC0415
 
         # TypeErrors from tf.as_dtype are passed up to the caller.
         tf_dtype = tf.as_dtype(dtype)
 
-        # TensorFlow will always copy in convert_to_tensor.
-        tensor = tf.convert_to_tensor(frame, dtype=tf_dtype)
-        if tf_dtype.is_floating:
-            # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
-            # instead, by making a tf.constant.
-            tensor = tensor / tf.constant(255.0, dtype=tf_dtype)
-        return tensor
+        # We don't need to do anything explicit about device management in TensorFlow; it handles that for us.
+        # convert_to_tensor will always copy.  We verified in __init__ that self._raw is a memoryview of unsigned bytes,
+        # so that's what TensorFlow will take as the source format; we just give an explicit dtype for clarity.
+        rv = tf.convert_to_tensor(self._raw, dtype=tf.uint8)
+        rv = tf.reshape(rv, (self.height, self.width, 4))
+
+        if channels == "BGRA":
+            pass
+        elif channels == "BGR":
+            rv = rv[:, :, :3]
+        elif channels == "RGB":
+            rv = tf.gather(rv, [2, 1, 0], axis=2)
+        elif channels == "RGBA":
+            rv = tf.gather(rv, [2, 1, 0, 3], axis=2)
+        else:
+            msg = 'Channels must be "BGRA", "BGR", "RGB", or "RGBA"'
+            raise ValueError(msg)
+
+        if layout == "HWC":
+            pass
+        elif layout == "CHW":
+            rv = tf.transpose(rv, perm=(2, 0, 1))
+        else:
+            msg = 'Layout must be "HWC" or "CHW"'
+            raise ValueError(msg)
+
+        # Do the conversion last to save memory bandwidth during channel shuffles.
+        if tf_dtype != tf.uint8:
+            rv = tf.cast(rv, dtype=tf_dtype)
+            if tf_dtype.is_floating:
+                # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
+                # instead, by making a tf.constant.
+                rv = rv / tf.constant(255.0, dtype=tf_dtype)
+
+        return rv
 
     @property
     def top(self) -> int:

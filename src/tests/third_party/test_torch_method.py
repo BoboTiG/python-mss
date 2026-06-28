@@ -35,16 +35,32 @@ def test_to_torch_dtype_uint8() -> None:
 
 @pytest.mark.parametrize("layout", ["HWC", "CHW"])
 @pytest.mark.parametrize("channels", ["BGRA", "BGR", "RGBA", "RGB"])
-def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, layout: str) -> None:
+@pytest.mark.parametrize("cuda", [False, True])
+def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, layout: str, cuda: bool) -> None:
     """Test all permutations of channels and layouts."""
+    if cuda and not torch.cuda.is_available:
+        # The CUDA versions won't be run in CI/CD, but it's still worth checking them on developers' machines if they
+        # happen to have PyTorch with CUDA support.
+        pytest.skip()
+
     uint8_target = reordered_test_image(channels=channels, layout=layout)
     bfloat16_target = uint8_target.astype(np.float32) / 255.0
 
-    uint8_result = framework_test_image.to_torch(channels=channels, layout=layout, dtype=torch.uint8)  # type: ignore[arg-type]
-    assert np.array_equal(uint8_result.numpy(), uint8_target)
+    uint8_result = framework_test_image.to_torch(
+        channels=channels,  # type: ignore[arg-type]
+        layout=layout,  # type: ignore[arg-type]
+        dtype=torch.uint8,
+        device="cuda" if cuda else "cpu",
+    )
+    assert np.array_equal(uint8_result.cpu().numpy(), uint8_target)
 
-    bfloat16_result = framework_test_image.to_torch(channels=channels, layout=layout, dtype=torch.bfloat16)  # type: ignore[arg-type]
+    bfloat16_result = framework_test_image.to_torch(
+        channels=channels,  # type: ignore[arg-type]
+        layout=layout,  # type: ignore[arg-type]
+        dtype=torch.bfloat16,
+        device="cuda" if cuda else "cpu",
+    )
     # We have to explicitly cast back to float32 for the comparison, because PyTorch won't directly convert bfloat16 to
     # NumPy.
     bfloat16_result = bfloat16_result.to(torch.float32)
-    assert np.allclose(bfloat16_result.numpy(), bfloat16_target, rtol=0, atol=1 / 512.0)
+    assert np.allclose(bfloat16_result.cpu().numpy(), bfloat16_target, rtol=0, atol=1 / 512.0)
