@@ -271,7 +271,7 @@ class ScreenShot:
 
         return rv
 
-    def to_torch(
+    def to_torch(  # noqa: PLR0912
         self,
         channels: Channels = "RGB",
         layout: Layout = "CHW",
@@ -318,6 +318,19 @@ class ScreenShot:
             msg = 'argument "dtype" must be a torch.dtype'
             raise TypeError(msg)
         torch_device = torch.get_default_device() if device is None else torch.device(device)
+
+        if torch_device.type == "cpu":
+            # NumPy handles the necessary CPU operations significantly more efficiently than PyTorch, so we defer to it.
+            ndarray = self.to_numpy(channels=channels, layout=layout)
+            # to_numpy can return tensors with negative strides, which PyTorch doesn't support.
+            if any(s < 0 for s in ndarray.strides):
+                ndarray = ndarray.copy()
+            rv = torch.from_numpy(ndarray)
+            # We do the dtype conversion ourselves because PyTorch has dtypes that NumPy doesn't, like bfloat16.
+            rv = rv.to(dtype=torch_dtype, device=torch_device)
+            if torch_dtype.is_floating_point:
+                rv.div_(255.0)
+            return rv
 
         # Build a new tensor from the raw bytes.  This is a view, not a copy.  The shape is HWC with 4 channels in BGRA
         # order at this point.  The dtype here tells PyTorch how to interpret the data (unlike TensorFlow's

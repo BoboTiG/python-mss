@@ -4,8 +4,6 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from collections.abc import Callable
 
-import pytest
-
 import numpy as np
 
 from mss import MSS
