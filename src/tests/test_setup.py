@@ -113,6 +113,7 @@ def test_sdist() -> None:
         f"mss-{__version__}/src/tests/test_windows.py",
         f"mss-{__version__}/src/tests/test_xcb.py",
         f"mss-{__version__}/src/tests/third_party/__init__.py",
+        f"mss-{__version__}/src/tests/third_party/conftest.py",
         f"mss-{__version__}/src/tests/third_party/test_numpy.py",
         f"mss-{__version__}/src/tests/third_party/test_numpy_method.py",
         f"mss-{__version__}/src/tests/third_party/test_pil.py",

@@ -7,6 +7,7 @@ from __future__ import annotations
 import pytest
 
 from mss import ScreenShot
+from tests.third_party.conftest import reordered_test_image
 
 np = pytest.importorskip("numpy")
 
@@ -55,3 +56,12 @@ def test_to_numpy_bad_layout() -> None:
 
     with pytest.raises(ValueError, match="Layout must be 'HWC' or 'CHW'"):
         shot.to_numpy(layout="NHWC")  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("layout", ["HWC", "CHW"])
+@pytest.mark.parametrize("channels", ["BGRA", "BGR", "RGBA", "RGB"])
+def test_to_numpy_permutations(framework_test_image: ScreenShot, channels: str, layout: str) -> None:
+    """Test all permutations of channels and layouts."""
+    result = framework_test_image.to_numpy(channels=channels, layout=layout)  # type: ignore[arg-type]
+    target = reordered_test_image(channels=channels, layout=layout)
+    assert np.array_equal(result, target)
