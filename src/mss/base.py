@@ -165,15 +165,15 @@ def _choose_impl(**kwargs: Any) -> MSSImplementation:
 class MSS:
     """Multiple ScreenShots class
 
-    :param backend: Backend selector, for platforms with multiple backends.
+    :param backend: Backend selector, for platforms with multiple
+        backends.
     :param compression_level: PNG compression level.
-    :param with_cursor: Include the mouse cursor in screenshots
-        (GNU/Linux only)
-    :type display: bool, optional (default False)
-    :param display: X11 display name (GNU/Linux only).
-    :type display: bytes | str, optional (default :envvar:`$DISPLAY`)
-    :param max_displays: Maximum number of displays to enumerate (macOS only).
-    :type max_displays: int, optional (default 32)
+    :param with_cursor: Include the mouse cursor in screenshots.
+        Optional, default False.  (GNU/Linux only)
+    :param display: X11 display name.  Optional; default
+        :envvar:`$DISPLAY`.  (GNU/Linux only)
+    :param max_displays: Maximum number of displays to enumerate.
+        Optional, default 32.  (macOS only).
 
     .. versionadded:: 8.0.0
         ``compression_level``, ``display``, ``max_displays``, and
@@ -295,7 +295,7 @@ class MSS:
         """Retrieve screen pixels for a given monitor.
 
         Note: ``monitor`` can be a tuple like the one
-        :py:meth:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``
+        :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
@@ -391,12 +391,14 @@ class MSS:
     ) -> Iterator[str]:
         """Grab a screenshot and save it to a file.
 
-        :param int mon: The monitor to screenshot (default=0). ``-1`` grabs all
-            monitors, ``0`` grabs each monitor, and ``N`` grabs monitor ``N``.
-        :param str output: The output filename. Keywords: ``{mon}``, ``{top}``,
-            ``{left}``, ``{width}``, ``{height}``, ``{date}``.
-        :param callable callback: Called before saving the screenshot; receives
-            the ``output`` argument.
+        :param int mon: The monitor to screenshot (default=0). ``-1``
+            grabs all monitors, ``0`` grabs each monitor, and ``N``
+            grabs monitor ``N``.
+        :param str output: The output filename. Keywords: ``{mon}``,
+            ``{top}``, ``{left}``, ``{width}``, ``{height}``,
+            ``{date}``.
+        :param typing.Callable callback: Called before saving the
+            screenshot; receives the ``output`` argument.
         :return: Created file(s).
         """
         monitors = self.monitors

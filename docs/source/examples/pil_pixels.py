@@ -4,8 +4,6 @@ Source: https://github.com/BoboTiG/python-mss.
 PIL examples to play with pixels.
 """
 
-from PIL import Image
-
 import mss
 
 with mss.MSS() as sct:
@@ -13,7 +11,7 @@ with mss.MSS() as sct:
     sct_img = sct.grab(sct.monitors[1])
 
     # Create an Image
-    img = Image.new("RGB", sct_img.size)
+    img = sct_img.to_pil("RGB")
 
     # Best solution: create a list(tuple(R, G, B), ...) for putdata()
     pixels = zip(sct_img.bgra[2::4], sct_img.bgra[1::4], sct_img.bgra[::4], strict=False)
