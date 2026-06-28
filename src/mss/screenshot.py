@@ -338,10 +338,10 @@ class ScreenShot:
         rv = torch.frombuffer(self._raw, dtype=torch.uint8)
         rv = rv.reshape((self.height, self.width, 4))
 
-        # Move the data to the desired device.  If no copy is needed, this is a no-op.  PyTorch using CUDA can do this
-        # transfer without blocking; the other devices can't.  (Well, they technically can, but then our subsequent ops
-        # may corrupt data unless we synchronize explicitly.)
-        rv = rv.to(device=torch_device, non_blocking=(torch_device.type == "cuda"))
+        # Move the data to the desired device.  If no copy is needed, this is a no-op.
+        # We don't use a non-blocking copy because it can be fragile, hard to manage lifetimes, and doesn't win us
+        # measurable gains.
+        rv = rv.to(device=torch_device)
 
         if channels == "BGRA":
             pass
