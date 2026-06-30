@@ -56,6 +56,8 @@ For instance, you can capture the first monitor and get a :py:class:`mss.ScreenS
 Ok, now you've got the :py:class:`mss.ScreenShot` object.  But what do
 you do with it?
 
+.. _accessing_pixel_data:
+
 Accessing Pixel Data
 ====================
 
