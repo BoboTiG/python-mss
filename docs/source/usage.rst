@@ -2,6 +2,10 @@
 Usage
 =====
 
+.. role:: python(code)
+   :language: python
+   :class: highlight
+
 Import
 ======
 
@@ -41,8 +45,17 @@ copy and paste.
 If instead you want to use the pixel data yourself, you can do so easily, with the :py:meth:`mss.MSS.grab` method.
 
 You'll first need to decide whether you want to capture all the monitors, a single monitor, or a specific region of the
-screen.  The :py:class:`mss.MSS` object has a :py:attr:`mss.MSS.monitors` attribute that is a list of all the monitors,
-starting from index 1, as well as the full virtual screen (all monitors combined) at index 0.
+screen.
+
+For capturing one or more monitors, the :py:class:`mss.MSS` object has a :py:attr:`mss.MSS.monitors` attribute that is a
+list of all the monitors, starting from index 1, as well as the full virtual screen (all monitors combined) at index 0.
+The primary monitor, the one that holds the taskbar or similar system UI, is available as
+:py:attr:`mss.MSS.primary_monitor`.
+
+For capturing a specific region, you can pass :py:meth:`mss.MSS.grab` a dictionary with the keys ``top``, ``left``,
+``width``, and ``height``.  For instance, to capture a 100x100 pixel region starting at the top-left corner of the
+screen, you could use :python:`{"top": 0, "left": 0, "width": 100, "height": 100}`.  You can also use a PIL-style box,
+which is a 4-tuple of ``(left, top, right, bottom)``.
 
 Once you've decided what you want to capture, you can call :py:meth:`mss.MSS.grab` with the appropriate monitor or
 region.  This will return a :py:class:`mss.ScreenShot` object, which contains the pixel data and other information about
@@ -51,7 +64,7 @@ the screenshot.
 For instance, you can capture the first monitor and get a :py:class:`mss.ScreenShot` object like this::
 
     with MSS() as sct:
-        sct_img = sct.grab(sct.monitors[1])  # Capture the first monitor
+        sct_img = sct.grab(sct.primary_monitor)
 
 Ok, now you've got the :py:class:`mss.ScreenShot` object.  But what do
 you do with it?
@@ -106,10 +119,11 @@ Some examples include the following libraries:
 * Some functions from `OpenCV <https://opencv.org/>`_, a popular computer vision library
 
 When using the NumPy array interface protocol, the returned object is in HWC (height, width, channels) format, with the
-channels in BGRA order.
+channels in BGRA order, and with a data type of :py:attr:`numpy.uint8`.
 
 Note that most libraries do not expect the alpha channel to be present, or expect an order other than the BGRA order
-used in this automatic conversion.  You may prefer to use the :py:meth:`mss.ScreenShot.to_numpy` method instead.
+used in this automatic conversion.  You may prefer to use the :py:meth:`mss.ScreenShot.to_numpy` method instead, since
+it can return the pixel data in most common layouts, orders, and data types.
 
 Alpha Channel
 -------------
