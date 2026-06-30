@@ -45,7 +45,9 @@ def test_to_tensorflow_permutations(framework_test_image: ScreenShot, channels: 
     bfloat16_target = uint8_target.astype(np.float32) / 255.0
 
     uint8_result = framework_test_image.to_tensorflow(channels=channels, layout=layout, dtype="uint8")  # type: ignore[arg-type]
+    assert uint8_result.dtype == tf.uint8
     assert np.array_equal(uint8_result.numpy(), uint8_target)
 
     bfloat16_result = framework_test_image.to_tensorflow(channels=channels, layout=layout, dtype="bfloat16")  # type: ignore[arg-type]
+    assert bfloat16_result.dtype == tf.bfloat16
     assert np.allclose(bfloat16_result.numpy(), bfloat16_target, rtol=0, atol=1 / 512.0)

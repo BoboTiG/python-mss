@@ -405,39 +405,22 @@ class ScreenShot:
         # TypeErrors from tf.as_dtype are passed up to the caller.
         tf_dtype = tf.as_dtype(dtype)
 
+        # Whether we're sending to a CPU or GPU, the channels and layout conversion are much faster in NumPy.  I suspect
+        # this is because doing this in TensorFlow eager mode materializes the tensor at each operation, but that's just
+        # a guess, and putting the channel shuffles in a tf.function didn't help.  It's still best (especially on GPU)
+        # to do the dtype conversion in TensorFlow.
+        ndarray = self.to_numpy(channels=channels, layout=layout)
+
         # We don't need to do anything explicit about device management in TensorFlow; it handles that for us.
-        # convert_to_tensor will always copy.  We verified in __init__ that self._raw is a memoryview of unsigned bytes,
-        # so that's what TensorFlow will take as the source format; we just give an explicit dtype for clarity.
-        rv = tf.convert_to_tensor(self._raw, dtype=tf.uint8)
-        rv = tf.reshape(rv, (self.height, self.width, 4))
+        # convert_to_tensor will always copy.
+        rv = tf.convert_to_tensor(ndarray)
 
-        if channels == "BGRA":
-            pass
-        elif channels == "BGR":
-            rv = rv[:, :, :3]
-        elif channels == "RGB":
-            rv = tf.gather(rv, [2, 1, 0], axis=2)
-        elif channels == "RGBA":
-            rv = tf.gather(rv, [2, 1, 0, 3], axis=2)
-        else:
-            msg = 'Channels must be "BGRA", "BGR", "RGB", or "RGBA"'
-            raise ValueError(msg)
-
-        if layout == "HWC":
-            pass
-        elif layout == "CHW":
-            rv = tf.transpose(rv, perm=(2, 0, 1))
-        else:
-            msg = 'Layout must be "HWC" or "CHW"'
-            raise ValueError(msg)
-
-        # Do the conversion last to save memory bandwidth during channel shuffles.
         if tf_dtype != tf.uint8:
+            # I have no idea why, but doing the cast here instead of in convert_to_tensor is significantly faster,
+            # especially on the GPU.
             rv = tf.cast(rv, dtype=tf_dtype)
             if tf_dtype.is_floating:
-                # TensorFlow's implicit dtype conversion rules are not trivial.  We use an explicit dtype on both sides
-                # instead, by making a tf.constant.
-                rv = rv / tf.constant(255.0, dtype=tf_dtype)
+                rv /= 255.0
 
         return rv
 

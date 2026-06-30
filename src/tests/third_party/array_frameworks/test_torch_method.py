@@ -41,7 +41,7 @@ def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, 
     if cuda and not torch.cuda.is_available():
         # The CUDA versions won't be run in CI/CD, but it's still worth checking them on developers' machines if they
         # happen to have PyTorch with CUDA support.
-        pytest.skip()
+        pytest.skip("CUDA is not available")
 
     uint8_target = reordered_test_image(channels=channels, layout=layout)
     bfloat16_target = uint8_target.astype(np.float32) / 255.0
@@ -52,6 +52,7 @@ def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, 
         dtype=torch.uint8,
         device="cuda" if cuda else "cpu",
     )
+    assert uint8_result.dtype == torch.uint8
     assert np.array_equal(uint8_result.cpu().numpy(), uint8_target)
 
     bfloat16_result = framework_test_image.to_torch(
@@ -60,7 +61,8 @@ def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, 
         dtype=torch.bfloat16,
         device="cuda" if cuda else "cpu",
     )
+    assert bfloat16_result.dtype == torch.bfloat16
     # We have to explicitly cast back to float32 for the comparison, because PyTorch won't directly convert bfloat16 to
     # NumPy.
-    bfloat16_result = bfloat16_result.to(torch.float32)
-    assert np.allclose(bfloat16_result.cpu().numpy(), bfloat16_target, rtol=0, atol=1 / 512.0)
+    bfloat16_result_f32 = bfloat16_result.to(torch.float32)
+    assert np.allclose(bfloat16_result_f32.cpu().numpy(), bfloat16_target, rtol=0, atol=1 / 512.0)
