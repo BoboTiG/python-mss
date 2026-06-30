@@ -107,9 +107,11 @@ jobs:
         run: python -m pip install tensorflow
 
       - name: Tests (GNU/Linux)
+        timeout-minutes: 10
         if: matrix.os.name == 'linux'
         run: xvfb-run python -m pytest
       - name: Tests (macOS, Windows)
+        timeout-minutes: 10
         if: matrix.os.name != 'linux'
         run: python -m pytest
 
