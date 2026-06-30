@@ -348,7 +348,7 @@ def capture_image(
 
         while True:
             sct_img = sct.grab(rect)
-            pil_img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX", 0, 1)
+            pil_img = sct_img.to_pil("RGB")
             yield pil_img
 
 

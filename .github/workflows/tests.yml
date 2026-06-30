@@ -57,10 +57,13 @@ jobs:
       matrix:
         os:
           - emoji: 🐧
+            name: linux
             runs-on: [ubuntu-latest]
           - emoji: 🍎
+            name: macos
             runs-on: [macos-latest]
           - emoji: 🪟
+            name: windows
             runs-on: [windows-latest]
         python:
           - name: CPython 3.10
@@ -84,11 +87,32 @@ jobs:
         run: |
           python -m pip install -U pip
           python -m pip install -e '.[dev,tests]'
+
+      # We don't include PyTorch or TensorFlow in the dependencies.  This is partly because they are large and not
+      # needed for most users.  But it's mostly because the right way to install them depends a lot on the user's
+      # needs (such as GPU support) and OS.
+
+      # The PyPI versions of PyTorch for Linux include CUDA for Linux, so we use an index with a CPU-only version there.
+      # For the other OSs, the PyPI versions are CPU-only.
+      - name: Install PyTorch (Linux CPU)
+        if: matrix.os.name == 'linux'
+        run: python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install PyTorch (macOS/Windows)
+        if: matrix.os.name != 'linux'
+        run: python -m pip install torch
+      # TensorFlow stable (as of this June 2026) only supports up to Python 3.12; see
+      # https://www.tensorflow.org/install/pip#software_requirements
+      - name: Install TensorFlow (Python 3.10-3.12)
+        if: contains(fromJSON('["3.10", "3.11", "3.12"]'), matrix.python.runs-on)
+        run: python -m pip install tensorflow
+
       - name: Tests (GNU/Linux)
-        if: matrix.os.emoji == '🐧'
+        timeout-minutes: 10
+        if: matrix.os.name == 'linux'
         run: xvfb-run python -m pytest
       - name: Tests (macOS, Windows)
-        if: matrix.os.emoji != '🐧'
+        timeout-minutes: 10
+        if: matrix.os.name != 'linux'
         run: python -m pytest
 
   automerge:

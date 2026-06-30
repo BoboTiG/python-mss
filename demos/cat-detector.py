@@ -128,26 +128,6 @@ SCORE_THRESH = 0.60
 MIN_AREA_FRAC = 0.001
 
 
-# This function is here for illustrative purposes: the demo doesn't currently call it, but there's a commented-out
-# line in the main loop that shows how you might use it.
-def screenshot_to_tensor(sct_img: mss.ScreenShot, device: str | torch.device) -> torch.Tensor:
-    """Convert an MSS ScreenShot to a CHW PyTorch tensor."""
-
-    # Get a 1d tensor of BGRA values.  PyTorch will issue a warning at this step: the ScreenShot's bgra object is
-    # read-only, but PyTorch doesn't support read-only tensors.  However, this is harmless in our case: we'll end up
-    # copying the data anyway.
-    img = torch.frombuffer(sct_img.bgra, dtype=torch.uint8)
-    # Bring everything to the desired device.  This is still just a linear buffer of BGRA bytes.
-    img = img.to(device)
-    # The next two steps will all just create views of the original tensor, without copying the data.
-    img = img.view(sct_img.height, sct_img.width, 4)  # Interpret as BGRA HWC
-    img = img.permute(2, 0, 1)  # Permute the axes: BGRA CHW
-    # This final step will create a copy.  Copying the data is required to reorder the channels.  This also has the
-    # advantage of also making the tensor contiguous, for more efficient access.
-    img = img[[2, 1, 0], ...]  # Reorder the channels: RGB CHW
-    return img
-
-
 def top_unique_labels(labels: torch.Tensor, scores: torch.Tensor) -> torch.Tensor:
     """Return the unique labels, ordered by descending score.
 
@@ -278,27 +258,8 @@ def main() -> None:
             # Grab the screenshot.
             sct_img = sct.grab(monitor)
 
-            # We transfer the image from MSS to PyTorch via a Pillow Image.  Faster approaches exist (see
-            # screenshot_to_tensor), but PIL is more readable.  The bulk of the time in this program is spent doing
-            # the AI work, so we just use the most convenient mechanism.
-            img = Image.frombuffer("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX", 0, 1)
-
-            # We explicitly convert it to a tensor here, even though Torchvision can also convert it in the preprocess
-            # step.  This is so that we send it to the GPU before we do the preprocessing: PIL Images are always on
-            # the CPU, and doing the preprocessing on the GPU is much faster.
-            #
-            # Most image APIs, including MSS, use an array layout of [height, width, channels].  In MSS, the
-            # ScreenShot.bgra data follows this convention, even though it's exposed as a flat bytes object.
-            #
-            # In contrast, most AI frameworks expect images in [channels, height, width] order.  The pil_to_tensor
-            # helper performs this rearrangement for us.
-            img_tensor = torchvision.transforms.v2.functional.pil_to_tensor(img).to(device)
-
-            # An alternative to using PIL is shown in screenshot_to_tensor.  In one test, this saves about 20 ms per
-            # frame if using a GPU, and about 200 ms if using a CPU.  This would replace the "img=" and "img_tensor="
-            # lines above.
-            #
-            #img_tensor = screenshot_to_tensor(sct_img, device)
+            # Transfer the image from MSS to PyTorch.
+            img_tensor = sct_img.to_torch(device=device)
 
             # Do the preprocessing stages that the trained model expects; see the comment where we define preprocess.
             # The traditional name for inputs to a neural net is "x", because AI programmers aren't terribly

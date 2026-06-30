@@ -92,5 +92,14 @@ epub_exclude_files = ["search.html"]
 
 # ----------------------------------------------
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pil": ("https://pillow.readthedocs.io/en/stable/", None),
+    "python": ("https://docs.python.org/3", None),
+    # TensorFlow doesn't have an official InterSphinx mapping, but there is a community one.
+    "tensorflow": (
+        "https://www.tensorflow.org/api_docs/python",
+        "https://github.com/GPflow/tensorflow-intersphinx/raw/master/tf2_py_objects.inv",
+    ),
+    "torch": ("https://docs.pytorch.org/docs/stable/", None),
+}

@@ -4,11 +4,9 @@ Source: https://github.com/BoboTiG/python-mss.
 
 from collections.abc import Callable
 
-import pytest
+import numpy as np
 
 from mss import MSS
-
-np = pytest.importorskip("numpy", reason="Numpy module not available.")
 
 
 def test_numpy(mss_impl: Callable[..., MSS]) -> None:

@@ -23,7 +23,7 @@ An ultra fast cross-platform multiple screenshots module in pure python using ct
     - **Python 3.10+**, :pep:`8` compliant, no dependency, thread-safe;
     - very basic, it will grab one screenshot by monitor or a screenshot of all monitors and save it to a PNG file;
     - but you can use PIL and benefit from all its formats (or add yours directly);
-    - integrate well with Numpy and OpenCV;
+    - integrate well with NumPy, OpenCV, PyTorch, and TensorFlow;
     - it could be easily embedded into games and other software which require fast and platform optimized methods to grab screenshots (like AI, Computer Vision);
     - get the `source code on GitHub <https://github.com/BoboTiG/python-mss>`_;
     - learn with a `bunch of examples <https://python-mss.readthedocs.io/examples.html>`_;
