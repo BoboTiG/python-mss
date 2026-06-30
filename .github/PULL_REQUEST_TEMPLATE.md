@@ -10,9 +10,4 @@ Fixes #
 
 ### AI assistance disclosure
 
-- [ ] No AI assistance was used.
-- [ ] AI assistance was used partially or completely.
-
-If AI assistance was used, describe what it was used for:
-
-(...)
+- [ ] No AI assistance was used to generate this contribution.
