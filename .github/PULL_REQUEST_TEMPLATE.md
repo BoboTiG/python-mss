@@ -7,3 +7,7 @@ Fixes #
 - [ ] Documentation updated
 - [ ] Changelog entry added
 - [ ] `./check.sh` passed
+
+### AI assistance disclosure
+
+- [ ] No AI assistance was used to generate this contribution.
