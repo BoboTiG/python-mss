@@ -89,7 +89,7 @@ tests = [
   "pillow==12.2.0 ; python_version >= '3.12'",
   "pytest==9.1.1",
   "pytest-cov==7.1.0",
-  "pytest-rerunfailures==16.3",
+  "pytest-rerunfailures==16.4",
   "pyvirtualdisplay==3.0 ; sys_platform == 'linux'",
 ]
 
