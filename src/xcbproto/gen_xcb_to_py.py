@@ -747,7 +747,7 @@ def lib_for_proto(protocol: str) -> str:
 
 
 def camel_case(name: str, protocol: str | None = None) -> str:
-    prefix = "" if protocol in {"xproto", None} else camel_case(protocol)  # type: ignore[arg-type]
+    prefix = "" if protocol in {"xproto", None} else camel_case(protocol)
     if not name.isupper() and not name.islower():
         # It's already in camel case.
         return prefix + name
@@ -763,7 +763,7 @@ def snake_case(name: str, protocol: str | None = None) -> str:
             "xproto",
             None,
         }
-        else f"{snake_case(protocol)}_"  # type: ignore[arg-type]
+        else f"{snake_case(protocol)}_"
     )
     if name.islower():
         return prefix + name
