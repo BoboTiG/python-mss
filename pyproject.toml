@@ -79,7 +79,7 @@ dev = [
 ]
 docs = [
   "myst-parser==5.0.0 ; python_version >= '3.12'",
-  "shibuya==2026.5.19 ; python_version >= '3.12'",
+  "shibuya==2026.7.12 ; python_version >= '3.12'",
   "sphinx==9.1.0 ; python_version >= '3.12'",
   "sphinx-copybutton==0.5.2 ; python_version >= '3.12'",
   "sphinx-new-tab-link==0.8.1 ; python_version >= '3.12'",
