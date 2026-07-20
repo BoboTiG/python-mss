@@ -73,7 +73,7 @@ dev = [
   "build==1.5.1",
   "lxml==6.1.1",
   "mypy==2.3.0",
-  "ruff==0.15.21",
+  "ruff==0.15.22",
   "twine==6.2.0",
   "typing_extensions==4.16.0",
 ]
