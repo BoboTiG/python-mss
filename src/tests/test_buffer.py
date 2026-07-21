@@ -27,8 +27,8 @@ def test_finalizer_runs_once() -> None:
 @pytest.mark.parametrize(
     ("buffer_class", "readonly"),
     [
-        (bytearray, False),
-        (bytes, True),
+        pytest.param(bytearray, False, id="bytearray"),
+        pytest.param(bytes, True, id="bytes"),
     ],
 )
 def test_finalizing_buffer_preserves_readonly(buffer_class: type, readonly: bool) -> None:

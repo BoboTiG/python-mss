@@ -295,13 +295,16 @@ Or via direct call from Python::
 
     options:
     -h, --help            show this help message and exit
-    -c COORDINATES, --coordinates COORDINATES
-                          the part of the screen to capture: top, left, width, height
-    -l {0,1,2,3,4,5,6,7,8,9}, --level {0,1,2,3,4,5,6,7,8,9}
+    -c, --coordinates COORDINATES
+                          the part of the screen to capture:
+                          TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP;
+                          negative TOP or LEFT are insets from the bottom or
+                          right edge
+    -l, --level {0,1,2,3,4,5,6,7,8,9}
                           the PNG compression level
-    -m MONITOR, --monitor MONITOR
+    -m, --monitor MONITOR
                           the monitor to screenshot
-    -o OUTPUT, --output OUTPUT
+    -o, --output OUTPUT
                           the output file name
     -b, --backend BACKEND
                           platform-specific backend to use
@@ -317,3 +320,7 @@ Or via direct call from Python::
 
 .. versionadded:: 10.2.0
     ``--backend`` to force selecting the backend to use.
+
+.. versionadded:: 11.0.0
+    ``--coordinates`` now accepts coordinates in the traditional X11 style (WIDTHxHEIGHT+LEFT+TOP), as well as negative
+    left or top values (in either style).

@@ -16,6 +16,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import mss
+from mss.__main__ import _parse_coordinates
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
@@ -75,7 +76,14 @@ class MSSCloseRaises(MSSImplementation):
         raise self.close_error
 
 
-@pytest.mark.parametrize("cls", [MSS0, MSS1, MSS2])
+@pytest.mark.parametrize(
+    "cls",
+    [
+        pytest.param(MSS0, id="no_methods"),
+        pytest.param(MSS1, id="grab_only"),
+        pytest.param(MSS2, id="monitors_only"),
+    ],
+)
 def test_incomplete_class(cls: type[MSSImplementation]) -> None:
     with pytest.raises(TypeError):
         cls()
@@ -144,7 +152,13 @@ def reset_sys_argv(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.usefixtures("reset_sys_argv")
-@pytest.mark.parametrize("with_cursor", [False, True])
+@pytest.mark.parametrize(
+    "with_cursor",
+    [
+        pytest.param(False, id="without_cursor"),
+        pytest.param(True, id="with_cursor"),
+    ],
+)
 class TestEntryPoint:
     """CLI entry-point scenarios split into focused tests."""
 
@@ -207,8 +221,8 @@ class TestEntryPoint:
             assert filename.is_file()
             filename.unlink()
 
-    def test_coordinates_capture(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
-        coordinates = "2,12,40,67"
+    @pytest.mark.parametrize("coordinates", ["2,12,40,67", "40x67+12+2"])
+    def test_coordinates_capture(self, with_cursor: bool, capsys: pytest.CaptureFixture, coordinates: str) -> None:
         filename = Path("sct-2x12_40x67.png")
         for opt in ("-c", "--coordinates"):
             self._run_main(with_cursor, opt, coordinates)
@@ -222,7 +236,7 @@ class TestEntryPoint:
         for opt in ("-c", "--coordinates"):
             self._run_main(with_cursor, opt, coordinates, ret=2)
             captured = capsys.readouterr()
-            assert captured.out == "Coordinates syntax: top, left, width, height\n"
+            assert captured.out == "Coordinates syntax: TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP\n"
 
     def test_backend_option(self, with_cursor: bool, capsys: pytest.CaptureFixture) -> None:
         backend = "default"
@@ -243,7 +257,13 @@ class TestEntryPoint:
 
 @patch.object(sys, "argv", new=[])  # Prevent side effects while testing
 @patch("mss.base.MSS.monitors", new=[])
-@pytest.mark.parametrize("quiet", [False, True])
+@pytest.mark.parametrize(
+    "quiet",
+    [
+        pytest.param(False, id="verbose_mode"),
+        pytest.param(True, id="quiet_mode"),
+    ],
+)
 def test_entry_point_error(quiet: bool, capsys: pytest.CaptureFixture) -> None:
     def main(*args: str) -> int:
         if quiet:
@@ -273,6 +293,39 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     assert "usage: mss" in captured.out
+
+
+@pytest.mark.parametrize(
+    ("coordinates", "expected"),
+    [
+        pytest.param(" 15,14,0012,13 ", (15, 14, 12, 13), id="comma_pos_top_pos_left"),
+        pytest.param("-15, 0014,12,0013", (-15, 14, 12, 13), id="comma_neg_top_pos_left"),
+        pytest.param("0015 , -14 , 12 , 13", (15, -14, 12, 13), id="comma_pos_top_neg_left"),
+        pytest.param(" -0015,-14,12,0013  ", (-15, -14, 12, 13), id="comma_neg_top_neg_left"),
+        pytest.param("12x13+14+15", (15, 14, 12, 13), id="x_pos_top_pos_left"),
+        pytest.param(" 0012 x 13 - 14 + 15 ", (15, -14, 12, 13), id="x_pos_top_neg_left"),
+        pytest.param("12x0013+0014-15", (-15, 14, 12, 13), id="x_neg_top_pos_left"),
+        pytest.param(" 12 x 13 - 0014 - 0015 ", (-15, -14, 12, 13), id="x_neg_top_neg_left"),
+    ],
+)
+def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int]) -> None:
+    assert _parse_coordinates(coordinates) == expected
+
+
+@pytest.mark.parametrize(
+    "coordinates",
+    [
+        pytest.param("1,2,-3,4", id="comma_negative_width"),
+        pytest.param("1,2,3,-4", id="comma_negative_height"),
+        pytest.param("-0012x0013+0014+0015", id="x_negative_width"),
+        pytest.param("0012x-0013+0014+0015", id="x_negative_height"),
+        pytest.param("0x10,2,30,40", id="comma_hex_prefix"),
+        pytest.param("30x40+0x10+2", id="x_hex_prefix"),
+    ],
+)
+def test_parse_coordinates_invalid(coordinates: str) -> None:
+    with pytest.raises(ValueError, match=r"(?i)coordinates syntax"):
+        _parse_coordinates(coordinates)
 
 
 def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:

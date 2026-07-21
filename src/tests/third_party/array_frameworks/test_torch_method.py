@@ -35,14 +35,19 @@ def test_to_torch_dtype_uint8() -> None:
 
 @pytest.mark.parametrize("layout", ["HWC", "CHW"])
 @pytest.mark.parametrize("channels", ["BGRA", "BGR", "RGBA", "RGB"])
-@pytest.mark.parametrize("cuda", [False, True])
-def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, layout: str, cuda: bool) -> None:
-    """Test all permutations of channels and layouts."""
-    if cuda and not torch.cuda.is_available():
+@pytest.mark.parametrize(
+    "cuda",
+    [
+        pytest.param(False, id="cpu"),
         # The CUDA versions won't be run in CI/CD, but it's still worth checking them on developers' machines if they
         # happen to have PyTorch with CUDA support.
-        pytest.skip("CUDA is not available")
-
+        pytest.param(
+            True, id="cuda", marks=pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is not available")
+        ),
+    ],
+)
+def test_to_torch_permutations(framework_test_image: ScreenShot, channels: str, layout: str, cuda: bool) -> None:
+    """Test all permutations of channels and layouts."""
     uint8_target = reordered_test_image(channels=channels, layout=layout)
     bfloat16_target = uint8_target.astype(np.float32) / 255.0
 
