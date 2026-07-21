@@ -316,15 +316,51 @@ def test_xgetimage_visual_validation_accepts_default_setup(visual_validation_env
 @pytest.mark.parametrize(
     ("mutator", "message"),
     [
-        (lambda env: setattr(env.setup, "image_byte_order", xcb.ImageOrder.MSBFirst), "LSB-First"),
-        (lambda env: setattr(env.screen, "root_depth", 16), "color depth 24 or 32"),
-        (lambda env: setattr(env, "pixmap_formats", []), "supported formats"),
-        (lambda env: setattr(env.format, "bits_per_pixel", 16), "32 bpp"),
-        (lambda env: setattr(env.format, "scanline_pad", 16), "scanline padding"),
-        (lambda env: setattr(env, "depths", []), "supported depths"),
-        (lambda env: setattr(env, "visuals", []), "supported visuals"),
-        (lambda env: setattr(env.visual, "class_", xcb.VisualClass.StaticGray), "TrueColor"),
-        (lambda env: setattr(env.visual, "red_mask", 0), "BGRx ordering"),
+        pytest.param(
+            lambda env: setattr(env.setup, "image_byte_order", xcb.ImageOrder.MSBFirst),
+            "LSB-First",
+            id="image_byte_order",
+        ),
+        pytest.param(
+            lambda env: setattr(env.screen, "root_depth", 16),
+            "color depth 24 or 32",
+            id="root_depth",
+        ),
+        pytest.param(
+            lambda env: setattr(env, "pixmap_formats", []),
+            "supported formats",
+            id="pixmap_formats",
+        ),
+        pytest.param(
+            lambda env: setattr(env.format, "bits_per_pixel", 16),
+            "32 bpp",
+            id="bits_per_pixel",
+        ),
+        pytest.param(
+            lambda env: setattr(env.format, "scanline_pad", 16),
+            "scanline padding",
+            id="scanline_pad",
+        ),
+        pytest.param(
+            lambda env: setattr(env, "depths", []),
+            "supported depths",
+            id="depths",
+        ),
+        pytest.param(
+            lambda env: setattr(env, "visuals", []),
+            "supported visuals",
+            id="visuals",
+        ),
+        pytest.param(
+            lambda env: setattr(env.visual, "class_", xcb.VisualClass.StaticGray),
+            "TrueColor",
+            id="TrueColor",
+        ),
+        pytest.param(
+            lambda env: setattr(env.visual, "red_mask", 0),
+            "BGRx ordering",
+            id="BGRx",
+        ),
     ],
 )
 def test_xgetimage_visual_validation_failures(

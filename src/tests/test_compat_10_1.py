@@ -75,9 +75,9 @@ def _platform_factory_from_import_style() -> type[MSS]:
 @pytest.mark.parametrize(
     "factory_getter",
     [
-        lambda: mss.mss,
-        _factory_from_import_style,
-        _factory_from_module_style,
+        pytest.param(lambda: mss.mss, id="mss.mss"),
+        pytest.param(_factory_from_import_style, id="import_style"),
+        pytest.param(_factory_from_module_style, id="module_style"),
     ],
 )
 def test_mss_factory_documented_styles_return_mss(factory_getter: MSSFactoryGetter) -> None:
