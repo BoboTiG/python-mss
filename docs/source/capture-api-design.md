@@ -7,10 +7,13 @@ orphan: true
 Status: design proposal for issues [#470](https://github.com/BoboTiG/python-mss/issues/470) and
 [#544](https://github.com/BoboTiG/python-mss/issues/544).
 
+Decisions below reflect discussion on #544 through 2026-07-22. Sections marked **Open** or **Deferred** are
+not settled.
+
 ## Overview
 
-`MSS` is a platform session. It enumerates sources and creates source-bound `Capture` objects. CPU captures continue
-returning `ScreenShot` objects.
+`MSS` is a platform session. It enumerates sources and creates source-bound `Capture` objects. Captures return
+`ScreenShot` objects (see [Results](#results)).
 
 ```python
 with MSS() as session:
@@ -18,9 +21,10 @@ with MSS() as session:
 
     with session.create_capture(monitor) as capture:
         image = capture.grab()
+        image = capture.grab(region=Region(left=10, top=20, width=640, height=480))
 ```
 
-The source types are explicit. A region restricts a source; it is not itself a source.
+The source types are explicit. A region restricts a source at acquisition time; it is not itself a source.
 
 ```python
 CaptureSource = Desktop | Monitor | Window
@@ -34,18 +38,11 @@ class Region:
     height: int
 ```
 
-```python
-capture = session.create_capture(
-    session.desktop,
-    region=Region(left=10, top=20, width=640, height=480),
-)
-```
-
 ## Public types
 
 ### Sources
 
-`Desktop`, `Monitor`, and `Window` are read-only. Enumeration returns a new snapshot on each call.
+`Desktop`, `Monitor`, and `Window` are read-only. Enumeration returns a new immutable snapshot on each call.
 
 ```python
 session.desktop
@@ -53,15 +50,26 @@ session.list_monitors()  # tuple[Monitor, ...]; no desktop entry
 session.list_windows()   # tuple[Window, ...]
 ```
 
-Source coordinate spaces use physical pixels:
+Return type is `tuple[...]` so the snapshot cannot be resized or reassigned in place.
 
-```text
-Desktop  virtual-desktop coordinates; its origin may be negative
-Monitor  (0, 0) is the displayed monitor's upper-left pixel
-Window   (0, 0) is the selected window area's upper-left pixel
-```
+#### Coordinate spaces — **Open**
 
-Displayed orientation determines source dimensions. Callers do not apply a rotation transform.
+**Inputs** (windows, monitors, desktop, regions) are always in **display-oriented** pixels: a 90°-rotated 1920×1080
+panel is reported and addressed as width 1080, height 1920. Callers do not apply a rotation transform when specifying
+what to capture.
+
+**Pixel space (physical / framebuffer vs logical / nominal)** is unresolved. Today Windows and Linux/X11 use
+framebuffer pixels (geometry matches the buffer); macOS defaults to nominal/logical via
+`kCGWindowImageNominalResolution`. Because the new API keeps `ScreenShot` as the result type shared with the legacy
+path, there is no separate type with which to quarantine a new contract. Options under discussion on #544:
+
+1. Keep the platform inconsistency on `ScreenShot` (document it).
+2. Unify on physical/framebuffer everywhere in a major release (breaking on Retina Macs that rely on nominal size).
+3. Make the space explicit on each result (attribute / scale factor).
+
+Until decided, this document does not claim “physical pixels everywhere.”
+
+### Monitors
 
 `Monitor` supports attributes. It may retain string-key access temporarily for migration.
 
@@ -86,8 +94,10 @@ class Window:
 ```
 
 Core properties describe the enumeration snapshot. Expensive properties such as `exe` may be loaded lazily and return
-`None` if the process disappears or access is denied. A `Window` belongs to the session that enumerated it. Window
-objects initially use object identity for equality; callers can compare native IDs explicitly.
+`None` if the process disappears or access is denied. A `Window` belongs to the session that enumerated it.
+
+`Window` equality is **object identity**. Native IDs can be recycled after destroy, so `__eq__` is not based on `id`.
+Within the same session, callers who need “same OS window” compare `window.id` while that window still exists.
 
 `list_windows()` includes top-level application windows and minimized windows. Hidden windows require
 `include_hidden=True`. Child controls, shell surfaces, menus, tooltips, and similar transient windows are excluded where
@@ -102,13 +112,6 @@ def find_window(
     selector: WindowSelector,
     include_hidden: bool = False,
 ) -> Window | None: ...
-
-
-def get_window(
-    self,
-    selector: WindowSelector,
-    include_hidden: bool = False,
-) -> Window: ...
 ```
 
 MSS supplies selectors for common cases:
@@ -123,7 +126,7 @@ session.find_window(lambda windows: choose_window(windows))
 
 Built-in selectors return `None` for no match and raise `WindowSelectionError` for multiple matches. String matching is
 exact and case-sensitive; regular expressions use `search()`. A custom selector must return one of the supplied windows
-or `None`, and its exceptions propagate unchanged. `get_window()` converts a `None` result to `WindowSelectionError`.
+or `None`, and its exceptions propagate unchanged.
 
 Window identity is native and does not silently follow an application through native window recreation. A destroyed
 window remains lost even if another window later has the same title, PID, class, or native ID.
@@ -136,6 +139,11 @@ class CaptureCapability(Flag):
     FRAME_NOTIFICATIONS = auto()
     PRESENTATION_TIMESTAMPS = auto()
     SOURCE_MISSED_FRAME_COUNT = auto()
+
+
+class WindowArea(Enum):
+    CLIENT = auto()  # client area / content rect / client window
+    FULL = auto()    # entire native window, including non-client chrome
 ```
 
 ```python
@@ -143,44 +151,61 @@ def create_capture(
     self,
     source: CaptureSource,
     *,
-    region: Region | None = None,
     backend: str = "auto",
     required_capabilities: CaptureCapability = CaptureCapability.NONE,
-    with_cursor: bool = False,
-    client_area_only: bool = False,
-) -> Capture[ScreenShot]: ...
+    with_cursor: bool | None = None,
+    area: WindowArea | None = None,
+) -> Capture: ...
 ```
 
-`client_area_only` is valid only for a `Window`. Its default captures the complete native window, including non-client
-decorations. Regions are relative to the selected complete-window or client-area extent.
+`area` is valid only with a `Window` source. Invalid for `Monitor` / `Desktop`. Region coordinates on later
+`grab` calls are relative to the chosen extent: with `CLIENT`, `(0, 0)` is the client/content origin; with
+`FULL`, `(0, 0)` is the full native window origin.
 
-`with_cursor` is strict. `True` guarantees cursor inclusion and `False` guarantees exclusion. Automatic backend
-selection considers only providers that can satisfy the requested value. Cursor pixels are composited only where they
-intersect the final clipped output. With cursor inclusion enabled, cursor movement, shape changes, and visibility
-changes count as output updates for `frames()`.
+**Open:** default for `area` when capturing a window (`CLIENT` vs `FULL`). Lean `CLIENT` unless discussion settles
+otherwise.
 
-Configuration is separate from capability flags: source type, cursor inclusion, client-area capture, regions, and CPU
-output are requirements already expressed by the capture request.
+`with_cursor` is tri-state for backend selection:
+
+```text
+True   cursor must be included; only backends that can guarantee that are eligible
+False  cursor must be excluded; same filter the other way
+None   don't care (default); auto may pick the best otherwise-eligible backend;
+       cursor presence is unspecified
+```
+
+When cursor inclusion is required (`True`), cursor pixels are composited only where they intersect the final clipped
+output, and cursor movement, shape changes, and visibility changes count as output updates.
+
+Configuration is separate from capability flags: source type, cursor preference, window area, and regions are
+requirements already expressed by the capture request.
 
 ### Regions
+
+`region` is **not** a `create_capture` argument. It is optional on `grab()`:
+
+```python
+capture.grab()
+capture.grab(region=Region(left=10, top=20, width=640, height=480))
+```
+
+`None` captures the full source extent (subject to `area` for windows). Region may differ across `grab` calls.
 
 Region fields are integers. Negative `left` and `top` values are valid. Negative width or height raises `ValueError`;
 zero is valid. The effective rectangle is recomputed for each acquisition:
 
 ```python
-effective = requested_region.intersection(source.bounds)
+effective = requested_region.intersection(source_extent)
 ```
 
-The returned image describes the clipped rectangle:
+The returned image describes the clipped rectangle. A completely clipped region returns an empty `ScreenShot` without a
+native pixel copy. Continuous capture still observes source updates because a resized source may make the region
+nonempty later. For an empty intersection, the position is the requested origin clamped to the nearest source boundary.
 
-```python
-image.pos == Pos(effective.left, effective.top)
-image.size == Size(effective.width, effective.height)
-```
+Insets / negative width-height as a crop-from-edges sugar remain deferred.
 
-A completely clipped region returns an empty `ScreenShot` without a native pixel copy. Continuous capture still
-observes source updates because a resized source may make the region nonempty later. For an empty intersection, the
-position is the requested origin clamped to the nearest source boundary.
+If a backend cannot re-crop without reinit, `create_capture` still succeeds; the first incompatible `grab`
+request raises `UnsupportedCaptureOperationError`. Prefer backends that can re-crop.
 
 ### Backend selection
 
@@ -198,8 +223,8 @@ class BackendFailure(NamedTuple):
 
 ```python
 capture.backend.name
-capture.backend.capabilities
-capture.backend_failures  # tuple[BackendFailure, ...]
+capture.backend.capabilities   # introspection / debugging after auto-select
+capture.backend_failures       # tuple[BackendFailure, ...]
 ```
 
 For `backend="auto"`, MSS filters a documented platform/source priority list by the capture configuration and required
@@ -212,115 +237,57 @@ capture's provider. Priority does not change in patch releases. Minor releases a
 eligible defaults; established defaults may be reordered in a major release. Providers may be disabled sooner for
 correctness, security, or platform compatibility.
 
-## CPU results and timing
+## Results
 
-The default result remains `ScreenShot`. It contains CPU-addressable, tightly packed, top-to-bottom BGRA/BGRX bytes:
+The result type remains **`ScreenShot`**. It is not replaced by a separate `Frame` type.
 
-```text
-row stride  width * 4
-channels    B, G, R, A/X
-alpha       not guaranteed meaningful
-```
+Future direction (not v1): `ScreenShot` as a base with `ScreenShotCpu` and `ScreenShotGpu` subclasses sharing common
+attributes; CPU and GPU results expose different buffers.
 
-Backends may acquire another native format but convert as necessary before returning a CPU `ScreenShot`.
+### Buffer layout
 
-```python
-@dataclass(frozen=True, slots=True)
-class FrameTiming:
-    sequence: int
-    source_generation: int
-    source_sequence: int | None
-    presented_at_ns: int | None
-    acquired_at_ns: int
-    ready_at_ns: int
-    delivered_at_ns: int
+`ScreenShot` does **not** require tightly packed rows. Backends may return a native stride/pitch. Contiguous packed
+BGRA is obtained lazily via `.bgra` (may copy). NumPy/PIL/PyTorch and similar consumers can use the native layout
+directly when they support strides.
 
+This would mean that legacy `MSS.grab()` stops returning packed buffers as today, but they can be obtained via attributes as
+described above.
 
-@dataclass(frozen=True, slots=True)
-class CaptureStatistics:
-    acquired_frames: int
-    delivered_frames: int
-    dropped_frames: int
-    source_missed_frames: int | None
-```
+Exact pixel-format negotiation (HDR, YUV, etc.) is deferred with GPU work.
 
-Built-in `ScreenShot` results from the new API always have `image.timing`; directly constructed and legacy screenshots
-may have `timing=None`. All times use one documented monotonic nanosecond clock. `presented_at_ns` is `None` unless the
-backend supplies a reliable presentation time in that clock domain. Acquisition time is never reported as presentation
-time.
+### Timing and statistics — **Deferred**
 
-`sequence` is capture-wide and monotonic across generator restarts and native recovery. Gaps reveal MSS-side drops.
-`source_sequence` belongs to `source_generation`; the generation increments when recovery changes the native sequence
-domain. Repeated `grab()` results receive new MSS sequences but may share a source sequence and presentation time.
+`FrameTiming` and `CaptureStatistics` are deferred past the first cut of the source-bound API. They can be added later
+without blocking capture creation, `ScreenShot`, and basic `grab` / `frames`.
 
-`capture.statistics` returns an immutable, thread-safe snapshot and remains available after loss, failure, or closure.
-`acquired_frames` counts backend updates accepted by MSS, including updates later dropped. `delivered_frames` counts
-successful returns and yields. `source_missed_frames` is `None` unless the backend can count misses reliably.
+### `cls_image`
 
-`MSS.cls_image` is snapshotted when a capture is created. The custom image constructor receives:
-
-```python
-image_class(data, region, size=actual_size, timing=timing)
-```
-
-Custom classes may ignore optional keywords. Changing `session.cls_image` affects future captures, not an existing
-capture's result type.
+Dropped from the new API. Legacy `MSS.cls_image` may remain on the deprecated path; source-bound capture does not grow
+an equivalent.
 
 ## Pull and continuous capture
 
 ```python
-image = capture.grab(timeout=1.0)
-
-for image in capture.frames(
-    buffer_count=1,
-    overflow="drop_oldest",
-    timeout=None,
-):
-    process(image)
+image = capture.grab()
+image = capture.grab(region=...)
 ```
 
 `grab()` returns a newly constructed current image whenever the backend can complete the request. Repeated calls may
-contain identical pixels. It does not promise a distinct source presentation or a particular rate.
+contain identical pixels. It does not promise a distinct source presentation, a particular rate, or no-drop delivery.
+**No `timeout` on `grab()`.**
 
-`frames()` requires `FRAME_NOTIFICATIONS` and yields only distinct backend-reported output updates. Equal pixels may be
-yielded for distinct presentations. MSS does not compare images to infer updates and does not synthesize duplicates.
-Calling it without the capability raises `UnsupportedCaptureOperationError`.
+### `frames()` — **Open**
 
-`buffer_count` is a positive integer and counts completed images waiting for delivery, excluding native frame pools and
-the image held by the consumer. The supported overflow policies are:
+Intent: a streaming path that can deliver consecutive backend updates **without dropping frames** when the consumer
+keeps up. `timeout` belongs on this path, not on `grab()`.
+Would require us to add a `wait_for_next_frame` or something similar to `grab()`
+function.
 
-```text
-drop_oldest  discard the oldest pending image and queue the newest; default
-block        stop draining native updates until delivery space is available
-```
-
-Native APIs may coalesce or miss updates while blocked; this is not an MSS-side drop. Pending images discarded when a
-generator ends count as dropped. Version one has no target-FPS or duplicate-frame video mode.
-
-`timeout` limits each wait for an image. `FrameTimeoutError` terminates that generator but leaves the capture reusable.
-`SourceLostError` and `CaptureFailedError` terminate it and leave the capture terminal. Closing the capture ends an
-active generator normally.
-
-Only one `frames()` generator may be active. It becomes active on its first iteration. While active, `grab()` or
-advancing another generator raises `CaptureBusyError`. Concurrent `grab()` calls are serialized. An individual generator
-must not be advanced concurrently from multiple threads.
-
-```python
-stream = capture.frames()
-try:
-    for image in stream:
-        if process_and_finish(image):
-            break
-finally:
-    stream.close()  # Required when retaining a generator and leaving early.
-```
-
-Closing or exhausting the generator returns the capture to its open state. A timeout permits another generator on the
-same capture; source loss requires selecting a source and creating a new capture.
+Only one streaming consumer may be active per capture at a time; details TBD with the `frames()` design. Concurrent `grab()` calls are serialized.
 
 ## Lifetime and recovery
 
-`Capture` is an idempotent context manager:
+`Capture` is an idempotent context manager: `__exit__` closes; `close()` may be called again with no effect.
 
 ```python
 with session.create_capture(source) as capture:
@@ -335,13 +302,6 @@ closing shared platform resources. Returned image storage remains valid after bo
 
 ```text
 OPEN
-├── first next(frames) ─────────> STREAMING
-├── source disappears ──────────> LOST
-├── unrecoverable provider error ─> FAILED
-└── close() ────────────────────> CLOSED
-
-STREAMING
-├── generator close/timeout ────> OPEN
 ├── source disappears ──────────> LOST
 ├── unrecoverable provider error ─> FAILED
 └── close() ────────────────────> CLOSED
@@ -352,14 +312,9 @@ include device reset, DXGI duplication invalidation, frame-pool recreation, wind
 orientation changes for the same monitor. Recovery stays within the selected provider and preserves required
 capabilities.
 
-A minimized, hidden, or temporarily unavailable window is not lost. `frames()` waits for another update and may time
-out; `grab()` may construct a new result from the latest retained source image. Window destruction and monitor unplug
-are terminal source loss. Recreated windows, reconnected monitors, matching titles, matching geometry, and reused list
-indices do not silently retarget a capture. `Desktop` persists across monitor-topology changes.
-
-Pending delivery images are discarded on native-generation replacement, source loss, or terminal failure. Previously
-returned images remain valid. Public timeouts include time spent recovering; `timeout=None` uses finite internal waits
-so close, loss, and failure remain observable.
+A minimized, hidden, or temporarily unavailable window is not lost. Window destruction and monitor unplug are terminal
+source loss. Recreated windows, reconnected monitors, matching titles, matching geometry, and reused list indices do
+not silently retarget a capture. `Desktop` persists across monitor-topology changes.
 
 ## Exceptions
 
@@ -370,7 +325,6 @@ MSSError
 ├── WindowSelectionError
 ├── BackendUnavailableError
 └── CaptureError
-    ├── FrameTimeoutError                 capture reusable
     ├── SourceLostError                   terminal LOST
     ├── CaptureFailedError                terminal FAILED
     ├── CaptureClosedError
@@ -378,19 +332,42 @@ MSSError
     └── UnsupportedCaptureOperationError
 ```
 
+`MSSError` is the package top-level exception. `ScreenShotError` remains for the legacy path only; the new API is not
+rooted at `ScreenShotError`.
+
 Invalid argument types use `TypeError`; invalid values use `ValueError`. Window-selector callback exceptions propagate
 unchanged. `CaptureFailedError` chains its native cause.
 
 ## Compatibility and deferred work
 
 The deprecated `MSS.grab()`, `MSS.monitors`, `save()`, and `shot()` retain their current desktop-rectangle semantics and
-return types. Their legacy backend is initialized lazily. Constructor-level `backend=` and `with_cursor=` configure only
-that path; new capture selection belongs to `create_capture()`. Compatibility helpers do not call deprecated public
-methods internally.
+return types (including today's macOS nominal-resolution default and packed buffers). Their legacy backend is
+initialized lazily. Constructor-level `backend=` and `with_cursor=` configure only that path; new capture selection
+belongs to `create_capture()`. Compatibility helpers do not call deprecated public methods internally.
 
-The new API uses `MSSError` and `CaptureError`; `ScreenShotError` remains the legacy error type.
+### Settled for this revision
 
-THis version 1.0 of the new interface deliberately defers GPU result types and more capture-native formats (CPU or GPU).
-Internally, capture implementations are generic over their result type and
-producer/queue delivery so these improvements can be added later without changes
-to the overall design.
+- Session + source-bound `Capture`; region on `grab`, not `create_capture`
+- `WindowArea` instead of `client_area_only`; regions relative to the chosen area
+- `with_cursor: bool | None` for auto backend selection
+- `find_window` only (no `get_window`); window equality by identity
+- Enumeration snapshots as `tuple[...]`
+- Keep `ScreenShot`; allow strides; lazy packed `.bgra`
+- No `cls_image` on the new path
+- No `timeout` on `grab()`
+- Expose `capture.backend` / `capabilities` / `backend_failures` for introspection
+- `MSSError` as the new-API exception root
+
+### Open
+
+- Physical vs logical pixel space on macOS vs Windows/Linux (shared `ScreenShot` contract)
+- Default `WindowArea` for window captures
+- A `frames()` generator design
+- OS picker / authorization models (WGC, Wayland ScreenCast, ScreenCaptureKit) vs app-selected sources
+
+### Deferred
+
+- `FrameTiming` / `CaptureStatistics`
+- `ScreenShotCpu` / `ScreenShotGpu` split and GPU result types
+- Richer pixel formats / color spaces
+- Region insets (negative width/height syntactic sugar)
