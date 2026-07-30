@@ -7,13 +7,13 @@ orphan: true
 Status: design proposal for issues [#470](https://github.com/BoboTiG/python-mss/issues/470) and
 [#544](https://github.com/BoboTiG/python-mss/issues/544).
 
-Decisions below reflect discussion on #544 through 2026-07-22. Sections marked **Open** or **Deferred** are
+Decisions below reflect discussion on #544 through 2026-07-30. Sections marked **Open** or **Deferred** are
 not settled.
 
 ## Overview
 
 `MSS` is a platform session. It enumerates sources and creates source-bound `Capture` objects. Captures return
-`ScreenShot` objects (see [Results](#results)).
+`ScreenShot` objects (see the Results section below).
 
 ```python
 with MSS() as session:
@@ -52,22 +52,23 @@ session.list_windows()   # tuple[Window, ...]
 
 Return type is `tuple[...]` so the snapshot cannot be resized or reassigned in place.
 
-#### Coordinate spaces — **Open**
+Inputs are always display-oriented: a 90°-rotated 1920×1080 panel is addressed as width 1080, height 1920. Callers do
+not apply a rotation transform.
 
-**Inputs** (windows, monitors, desktop, regions) are always in **display-oriented** pixels: a 90°-rotated 1920×1080
-panel is reported and addressed as width 1080, height 1920. Callers do not apply a rotation transform when specifying
-what to capture.
+```python
+class PixelSpace(Enum):
+    LOGICAL = auto()   # points / DIPs / nominal display units
+    PHYSICAL = auto()  # backing-store / framebuffer pixels
+```
 
-**Pixel space (physical / framebuffer vs logical / nominal)** is unresolved. Today Windows and Linux/X11 use
-framebuffer pixels (geometry matches the buffer); macOS defaults to nominal/logical via
-`kCGWindowImageNominalResolution`. Because the new API keeps `ScreenShot` as the result type shared with the legacy
-path, there is no separate type with which to quarantine a new contract. Options under discussion on #544:
+Enumerated source geometry uses the session's platform-default pixel space:
 
-1. Keep the platform inconsistency on `ScreenShot` (document it).
-2. Unify on physical/framebuffer everywhere in a major release (breaking on Retina Macs that rely on nominal size).
-3. Make the space explicit on each result (attribute / scale factor).
+```python
+session.default_pixel_space  # PixelSpace
+source.bounds                # Region in session.default_pixel_space
+```
 
-Until decided, this document does not claim “physical pixels everywhere.”
+The initial API does not provide source-geometry conversion between pixel spaces.
 
 ### Monitors
 
@@ -102,6 +103,16 @@ Within the same session, callers who need “same OS window” compare `window.i
 `list_windows()` includes top-level application windows and minimized windows. Hidden windows require
 `include_hidden=True`. Child controls, shell surfaces, menus, tooltips, and similar transient windows are excluded where
 the platform can identify them reliably.
+
+On platforms that prohibit application-driven enumeration, these APIs raise rather than returning an empty snapshot:
+
+```python
+session.list_windows()   # SourceEnumerationUnsupportedError
+session.list_monitors()  # SourceEnumerationUnsupportedError
+session.desktop          # SourceEnumerationUnsupportedError
+```
+
+An empty tuple means enumeration succeeded and found no sources. Portal-only Wayland uses the system-picker path below.
 
 ```python
 WindowSelector = Callable[[tuple[Window, ...]], Window | None]
@@ -141,6 +152,11 @@ class CaptureCapability(Flag):
     SOURCE_MISSED_FRAME_COUNT = auto()
 
 
+class PickerTarget(Flag):
+    MONITOR = auto()
+    WINDOW = auto()
+
+
 class WindowArea(Enum):
     CLIENT = auto()  # client area / content rect / client window
     FULL = auto()    # entire native window, including non-client chrome
@@ -155,8 +171,29 @@ def create_capture(
     required_capabilities: CaptureCapability = CaptureCapability.NONE,
     with_cursor: bool | None = None,
     area: WindowArea | None = None,
+    pixel_space: PixelSpace | None = None,
 ) -> Capture: ...
 ```
+
+`pixel_space=None` resolves to a documented platform default:
+
+```text
+Windows          PHYSICAL
+Linux/X11        PHYSICAL
+Linux/Wayland    PHYSICAL
+macOS            LOGICAL
+```
+
+`None` does not let the backend choose. The resolved value is stable and inspectable:
+
+```python
+capture.pixel_space  # PixelSpace; never None
+capture.source_bounds  # Region in capture.pixel_space
+session.default_pixel_space
+```
+
+Portable applications select a space explicitly. Backend selection rejects providers that cannot produce the requested
+space; it never substitutes the other one.
 
 `area` is valid only with a `Window` source. Invalid for `Monitor` / `Desktop`. Region coordinates on later
 `grab` calls are relative to the chosen extent: with `CLIENT`, `(0, 0)` is the client/content origin; with
@@ -177,8 +214,47 @@ None   don't care (default); auto may pick the best otherwise-eligible backend;
 When cursor inclusion is required (`True`), cursor pixels are composited only where they intersect the final clipped
 output, and cursor movement, shape changes, and visibility changes count as output updates.
 
-Configuration is separate from capability flags: source type, cursor preference, window area, and regions are
-requirements already expressed by the capture request.
+Configuration is separate from capability flags: source type, cursor preference, window area, pixel space, and regions
+are requirements already expressed by the capture request.
+
+### System-picker creation
+
+Application-selected sources use `create_capture()`. User-selected surfaces use an asynchronous system picker and are
+bound directly to the returned capture:
+
+```python
+async def create_capture_from_picker(
+    self,
+    *,
+    allowed_to_pick: PickerTarget = PickerTarget.MONITOR | PickerTarget.WINDOW,
+    backend: str = "auto",
+    required_capabilities: CaptureCapability = CaptureCapability.NONE,
+    with_cursor: bool | None = None,
+    area: WindowArea | None = None,
+    pixel_space: PixelSpace | None = None,
+    parent_window: object | None = None,
+) -> Capture | None: ...
+```
+
+```python
+capture = await session.create_capture_from_picker(
+    allowed_to_pick=PickerTarget.WINDOW,
+    with_cursor=True,
+    pixel_space=PixelSpace.PHYSICAL,
+)
+if capture is None:
+    return  # User cancelled.
+```
+
+`allowed_to_pick` controls the categories offered by the picker; one surface is selected. The selected item, portal
+session, authorization, and stream setup are not exposed as a public `CaptureSource`. `area` applies only if the user
+selects a window. `parent_window` is the platform-specific parent handle for the picker. Automatic backend fallback may
+occur before UI is presented, but MSS presents at most one picker and does not reprompt after selection if capture
+initialization fails.
+
+This path is optional on platforms with application-driven selection and required by portal-only Wayland. Although
+frame delivery remains synchronous in the first version, picker creation is async because WGC, ScreenCaptureKit, and
+the Wayland portal all complete selection asynchronously.
 
 ### Regions
 
@@ -190,6 +266,7 @@ capture.grab(region=Region(left=10, top=20, width=640, height=480))
 ```
 
 `None` captures the full source extent (subject to `area` for windows). Region may differ across `grab` calls.
+Coordinates and clipping use `capture.pixel_space`.
 
 Region fields are integers. Negative `left` and `top` values are valid. Negative width or height raises `ValueError`;
 zero is valid. The effective rectangle is recomputed for each acquisition:
@@ -240,6 +317,14 @@ correctness, security, or platform compatibility.
 ## Results
 
 The result type remains **`ScreenShot`**. It is not replaced by a separate `Frame` type.
+
+```python
+image.pixel_space == capture.pixel_space
+```
+
+`image.pos`, `image.size`, buffer dimensions, row stride, and array/tensor shapes use that space. Each result contains
+one buffer in one space, never logical and physical copies. `capture.source_bounds` gives the captured source extent in
+the capture's resolved pixel space.
 
 Future direction (not v1): `ScreenShot` as a base with `ScreenShotCpu` and `ScreenShotGpu` subclasses sharing common
 attributes; CPU and GPU results expose different buffers.
@@ -322,6 +407,7 @@ not silently retarget a capture. `Desktop` persists across monitor-topology chan
 MSSError
 ├── ScreenShotError                       legacy API
 ├── SessionClosedError
+├── SourceEnumerationUnsupportedError
 ├── WindowSelectionError
 ├── BackendUnavailableError
 └── CaptureError
@@ -348,6 +434,8 @@ belongs to `create_capture()`. Compatibility helpers do not call deprecated publ
 ### Settled for this revision
 
 - Session + source-bound `Capture`; region on `grab`, not `create_capture`
+- Explicit logical/physical capture space with platform-dependent `None` default
+- Separate `create_capture_from_picker`; no public intermediate picked-source object
 - `WindowArea` instead of `client_area_only`; regions relative to the chosen area
 - `with_cursor: bool | None` for auto backend selection
 - `find_window` only (no `get_window`); window equality by identity
@@ -360,10 +448,8 @@ belongs to `create_capture()`. Compatibility helpers do not call deprecated publ
 
 ### Open
 
-- Physical vs logical pixel space on macOS vs Windows/Linux (shared `ScreenShot` contract)
 - Default `WindowArea` for window captures
 - A `frames()` generator design
-- OS picker / authorization models (WGC, Wayland ScreenCast, ScreenCaptureKit) vs app-selected sources
 
 ### Deferred
 
