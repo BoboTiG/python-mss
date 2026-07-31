@@ -234,14 +234,23 @@ if capture is None:
     return  # User cancelled.
 ```
 
-The method blocks while the system picker is open and returns when the user selects a source, cancels, or picker
-creation fails. It has no timeout.
+The method blocks while the system picker is open and returns when the user
+selects a source or the platform reports that the user cancelled. `None` means
+cancellation only. Failure to create or operate the picker, loss of the portal
+or native service, permission failure, an invalid platform response, and failure
+to initialize the selected capture raise an exception. It has no timeout.
+
+If no eligible picker backend can be initialized before UI is presented,
+`BackendUnavailableError` records the attempted providers in the same way as
+`create_capture()`. After a picker backend has presented UI, an abnormal picker
+exit or failure to initialize the selected source raises `PickerError` and
+chains the native cause where available. Automatic backend fallback does not
+occur after UI has been presented.
 
 The operating-system picker determines which source categories are offered and one surface is selected. The selected
 item and associated resources are not exposed as a public `CaptureSource`. `area` applies only
-if the user selects a window. `parent_window` is the platform-specific parent handle for the picker. Automatic backend
-fallback may occur before UI is presented, but MSS presents at most one picker and does not reprompt after selection if
-capture initialization fails.
+if the user selects a window. `parent_window` is the platform-specific parent handle for the picker. MSS presents at
+most one picker and does not reprompt after selection if capture initialization fails.
 
 This path is required by portal-only Wayland. In the future we may also offer it for Windows WGC and MacOS
 ScreenCaptureKit. Although WGC,
@@ -403,6 +412,7 @@ MSSError
 ├── SourceEnumerationUnsupportedError
 ├── WindowSelectionError
 ├── BackendUnavailableError
+├── PickerError                             abnormal picker exit or selected-source initialization failure
 └── CaptureError
     ├── SourceLostError                   terminal LOST
     ├── CaptureFailedError                terminal FAILED
@@ -415,7 +425,7 @@ MSSError
 rooted at `ScreenShotError`.
 
 Invalid argument types use `TypeError`; invalid values use `ValueError`. Window-selector callback exceptions propagate
-unchanged. `CaptureFailedError` chains its native cause.
+unchanged. `PickerError` and `CaptureFailedError` chain their native causes.
 
 ## Compatibility and deferred work
 
@@ -440,6 +450,7 @@ otherwise refuses the requested configuration. An already-established compatible
 - Session + source-bound `Capture`; region on `grab`, not `create_capture`
 - Pixel space is platform/process determined and inspectable, not caller-selectable
 - Synchronous `create_capture_from_picker`; no target-category filter or public intermediate picked-source object
+- Picker cancellation returns `None`; every abnormal picker exit raises an exception
 - `WindowArea` instead of `client_area_only`; regions relative to the chosen area
 - `with_cursor: bool | None` for auto backend selection
 - `find_window` only (no `get_window`); window equality by identity
