@@ -61,14 +61,29 @@ class PixelSpace(Enum):
     PHYSICAL = auto()  # backing-store / framebuffer pixels
 ```
 
-Enumerated source geometry uses the session's platform-default pixel space:
+Pixel space is not selected by the caller. It is determined by the platform and any process or
+thread DPI configuration established by the application. MSS does not change process DPI awareness implicitly,
+but it does offer a utility function on Windows, for the user's convenience.
+
+Enumerated source geometry uses the session's effective pixel space:
 
 ```python
-session.default_pixel_space  # PixelSpace
-source.bounds                # Region in session.default_pixel_space
+session.pixel_space  # PixelSpace
+source.bounds        # Region in session.pixel_space
+```
+The session therefore informs the user of the pixel_space being used. This should be fixed for the
+lifetime of an MSS session. Applications must not change their pixel space while the session or its captures are active. MSS may detect such a change and raise an exception.
+
+Typical behavior is:
+
+```text
+Windows          Determined by the application's DPI-awareness context
+Linux/X11        PHYSICAL
+Linux/Wayland    PHYSICAL capture-buffer pixels
+macOS            LOGICAL
 ```
 
-The initial API does not provide source-geometry conversion between pixel spaces.
+The initial API does not provide conversion between pixel spaces and does not resample to produce another space.
 
 ### Monitors
 
@@ -152,11 +167,6 @@ class CaptureCapability(Flag):
     SOURCE_MISSED_FRAME_COUNT = auto()
 
 
-class PickerTarget(Flag):
-    MONITOR = auto()
-    WINDOW = auto()
-
-
 class WindowArea(Enum):
     CLIENT = auto()  # client area / content rect / client window
     FULL = auto()    # entire native window, including non-client chrome
@@ -171,29 +181,11 @@ def create_capture(
     required_capabilities: CaptureCapability = CaptureCapability.NONE,
     with_cursor: bool | None = None,
     area: WindowArea | None = None,
-    pixel_space: PixelSpace | None = None,
 ) -> Capture: ...
 ```
 
-`pixel_space=None` resolves to a documented platform default:
-
-```text
-Windows          PHYSICAL
-Linux/X11        PHYSICAL
-Linux/Wayland    PHYSICAL
-macOS            LOGICAL
-```
-
-`None` does not let the backend choose. The resolved value is stable and inspectable:
-
-```python
-capture.pixel_space  # PixelSpace; never None
-capture.source_bounds  # Region in capture.pixel_space
-session.default_pixel_space
-```
-
-Portable applications select a space explicitly. Backend selection rejects providers that cannot produce the requested
-space; it never substitutes the other one.
+The caller does not choose logical or physical coordinates. The resolved space is inspectable through
+`session.pixel_space` and remains stable for the lifetime of the session and therefore the capture.
 
 `area` is valid only with a `Window` source. Invalid for `Monitor` / `Desktop`. Region coordinates on later
 `grab` calls are relative to the chosen extent: with `CLIENT`, `(0, 0)` is the client/content origin; with
@@ -214,47 +206,47 @@ None   don't care (default); auto may pick the best otherwise-eligible backend;
 When cursor inclusion is required (`True`), cursor pixels are composited only where they intersect the final clipped
 output, and cursor movement, shape changes, and visibility changes count as output updates.
 
-Configuration is separate from capability flags: source type, cursor preference, window area, pixel space, and regions
-are requirements already expressed by the capture request.
+Configuration is separate from capability flags: source type, cursor preference, window area, and regions are
+requirements already expressed by the capture request. Pixel space is an observed property, not a capture request.
 
 ### System-picker creation
 
-Application-selected sources use `create_capture()`. User-selected surfaces use an asynchronous system picker and are
-bound directly to the returned capture:
+Application-selected sources use `create_capture()`. User-selected surfaces use a system picker and are bound directly
+to the returned capture:
 
 ```python
-async def create_capture_from_picker(
+def create_capture_from_picker(
     self,
     *,
-    allowed_to_pick: PickerTarget = PickerTarget.MONITOR | PickerTarget.WINDOW,
     backend: str = "auto",
     required_capabilities: CaptureCapability = CaptureCapability.NONE,
     with_cursor: bool | None = None,
     area: WindowArea | None = None,
-    pixel_space: PixelSpace | None = None,
     parent_window: object | None = None,
 ) -> Capture | None: ...
 ```
 
 ```python
-capture = await session.create_capture_from_picker(
-    allowed_to_pick=PickerTarget.WINDOW,
+capture = session.create_capture_from_picker(
     with_cursor=True,
-    pixel_space=PixelSpace.PHYSICAL,
 )
 if capture is None:
     return  # User cancelled.
 ```
 
-`allowed_to_pick` controls the categories offered by the picker; one surface is selected. The selected item, portal
-session, authorization, and stream setup are not exposed as a public `CaptureSource`. `area` applies only if the user
-selects a window. `parent_window` is the platform-specific parent handle for the picker. Automatic backend fallback may
-occur before UI is presented, but MSS presents at most one picker and does not reprompt after selection if capture
-initialization fails.
+The method blocks while the system picker is open and returns when the user selects a source, cancels, or picker
+creation fails. It has no timeout.
 
-This path is optional on platforms with application-driven selection and required by portal-only Wayland. Although
-frame delivery remains synchronous in the first version, picker creation is async because WGC, ScreenCaptureKit, and
-the Wayland portal all complete selection asynchronously.
+The operating-system picker determines which source categories are offered and one surface is selected. The selected
+item and associated resources are not exposed as a public `CaptureSource`. `area` applies only
+if the user selects a window. `parent_window` is the platform-specific parent handle for the picker. Automatic backend
+fallback may occur before UI is presented, but MSS presents at most one picker and does not reprompt after selection if
+capture initialization fails.
+
+This path is required by portal-only Wayland. In the future we may also offer it for Windows WGC and MacOS
+ScreenCaptureKit. Although WGC,
+ScreenCaptureKit, and the Wayland portal complete selection asynchronously at the platform level, the initial public API
+is synchronous. A `create_capture_from_picker_async()` variant may be added later without changing the synchronous API.
 
 ### Regions
 
@@ -428,14 +420,15 @@ unchanged. `CaptureFailedError` chains its native cause.
 
 The deprecated `MSS.grab()`, `MSS.monitors`, `save()`, and `shot()` retain their current desktop-rectangle semantics and
 return types (including today's macOS nominal-resolution default and packed buffers). Their legacy backend is
-initialized lazily. Constructor-level `backend=` and `with_cursor=` configure only that path; new capture selection
-belongs to `create_capture()`. Compatibility helpers do not call deprecated public methods internally.
+initialized lazily. Constructor-level `backend=` and `with_cursor=` configure only that path; new source-bound
+capture creation belongs to `create_capture()` and `create_capture_from_picker()`. Compatibility helpers do not call
+deprecated public methods internally.
 
 ### Settled for this revision
 
 - Session + source-bound `Capture`; region on `grab`, not `create_capture`
-- Explicit logical/physical capture space with platform-dependent `None` default
-- Separate `create_capture_from_picker`; no public intermediate picked-source object
+- Pixel space is platform/process determined and inspectable, not caller-selectable
+- Synchronous `create_capture_from_picker`; no target-category filter or public intermediate picked-source object
 - `WindowArea` instead of `client_area_only`; regions relative to the chosen area
 - `with_cursor: bool | None` for auto backend selection
 - `find_window` only (no `get_window`); window equality by identity
