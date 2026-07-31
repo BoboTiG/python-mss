@@ -399,6 +399,7 @@ not silently retarget a capture. `Desktop` persists across monitor-topology chan
 MSSError
 ├── ScreenShotError                       legacy API
 ├── SessionClosedError
+├── SessionModeError                      legacy/source-bound API paths mixed
 ├── SourceEnumerationUnsupportedError
 ├── WindowSelectionError
 ├── BackendUnavailableError
@@ -419,10 +420,20 @@ unchanged. `CaptureFailedError` chains its native cause.
 ## Compatibility and deferred work
 
 The deprecated `MSS.grab()`, `MSS.monitors`, `save()`, and `shot()` retain their current desktop-rectangle semantics and
-return types (including today's macOS nominal-resolution default and packed buffers). Their legacy backend is
-initialized lazily. Constructor-level `backend=` and `with_cursor=` configure only that path; new source-bound
-capture creation belongs to `create_capture()` and `create_capture_from_picker()`. Compatibility helpers do not call
-deprecated public methods internally.
+return types (including today's macOS nominal-resolution default and packed buffers). The legacy and new paths
+must not be mixed on one `MSS` session. A session is initially uncommitted; its first legacy or new operation
+commits it to that path for its lifetime. Using an API from the other path afterward raises `SessionModeError`.
+
+The legacy backend is initialized lazily by the first legacy operation. Constructor-level `backend=` and
+`with_cursor=` configure only that path; they do not initialize it. New source enumeration and capture creation belong
+to the source-bound (new) path, including `desktop`, `list_monitors()`, `list_windows()`, `find_window()`, `create_capture()`,
+and `create_capture_from_picker()`. Compatibility helpers do not call deprecated public methods internally.
+
+On Windows, only initialization of the legacy GDI path attempts to establish the process DPI awareness required by its
+existing physical-desktop coordinate contract. Source-bound session creation and use never change process or thread DPI
+awareness implicitly. We will improve the legacy GDI initialization so it validates the resulting awareness and raises `ScreenShotError` if an
+incompatible value was already established by the application manifest or by other code in the process, or if Windows
+otherwise refuses the requested configuration. An already-established compatible value is accepted.
 
 ### Settled for this revision
 
@@ -438,6 +449,7 @@ deprecated public methods internally.
 - No `timeout` on `grab()`
 - Expose `capture.backend` / `capabilities` / `backend_failures` for introspection
 - `MSSError` as the new-API exception root
+- Legacy and source-bound operations cannot be mixed in one session; legacy initialization remains lazy
 
 ### Open
 
