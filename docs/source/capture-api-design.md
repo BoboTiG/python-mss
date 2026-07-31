@@ -247,10 +247,13 @@ exit or failure to initialize the selected source raises `PickerError` and
 chains the native cause where available. Automatic backend fallback does not
 occur after UI has been presented.
 
-The operating-system picker determines which source categories are offered and one surface is selected. The selected
-item and associated resources are not exposed as a public `CaptureSource`. `area` applies only
-if the user selects a window. `parent_window` is the platform-specific parent handle for the picker. MSS presents at
-most one picker and does not reprompt after selection if capture initialization fails.
+MSS requests monitor and window sources where supported. The platform picker
+determines how those choices are presented and may offer a narrower set; MSS does
+not request virtual-display creation. One surface is selected. The selected item
+and associated resources are not exposed as a public `CaptureSource`. `area`
+applies only if the user selects a window. `parent_window` is the platform-specific
+parent handle for the picker. MSS presents at most one picker and does not reprompt
+after selection if capture initialization fails.
 
 This path is required by portal-only Wayland. In the future we may also offer it for Windows WGC and MacOS
 ScreenCaptureKit. Although WGC,
