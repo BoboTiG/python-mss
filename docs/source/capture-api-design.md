@@ -7,8 +7,7 @@ orphan: true
 Status: design proposal for issues [#470](https://github.com/BoboTiG/python-mss/issues/470) and
 [#544](https://github.com/BoboTiG/python-mss/issues/544).
 
-Decisions below reflect discussion on #544 through 2026-07-30. Sections marked **Open** or **Deferred** are
-not settled.
+Decisions below reflect discussion on #544 through 2026-08-01. Sections marked **Deferred** are not part of v1.
 
 ## Overview
 
@@ -52,6 +51,13 @@ session.list_windows()   # tuple[Window, ...]
 
 Return type is `tuple[...]` so the snapshot cannot be resized or reassigned in place.
 
+Sources returned by a session carry private provenance. `create_capture()`
+accepts only a source returned by that same session. A manually constructed
+`Monitor` may still be useful as geometry, and legacy `MSS.grab()` continues to
+accept monitor dictionaries, but neither is a valid source for the new API.
+Passing a foreign or manually constructed source to `create_capture()` raises
+`ValueError`.
+
 Inputs are always display-oriented: a 90°-rotated 1920×1080 panel is addressed as width 1080, height 1920. Callers do
 not apply a rotation transform.
 
@@ -87,7 +93,11 @@ The initial API does not provide conversion between pixel spaces and does not re
 
 ### Monitors
 
-`Monitor` supports attributes. It may retain string-key access temporarily for migration.
+`Monitor` is introduced first as a focused change for #470. It is a frozen,
+slotted dataclass with required geometry and optional standard metadata such as
+`is_primary`, `name`, `unique_id`, and Linux `output`. It supports attributes
+and retains string-key access temporarily for migration, but does not promise
+the complete `Mapping` interface.
 
 ```python
 monitor.width
@@ -160,13 +170,6 @@ window remains lost even if another window later has the same title, PID, class,
 ## Capture creation
 
 ```python
-class CaptureCapability(Flag):
-    NONE = 0
-    FRAME_NOTIFICATIONS = auto()
-    PRESENTATION_TIMESTAMPS = auto()
-    SOURCE_MISSED_FRAME_COUNT = auto()
-
-
 class WindowArea(Enum):
     CLIENT = auto()  # client area / content rect / client window
     FULL = auto()    # entire native window, including non-client chrome
@@ -178,7 +181,6 @@ def create_capture(
     source: CaptureSource,
     *,
     backend: str = "auto",
-    required_capabilities: CaptureCapability = CaptureCapability.NONE,
     with_cursor: bool | None = None,
     area: WindowArea | None = None,
 ) -> Capture: ...
@@ -187,12 +189,13 @@ def create_capture(
 The caller does not choose logical or physical coordinates. The resolved space is inspectable through
 `session.pixel_space` and remains stable for the lifetime of the session and therefore the capture.
 
-`area` is valid only with a `Window` source. Invalid for `Monitor` / `Desktop`. Region coordinates on later
-`grab` calls are relative to the chosen extent: with `CLIENT`, `(0, 0)` is the client/content origin; with
-`FULL`, `(0, 0)` is the full native window origin.
+`area` is valid only with a `Window` source. It must be `None` for `Monitor` and `Desktop`. For a `Window`, `None`
+resolves to `WindowArea.CLIENT`, the v1 default. Region coordinates on later `grab` calls are relative to the chosen
+extent: with `CLIENT`, `(0, 0)` is the client/content origin; with `FULL`, `(0, 0)` is the full native window origin.
 
-**Open:** default for `area` when capturing a window (`CLIENT` vs `FULL`). Lean `CLIENT` unless discussion settles
-otherwise.
+`FULL` means the native frame rectangle, including title bars, borders, menus, and other non-client chrome. It excludes
+compositor effects outside that rectangle, such as drop shadows, glow, capture-selection borders, and other external
+decoration. A backend is eligible only if it can honor the requested extent.
 
 `with_cursor` is tri-state for backend selection:
 
@@ -204,10 +207,11 @@ None   don't care (default); auto may pick the best otherwise-eligible backend;
 ```
 
 When cursor inclusion is required (`True`), cursor pixels are composited only where they intersect the final clipped
-output, and cursor movement, shape changes, and visibility changes count as output updates.
+output.
 
-Configuration is separate from capability flags: source type, cursor preference, window area, and regions are
-requirements already expressed by the capture request. Pixel space is an observed property, not a capture request.
+Source type, cursor preference, and window area are requirements expressed by the capture request. Pixel space is an
+observed property, not a capture request. Streaming capabilities are deferred with `frames()` and are not part of the
+v1 capture-creation API.
 
 ### System-picker creation
 
@@ -219,9 +223,8 @@ def create_capture_from_picker(
     self,
     *,
     backend: str = "auto",
-    required_capabilities: CaptureCapability = CaptureCapability.NONE,
     with_cursor: bool | None = None,
-    area: WindowArea | None = None,
+    window_area: WindowArea = WindowArea.CLIENT,
     parent_window: object | None = None,
 ) -> Capture | None: ...
 ```
@@ -241,7 +244,7 @@ or native service, permission failure, an invalid platform response, and failure
 to initialize the selected capture raise an exception. It has no timeout.
 
 If no eligible picker backend can be initialized before UI is presented,
-`BackendUnavailableError` records the attempted providers in the same way as
+`BackendUnavailableError` reports attempted-provider context in the same way as
 `create_capture()`. After a picker backend has presented UI, an abnormal picker
 exit or failure to initialize the selected source raises `PickerError` and
 chains the native cause where available. Automatic backend fallback does not
@@ -250,12 +253,14 @@ occur after UI has been presented.
 MSS requests monitor and window sources where supported. The platform picker
 determines how those choices are presented and may offer a narrower set; MSS does
 not request virtual-display creation. One surface is selected. The selected item
-and associated resources are not exposed as a public `CaptureSource`. `area`
-applies only if the user selects a window. `parent_window` is the platform-specific
-parent handle for the picker. MSS presents at most one picker and does not reprompt
-after selection if capture initialization fails.
+and associated resources are not exposed as a public `CaptureSource`.
+`window_area` applies only if the user selects a window and is irrelevant when a
+monitor is selected. A picker backend is eligible only if it can honor
+`window_area` whenever it offers window selection. `parent_window` is the
+platform-specific parent handle for the picker. MSS presents at most one picker
+and does not reprompt after selection if capture initialization fails.
 
-This path is required by portal-only Wayland. In the future we may also offer it for Windows WGC and MacOS
+This path is required by portal-only Wayland. In the future we may also offer it for Windows WGC and macOS
 ScreenCaptureKit. Although WGC,
 ScreenCaptureKit, and the Wayland portal complete selection asynchronously at the platform level, the initial public API
 is synchronous. A `create_capture_from_picker_async()` variant may be added later without changing the synchronous API.
@@ -272,51 +277,38 @@ capture.grab(region=Region(left=10, top=20, width=640, height=480))
 `None` captures the full source extent (subject to `area` for windows). Region may differ across `grab` calls.
 Coordinates and clipping use `capture.pixel_space`.
 
-Region fields are integers. Negative `left` and `top` values are valid. Negative width or height raises `ValueError`;
-zero is valid. The effective rectangle is recomputed for each acquisition:
+Region fields are integers. Negative `left` and `top` values are valid. Width and height must be positive; zero or a
+negative value raises `ValueError`. The effective rectangle is recomputed for each acquisition against the
+capture-local extent:
 
 ```python
+source_extent = Region(left=0, top=0, width=source_width, height=source_height)
 effective = requested_region.intersection(source_extent)
 ```
 
-The returned image describes the clipped rectangle. A completely clipped region returns an empty `ScreenShot` without a
-native pixel copy. Continuous capture still observes source updates because a resized source may make the region
-nonempty later. For an empty intersection, the position is the requested origin clamped to the nearest source boundary.
+The returned image describes the clipped rectangle. A region with an empty intersection raises `ValueError`. If the
+source itself currently has an empty extent, `grab()` raises `CaptureError`. V1 does not create zero-sized `ScreenShot`
+objects.
+
+Every v1 CPU backend must support a different valid region on each `grab()` call, either through native cropping or by
+cropping inside MSS. Auto-selection never chooses a backend that rejects this normal `Capture` operation.
 
 Insets / negative width-height as a crop-from-edges sugar remain deferred.
-
-If a backend cannot re-crop without reinit, `create_capture` still succeeds; the first incompatible `grab`
-request raises `UnsupportedCaptureOperationError`. Prefer backends that can re-crop.
 
 ### Backend selection
 
 ```python
-@dataclass(frozen=True, slots=True)
-class Backend:
-    name: str
-    capabilities: CaptureCapability
-
-
-class BackendFailure(NamedTuple):
-    name: str
-    reason: str
+capture.backend  # "xshmgetimage", "gdi", ...
 ```
 
-```python
-capture.backend.name
-capture.backend.capabilities   # introspection / debugging after auto-select
-capture.backend_failures       # tuple[BackendFailure, ...]
-```
-
-For `backend="auto"`, MSS filters a documented platform/source priority list by the capture configuration and required
-capabilities, then tries eligible providers in order. `backend_failures` records each higher-priority provider considered
-before the successful one and why it could not be used. If none succeeds, `BackendUnavailableError.failures` contains
-the same records.
+For `backend="auto"`, MSS filters the platform providers by source and capture configuration, then tries eligible
+providers in implementation-defined order. If none succeeds, `BackendUnavailableError` reports useful attempted-provider
+context in its message without making a structured failure history part of the public API.
 
 An explicit backend never falls back. Automatic fallback occurs only during capture creation; recovery never changes a
-capture's provider. Priority does not change in patch releases. Minor releases append new providers behind established
-eligible defaults; established defaults may be reordered in a major release. Providers may be disabled sooner for
-correctness, security, or platform compatibility.
+capture's provider. Auto-selection order is an implementation detail and may improve between releases. Users who need a
+specific provider select it explicitly. Providers may be changed or disabled at any time for correctness, security, or
+platform compatibility.
 
 ## Results
 
@@ -329,6 +321,11 @@ image.pixel_space == capture.pixel_space
 `image.pos`, `image.size`, buffer dimensions, row stride, and array/tensor shapes use that space. Each result contains
 one buffer in one space, never logical and physical copies. `capture.source_bounds` gives the captured source extent in
 the capture's resolved pixel space.
+
+`source.bounds` and `capture.source_bounds` use session-global desktop coordinates. A region passed to `grab()` is
+capture-local. `image.pos` remains session-global: it is the origin of `capture.source_bounds` plus the origin of the
+effective clipped region. For `WindowArea.CLIENT`, `capture.source_bounds` describes the global client/content rectangle;
+for `WindowArea.FULL`, it describes the global native frame rectangle.
 
 Future direction (not v1): `ScreenShot` as a base with `ScreenShotCpu` and `ScreenShotGpu` subclasses sharing common
 attributes; CPU and GPU results expose different buffers.
@@ -344,10 +341,10 @@ described above.
 
 Exact pixel-format negotiation (HDR, YUV, etc.) is deferred with GPU work.
 
-### Timing and statistics — **Deferred**
+### Timing, statistics, and capabilities — **Deferred**
 
-`FrameTiming` and `CaptureStatistics` are deferred past the first cut of the source-bound API. They can be added later
-without blocking capture creation, `ScreenShot`, and basic `grab` / `frames`.
+`CaptureCapability`, `FrameTiming`, and `CaptureStatistics` are deferred past the first cut of the source-bound API.
+They can be designed with the first operation that consumes them rather than becoming speculative v1 public surface.
 
 ### `cls_image`
 
@@ -365,14 +362,10 @@ image = capture.grab(region=...)
 contain identical pixels. It does not promise a distinct source presentation, a particular rate, or no-drop delivery.
 **No `timeout` on `grab()`.**
 
-### `frames()` — **Open**
+### `frames()` — **Deferred**
 
-Intent: a streaming path that can deliver consecutive backend updates **without dropping frames** when the consumer
-keeps up. `timeout` belongs on this path, not on `grab()`.
-Would require us to add a `wait_for_next_frame` or something similar to `grab()`
-function.
-
-Only one streaming consumer may be active per capture at a time; details TBD with the `frames()` design. Concurrent `grab()` calls are serialized.
+The streaming API, buffering, timeouts, update notifications, and concurrency rules will be designed together in a
+separate change. Adding `frames()` later does not require changing source-bound capture creation or `grab()`.
 
 ## Lifetime and recovery
 
@@ -418,24 +411,24 @@ MSSError
 ├── PickerError                             abnormal picker exit or selected-source initialization failure
 └── CaptureError
     ├── SourceLostError                   terminal LOST
-    ├── CaptureFailedError                terminal FAILED
-    ├── CaptureClosedError
-    ├── CaptureBusyError
-    └── UnsupportedCaptureOperationError
+    └── CaptureClosedError
 ```
 
 `MSSError` is the package top-level exception. `ScreenShotError` remains for the legacy path only; the new API is not
 rooted at `ScreenShotError`.
 
 Invalid argument types use `TypeError`; invalid values use `ValueError`. Window-selector callback exceptions propagate
-unchanged. `PickerError` and `CaptureFailedError` chain their native causes.
+unchanged. `PickerError` and `CaptureError` chain their native causes where available.
 
 ## Compatibility and deferred work
 
-The deprecated `MSS.grab()`, `MSS.monitors`, `save()`, and `shot()` retain their current desktop-rectangle semantics and
-return types (including today's macOS nominal-resolution default and packed buffers). The legacy and new paths
-must not be mixed on one `MSS` session. A session is initially uncommitted; its first legacy or new operation
-commits it to that path for its lifetime. Using an API from the other path afterward raises `SessionModeError`.
+The deprecated `MSS.grab()`, `MSS.monitors`, `save()`, and `shot()` retain their current desktop-rectangle semantics
+(including today's macOS nominal-resolution default and packed `ScreenShot` buffers). `MSS.monitors` returns the new
+immutable `Monitor` objects, including the virtual-desktop entry at index zero; temporary string-key access provides the
+migration bridge. Legacy `MSS.grab()` accepts those objects as well as current user-created dictionaries and PIL-style
+tuples. The legacy and new paths must not be mixed on one `MSS` session. A session is initially uncommitted; its first
+legacy or new operation commits it to that path for its lifetime. Using an API from the other path afterward raises
+`SessionModeError`.
 
 The legacy backend is initialized lazily by the first legacy operation. Constructor-level `backend=` and
 `with_cursor=` configure only that path; they do not initialize it. New source enumeration and capture creation belong
@@ -451,28 +444,91 @@ otherwise refuses the requested configuration. An already-established compatible
 ### Settled for this revision
 
 - Session + source-bound `Capture`; region on `grab`, not `create_capture`
+- Sources carry private session provenance; manually constructed geometry is not a capture source
 - Pixel space is platform/process determined and inspectable, not caller-selectable
+- Source bounds and result positions are session-global; requested regions are capture-local
 - Synchronous `create_capture_from_picker`; no target-category filter or public intermediate picked-source object
 - Picker cancellation returns `None`; every abnormal picker exit raises an exception
-- `WindowArea` instead of `client_area_only`; regions relative to the chosen area
+- `WindowArea` instead of `client_area_only`; `CLIENT` is the v1 default
+- Picker `window_area` is conditional on the user selecting a window
 - `with_cursor: bool | None` for auto backend selection
 - `find_window` only (no `get_window`); window equality by identity
 - Enumeration snapshots as `tuple[...]`
+- Dynamic region cropping is required for every v1 CPU backend
+- Non-positive and completely clipped regions do not produce empty screenshots
 - Keep `ScreenShot`; allow strides; lazy packed `.bgra`
 - No `cls_image` on the new path
 - No `timeout` on `grab()`
-- Expose `capture.backend` / `capabilities` / `backend_failures` for introspection
+- Expose only the selected `capture.backend`; auto-selection order remains an implementation detail
 - `MSSError` as the new-API exception root
 - Legacy and source-bound operations cannot be mixed in one session; legacy initialization remains lazy
 
-### Open
-
-- Default `WindowArea` for window captures
-- A `frames()` generator design
-
 ### Deferred
 
-- `FrameTiming` / `CaptureStatistics`
+- `frames()` and its buffering, timeout, notification, capability, timing, statistics, and concurrency contracts
+- Native-stride and other non-packed CPU result layouts
 - `ScreenShotCpu` / `ScreenShotGpu` split and GPU result types
 - Richer pixel formats / color spaces
 - Region insets (negative width/height syntactic sugar)
+- Structured backend-attempt diagnostics after successful auto-selection
+- Public transparent-recovery guarantees for device resets and provider invalidation
+
+## Implementation task list
+
+Each task is intended to be reviewable independently and should include focused tests and documentation for its public
+behavior.
+
+### Task 1: Immutable `Monitor` model (#470)
+
+- Replace the public monitor dictionary returned by `MSS.monitors` with a frozen, slotted `Monitor` dataclass.
+- Include required geometry and the existing optional standard metadata.
+- Preserve temporary string-key access such as `monitor["width"]`; do not promise the complete `Mapping` interface.
+- Keep legacy `MSS.grab()` support for user-created monitor/region dictionaries and PIL-style tuples.
+- Update platform enumeration, compatibility code, typing, tests, examples, and migration documentation.
+
+### Task 2: Platform session and source enumeration
+
+- Split shared platform/session resources from legacy capture initialization.
+- Add `Desktop`, session-bound `Monitor`, and `Window` source provenance.
+- Add `pixel_space`, `desktop`, `list_monitors()`, and `list_windows()` with immutable snapshot semantics.
+- Define platform enumeration support and `SourceEnumerationUnsupportedError` behavior.
+- Validate that foreign and manually constructed sources cannot enter the new capture path.
+
+### Task 3: `find_window()` convenience
+
+- Implement `find_window()` strictly on top of `list_windows()`; it does not participate in backend selection or capture
+  lifetime.
+- Add the built-in ID, title, and property selectors described above.
+- Preserve exact, case-sensitive string matching, regular-expression `search()`, `None` for no match, and
+  `WindowSelectionError` for ambiguous built-in matches.
+- Validate custom-selector results and propagate custom exceptions unchanged.
+
+### Task 4: Source-bound CPU capture core
+
+- Add `Region`, `WindowArea`, `Capture`, `create_capture()`, and the v1 exception hierarchy.
+- Implement context-manager lifetime, idempotent close, source ownership checks, and stable result-buffer lifetime.
+- Implement global/source-local coordinate rules, clipping, positive-size validation, and dynamic per-grab regions.
+- Exercise the public contract against small fake implementations before adding platform providers.
+
+### Task 5: Platform capture providers and auto-selection
+
+- Implement or adapt CPU providers for the supported X11, Windows, and macOS source types.
+- Require each eligible provider to honor source type, cursor preference, window area, and dynamic region cropping.
+- Add `backend="auto"`, explicit backend selection, fallback during creation, and `capture.backend` introspection.
+- Keep provider ordering and successful fallback details internal.
+- Test source loss, resizing, provider failure, and the no-silent-retarget rule per platform.
+
+### Task 6: System-picker capture
+
+- Add the synchronous picker path and cancellation/error semantics.
+- Implement portal-based Wayland capture first; add other platform pickers only when their providers are implemented.
+- Enforce conditional `window_area`, cursor requirements, parent-window handling, and no fallback after UI is shown.
+- Keep asynchronous picker APIs deferred.
+
+### Task 7: Legacy migration and release integration
+
+- Initialize the legacy backend lazily and enforce the one-session/one-mode rule.
+- Keep legacy coordinate, macOS resolution, cursor, and packed-buffer behavior unchanged.
+- Ensure `save()` and `shot()` use private compatibility helpers without emitting misleading internal deprecation warnings.
+- Add deprecation notices, upgrade documentation, release notes, and the required AI-assistance disclosure in the pull
+  request template.
