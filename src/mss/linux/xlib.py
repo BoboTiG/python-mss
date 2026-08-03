@@ -37,12 +37,13 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:
     from threading import Thread
 
-    from mss.models import CFunctions, Monitor, Monitors
+    from mss.models import CFunctions, Monitors
 
 __all__ = ()
 
@@ -544,7 +545,7 @@ class MSSImplXlib(MSSImplementation):
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
             monitors.append(
-                {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
+                Monitor(left=int_(gwa.x), top=int_(gwa.y), width=int_(gwa.width), height=int_(gwa.height)),
             )
 
             # Each monitor
@@ -567,12 +568,12 @@ class MSSImplXlib(MSSImplementation):
                     continue
 
                 monitors.append(
-                    {
-                        "left": int_(crtc.x),
-                        "top": int_(crtc.y),
-                        "width": int_(crtc.width),
-                        "height": int_(crtc.height),
-                    },
+                    Monitor(
+                        left=int_(crtc.x),
+                        top=int_(crtc.y),
+                        width=int_(crtc.width),
+                        height=int_(crtc.height),
+                    ),
                 )
                 xrandr.XRRFreeCrtcInfo(crtc)
             xrandr.XRRFreeScreenResources(mon)
@@ -586,10 +587,10 @@ class MSSImplXlib(MSSImplementation):
             ximage = self.xlib.XGetImage(
                 self._handles.display,
                 self._handles.drawable,
-                monitor["left"],
-                monitor["top"],
-                monitor["width"],
-                monitor["height"],
+                monitor.left,
+                monitor.top,
+                monitor.width,
+                monitor.height,
                 PLAINMASK,
                 ZPIXMAP,
             )
@@ -602,7 +603,7 @@ class MSSImplXlib(MSSImplementation):
 
             raw_data = cast(
                 ximage.contents.data,
-                POINTER(c_ubyte * monitor["height"] * monitor["width"] * 4),
+                POINTER(c_ubyte * monitor.height * monitor.width * 4),
             )
             data = bytearray(raw_data.contents)
         finally:

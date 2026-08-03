@@ -14,8 +14,8 @@ with mss.MSS() as sct:
 
     # The screen part to capture
     monitor = {
-        "top": mon["top"] + 100,  # 100px from the top
-        "left": mon["left"] + 100,  # 100px from the left
+        "top": mon.top + 100,  # 100px from the top
+        "left": mon.left + 100,  # 100px from the left
         "width": 160,
         "height": 135,
         "mon": monitor_number,

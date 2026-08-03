@@ -28,12 +28,13 @@ from typing import TYPE_CHECKING
 from mss.base import MSS as _MSS
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 from mss.screenshot import Size
 
 if TYPE_CHECKING:
     from typing import Any
 
-    from mss.models import CFunctions, Monitor, Monitors
+    from mss.models import CFunctions, Monitors
 
 __all__ = ("IMAGE_OPTIONS", "MSS")
 
@@ -184,8 +185,6 @@ class MSSImplDarwin(MSSImplementation):
         # We need to update the value with every single monitor found
         # using CGRectUnion.  Else we will end with infinite values.
         all_monitors = CGRect()
-        monitors.append({})
-
         # Each monitor
         display_count = c_uint32(0)
         active_displays = (c_uint32 * self.max_displays)()
@@ -203,31 +202,34 @@ class MSSImplDarwin(MSSImplementation):
                 width, height = height, width
 
             monitors.append(
-                {
-                    "left": int_(rect.origin.x),
-                    "top": int_(rect.origin.y),
-                    "width": int_(width),
-                    "height": int_(height),
-                },
+                Monitor(
+                    left=int_(rect.origin.x),
+                    top=int_(rect.origin.y),
+                    width=int_(width),
+                    height=int_(height),
+                ),
             )
 
             # Update AiO monitor's values
             all_monitors = core.CGRectUnion(all_monitors, rect)
 
         # Set the AiO monitor's values
-        monitors[0] = {
-            "left": int_(all_monitors.origin.x),
-            "top": int_(all_monitors.origin.y),
-            "width": int_(all_monitors.size.width),
-            "height": int_(all_monitors.size.height),
-        }
+        monitors.insert(
+            0,
+            Monitor(
+                left=int_(all_monitors.origin.x),
+                top=int_(all_monitors.origin.y),
+                width=int_(all_monitors.size.width),
+                height=int_(all_monitors.size.height),
+            ),
+        )
 
         return monitors
 
     def grab(self, monitor: Monitor, /) -> tuple[bytearray, Size]:
         """Retrieve all pixels from a monitor. Pixels have to be RGB."""
         core = self.core
-        rect = CGRect((monitor["left"], monitor["top"]), (monitor["width"], monitor["height"]))
+        rect = CGRect((monitor.left, monitor.top), (monitor.width, monitor.height))
 
         image_ref = core.CGWindowListCreateImage(rect, 1, 0, IMAGE_OPTIONS)
         if not image_ref:

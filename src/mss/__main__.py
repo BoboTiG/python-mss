@@ -155,9 +155,9 @@ def _capture_and_save(
     """Capture screenshots and write output files."""
     if coordinates is not None:
         if coordinates["top"] < 0:
-            coordinates["top"] = sct.monitors[monitor_index]["height"] + coordinates["top"]
+            coordinates["top"] = sct.monitors[monitor_index].height + coordinates["top"]
         if coordinates["left"] < 0:
-            coordinates["left"] = sct.monitors[monitor_index]["width"] + coordinates["left"]
+            coordinates["left"] = sct.monitors[monitor_index].width + coordinates["left"]
         output = output_template.format(**coordinates)
         sct_img = sct.grab(coordinates)
         to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)

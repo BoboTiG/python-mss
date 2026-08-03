@@ -60,8 +60,34 @@ def test_output_format_positions_and_sizes(mss_impl: Callable[..., MSS]) -> None
     fmt = "sct-{top}x{left}_{width}x{height}.png"
     with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)
-        assert filename == fmt.format(**sct.monitors[1])
+        monitor = sct.monitors[1]
+        assert filename == fmt.format(
+            top=monitor.top,
+            left=monitor.left,
+            width=monitor.width,
+            height=monitor.height,
+        )
     assert Path(filename).is_file()
+
+
+def test_output_format_optional(mss_impl: Callable[..., MSS]) -> None:
+    class FormattingCompleteError(Exception):
+        pass
+
+    filename = ""
+
+    def capture_filename(value: str) -> None:
+        nonlocal filename
+        filename = value
+        raise FormattingCompleteError
+
+    fmt = "sct-{is_primary}-{unique_id}.png"
+    with mss_impl() as sct:
+        monitor = sct.monitors[1]
+        with pytest.raises(FormattingCompleteError):
+            next(sct.save(mon=1, output=fmt, callback=capture_filename))
+
+    assert filename == fmt.format(is_primary=monitor.is_primary, unique_id=monitor.unique_id)
 
 
 def test_output_format_date_simple(mss_impl: Callable[..., MSS]) -> None:

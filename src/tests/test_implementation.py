@@ -206,7 +206,15 @@ class TestEntryPoint:
                     zip(sct.monitors[1:], captured.out.splitlines(), strict=False),
                     1,
                 ):
-                    filename = Path(fmt.format(mon=mon, **monitor))
+                    filename = Path(
+                        fmt.format(
+                            mon=mon,
+                            top=monitor.top,
+                            left=monitor.left,
+                            width=monitor.width,
+                            height=monitor.height,
+                        ),
+                    )
                     assert line.endswith(filename.name)
                     assert filename.is_file()
                     filename.unlink()
@@ -370,8 +378,8 @@ def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
 def test_grab_with_tuple_percents(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
-        left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
-        top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
+        left = monitor.left + monitor.width * 5 // 100  # 5% from the left
+        top = monitor.top + monitor.height * 5 // 100  # 5% from the top
         right = left + 500  # 500px
         lower = top + 500  # 500px
         width = right - left

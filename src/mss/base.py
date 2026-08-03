@@ -11,6 +11,7 @@ from threading import Lock
 from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Self
 
-    from mss.models import Monitor, Monitors, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -291,7 +292,7 @@ class MSS:
             self._impl.close()
             self._closed = True
 
-    def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
+    def grab(self, monitor: Monitor | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
         Note: ``monitor`` can be a tuple like the one
@@ -303,14 +304,25 @@ class MSS:
         """
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
-            monitor = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
+            monitor = Monitor(
+                left=monitor[0],
+                top=monitor[1],
+                width=monitor[2] - monitor[0],
+                height=monitor[3] - monitor[1],
+            )
+        elif isinstance(monitor, dict):
+            monitor = Monitor(
+                left=monitor["left"],
+                top=monitor["top"],
+                width=monitor["width"],
+                height=monitor["height"],
+                is_primary=monitor.get("is_primary"),
+                name=monitor.get("name"),
+                unique_id=monitor.get("unique_id"),
+                output=monitor.get("output"),
+            )
 
-        if monitor["width"] <= 0 or monitor["height"] <= 0:
+        if monitor.width <= 0 or monitor.height <= 0:
             msg = f"Region has zero or negative size: {monitor!r}"
             raise ScreenShotError(msg)
 
@@ -335,19 +347,19 @@ class MSS:
         This method has to fill ``self._monitors`` with all information
         and use it as a cache:
 
-        - ``self._monitors[0]`` is a dict of all monitors together
-        - ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
+        - ``self._monitors[0]`` is all monitors together
+        - ``self._monitors[N]`` is monitor N (with N > 0)
 
-        Each monitor is a dict with:
+        Each :class:`mss.models.Monitor` has:
 
         - ``left``: the x-coordinate of the upper-left corner
         - ``top``: the y-coordinate of the upper-left corner
         - ``width``: the width
         - ``height``: the height
-        - ``is_primary``: (optional) true if this is the primary monitor
-        - ``name``: (optional) human-readable device name
-        - ``unique_id``: (optional) platform-specific stable identifier for the monitor
-        - ``output``: (optional, Linux only) monitor output name, compatible with xrandr
+        - ``is_primary``: true or false when known, otherwise ``None``
+        - ``name``: human-readable device name, or ``None``
+        - ``unique_id``: platform-specific stable identifier, or ``None``
+        - ``output``: Linux output name compatible with xrandr, or ``None``
         """
         with self._lock:
             if self._monitors is None:
@@ -376,7 +388,7 @@ class MSS:
             (
                 monitor
                 for monitor in monitors[1:]  # Skip the "all monitors" entry at index 0
-                if monitor.get("is_primary", False)
+                if monitor.is_primary
             ),
             monitors[1],  # Fallback to the first monitor if no primary is found
         )
@@ -396,7 +408,9 @@ class MSS:
             grabs monitor ``N``.
         :param str output: The output filename. Keywords: ``{mon}``,
             ``{top}``, ``{left}``, ``{width}``, ``{height}``,
-            ``{date}``.
+            ``{is_primary}``, ``{name}``, ``{unique_id}``, ``{output}``,
+            ``{date}``. Optional metadata is formatted as ``None`` when
+            unavailable.
         :param typing.Callable callback: Called before saving the
             screenshot; receives the ``output`` argument.
         :return: Created file(s).
@@ -409,7 +423,18 @@ class MSS:
         if mon == 0:
             # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
-                fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+                fname = output.format(
+                    mon=idx,
+                    date=datetime.now(UTC) if "{date" in output else None,
+                    top=monitor.top,
+                    left=monitor.left,
+                    width=monitor.width,
+                    height=monitor.height,
+                    is_primary=monitor.is_primary,
+                    name=monitor.name,
+                    unique_id=monitor.unique_id,
+                    output=monitor.output,
+                )
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
@@ -425,7 +450,18 @@ class MSS:
                 msg = f"Monitor {mon!r} does not exist."
                 raise ScreenShotError(msg) from exc
 
-            output = output.format(mon=mon, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+            output = output.format(
+                mon=mon,
+                date=datetime.now(UTC) if "{date" in output else None,
+                top=monitor.top,
+                left=monitor.left,
+                width=monitor.width,
+                height=monitor.height,
+                is_primary=monitor.is_primary,
+                name=monitor.name,
+                unique_id=monitor.unique_id,
+                output=monitor.output,
+            )
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)

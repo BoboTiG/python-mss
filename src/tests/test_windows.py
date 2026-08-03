@@ -163,7 +163,7 @@ def test_monitors_work_when_getwindowdc_fails() -> None:
         try:
             monitors = sct.monitors
             assert len(monitors) >= 1
-            assert "width" in monitors[0]
+            assert monitors[0].width > 0
 
             with pytest.raises(ScreenShotError):
                 sct.grab(monitors[1])

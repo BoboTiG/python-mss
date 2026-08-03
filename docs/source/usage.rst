@@ -52,6 +52,17 @@ list of all the monitors, starting from index 1, as well as the full virtual scr
 The primary monitor, the one that holds the taskbar or similar system UI, is available as
 :py:attr:`mss.MSS.primary_monitor`.
 
+Each entry is an immutable :py:class:`mss.models.Monitor`.  Its geometry is available through ``left``, ``top``,
+``width``, and ``height`` attributes.  The ``is_primary``, ``name``, ``unique_id``, and ``output`` metadata attributes
+are ``None`` when unavailable::
+
+    monitor = sct.monitors[1]
+    print(monitor.width, monitor.height)
+
+For migration from MSS 10, string-key access such as ``monitor["width"]`` is temporarily supported.  ``Monitor`` is not
+a mapping, so dictionary methods, membership tests, and ``**monitor`` unpacking are not supported.  New code should use
+attributes.
+
 For capturing a specific region, you can pass :py:meth:`mss.MSS.grab` a dictionary with the keys ``top``, ``left``,
 ``width``, and ``height``.  For instance, to capture a 100x100 pixel region starting at the top-left corner of the
 screen, you could use :python:`{"top": 0, "left": 0, "width": 100, "height": 100}`.  You can also use a PIL-style box,

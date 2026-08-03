@@ -35,7 +35,7 @@ class ScreenShot:
 
     __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
-    def __init__(self, data: Buffer, monitor: Monitor, /, *, size: Size | None = None) -> None:
+    def __init__(self, data: Buffer, monitor: Monitor | dict[str, Any], /, *, size: Size | None = None) -> None:
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
@@ -84,7 +84,7 @@ class ScreenShot:
     @classmethod
     def from_size(cls: type[ScreenShot], data: Buffer, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
-        monitor = {"left": 0, "top": 0, "width": width, "height": height}
+        monitor = Monitor(left=0, top=0, width=width, height=height)
         return cls(data, monitor)
 
     @property
