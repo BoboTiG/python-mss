@@ -43,6 +43,13 @@ Run tests:
 python -m pytest
 ```
 
+When adding, removing, or renaming a file included in the source distribution, update the explicit expected file list
+in `src/tests/test_setup.py::test_sdist` and run the focused packaging test:
+
+```shell
+python -m pytest src/tests/test_setup.py::test_sdist
+```
+
 On headless GNU/Linux environments, run tests with a virtual display:
 
 ```shell
