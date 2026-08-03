@@ -29,7 +29,7 @@ def test_monitor() -> None:
     assert not hasattr(monitor, "__dict__")
 
     with pytest.raises(FrozenInstanceError):
-        monitor.width = 5
+        monitor.width = 5  # type: ignore[misc]
 
 
 def test_monitor_string_key_access() -> None:

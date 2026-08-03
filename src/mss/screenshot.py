@@ -39,11 +39,21 @@ class ScreenShot:
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
+        if isinstance(monitor, Monitor):
+            left, top = monitor.left, monitor.top
+        else:  # remove this once we deprecate the string key access
+            left, top = monitor["left"], monitor["top"]
+
         #: NamedTuple of the screenshot coordinates.
-        self.pos: Pos = Pos(monitor["left"], monitor["top"])
+        self.pos: Pos = Pos(left, top)
 
         #: NamedTuple of the screenshot size.
-        self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
+        if size is not None:
+            self.size: Size = size
+        elif isinstance(monitor, Monitor):
+            self.size = Size(monitor.width, monitor.height)
+        else:  # remove this once we deprecate the string key access
+            self.size = Size(monitor["width"], monitor["height"])
 
         # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.
         self._raw: memoryview[int] = memoryview(data)

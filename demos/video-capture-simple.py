@@ -72,17 +72,21 @@ def main() -> None:
         monitor = sct.monitors[1]
 
         # Because of how H.264 video stores color information, libx264 requires the video size to be a multiple of
-        # two.
-        monitor["width"] = (monitor["width"] // 2) * 2
-        monitor["height"] = (monitor["height"] // 2) * 2
+        # two.  Keep the monitor description unchanged and capture a slightly smaller region when necessary.
+        capture_region = {
+            "left": monitor.left,
+            "top": monitor.top,
+            "width": (monitor.width // 2) * 2,
+            "height": (monitor.height // 2) * 2,
+        }
 
         with av.open(FILENAME, "w") as avmux:
             # The "avmux" object we get back from "av.open" represents the MP4 file.  That's a container that holds
             # the video, as well as possibly audio and more.  These are each called "streams".  We only create one
             # stream here, since we're just recording video.
             video_stream = avmux.add_stream(CODEC, rate=FPS, options=CODEC_OPTIONS)
-            video_stream.width = monitor["width"]
-            video_stream.height = monitor["height"]
+            video_stream.width = capture_region["width"]
+            video_stream.height = capture_region["height"]
             # There are more options you can set on the video stream; the full demo uses some of those.
 
             # Count how many frames we're capturing, so we can log the FPS later.
@@ -121,7 +125,7 @@ def main() -> None:
                 print(".", end="", flush=True)
 
                 # Grab a screenshot.
-                screenshot = sct.grab(monitor)
+                screenshot = sct.grab(capture_region)
                 frame_count += 1
 
                 # There are a few ways to get the screenshot into a VideoFrame.  The highest-performance way isn't
