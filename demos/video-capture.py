@@ -122,10 +122,11 @@ from typing import Any
 
 # Install the necessary libraries with "pip install av mss numpy si-prefix".
 import av
-from common.pipeline import Mailbox, PipelineStage
 from si_prefix import si_format
 
 import mss
+
+from common.pipeline import Mailbox, PipelineStage
 
 # These are the options you'd give to ffmpeg that it sends to the video codec.  Because ffmpeg and PyAV both use the
 # libav libraries, you can get the list of available flags with `ffmpeg -help encoder=libx264`, or whatever encoder
@@ -442,12 +443,7 @@ def main() -> None:
             }
         else:
             monitor = sct.monitors[args.monitor]
-            capture_region = {
-                "left": monitor.left,
-                "top": monitor.top,
-                "width": monitor.width,
-                "height": monitor.height,
-            }
+            capture_region = monitor.as_capture_region()
 
         # Some codecs, such as libx264, require the region to be a multiple of 2, to get the chroma subsampling right.
         # Others, such as h264_nvenc, do not; they'll pad to get the subsampling region, and add flags to the stream

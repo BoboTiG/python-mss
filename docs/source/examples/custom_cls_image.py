@@ -7,7 +7,7 @@ Screenshot of the monitor 1, using a custom class to handle the data.
 from typing import Any
 
 import mss
-from mss.models import Monitor
+from mss.models import CaptureRegion
 from mss.screenshot import ScreenShot
 
 
@@ -17,9 +17,9 @@ class SimpleScreenShot(ScreenShot):
     or add new methods.
     """
 
-    def __init__(self, data: bytearray, monitor: Monitor, **_: Any) -> None:
+    def __init__(self, data: bytearray, region: CaptureRegion, **_: Any) -> None:
         self.data = data
-        self.monitor = monitor
+        self.region = region
 
 
 with mss.MSS() as sct:

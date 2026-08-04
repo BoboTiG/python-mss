@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor, Monitors, Size
+    from mss.models import CaptureRegion, Monitors, Size
 
 try:
     from datetime import UTC
@@ -45,7 +45,7 @@ class MSS0(MSSImplementation):
 class MSS1(MSSImplementation):
     """Only `grab()` implemented."""
 
-    def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
+    def grab(self, region: CaptureRegion) -> None:  # type: ignore[override]
         pass
 
 
@@ -66,7 +66,7 @@ class MSSCloseRaises(MSSImplementation):
     def cursor(self) -> None:
         pass
 
-    def grab(self, _: Monitor) -> bytearray | tuple[bytearray, Size]:
+    def grab(self, _: CaptureRegion) -> bytearray | tuple[bytearray, Size]:
         return bytearray()
 
     def monitors(self) -> Monitors:
@@ -119,7 +119,7 @@ def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
 
 def test_repr(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_box: CaptureRegion = {"top": 0, "left": 0, "width": 10, "height": 10}
     with mss_impl() as sct:
         img = sct.grab(box)
     ref = ScreenShot(bytearray(b"BGRA" * 100), expected_box)

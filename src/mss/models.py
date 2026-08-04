@@ -3,7 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypedDict, overload
+
+
+class CaptureRegion(TypedDict):
+    """Rectangular screen region to capture."""
+
+    left: int
+    top: int
+    width: int
+    height: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +39,15 @@ class Monitor:
     name: str | None = None
     unique_id: str | None = None
     output: str | None = None
+
+    def as_capture_region(self) -> CaptureRegion:
+        """Return this monitor's geometry as a capture region."""
+        return {
+            "left": self.left,
+            "top": self.top,
+            "width": self.width,
+            "height": self.height,
+        }
 
     @overload
     def __getitem__(self, key: Literal["left", "top", "width", "height"], /) -> int: ...

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Self
 
-    from mss.models import Monitors, Size
+    from mss.models import CaptureRegion, Monitors, Size
 
 try:
     from datetime import UTC
@@ -90,11 +90,14 @@ class MSSImplementation(ABC):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
-    def grab(self, monitor: Monitor, /) -> Buffer | tuple[Buffer, Size]:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB.
+    def grab(self, region: CaptureRegion, /) -> Buffer | tuple[Buffer, Size]:
+        """Retrieve all pixels from a capture region. Pixels have to be RGB.
 
-        If the monitor size is not in pixel units, include a Size in
-        pixels (see issue #23).
+        Return ``(buffer, size)`` when the pixel dimensions of the returned
+        buffer differ from the region's width and height. For example, a
+        Retina display region may be measured in logical points while its
+        image buffer contains twice as many pixels in each dimension (see
+        issue #23).
         """
 
     @abstractmethod
@@ -304,36 +307,34 @@ class MSS:
         """
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
-            monitor = Monitor(
-                left=monitor[0],
-                top=monitor[1],
-                width=monitor[2] - monitor[0],
-                height=monitor[3] - monitor[1],
-            )
+            region: CaptureRegion = {
+                "left": monitor[0],
+                "top": monitor[1],
+                "width": monitor[2] - monitor[0],
+                "height": monitor[3] - monitor[1],
+            }
+        elif isinstance(monitor, Monitor):
+            region = monitor.as_capture_region()
         elif isinstance(monitor, dict):
-            monitor = Monitor(
-                left=monitor["left"],
-                top=monitor["top"],
-                width=monitor["width"],
-                height=monitor["height"],
-                is_primary=monitor.get("is_primary"),
-                name=monitor.get("name"),
-                unique_id=monitor.get("unique_id"),
-                output=monitor.get("output"),
-            )
+            region = {
+                "left": monitor["left"],
+                "top": monitor["top"],
+                "width": monitor["width"],
+                "height": monitor["height"],
+            }
 
-        if monitor.width <= 0 or monitor.height <= 0:
-            msg = f"Region has zero or negative size: {monitor!r}"
+        if region["width"] <= 0 or region["height"] <= 0:
+            msg = f"Region has zero or negative size: {region!r}"
             raise ScreenShotError(msg)
 
         with self._lock:
-            img_data_and_maybe_size = self._impl.grab(monitor)
+            img_data_and_maybe_size = self._impl.grab(region)
             if isinstance(img_data_and_maybe_size, tuple):
                 img_data, size = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, monitor, size=size)
+                screenshot = self.cls_image(img_data, region, size=size)
             else:
                 img_data = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, monitor)
+                screenshot = self.cls_image(img_data, region)
             if self._impl.with_cursor and (cursor := self._impl.cursor()):
                 return self._merge(screenshot, cursor)
             return screenshot

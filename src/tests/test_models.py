@@ -25,6 +25,7 @@ def test_monitor() -> None:
     assert monitor.name == "Display"
     assert monitor.unique_id == "display-id"
     assert monitor.output == "DP-1"
+    assert monitor.as_capture_region() == {"left": 1, "top": 2, "width": 3, "height": 4}
     assert not isinstance(monitor, Mapping)
     assert not hasattr(monitor, "__dict__")
 

@@ -37,7 +37,7 @@ from mss.models import Monitor
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mss.models import CFunctionsErrChecked, Monitors
+    from mss.models import CaptureRegion, CFunctionsErrChecked, Monitors
 
 __all__ = ()
 
@@ -340,8 +340,8 @@ class MSSImplGdi(MSSImplementation):
 
         return monitors
 
-    def grab(self, monitor: Monitor, /) -> bytearray:
-        """Retrieve all pixels from a monitor using CreateDIBSection.
+    def grab(self, region: CaptureRegion, /) -> bytearray:
+        """Retrieve all pixels from a capture region using CreateDIBSection.
 
         Device contexts (srcdc / memdc) are acquired and released within each
         call.  This avoids holding GDI resources across threads and allows
@@ -359,7 +359,7 @@ class MSSImplGdi(MSSImplementation):
         try:
             memdc = gdi.CreateCompatibleDC(srcdc)
             try:
-                width, height = monitor.width, monitor.height
+                width, height = region["width"], region["height"]
 
                 if self._region_width_height != (width, height):
                     self._region_width_height = (width, height)
@@ -391,7 +391,17 @@ class MSSImplGdi(MSSImplementation):
                 gdi.SelectObject(memdc, self._dib)
 
                 # BitBlt copies screen content directly into the DIB's memory
-                gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor.left, monitor.top, SRCCOPY | CAPTUREBLT)
+                gdi.BitBlt(
+                    memdc,
+                    0,
+                    0,
+                    width,
+                    height,
+                    srcdc,
+                    region["left"],
+                    region["top"],
+                    SRCCOPY | CAPTUREBLT,
+                )
 
                 # Flush GDI operations to ensure DIB memory is fully updated before reading.
                 gdi.GdiFlush()

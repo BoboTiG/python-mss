@@ -59,6 +59,8 @@ are ``None`` when unavailable::
     monitor = sct.monitors[1]
     print(monitor.width, monitor.height)
 
+Call ``monitor.as_capture_region()`` when you need its geometry as a mutable capture-region dictionary.
+
 For migration from MSS 10, string-key access such as ``monitor["width"]`` is temporarily supported.  ``Monitor`` is not
 a mapping, so dictionary methods, membership tests, and ``**monitor`` unpacking are not supported.  New code should use
 attributes.

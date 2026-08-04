@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from mss.exception import ScreenShotError
-from mss.models import Monitor, Pixel, Pixels, Pos, Size
+from mss.models import Pixel, Pixels, Pos, Size
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     import tensorflow as tf
     import torch
     from typing_extensions import Buffer
+
+    from mss.models import CaptureRegion
 
 # Type checkers can see these, but they don't get into the Sphinx docs.  I'm not sure if we should do this differently.
 Channels = Literal["BGRA", "BGR", "RGB", "RGBA"]
@@ -35,25 +37,18 @@ class ScreenShot:
 
     __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
-    def __init__(self, data: Buffer, monitor: Monitor | dict[str, Any], /, *, size: Size | None = None) -> None:
+    def __init__(self, data: Buffer, region: CaptureRegion, /, *, size: Size | None = None) -> None:
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
-        if isinstance(monitor, Monitor):
-            left, top = monitor.left, monitor.top
-        else:  # remove this once we deprecate the string key access
-            left, top = monitor["left"], monitor["top"]
-
         #: NamedTuple of the screenshot coordinates.
-        self.pos: Pos = Pos(left, top)
+        self.pos: Pos = Pos(region["left"], region["top"])
 
         #: NamedTuple of the screenshot size.
         if size is not None:
             self.size: Size = size
-        elif isinstance(monitor, Monitor):
-            self.size = Size(monitor.width, monitor.height)
-        else:  # remove this once we deprecate the string key access
-            self.size = Size(monitor["width"], monitor["height"])
+        else:
+            self.size = Size(region["width"], region["height"])
 
         # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.
         self._raw: memoryview[int] = memoryview(data)
@@ -94,8 +89,8 @@ class ScreenShot:
     @classmethod
     def from_size(cls: type[ScreenShot], data: Buffer, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
-        monitor = Monitor(left=0, top=0, width=width, height=height)
-        return cls(data, monitor)
+        region: CaptureRegion = {"left": 0, "top": 0, "width": width, "height": height}
+        return cls(data, region)
 
     @property
     def bgra(self) -> memoryview[int]:
