@@ -37,7 +37,7 @@ from mss.models import Monitor
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from mss.models import CaptureRegion, CFunctionsErrChecked, Monitors
+    from mss.models import CFunctionsErrChecked, Monitors, Region
 
 __all__ = ()
 
@@ -340,7 +340,7 @@ class MSSImplGdi(MSSImplementation):
 
         return monitors
 
-    def grab(self, region: CaptureRegion, /) -> bytearray:
+    def grab(self, region: Region, /) -> bytearray:
         """Retrieve all pixels from a capture region using CreateDIBSection.
 
         Device contexts (srcdc / memdc) are acquired and released within each

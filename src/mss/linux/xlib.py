@@ -43,7 +43,7 @@ from mss.screenshot import ScreenShot
 if TYPE_CHECKING:
     from threading import Thread
 
-    from mss.models import CaptureRegion, CFunctions, Monitors
+    from mss.models import CFunctions, Monitors, Region
 
 __all__ = ()
 
@@ -580,7 +580,7 @@ class MSSImplXlib(MSSImplementation):
 
         return monitors
 
-    def grab(self, region: CaptureRegion, /) -> bytearray:
+    def grab(self, region: Region, /) -> bytearray:
         """Retrieve all pixels from a capture region. Pixels have to be RGB."""
 
         with _lock:
@@ -626,7 +626,7 @@ class MSSImplXlib(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img: XFixesCursorImage = ximage.contents
-        region: CaptureRegion = {
+        region: Region = {
             "left": cursor_img.x - cursor_img.xhot,
             "top": cursor_img.y - cursor_img.yhot,
             "width": cursor_img.width,

@@ -10,7 +10,7 @@ backend.
 """
 
 from mss.linux.base import MSSImplXCBBase
-from mss.models import CaptureRegion
+from mss.models import Region
 
 __all__ = ()
 
@@ -23,6 +23,6 @@ class MSSImplXGetImage(MSSImplXCBBase):
             Lists constructor parameters.
     """
 
-    def grab(self, region: CaptureRegion) -> bytearray:
+    def grab(self, region: Region) -> bytearray:
         """Retrieve all pixels from a capture region. Pixels have to be RGBX."""
         return super()._grab_xgetimage(region)

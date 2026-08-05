@@ -444,7 +444,7 @@ def main() -> None:
             }
         else:
             monitor = sct.monitors[args.monitor]
-            capture_region = monitor.as_capture_region()
+            capture_region = monitor.as_region()
 
         # Some codecs, such as libx264, require the region to be a multiple of 2, to get the chroma subsampling right.
         # Others, such as h264_nvenc, do not; they'll pad to get the subsampling region, and add flags to the stream

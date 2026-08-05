@@ -6,11 +6,11 @@ from collections.abc import Callable
 from typing import Any
 
 from mss import MSS
-from mss.models import CaptureRegion
+from mss.models import Region
 
 
 class SimpleScreenShot:
-    def __init__(self, data: bytearray, region: CaptureRegion, **_: Any) -> None:
+    def __init__(self, data: bytearray, region: Region, **_: Any) -> None:
         self.raw = bytes(data)
         self.region = region
 
@@ -22,4 +22,4 @@ def test_custom_cls_image(mss_impl: Callable[..., MSS]) -> None:
         image = sct.grab(mon1)
     assert isinstance(image, SimpleScreenShot)
     assert isinstance(image.raw, bytes)
-    assert image.region == mon1.as_capture_region()
+    assert image.region == mon1.as_region()

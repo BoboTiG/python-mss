@@ -34,7 +34,7 @@ from mss.screenshot import Size
 if TYPE_CHECKING:
     from typing import Any
 
-    from mss.models import CaptureRegion, CFunctions, Monitors
+    from mss.models import CFunctions, Monitors, Region
 
 __all__ = ("IMAGE_OPTIONS", "MSS")
 
@@ -226,7 +226,7 @@ class MSSImplDarwin(MSSImplementation):
 
         return monitors
 
-    def grab(self, region: CaptureRegion, /) -> tuple[bytearray, Size]:
+    def grab(self, region: Region, /) -> tuple[bytearray, Size]:
         """Retrieve all pixels from a capture region. Pixels have to be RGB."""
         core = self.core
         rect = CGRect((region["left"], region["top"]), (region["width"], region["height"]))

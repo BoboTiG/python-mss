@@ -28,7 +28,7 @@ from mss.linux.base import ALL_PLANES, MSSImplXCBBase
 from mss.linux.xcbhelpers import LIB, XProtoError
 
 if TYPE_CHECKING:
-    from mss.models import CaptureRegion
+    from mss.models import Region
 
 __all__ = ()
 
@@ -282,7 +282,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
 
         return ShmStatus.UNKNOWN
 
-    def _grab_xshmgetimage(self, region: CaptureRegion) -> memoryview:
+    def _grab_xshmgetimage(self, region: Region) -> memoryview:
         """Capture a region directly into a shared-memory slot."""
         if self.conn is None:
             msg = "Cannot take screenshot while the connection is closed"
@@ -325,7 +325,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             self._release_shm_slot(slot)
             raise
 
-    def grab(self, region: CaptureRegion) -> memoryview | bytearray:
+    def grab(self, region: Region) -> memoryview | bytearray:
         """Retrieve all pixels from a capture region. Pixels have to be RGBX."""
         if self.shm_status == ShmStatus.UNAVAILABLE:
             return super()._grab_xgetimage(region)

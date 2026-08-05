@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import torch
     from typing_extensions import Buffer
 
-    from mss.models import CaptureRegion
+    from mss.models import Region
 
 # Type checkers can see these, but they don't get into the Sphinx docs.  I'm not sure if we should do this differently.
 Channels = Literal["BGRA", "BGR", "RGB", "RGBA"]
@@ -37,7 +37,7 @@ class ScreenShot:
 
     __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
-    def __init__(self, data: Buffer, region: CaptureRegion, /, *, size: Size | None = None) -> None:
+    def __init__(self, data: Buffer, region: Region, /, *, size: Size | None = None) -> None:
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
@@ -89,7 +89,7 @@ class ScreenShot:
     @classmethod
     def from_size(cls: type[ScreenShot], data: Buffer, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
-        region: CaptureRegion = {"left": 0, "top": 0, "width": width, "height": height}
+        region: Region = {"left": 0, "top": 0, "width": width, "height": height}
         return cls(data, region)
 
     @property

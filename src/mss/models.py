@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypedDict, overload
 
 
-class CaptureRegion(TypedDict):
+class Region(TypedDict):
     """Rectangular screen region to capture."""
 
     left: int
@@ -40,7 +40,7 @@ class Monitor:
     unique_id: str | None = None
     output: str | None = None
 
-    def as_capture_region(self) -> CaptureRegion:
+    def as_region(self) -> Region:
         """Return this monitor's geometry as a capture region."""
         return {
             "left": self.left,

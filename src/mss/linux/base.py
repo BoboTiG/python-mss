@@ -14,7 +14,7 @@ from mss.tools import parse_edid
 if TYPE_CHECKING:
     from ctypes import Array
 
-    from mss.models import CaptureRegion, Monitors
+    from mss.models import Monitors, Region
 
 __all__ = ()
 
@@ -421,7 +421,7 @@ class MSSImplXCBBase(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img = xcb.xfixes_get_cursor_image(self.conn)
-        region: CaptureRegion = {
+        region: Region = {
             "left": cursor_img.x - cursor_img.xhot,
             "top": cursor_img.y - cursor_img.yhot,
             "width": cursor_img.width,
@@ -435,7 +435,7 @@ class MSSImplXCBBase(MSSImplementation):
 
         return ScreenShot(data, region)
 
-    def _grab_xgetimage(self, region: CaptureRegion, /) -> bytearray:
+    def _grab_xgetimage(self, region: Region, /) -> bytearray:
         """Retrieve pixels from a capture region using ``GetImage``.
 
         Used by the XGetImage backend and by the XShmGetImage backend in

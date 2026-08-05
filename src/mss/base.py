@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Self
 
-    from mss.models import CaptureRegion, Monitors, Size
+    from mss.models import Monitors, Region, Size
 
 try:
     from datetime import UTC
@@ -90,7 +90,7 @@ class MSSImplementation(ABC):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
-    def grab(self, region: CaptureRegion, /) -> Buffer | tuple[Buffer, Size]:
+    def grab(self, region: Region, /) -> Buffer | tuple[Buffer, Size]:
         """Retrieve all pixels from a capture region. Pixels have to be RGB.
 
         Return ``(buffer, size)`` when the pixel dimensions of the returned
@@ -307,14 +307,14 @@ class MSS:
         """
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
-            region: CaptureRegion = {
+            region: Region = {
                 "left": monitor[0],
                 "top": monitor[1],
                 "width": monitor[2] - monitor[0],
                 "height": monitor[3] - monitor[1],
             }
         elif isinstance(monitor, Monitor):
-            region = monitor.as_capture_region()
+            region = monitor.as_region()
         elif isinstance(monitor, dict):
             region = {
                 "left": monitor["left"],
