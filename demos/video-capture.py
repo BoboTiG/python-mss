@@ -121,6 +121,7 @@ from threading import Event
 from typing import Any
 
 # Install the necessary libraries with "pip install av mss numpy si-prefix".
+# Note that numpy is needed even if we don't explicitly import it here.
 import av
 from si_prefix import si_format
 
