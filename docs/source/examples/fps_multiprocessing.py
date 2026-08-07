@@ -9,14 +9,15 @@ from multiprocessing import Process, Queue
 
 import mss
 import mss.tools
+from mss.models import Region
 
 
 def grab(queue: Queue) -> None:
-    rect = {"top": 0, "left": 0, "width": 600, "height": 800}
+    region = Region(left=0, top=0, width=600, height=800)
 
     with mss.MSS() as sct:
         for _ in range(1_000):
-            queue.put(sct.grab(rect))
+            queue.put(sct.grab(region))
 
     # Tell the other worker to stop
     queue.put(None)

@@ -6,6 +6,7 @@ from __future__ import annotations
 import platform
 import warnings
 from abc import ABC, abstractmethod
+from copy import copy
 from datetime import datetime
 from threading import Lock
 from typing import TYPE_CHECKING, Any
@@ -295,48 +296,47 @@ class MSS:
             self._impl.close()
             self._closed = True
 
-    def grab(self, monitor: Monitor | Region | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
-        """Retrieve screen pixels for a given monitor.
+    def grab(self, region: Monitor | Region | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
+        """Retrieve screen pixels for a given region.
 
-        ``monitor`` can be a :class:`mss.models.Monitor`, a :class:`mss.models.Region`, a region dictionary, or a tuple
+        ``region`` can be a :class:`mss.models.Monitor`, a :class:`mss.models.Region`, a region dictionary, or a tuple
         like the one :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``.
 
-        :param monitor: The coordinates and size of the box to capture.
-                        See :meth:`monitors <monitors>` for object details.
+        :param region: The coordinates and size of the box to capture.
+                       See :meth:`monitors <monitors>` for monitor object details.
         :returns: Screenshot of the requested region.
         """
-        # Convert PIL bbox style
-        if isinstance(monitor, tuple):
-            region = Region(
-                left=monitor[0],
-                top=monitor[1],
-                width=monitor[2] - monitor[0],
-                height=monitor[3] - monitor[1],
+        if isinstance(region, tuple):
+            grab_region = Region(
+                left=region[0],
+                top=region[1],
+                width=region[2] - region[0],
+                height=region[3] - region[1],
             )
-        elif isinstance(monitor, Monitor):
-            region = monitor.as_region()
-        elif isinstance(monitor, Region):
-            region = monitor
-        elif isinstance(monitor, dict):
-            region = Region(
-                left=monitor["left"],
-                top=monitor["top"],
-                width=monitor["width"],
-                height=monitor["height"],
+        elif isinstance(region, Monitor):
+            grab_region = region.as_region()
+        elif isinstance(region, Region):
+            grab_region = copy(region)
+        elif isinstance(region, dict):
+            grab_region = Region(
+                left=region["left"],
+                top=region["top"],
+                width=region["width"],
+                height=region["height"],
             )
 
-        if region.width <= 0 or region.height <= 0:
-            msg = f"Region has zero or negative size: {region!r}"
+        if grab_region.width <= 0 or grab_region.height <= 0:
+            msg = f"Region has zero or negative size: {grab_region!r}"
             raise ScreenShotError(msg)
 
         with self._lock:
-            img_data_and_maybe_size = self._impl.grab(region)
+            img_data_and_maybe_size = self._impl.grab(grab_region)
             if isinstance(img_data_and_maybe_size, tuple):
                 img_data, size = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, region, size=size)
+                screenshot = self.cls_image(img_data, grab_region, size=size)
             else:
                 img_data = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, region)
+                screenshot = self.cls_image(img_data, grab_region)
             if self._impl.with_cursor and (cursor := self._impl.cursor()):
                 return self._merge(screenshot, cursor)
             return screenshot

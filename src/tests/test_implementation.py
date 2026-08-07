@@ -376,12 +376,21 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
         assert im.pos == im2.pos
         assert im.rgb == im2.rgb
 
-        # Region object
+
+def test_grab_with_region(mss_impl: Callable[..., MSS]) -> None:
+    left = 100
+    top = 100
+    width = 400
+    height = 400
+
+    with mss_impl() as sct:
+        expected = sct.grab({"left": left, "top": top, "width": width, "height": height})
         region = Region(left=left, top=top, width=width, height=height)
-        im3 = sct.grab(region)
-        assert im.size == im3.size
-        assert im.pos == im3.pos
-        assert im.rgb == im3.rgb
+        image = sct.grab(region)
+
+    assert image.size == expected.size
+    assert image.pos == expected.pos
+    assert image.rgb == expected.rgb
 
 
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:

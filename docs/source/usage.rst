@@ -70,8 +70,12 @@ a mapping, so dictionary methods, membership tests, and ``**monitor`` unpacking 
 attributes.
 
 For capturing a specific region, construct a mutable :py:class:`mss.models.Region` with ``top``, ``left``, ``width``,
-and ``height`` attributes.  You can also pass :py:meth:`mss.MSS.grab` a dictionary with those keys or a PIL-style box,
-which is a 4-tuple of ``(left, top, right, bottom)``.
+and ``height`` attributes.  Region dictionaries remain supported for compatibility::
+
+    screenshot = sct.grab({"top": 0, "left": 0, "width": 100, "height": 100})
+
+You can also pass :py:meth:`mss.MSS.grab` a PIL-style box, which is a 4-tuple of
+``(left, top, right, bottom)``.
 
 Once you've decided what you want to capture, you can call :py:meth:`mss.MSS.grab` with the appropriate monitor or
 region.  This will return a :py:class:`mss.ScreenShot` object, which contains the pixel data and other information about

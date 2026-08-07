@@ -12,6 +12,7 @@ import numpy as np
 from PIL import ImageGrab
 
 import mss
+from mss.models import Region
 
 
 def screen_record() -> int:
@@ -36,7 +37,7 @@ def screen_record() -> int:
 
 def screen_record_efficient() -> int:
     # 800x600 windowed mode
-    mon = {"top": 40, "left": 0, "width": 800, "height": 640}
+    region = Region(left=0, top=40, width=800, height=640)
 
     title = "[MSS] FPS benchmark"
     fps = 0
@@ -44,7 +45,7 @@ def screen_record_efficient() -> int:
     last_time = time.time()
 
     while time.time() - last_time < 1:
-        img = np.asarray(sct.grab(mon))
+        img = np.asarray(sct.grab(region))
         fps += 1
 
         cv2.imshow(title, img)
