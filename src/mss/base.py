@@ -11,7 +11,7 @@ from threading import Lock
 from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
-from mss.models import Monitor
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Self
 
-    from mss.models import Monitors, Region, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -295,11 +295,11 @@ class MSS:
             self._impl.close()
             self._closed = True
 
-    def grab(self, monitor: Monitor | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
+    def grab(self, monitor: Monitor | Region | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given monitor.
 
-        Note: ``monitor`` can be a tuple like the one
-        :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``
+        ``monitor`` can be a :class:`mss.models.Monitor`, a :class:`mss.models.Region`, a region dictionary, or a tuple
+        like the one :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``.
 
         :param monitor: The coordinates and size of the box to capture.
                         See :meth:`monitors <monitors>` for object details.
@@ -307,23 +307,25 @@ class MSS:
         """
         # Convert PIL bbox style
         if isinstance(monitor, tuple):
-            region: Region = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
+            region = Region(
+                left=monitor[0],
+                top=monitor[1],
+                width=monitor[2] - monitor[0],
+                height=monitor[3] - monitor[1],
+            )
         elif isinstance(monitor, Monitor):
             region = monitor.as_region()
+        elif isinstance(monitor, Region):
+            region = monitor
         elif isinstance(monitor, dict):
-            region = {
-                "left": monitor["left"],
-                "top": monitor["top"],
-                "width": monitor["width"],
-                "height": monitor["height"],
-            }
+            region = Region(
+                left=monitor["left"],
+                top=monitor["top"],
+                width=monitor["width"],
+                height=monitor["height"],
+            )
 
-        if region["width"] <= 0 or region["height"] <= 0:
+        if region.width <= 0 or region.height <= 0:
             msg = f"Region has zero or negative size: {region!r}"
             raise ScreenShotError(msg)
 

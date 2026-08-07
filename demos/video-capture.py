@@ -126,6 +126,7 @@ import av
 from si_prefix import si_format
 
 import mss
+from mss.models import Region
 
 from common.pipeline import Mailbox, PipelineStage
 
@@ -165,7 +166,7 @@ LOGGER = logging.getLogger("video-capture")
 def video_capture(
     fps: int,
     sct: mss.MSS,
-    capture_region: dict[str, int],
+    capture_region: Region,
     shutdown_requested: Event,
 ) -> Generator[tuple[mss.screenshot.ScreenShot, float], None, None]:
     # Keep track of the time when we want to get the next frame.  We limit the frame time this way instead of sleeping
@@ -436,12 +437,7 @@ def main() -> None:
     with mss.MSS() as sct:
         if args.region:
             left, top, right, bottom = args.region
-            capture_region = {
-                "left": left,
-                "top": top,
-                "width": right - left,
-                "height": bottom - top,
-            }
+            capture_region = Region(left=left, top=top, width=right - left, height=bottom - top)
         else:
             monitor = sct.monitors[args.monitor]
             capture_region = monitor.as_region()
@@ -454,8 +450,8 @@ def main() -> None:
             # it (at least, when using 4:2:0 subsampling).
             region_crop_to_multiple_of_two = codec in {"libx264", "libx265"}
         if region_crop_to_multiple_of_two:
-            capture_region["width"] = (capture_region["width"] // 2) * 2
-            capture_region["height"] = (capture_region["height"] // 2) * 2
+            capture_region.width = (capture_region.width // 2) * 2
+            capture_region.height = (capture_region.height // 2) * 2
 
         # We don't pass the container format to av.open here, so it will choose it based on the extension: .mp4, .mkv,
         # etc.
@@ -494,8 +490,8 @@ def main() -> None:
                 # so some video encoders will tag it as AVCOL_TRC_BT709 (1) instead.
                 video_stream.color_trc = 13
 
-            video_stream.width = capture_region["width"]
-            video_stream.height = capture_region["height"]
+            video_stream.width = capture_region.width
+            video_stream.height = capture_region.height
             # There are multiple time bases in play (stream, codec context, per-frame).  Depending on the container
             # and codec, some of these might be ignored or overridden.  We set the desired time base consistently
             # everywhere, so that the saved timestamps are correct regardless of what format we're saving to.

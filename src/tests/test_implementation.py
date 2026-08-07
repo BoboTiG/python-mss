@@ -20,6 +20,7 @@ from mss.__main__ import _parse_coordinates
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from tests.thread_helpers import run_threads
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitors, Region, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -119,11 +120,29 @@ def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
 
 def test_repr(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box: Region = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_region = Region(top=0, left=0, width=10, height=10)
     with mss_impl() as sct:
         img = sct.grab(box)
-    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_box)
+    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_region)
     assert repr(img) == repr(ref)
+
+
+def test_screenshot_accepts_region_dictionary() -> None:
+    region = {"top": 0, "left": 0, "width": 10, "height": 10}
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), region)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
+
+
+def test_screenshot_accepts_monitor() -> None:
+    monitor = Monitor(left=0, top=0, width=10, height=10)
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), monitor)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
 
 
 def test_factory_no_backend() -> None:
@@ -356,6 +375,13 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
         assert im.size == im2.size
         assert im.pos == im2.pos
         assert im.rgb == im2.rgb
+
+        # Region object
+        region = Region(left=left, top=top, width=width, height=height)
+        im3 = sct.grab(region)
+        assert im.size == im3.size
+        assert im.pos == im3.pos
+        assert im.rgb == im3.rgb
 
 
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:

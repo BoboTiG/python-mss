@@ -7,14 +7,14 @@ from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 from mss.linux import xcb
 from mss.linux.xcb import LIB
-from mss.models import Monitor
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from mss.tools import parse_edid
 
 if TYPE_CHECKING:
     from ctypes import Array
 
-    from mss.models import Monitors, Region
+    from mss.models import Monitors
 
 __all__ = ()
 
@@ -421,12 +421,12 @@ class MSSImplXCBBase(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img = xcb.xfixes_get_cursor_image(self.conn)
-        region: Region = {
-            "left": cursor_img.x - cursor_img.xhot,
-            "top": cursor_img.y - cursor_img.yhot,
-            "width": cursor_img.width,
-            "height": cursor_img.height,
-        }
+        region = Region(
+            left=cursor_img.x - cursor_img.xhot,
+            top=cursor_img.y - cursor_img.yhot,
+            width=cursor_img.width,
+            height=cursor_img.height,
+        )
 
         data_arr = xcb.xfixes_get_cursor_image_cursor_image(cursor_img)
         data = bytearray(data_arr)
@@ -454,10 +454,10 @@ class MSSImplXCBBase(MSSImplementation):
             self.conn,
             xcb.ImageFormat.ZPixmap,
             self.drawable,
-            region["left"],
-            region["top"],
-            region["width"],
-            region["height"],
+            region.left,
+            region.top,
+            region.width,
+            region.height,
             ALL_PLANES,
         )
 

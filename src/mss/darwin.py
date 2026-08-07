@@ -229,7 +229,7 @@ class MSSImplDarwin(MSSImplementation):
     def grab(self, region: Region, /) -> tuple[bytearray, Size]:
         """Retrieve all pixels from a capture region. Pixels have to be RGB."""
         core = self.core
-        rect = CGRect((region["left"], region["top"]), (region["width"], region["height"]))
+        rect = CGRect((region.left, region.top), (region.width, region.height))
 
         image_ref = core.CGWindowListCreateImage(rect, 1, 0, IMAGE_OPTIONS)
         if not image_ref:

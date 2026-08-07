@@ -22,4 +22,5 @@ def test_custom_cls_image(mss_impl: Callable[..., MSS]) -> None:
         image = sct.grab(mon1)
     assert isinstance(image, SimpleScreenShot)
     assert isinstance(image.raw, bytes)
+    assert isinstance(image.region, Region)
     assert image.region == mon1.as_region()

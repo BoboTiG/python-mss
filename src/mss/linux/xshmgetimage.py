@@ -291,7 +291,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         # Presently, we request a buffer at least as big as our capture area.  Another option would be to request a
         # buffer at the root size: this uses more memory, but makes it more likely that the buffers can be reused after
         # window resizes.  This only matters if the initial buffers are in use still, and we have to create a new one.
-        required_size = region["width"] * region["height"] * 4
+        required_size = region.width * region.height * 4
         slot = self._acquire_shm_slot(required_size)
         assert slot.buf is not None  # noqa: S101
 
@@ -299,10 +299,10 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             img_reply = xcb.shm_get_image(
                 self.conn,
                 self.drawable,
-                region["left"],
-                region["top"],
-                region["width"],
-                region["height"],
+                region.left,
+                region.top,
+                region.width,
+                region.height,
                 ALL_PLANES,
                 xcb.ImageFormat.ZPixmap,
                 slot.shmseg,

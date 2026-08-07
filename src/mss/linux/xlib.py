@@ -37,13 +37,13 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
-from mss.models import Monitor
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:
     from threading import Thread
 
-    from mss.models import CFunctions, Monitors, Region
+    from mss.models import CFunctions, Monitors
 
 __all__ = ()
 
@@ -587,10 +587,10 @@ class MSSImplXlib(MSSImplementation):
             ximage = self.xlib.XGetImage(
                 self._handles.display,
                 self._handles.drawable,
-                region["left"],
-                region["top"],
-                region["width"],
-                region["height"],
+                region.left,
+                region.top,
+                region.width,
+                region.height,
                 PLAINMASK,
                 ZPIXMAP,
             )
@@ -603,7 +603,7 @@ class MSSImplXlib(MSSImplementation):
 
             raw_data = cast(
                 ximage.contents.data,
-                POINTER(c_ubyte * region["height"] * region["width"] * 4),
+                POINTER(c_ubyte * region.height * region.width * 4),
             )
             data = bytearray(raw_data.contents)
         finally:
@@ -626,17 +626,17 @@ class MSSImplXlib(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img: XFixesCursorImage = ximage.contents
-        region: Region = {
-            "left": cursor_img.x - cursor_img.xhot,
-            "top": cursor_img.y - cursor_img.yhot,
-            "width": cursor_img.width,
-            "height": cursor_img.height,
-        }
+        region = Region(
+            left=cursor_img.x - cursor_img.xhot,
+            top=cursor_img.y - cursor_img.yhot,
+            width=cursor_img.width,
+            height=cursor_img.height,
+        )
 
-        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region["height"] * region["width"]))
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region.height * region.width))
         raw = bytearray(raw_data.contents)
 
-        data = bytearray(region["height"] * region["width"] * 4)
+        data = bytearray(region.height * region.width * 4)
         data[3::4] = raw[3::8]
         data[2::4] = raw[2::8]
         data[1::4] = raw[1::8]

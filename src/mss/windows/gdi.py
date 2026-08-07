@@ -359,7 +359,7 @@ class MSSImplGdi(MSSImplementation):
         try:
             memdc = gdi.CreateCompatibleDC(srcdc)
             try:
-                width, height = region["width"], region["height"]
+                width, height = region.width, region.height
 
                 if self._region_width_height != (width, height):
                     self._region_width_height = (width, height)
@@ -398,8 +398,8 @@ class MSSImplGdi(MSSImplementation):
                     width,
                     height,
                     srcdc,
-                    region["left"],
-                    region["top"],
+                    region.left,
+                    region.top,
                     SRCCOPY | CAPTUREBLT,
                 )
 

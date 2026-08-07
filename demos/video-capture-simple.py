@@ -35,6 +35,7 @@ import av
 from PIL import Image
 
 import mss
+from mss.models import Region
 
 # These are the options you'd give to ffmpeg that would affect the way the video is encoded.  There are comments in
 # the full demo that go into more detail.
@@ -73,20 +74,20 @@ def main() -> None:
 
         # Because of how H.264 video stores color information, libx264 requires the video size to be a multiple of
         # two.  Keep the monitor description unchanged and capture a slightly smaller region when necessary.
-        capture_region = {
-            "left": monitor.left,
-            "top": monitor.top,
-            "width": (monitor.width // 2) * 2,
-            "height": (monitor.height // 2) * 2,
-        }
+        capture_region = Region(
+            left=monitor.left,
+            top=monitor.top,
+            width=(monitor.width // 2) * 2,
+            height=(monitor.height // 2) * 2,
+        )
 
         with av.open(FILENAME, "w") as avmux:
             # The "avmux" object we get back from "av.open" represents the MP4 file.  That's a container that holds
             # the video, as well as possibly audio and more.  These are each called "streams".  We only create one
             # stream here, since we're just recording video.
             video_stream = avmux.add_stream(CODEC, rate=FPS, options=CODEC_OPTIONS)
-            video_stream.width = capture_region["width"]
-            video_stream.height = capture_region["height"]
+            video_stream.width = capture_region.width
+            video_stream.height = capture_region.height
             # There are more options you can set on the video stream; the full demo uses some of those.
 
             # Count how many frames we're capturing, so we can log the FPS later.

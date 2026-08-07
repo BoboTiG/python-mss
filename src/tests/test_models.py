@@ -5,7 +5,22 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from mss.models import Monitor
+from mss.models import Monitor, Region
+
+
+def test_region() -> None:
+    region = Region(left=1, top=2, width=3, height=4)
+
+    assert (region.left, region.top, region.width, region.height) == (1, 2, 3, 4)
+    assert not isinstance(region, Mapping)
+    assert not hasattr(region, "__dict__")
+
+    region.left = 5
+    region.top = 6
+    region.width = 7
+    region.height = 8
+
+    assert (region.left, region.top, region.width, region.height) == (5, 6, 7, 8)
 
 
 def test_monitor() -> None:
@@ -25,7 +40,7 @@ def test_monitor() -> None:
     assert monitor.name == "Display"
     assert monitor.unique_id == "display-id"
     assert monitor.output == "DP-1"
-    assert monitor.as_region() == {"left": 1, "top": 2, "width": 3, "height": 4}
+    assert monitor.as_region() == Region(left=1, top=2, width=3, height=4)
     assert not isinstance(monitor, Mapping)
     assert not hasattr(monitor, "__dict__")
 

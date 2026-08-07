@@ -59,15 +59,18 @@ are ``None`` when unavailable::
     monitor = sct.monitors[1]
     print(monitor.width, monitor.height)
 
-Call ``monitor.as_region()`` when you need its geometry as a mutable capture-region dictionary.
+Call ``monitor.as_region()`` when you need its geometry as a :py:class:`mss.models.Region`::
+
+    region = monitor.as_region()
+    region.width -= 1
+    screenshot = sct.grab(region)
 
 For migration from MSS 10, string-key access such as ``monitor["width"]`` is temporarily supported.  ``Monitor`` is not
 a mapping, so dictionary methods, membership tests, and ``**monitor`` unpacking are not supported.  New code should use
 attributes.
 
-For capturing a specific region, you can pass :py:meth:`mss.MSS.grab` a dictionary with the keys ``top``, ``left``,
-``width``, and ``height``.  For instance, to capture a 100x100 pixel region starting at the top-left corner of the
-screen, you could use :python:`{"top": 0, "left": 0, "width": 100, "height": 100}`.  You can also use a PIL-style box,
+For capturing a specific region, construct a mutable :py:class:`mss.models.Region` with ``top``, ``left``, ``width``,
+and ``height`` attributes.  You can also pass :py:meth:`mss.MSS.grab` a dictionary with those keys or a PIL-style box,
 which is a 4-tuple of ``(left, top, right, bottom)``.
 
 Once you've decided what you want to capture, you can call :py:meth:`mss.MSS.grab` with the appropriate monitor or
