@@ -129,7 +129,9 @@ class Window:
 ```
 
 Core properties describe the enumeration snapshot. Expensive properties such as `exe` may be loaded lazily and return
-`None` if the process disappears or access is denied. A `Window` belongs to the session that enumerated it.
+`None` if the process disappears or access is denied. It shoudl also be noted that propreties like `pid` andc `exe`
+are not gauranteed to be accurate on X11, since the client application can modify them.
+A `Window` belongs to the session that enumerated it.
 
 `Window` equality is **object identity**. Native IDs can be recycled after destroy, so `__eq__` is not based on `id`.
 Within the same session, callers who need “same OS window” compare `window.id` while that window still exists.
