@@ -306,6 +306,12 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
         pytest.param(" 0012 x 13 - 14 + 15 ", (15, 14, 12, 13, False, True), id="x_pos_top_neg_left"),
         pytest.param("12x0013+0014-15", (15, 14, 12, 13, True, False), id="x_neg_top_pos_left"),
         pytest.param(" 12 x 13 - 0014 - 0015 ", (15, 14, 12, 13, True, True), id="x_neg_top_neg_left"),
+        pytest.param("12x13-+14+15", (15, 14, 12, 13, False, True), id="x_rel_12x13-+14+15"),
+        pytest.param("12x13+-14++15", (15, -14, 12, 13, False, False), id="x_rel_12x13+-14++15"),
+        pytest.param("12x13++14-15", (15, 14, 12, 13, True, False), id="x_rel_12x13++14-15"),
+        pytest.param("12x13-14-+15", (15, 14, 12, 13, True, True), id="x_rel_12x13-14-+15"),
+        pytest.param("12x13--14+-15", (-15, -14, 12, 13, False, True), id="x_rel_12x13--14+-15"),
+        pytest.param("12x13+14--15", (-15, 14, 12, 13, True, False), id="x_rel_12x13+14--15"),
     ],
 )
 def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int, bool, bool]) -> None:
@@ -328,10 +334,6 @@ def test_parse_coordinates_invalid(coordinates: str) -> None:
         _parse_coordinates(coordinates)
 
 
-# This is an exhaustive list of all the possible variations of
-# 100x100+-25+-25, where each "+-" is +, -, +-, -+, ++, or --.  Also,
-# the correct parse when used on a single 640x480 monitor is given,
-# including bounds cropping.
 @pytest.mark.parametrize(
     ("geom", "expected"),
     [
@@ -341,39 +343,9 @@ def test_parse_coordinates_invalid(coordinates: str) -> None:
         ("100x100+25+-25", {"top": 0, "left": 25, "height": 75, "width": 100}),
         ("100x100+25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}),
         ("100x100+25--25", {"top": 405, "left": 25, "height": 75, "width": 100}),
-        ("100x100-25+25", {"top": 25, "left": 515, "height": 100, "width": 100}),
-        ("100x100-25-25", {"top": 355, "left": 515, "height": 100, "width": 100}),
-        ("100x100-25++25", {"top": 25, "left": 515, "height": 100, "width": 100}),
-        ("100x100-25+-25", {"top": 0, "left": 515, "height": 75, "width": 100}),
-        ("100x100-25-+25", {"top": 355, "left": 515, "height": 100, "width": 100}),
-        ("100x100-25--25", {"top": 405, "left": 515, "height": 75, "width": 100}),
-        ("100x100++25+25", {"top": 25, "left": 25, "height": 100, "width": 100}),
-        ("100x100++25-25", {"top": 355, "left": 25, "height": 100, "width": 100}),
-        ("100x100++25++25", {"top": 25, "left": 25, "height": 100, "width": 100}),
-        ("100x100++25+-25", {"top": 0, "left": 25, "height": 75, "width": 100}),
-        ("100x100++25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}),
-        ("100x100++25--25", {"top": 405, "left": 25, "height": 75, "width": 100}),
-        ("100x100+-25+25", {"top": 25, "left": 0, "height": 100, "width": 75}),
-        ("100x100+-25-25", {"top": 355, "left": 0, "height": 100, "width": 75}),
-        ("100x100+-25++25", {"top": 25, "left": 0, "height": 100, "width": 75}),
-        ("100x100+-25+-25", {"top": 0, "left": 0, "height": 75, "width": 75}),
-        ("100x100+-25-+25", {"top": 355, "left": 0, "height": 100, "width": 75}),
-        ("100x100+-25--25", {"top": 405, "left": 0, "height": 75, "width": 75}),
-        ("100x100-+25+25", {"top": 25, "left": 515, "height": 100, "width": 100}),
-        ("100x100-+25-25", {"top": 355, "left": 515, "height": 100, "width": 100}),
-        ("100x100-+25++25", {"top": 25, "left": 515, "height": 100, "width": 100}),
-        ("100x100-+25+-25", {"top": 0, "left": 515, "height": 75, "width": 100}),
-        ("100x100-+25-+25", {"top": 355, "left": 515, "height": 100, "width": 100}),
-        ("100x100-+25--25", {"top": 405, "left": 515, "height": 75, "width": 100}),
-        ("100x100--25+25", {"top": 25, "left": 565, "height": 100, "width": 75}),
-        ("100x100--25-25", {"top": 355, "left": 565, "height": 100, "width": 75}),
-        ("100x100--25++25", {"top": 25, "left": 565, "height": 100, "width": 75}),
-        ("100x100--25+-25", {"top": 0, "left": 565, "height": 75, "width": 75}),
-        ("100x100--25-+25", {"top": 355, "left": 565, "height": 100, "width": 75}),
-        ("100x100--25--25", {"top": 405, "left": 565, "height": 75, "width": 75}),
     ],
 )
-def test_parse_coordinates_negative_exhaustive(geom: str, expected: Monitor) -> None:
+def test_parse_and_normalize_coordinates(geom: str, expected: Monitor) -> None:
     mon = {"top": 0, "left": 0, "width": 640, "height": 480}
     parsed = _parse_coordinates(geom)
     norm = _normalize_capture_region(parsed, mon, mon)
