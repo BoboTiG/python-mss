@@ -10,8 +10,8 @@ from argparse import ArgumentError, ArgumentParser, Namespace
 from typing import Any, NamedTuple
 
 from mss import MSS, __version__
-from mss.models import Monitor
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 from mss.tools import to_png
 
 _COORDINATES_SYNTAX = "TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP"
@@ -196,7 +196,7 @@ def _prepare_grab_options(options: Namespace) -> tuple[int, str, _CoordsWithEdge
     """Build grab options derived from parsed CLI arguments."""
     monitor_index = int(options.monitor)
     output_template = str(options.output)
-    if options.coordinates is None:
+    if not options.coordinates:
         return monitor_index, output_template, None
 
     coordinates = _parse_coordinates(str(options.coordinates))
@@ -214,10 +214,6 @@ def _build_mss_kwargs(options: Namespace) -> dict[str, Any]:
 
 
 def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor, bounds: Monitor) -> Monitor:
-    print(coordinates)
-    print(reference)
-    print(bounds)
-
     if coordinates.from_bottom:
         top = reference["top"] + reference["height"] - coordinates.top - coordinates.height
     else:
@@ -235,14 +231,12 @@ def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor,
     top = max(top, bounds["top"])
     left = max(left, bounds["left"])
 
-    rv = {
+    return {
         "top": top,
         "left": left,
         "height": bottom - top,
         "width": right - left,
     }
-    print(rv)
-    return rv
 
 
 def _capture_and_save(
@@ -255,8 +249,6 @@ def _capture_and_save(
 ) -> None:
     """Capture screenshots and write output files."""
     if coordinates is not None:
-        desktop = sct.monitors[0]
-        mon = sct.monitors[monitor_index]
         capture_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index], sct.monitors[0])
         output = output_template.format(**capture_region)
         sct_img = sct.grab(capture_region)

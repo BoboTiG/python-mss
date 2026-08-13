@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import mss
-from mss.__main__ import _parse_coordinates
+from mss.__main__ import _normalize_capture_region, _parse_coordinates
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
@@ -298,17 +298,17 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
 @pytest.mark.parametrize(
     ("coordinates", "expected"),
     [
-        pytest.param(" 15,14,0012,13 ", (15, 14, 12, 13), id="comma_pos_top_pos_left"),
-        pytest.param("-15, 0014,12,0013", (-15, 14, 12, 13), id="comma_neg_top_pos_left"),
-        pytest.param("0015 , -14 , 12 , 13", (15, -14, 12, 13), id="comma_pos_top_neg_left"),
-        pytest.param(" -0015,-14,12,0013  ", (-15, -14, 12, 13), id="comma_neg_top_neg_left"),
-        pytest.param("12x13+14+15", (15, 14, 12, 13), id="x_pos_top_pos_left"),
-        pytest.param(" 0012 x 13 - 14 + 15 ", (15, -14, 12, 13), id="x_pos_top_neg_left"),
-        pytest.param("12x0013+0014-15", (-15, 14, 12, 13), id="x_neg_top_pos_left"),
-        pytest.param(" 12 x 13 - 0014 - 0015 ", (-15, -14, 12, 13), id="x_neg_top_neg_left"),
+        pytest.param(" 15,14,0012,13 ", (15, 14, 12, 13, False, False), id="comma_pos_top_pos_left"),
+        pytest.param("-15, 0014,12,0013", (-15, 14, 12, 13, False, False), id="comma_neg_top_pos_left"),
+        pytest.param("0015 , -14 , 12 , 13", (15, -14, 12, 13, False, False), id="comma_pos_top_neg_left"),
+        pytest.param(" -0015,-14,12,0013  ", (-15, -14, 12, 13, False, False), id="comma_neg_top_neg_left"),
+        pytest.param("12x13+14+15", (15, 14, 12, 13, False, False), id="x_pos_top_pos_left"),
+        pytest.param(" 0012 x 13 - 14 + 15 ", (15, 14, 12, 13, False, True), id="x_pos_top_neg_left"),
+        pytest.param("12x0013+0014-15", (15, 14, 12, 13, True, False), id="x_neg_top_pos_left"),
+        pytest.param(" 12 x 13 - 0014 - 0015 ", (15, 14, 12, 13, True, True), id="x_neg_top_neg_left"),
     ],
 )
-def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int]) -> None:
+def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int, bool, bool]) -> None:
     assert _parse_coordinates(coordinates) == expected
 
 
@@ -326,6 +326,58 @@ def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int
 def test_parse_coordinates_invalid(coordinates: str) -> None:
     with pytest.raises(ValueError, match=r"(?i)coordinates syntax"):
         _parse_coordinates(coordinates)
+
+
+# This is an exhaustive list of all the possible variations of
+# 100x100+-25+-25, where each "+-" is +, -, +-, -+, ++, or --.  Also,
+# the correct parse when used on a single 640x480 monitor is given,
+# including bounds cropping.
+@pytest.mark.parametrize(
+    ("geom", "expected"),
+    [
+        ("100x100+25+25", {"top": 25, "left": 25, "height": 100, "width": 100}),
+        ("100x100+25-25", {"top": 355, "left": 25, "height": 100, "width": 100}),
+        ("100x100+25++25", {"top": 25, "left": 25, "height": 100, "width": 100}),
+        ("100x100+25+-25", {"top": 0, "left": 25, "height": 75, "width": 100}),
+        ("100x100+25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}),
+        ("100x100+25--25", {"top": 405, "left": 25, "height": 75, "width": 100}),
+        ("100x100-25+25", {"top": 25, "left": 515, "height": 100, "width": 100}),
+        ("100x100-25-25", {"top": 355, "left": 515, "height": 100, "width": 100}),
+        ("100x100-25++25", {"top": 25, "left": 515, "height": 100, "width": 100}),
+        ("100x100-25+-25", {"top": 0, "left": 515, "height": 75, "width": 100}),
+        ("100x100-25-+25", {"top": 355, "left": 515, "height": 100, "width": 100}),
+        ("100x100-25--25", {"top": 405, "left": 515, "height": 75, "width": 100}),
+        ("100x100++25+25", {"top": 25, "left": 25, "height": 100, "width": 100}),
+        ("100x100++25-25", {"top": 355, "left": 25, "height": 100, "width": 100}),
+        ("100x100++25++25", {"top": 25, "left": 25, "height": 100, "width": 100}),
+        ("100x100++25+-25", {"top": 0, "left": 25, "height": 75, "width": 100}),
+        ("100x100++25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}),
+        ("100x100++25--25", {"top": 405, "left": 25, "height": 75, "width": 100}),
+        ("100x100+-25+25", {"top": 25, "left": 0, "height": 100, "width": 75}),
+        ("100x100+-25-25", {"top": 355, "left": 0, "height": 100, "width": 75}),
+        ("100x100+-25++25", {"top": 25, "left": 0, "height": 100, "width": 75}),
+        ("100x100+-25+-25", {"top": 0, "left": 0, "height": 75, "width": 75}),
+        ("100x100+-25-+25", {"top": 355, "left": 0, "height": 100, "width": 75}),
+        ("100x100+-25--25", {"top": 405, "left": 0, "height": 75, "width": 75}),
+        ("100x100-+25+25", {"top": 25, "left": 515, "height": 100, "width": 100}),
+        ("100x100-+25-25", {"top": 355, "left": 515, "height": 100, "width": 100}),
+        ("100x100-+25++25", {"top": 25, "left": 515, "height": 100, "width": 100}),
+        ("100x100-+25+-25", {"top": 0, "left": 515, "height": 75, "width": 100}),
+        ("100x100-+25-+25", {"top": 355, "left": 515, "height": 100, "width": 100}),
+        ("100x100-+25--25", {"top": 405, "left": 515, "height": 75, "width": 100}),
+        ("100x100--25+25", {"top": 25, "left": 565, "height": 100, "width": 75}),
+        ("100x100--25-25", {"top": 355, "left": 565, "height": 100, "width": 75}),
+        ("100x100--25++25", {"top": 25, "left": 565, "height": 100, "width": 75}),
+        ("100x100--25+-25", {"top": 0, "left": 565, "height": 75, "width": 75}),
+        ("100x100--25-+25", {"top": 355, "left": 565, "height": 100, "width": 75}),
+        ("100x100--25--25", {"top": 405, "left": 565, "height": 75, "width": 75}),
+    ],
+)
+def test_parse_coordinates_negative_exhaustive(geom: str, expected: Monitor) -> None:
+    mon = {"top": 0, "left": 0, "width": 640, "height": 480}
+    parsed = _parse_coordinates(geom)
+    norm = _normalize_capture_region(parsed, mon, mon)
+    assert norm == expected
 
 
 def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
