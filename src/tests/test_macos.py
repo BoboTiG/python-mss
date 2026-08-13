@@ -60,8 +60,8 @@ def test_implementation(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr(sct._impl.core, "CGDisplayRotation", lambda _: -90.0)
         sct._monitors = None
         modified = sct.monitors[1]
-        assert original["width"] == modified["height"]
-        assert original["height"] == modified["width"]
+        assert original.width == modified.height
+        assert original.height == modified.width
         monkeypatch.undo()
 
         # Test bad data retrieval

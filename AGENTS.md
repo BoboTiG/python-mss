@@ -43,6 +43,14 @@ Run tests:
 python -m pytest
 ```
 
+When adding, removing, or renaming a packaged file, update the explicit expected file list in
+`src/tests/test_setup.py::test_sdist` and, for files included in binary distributions, in
+`src/tests/test_setup.py::test_wheel`. Run the focused packaging tests:
+
+```shell
+python -m pytest src/tests/test_setup.py::test_sdist src/tests/test_setup.py::test_wheel
+```
+
 On headless GNU/Linux environments, run tests with a virtual display:
 
 ```shell

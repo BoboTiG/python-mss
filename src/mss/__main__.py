@@ -11,6 +11,7 @@ from typing import Any
 
 from mss import MSS, __version__
 from mss.exception import ScreenShotError
+from mss.models import Region
 from mss.tools import to_png
 
 _COORDINATES_SYNTAX = "TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP"
@@ -117,7 +118,7 @@ def _build_parser() -> ArgumentParser:
     return cli_args
 
 
-def _prepare_grab_options(options: Namespace) -> tuple[int, str, dict[str, int] | None]:
+def _prepare_grab_options(options: Namespace) -> tuple[int, str, Region | None]:
     """Build grab options derived from parsed CLI arguments."""
     monitor_index = int(options.monitor)
     output_template = str(options.output)
@@ -125,12 +126,7 @@ def _prepare_grab_options(options: Namespace) -> tuple[int, str, dict[str, int] 
         return monitor_index, output_template, None
 
     top, left, width, height = _parse_coordinates(str(options.coordinates))
-    coordinates = {
-        "top": int(top),
-        "left": int(left),
-        "width": int(width),
-        "height": int(height),
-    }
+    coordinates = Region(top=int(top), left=int(left), width=int(width), height=int(height))
     if options.output == "monitor-{mon}.png":
         output_template = "sct-{top}x{left}_{width}x{height}.png"
     return monitor_index, output_template, coordinates
@@ -150,15 +146,20 @@ def _capture_and_save(
     options: Namespace,
     monitor_index: int,
     output_template: str,
-    coordinates: dict[str, int] | None,
+    coordinates: Region | None,
 ) -> None:
     """Capture screenshots and write output files."""
     if coordinates is not None:
-        if coordinates["top"] < 0:
-            coordinates["top"] = sct.monitors[monitor_index]["height"] + coordinates["top"]
-        if coordinates["left"] < 0:
-            coordinates["left"] = sct.monitors[monitor_index]["width"] + coordinates["left"]
-        output = output_template.format(**coordinates)
+        if coordinates.top < 0:
+            coordinates.top = sct.monitors[monitor_index].height + coordinates.top
+        if coordinates.left < 0:
+            coordinates.left = sct.monitors[monitor_index].width + coordinates.left
+        output = output_template.format(
+            top=coordinates.top,
+            left=coordinates.left,
+            width=coordinates.width,
+            height=coordinates.height,
+        )
         sct_img = sct.grab(coordinates)
         to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)
         if not options.quiet:

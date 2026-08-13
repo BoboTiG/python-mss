@@ -20,6 +20,7 @@ from mss.__main__ import _parse_coordinates
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from tests.thread_helpers import run_threads
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor, Monitors, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -45,7 +46,7 @@ class MSS0(MSSImplementation):
 class MSS1(MSSImplementation):
     """Only `grab()` implemented."""
 
-    def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
+    def grab(self, region: Region) -> None:  # type: ignore[override]
         pass
 
 
@@ -66,7 +67,7 @@ class MSSCloseRaises(MSSImplementation):
     def cursor(self) -> None:
         pass
 
-    def grab(self, _: Monitor) -> bytearray | tuple[bytearray, Size]:
+    def grab(self, _: Region) -> bytearray | tuple[bytearray, Size]:
         return bytearray()
 
     def monitors(self) -> Monitors:
@@ -119,11 +120,29 @@ def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
 
 def test_repr(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_region = Region(top=0, left=0, width=10, height=10)
     with mss_impl() as sct:
         img = sct.grab(box)
-    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_box)
+    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_region)
     assert repr(img) == repr(ref)
+
+
+def test_screenshot_accepts_region_dictionary() -> None:
+    region = {"top": 0, "left": 0, "width": 10, "height": 10}
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), region)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
+
+
+def test_screenshot_accepts_monitor() -> None:
+    monitor = Monitor(left=0, top=0, width=10, height=10)
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), monitor)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
 
 
 def test_factory_no_backend() -> None:
@@ -206,7 +225,15 @@ class TestEntryPoint:
                     zip(sct.monitors[1:], captured.out.splitlines(), strict=False),
                     1,
                 ):
-                    filename = Path(fmt.format(mon=mon, **monitor))
+                    filename = Path(
+                        fmt.format(
+                            mon=mon,
+                            top=monitor.top,
+                            left=monitor.left,
+                            width=monitor.width,
+                            height=monitor.height,
+                        ),
+                    )
                     assert line.endswith(filename.name)
                     assert filename.is_file()
                     filename.unlink()
@@ -350,6 +377,22 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
         assert im.rgb == im2.rgb
 
 
+def test_grab_with_region(mss_impl: Callable[..., MSS]) -> None:
+    left = 100
+    top = 100
+    width = 400
+    height = 400
+
+    with mss_impl() as sct:
+        expected = sct.grab({"left": left, "top": top, "width": width, "height": height})
+        region = Region(left=left, top=top, width=width, height=height)
+        image = sct.grab(region)
+
+    assert image.size == expected.size
+    assert image.pos == expected.pos
+    assert image.rgb == expected.rgb
+
+
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         # Remember that rect tuples are PIL-style: (left, top, right, bottom)
@@ -370,8 +413,8 @@ def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
 def test_grab_with_tuple_percents(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
-        left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
-        top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
+        left = monitor.left + monitor.width * 5 // 100  # 5% from the left
+        top = monitor.top + monitor.height * 5 // 100  # 5% from the top
         right = left + 500  # 500px
         lower = top + 500  # 500px
         width = right - left

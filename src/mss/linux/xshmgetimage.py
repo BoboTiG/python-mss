@@ -28,7 +28,7 @@ from mss.linux.base import ALL_PLANES, MSSImplXCBBase
 from mss.linux.xcbhelpers import LIB, XProtoError
 
 if TYPE_CHECKING:
-    from mss.models import Monitor
+    from mss.models import Region
 
 __all__ = ()
 
@@ -282,8 +282,8 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
 
         return ShmStatus.UNKNOWN
 
-    def _grab_xshmgetimage(self, monitor: Monitor) -> memoryview:
-        """Capture a monitor directly into a shared-memory slot."""
+    def _grab_xshmgetimage(self, region: Region) -> memoryview:
+        """Capture a region directly into a shared-memory slot."""
         if self.conn is None:
             msg = "Cannot take screenshot while the connection is closed"
             raise ScreenShotError(msg)
@@ -291,7 +291,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
         # Presently, we request a buffer at least as big as our capture area.  Another option would be to request a
         # buffer at the root size: this uses more memory, but makes it more likely that the buffers can be reused after
         # window resizes.  This only matters if the initial buffers are in use still, and we have to create a new one.
-        required_size = monitor["width"] * monitor["height"] * 4
+        required_size = region.width * region.height * 4
         slot = self._acquire_shm_slot(required_size)
         assert slot.buf is not None  # noqa: S101
 
@@ -299,10 +299,10 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             img_reply = xcb.shm_get_image(
                 self.conn,
                 self.drawable,
-                monitor["left"],
-                monitor["top"],
-                monitor["width"],
-                monitor["height"],
+                region.left,
+                region.top,
+                region.width,
+                region.height,
                 ALL_PLANES,
                 xcb.ImageFormat.ZPixmap,
                 slot.shmseg,
@@ -325,14 +325,14 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             self._release_shm_slot(slot)
             raise
 
-    def grab(self, monitor: Monitor) -> memoryview | bytearray:
-        """Retrieve all pixels from a monitor. Pixels have to be RGBX."""
+    def grab(self, region: Region) -> memoryview | bytearray:
+        """Retrieve all pixels from a capture region. Pixels have to be RGBX."""
         if self.shm_status == ShmStatus.UNAVAILABLE:
-            return super()._grab_xgetimage(monitor)
+            return super()._grab_xgetimage(region)
 
         # The usual path is just the next few lines.
         try:
-            rv: memoryview | bytearray = self._grab_xshmgetimage(monitor)
+            rv: memoryview | bytearray = self._grab_xshmgetimage(region)
             if self.shm_status != ShmStatus.AVAILABLE:
                 self.shm_status = ShmStatus.AVAILABLE
                 self.performance_status.append("MIT-SHM is working correctly.")
@@ -347,7 +347,7 @@ class MSSImplXShmGetImage(MSSImplXCBBase):
             # altogether: security-hardened servers, for instance, or some XPrint servers.  But let's make sure, by
             # testing the same request through XGetImage.
             try:
-                rv = super()._grab_xgetimage(monitor)
+                rv = super()._grab_xgetimage(region)
             except XProtoError:  # noqa: TRY203
                 # The XGetImage also failed, so we don't know anything about whether XShmGetImage is usable.  Maybe
                 # the user sent an out-of-bounds request.  Maybe it's a security-hardened server.  We're not sure what

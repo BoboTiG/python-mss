@@ -224,7 +224,7 @@ def main() -> None:
         monitor = sct.monitors[1]
 
         # Compute the minimum size, in square pixels, that we'll consider reliable.
-        img_area = monitor["width"] * monitor["height"]
+        img_area = monitor.width * monitor.height
         min_box_area = MIN_AREA_FRAC * img_area
 
         # We start a new line of the log if the cat visibility status changes.  That way, your terminal will show

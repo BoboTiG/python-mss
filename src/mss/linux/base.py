@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 from urllib.parse import urlencode
 
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
 from mss.linux import xcb
 from mss.linux.xcb import LIB
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from mss.tools import parse_edid
 
 if TYPE_CHECKING:
     from ctypes import Array
 
-    from mss.models import Monitor, Monitors
+    from mss.models import Monitors
 
 __all__ = ()
 
@@ -23,6 +24,12 @@ SUPPORTED_RED_MASK = 0xFF0000
 SUPPORTED_GREEN_MASK = 0x00FF00
 SUPPORTED_BLUE_MASK = 0x0000FF
 ALL_PLANES = 0xFFFFFFFF  # XCB doesn't define AllPlanes
+
+
+class _RandROutputIds(TypedDict, total=False):
+    name: str
+    unique_id: str
+    output: str
 
 
 class MSSImplXCBBase(MSSImplementation):
@@ -183,12 +190,12 @@ class MSSImplXCBBase(MSSImplementation):
             raise ScreenShotError(msg)
 
         root_geom = xcb.get_geometry(self.conn, self.root)
-        return {
-            "left": root_geom.x,
-            "top": root_geom.y,
-            "width": root_geom.width,
-            "height": root_geom.height,
-        }
+        return Monitor(
+            left=root_geom.x,
+            top=root_geom.y,
+            width=root_geom.width,
+            height=root_geom.height,
+        )
 
     def _randr_get_version(self) -> tuple[int, int] | None:
         if self.conn is None:
@@ -232,7 +239,7 @@ class MSSImplXCBBase(MSSImplementation):
         timestamp: xcb.Timestamp,
         edid_atom: xcb.Atom | None,
         /,
-    ) -> dict[str, Any]:
+    ) -> _RandROutputIds:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
@@ -242,7 +249,7 @@ class MSSImplXCBBase(MSSImplementation):
             msg = "Display configuration changed while detecting monitors."
             raise ScreenShotError(msg)
 
-        rv: dict[str, Any] = {}
+        rv: _RandROutputIds = {}
 
         output_name_arr = xcb.randr_get_output_info_name(output_info)
         rv["output"] = bytes(output_name_arr).decode("utf_8", errors="replace")
@@ -305,24 +312,29 @@ class MSSImplXCBBase(MSSImplementation):
         monitors_reply = xcb.randr_get_monitors(self.conn, self.drawable, 1)
         timestamp = monitors_reply.timestamp
         for randr_monitor in xcb.randr_get_monitors_monitors(monitors_reply):
-            monitor = {
-                "left": randr_monitor.x,
-                "top": randr_monitor.y,
-                "width": randr_monitor.width,
-                "height": randr_monitor.height,
-                # Under XRandR, it's legal for no monitor to be primary.  In this case, case MSSBase.primary_monitor
-                # will return the first monitor.  That said, we note in the dict that we explicitly are told by XRandR
-                # that all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which doesn't
-                # have any information about primary monitors.)
-                "is_primary": bool(randr_monitor.primary),
-            }
-
+            output_ids: _RandROutputIds = {}
             if randr_monitor.nOutput > 0:
                 outputs = xcb.randr_monitor_info_outputs(randr_monitor)
                 chosen_output = self._choose_randr_output(outputs, primary_output)
-                monitor |= self._randr_output_ids(chosen_output, timestamp, edid_atom)
+                output_ids = self._randr_output_ids(chosen_output, timestamp, edid_atom)
 
-            monitors.append(monitor)
+            monitors.append(
+                Monitor(
+                    left=randr_monitor.x,
+                    top=randr_monitor.y,
+                    width=randr_monitor.width,
+                    height=randr_monitor.height,
+                    # Under XRandR, it's legal for no monitor to be primary.  In
+                    # this case, case MSSBase.primary_monitor will return the
+                    # first monitor.  That said, we note in the Monitor that we
+                    # explicitly are told by XRandR that all of the monitors are
+                    # not primary.  (This is distinct from the XRandR 1.2 path,
+                    # which doesn't have any information about primary
+                    # monitors.)
+                    is_primary=bool(randr_monitor.primary),
+                    **output_ids,
+                ),
+            )
 
         return monitors
 
@@ -352,23 +364,22 @@ class MSSImplXCBBase(MSSImplementation):
             crtc_info = xcb.randr_get_crtc_info(self.conn, crtc, timestamp)
             if crtc_info.num_outputs == 0:
                 continue
-            monitor = {
-                "left": crtc_info.x,
-                "top": crtc_info.y,
-                "width": crtc_info.width,
-                "height": crtc_info.height,
-            }
-
             outputs = xcb.randr_get_crtc_info_outputs(crtc_info)
             chosen_output = self._choose_randr_output(outputs, primary_output)
-            monitor |= self._randr_output_ids(chosen_output, timestamp, edid_atom)
+            output_ids = self._randr_output_ids(chosen_output, timestamp, edid_atom)
             # The concept of primary outputs was added in XRandR 1.3.  We distinguish between "all the monitors are
             # not primary" (RRGetOutputPrimary returned XCB_NONE, a valid case) and "we have no way to get
-            # information about the primary monitor": in the latter case, we don't populate "is_primary".
-            if primary_output is not None:
-                monitor["is_primary"] = chosen_output == primary_output
-
-            monitors.append(monitor)
+            # information about the primary monitor": in the latter case, is_primary is None.
+            monitors.append(
+                Monitor(
+                    left=crtc_info.x,
+                    top=crtc_info.y,
+                    width=crtc_info.width,
+                    height=crtc_info.height,
+                    is_primary=chosen_output == primary_output if primary_output is not None else None,
+                    **output_ids,
+                ),
+            )
 
         return monitors
 
@@ -410,12 +421,12 @@ class MSSImplXCBBase(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img = xcb.xfixes_get_cursor_image(self.conn)
-        region = {
-            "left": cursor_img.x - cursor_img.xhot,
-            "top": cursor_img.y - cursor_img.yhot,
-            "width": cursor_img.width,
-            "height": cursor_img.height,
-        }
+        region = Region(
+            left=cursor_img.x - cursor_img.xhot,
+            top=cursor_img.y - cursor_img.yhot,
+            width=cursor_img.width,
+            height=cursor_img.height,
+        )
 
         data_arr = xcb.xfixes_get_cursor_image_cursor_image(cursor_img)
         data = bytearray(data_arr)
@@ -424,13 +435,13 @@ class MSSImplXCBBase(MSSImplementation):
 
         return ScreenShot(data, region)
 
-    def _grab_xgetimage(self, monitor: Monitor, /) -> bytearray:
-        """Retrieve pixels from a monitor using ``GetImage``.
+    def _grab_xgetimage(self, region: Region, /) -> bytearray:
+        """Retrieve pixels from a capture region using ``GetImage``.
 
         Used by the XGetImage backend and by the XShmGetImage backend in
         fallback mode.
 
-        :param monitor: Monitor rectangle specifying ``left``, ``top``,
+        :param region: Rectangle specifying ``left``, ``top``,
             ``width``, and ``height`` to capture.
         :returns: A screenshot object containing the captured region.
         """
@@ -443,10 +454,10 @@ class MSSImplXCBBase(MSSImplementation):
             self.conn,
             xcb.ImageFormat.ZPixmap,
             self.drawable,
-            monitor["left"],
-            monitor["top"],
-            monitor["width"],
-            monitor["height"],
+            region.left,
+            region.top,
+            region.width,
+            region.height,
             ALL_PLANES,
         )
 
