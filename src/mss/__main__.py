@@ -213,7 +213,7 @@ def _build_mss_kwargs(options: Namespace) -> dict[str, Any]:
     return mss_kwargs
 
 
-def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor, bounds: Monitor) -> Monitor:
+def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor) -> Monitor:
     if coordinates.from_bottom:
         top = reference["top"] + reference["height"] - coordinates.top - coordinates.height
     else:
@@ -223,20 +223,7 @@ def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor,
     else:
         left = reference["left"] + coordinates.left
 
-    # It's easier to crop to the bounds if we work on bottom and right.
-    bounds_bottom = bounds["top"] + bounds["height"]
-    bounds_right = bounds["left"] + bounds["width"]
-    bottom = min(top + coordinates.height, bounds_bottom)
-    right = min(left + coordinates.width, bounds_right)
-    top = max(top, bounds["top"])
-    left = max(left, bounds["left"])
-
-    return {
-        "top": top,
-        "left": left,
-        "height": bottom - top,
-        "width": right - left,
-    }
+    return {"top": top, "left": left, "height": coordinates.height, "width": coordinates.width}
 
 
 def _capture_and_save(
@@ -249,7 +236,7 @@ def _capture_and_save(
 ) -> None:
     """Capture screenshots and write output files."""
     if coordinates is not None:
-        capture_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index], sct.monitors[0])
+        capture_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index])
         output = output_template.format(**capture_region)
         sct_img = sct.grab(capture_region)
         to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)

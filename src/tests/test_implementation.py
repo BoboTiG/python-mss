@@ -337,18 +337,18 @@ def test_parse_coordinates_invalid(coordinates: str) -> None:
 @pytest.mark.parametrize(
     ("geom", "expected"),
     [
-        ("100x100+25+25", {"top": 25, "left": 25, "height": 100, "width": 100}),
-        ("100x100+25-25", {"top": 355, "left": 25, "height": 100, "width": 100}),
-        ("100x100+25++25", {"top": 25, "left": 25, "height": 100, "width": 100}),
-        ("100x100+25+-25", {"top": 0, "left": 25, "height": 75, "width": 100}),
-        ("100x100+25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}),
-        ("100x100+25--25", {"top": 405, "left": 25, "height": 75, "width": 100}),
+        pytest.param("100x100+25+25", {"top": 25, "left": 25, "height": 100, "width": 100}, id="+25"),
+        pytest.param("100x100+25-25", {"top": 355, "left": 25, "height": 100, "width": 100}, id="-25"),
+        pytest.param("100x100+25++25", {"top": 25, "left": 25, "height": 100, "width": 100}, id="++25"),
+        pytest.param("100x100+25+-25", {"top": -25, "left": 25, "height": 100, "width": 100}, id="+-25"),
+        pytest.param("100x100+25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}, id="-+25"),
+        pytest.param("100x100+25--25", {"top": 405, "left": 25, "height": 100, "width": 100}, id="--25"),
     ],
 )
 def test_parse_and_normalize_coordinates(geom: str, expected: Monitor) -> None:
     mon = {"top": 0, "left": 0, "width": 640, "height": 480}
     parsed = _parse_coordinates(geom)
-    norm = _normalize_capture_region(parsed, mon, mon)
+    norm = _normalize_capture_region(parsed, mon)
     assert norm == expected
 
 
