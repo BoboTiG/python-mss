@@ -148,6 +148,7 @@ from prettytable import PrettyTable, TableStyle
 from serial.tools import list_ports
 
 import mss
+from mss.models import Region
 
 from common.pipeline import Mailbox, PipelineStage
 
@@ -330,7 +331,7 @@ def _scale_stretch(img: Image.Image, size: tuple[int, int]) -> Image.Image:
 def capture_image(
     *,
     monitor: int | None = None,
-    capture_area: dict[str, int] | None = None,
+    capture_area: Region | None = None,
 ) -> Generator[Image.Image]:
     """Continuously capture images from the specified monitor.
 
@@ -338,13 +339,12 @@ def capture_image(
 
     :param monitor: Monitor number to capture from, using the standard
         MSS convention (all screens=0, first screen=1, etc.).
-    :param capture_area: Capture rectangle dict with 'left', 'top',
-        'width', 'height'.
+    :param capture_area: Capture region.
     :yields: PIL Image objects from the captured monitor.
     """
     with mss.MSS() as sct:
         rect = capture_area if capture_area is not None else sct.monitors[monitor]
-        LOGGER.debug("Capture area: %i,%i, %ix%i", rect["left"], rect["top"], rect["width"], rect["height"])
+        LOGGER.debug("Capture area: %i,%i, %ix%i", rect.left, rect.top, rect.width, rect.height)
 
         while True:
             sct_img = sct.grab(rect)
@@ -510,14 +510,14 @@ def _quality_type(value: str) -> int:
     raise argparse.ArgumentTypeError(msg)
 
 
-def _capture_area_type(value: str) -> dict[str, int]:
-    """Validate and return a capture area dict.
+def _capture_area_type(value: str) -> Region:
+    """Validate and return a capture region.
 
     Expected format is ``left,top,width,height`` where all values are
     integers.
 
     :param value: The capture area string to validate.
-    :returns: Dict with 'left', 'top', 'width', 'height' keys.
+    :returns: Capture region.
     :raises argparse.ArgumentTypeError: If the format is invalid or extents
         are non-positive.
     """
@@ -536,7 +536,7 @@ def _capture_area_type(value: str) -> dict[str, int]:
         msg = "Capture area width and height must be positive"
         raise argparse.ArgumentTypeError(msg)
 
-    return {"left": left, "top": top, "width": width, "height": height}
+    return Region(left=left, top=top, width=width, height=height)
 
 
 def main() -> None:

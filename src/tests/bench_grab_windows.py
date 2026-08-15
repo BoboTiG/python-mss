@@ -26,7 +26,7 @@ def benchmark_grab() -> tuple[float, float]:
     """
     with mss.MSS() as sct:
         monitor = sct.monitors[1]  # Primary monitor
-        width, height = monitor["width"], monitor["height"]
+        width, height = monitor.width, monitor.height
 
         print(f"Platform: {sys.platform}")
         print(f"Region: {width}x{height}")
@@ -113,8 +113,8 @@ def benchmark_raw_bitblt() -> None:
 
     with mss.MSS() as sct:
         monitor = sct.monitors[1]
-        width, height = monitor["width"], monitor["height"]
-        left, top = monitor["left"], monitor["top"]
+        width, height = monitor.width, monitor.height
+        left, top = monitor.left, monitor.top
 
         # Acquire DCs directly for raw benchmarking (the impl no longer
         # holds them as instance state — they are per-grab now).
@@ -151,7 +151,7 @@ def analyze_frame_timing() -> None:
 
     with mss.MSS() as sct:
         monitor = sct.monitors[1]
-        width, height = monitor["width"], monitor["height"]
+        width, height = monitor.width, monitor.height
 
         print("Frame timing analysis")
         print(f"Region: {width}x{height}")

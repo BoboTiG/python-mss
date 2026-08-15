@@ -32,12 +32,12 @@ from typing import TYPE_CHECKING
 
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any
 
-    from mss.models import CFunctionsErrChecked, Monitor, Monitors
+    from mss.models import CFunctionsErrChecked, Monitors, Region
 
 __all__ = ()
 
@@ -276,12 +276,12 @@ class MSSImplGdi(MSSImplementation):
 
         # All monitors
         monitors.append(
-            {
-                "left": int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
-                "top": int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
-                "width": int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
-                "height": int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
-            },
+            Monitor(
+                left=int_(get_system_metrics(76)),  # SM_XVIRTUALSCREEN
+                top=int_(get_system_metrics(77)),  # SM_YVIRTUALSCREEN
+                width=int_(get_system_metrics(78)),  # SM_CXVIRTUALSCREEN
+                height=int_(get_system_metrics(79)),  # SM_CYVIRTUALSCREEN
+            ),
         )
 
         # Each monitor
@@ -323,26 +323,25 @@ class MSSImplGdi(MSSImplementation):
             ):
                 unique_id = ctypes.wstring_at(ctypes.addressof(display_device.DeviceID))
 
-            mon_dict: dict[str, Any] = {
-                "left": left,
-                "top": top,
-                "width": int_(rct.right) - left,
-                "height": int_(rct.bottom) - top,
-                "is_primary": is_primary,
-            }
-            if device_string is not None:
-                mon_dict["name"] = device_string
-            if unique_id is not None:
-                mon_dict["unique_id"] = unique_id
-            monitors.append(mon_dict)
+            monitors.append(
+                Monitor(
+                    left=left,
+                    top=top,
+                    width=int_(rct.right) - left,
+                    height=int_(rct.bottom) - top,
+                    is_primary=is_primary,
+                    name=device_string,
+                    unique_id=unique_id,
+                ),
+            )
             return True
 
         user32.EnumDisplayMonitors(0, None, callback, 0)
 
         return monitors
 
-    def grab(self, monitor: Monitor, /) -> bytearray:
-        """Retrieve all pixels from a monitor using CreateDIBSection.
+    def grab(self, region: Region, /) -> bytearray:
+        """Retrieve all pixels from a capture region using CreateDIBSection.
 
         Device contexts (srcdc / memdc) are acquired and released within each
         call.  This avoids holding GDI resources across threads and allows
@@ -360,7 +359,7 @@ class MSSImplGdi(MSSImplementation):
         try:
             memdc = gdi.CreateCompatibleDC(srcdc)
             try:
-                width, height = monitor["width"], monitor["height"]
+                width, height = region.width, region.height
 
                 if self._region_width_height != (width, height):
                     self._region_width_height = (width, height)
@@ -392,7 +391,17 @@ class MSSImplGdi(MSSImplementation):
                 gdi.SelectObject(memdc, self._dib)
 
                 # BitBlt copies screen content directly into the DIB's memory
-                gdi.BitBlt(memdc, 0, 0, width, height, srcdc, monitor["left"], monitor["top"], SRCCOPY | CAPTUREBLT)
+                gdi.BitBlt(
+                    memdc,
+                    0,
+                    0,
+                    width,
+                    height,
+                    srcdc,
+                    region.left,
+                    region.top,
+                    SRCCOPY | CAPTUREBLT,
+                )
 
                 # Flush GDI operations to ensure DIB memory is fully updated before reading.
                 gdi.GdiFlush()

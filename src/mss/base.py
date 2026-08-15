@@ -6,11 +6,13 @@ from __future__ import annotations
 import platform
 import warnings
 from abc import ABC, abstractmethod
+from copy import copy
 from datetime import datetime
 from threading import Lock
 from typing import TYPE_CHECKING, Any
 
 from mss.exception import ScreenShotError
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Buffer, Self
 
-    from mss.models import Monitor, Monitors, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -89,11 +91,14 @@ class MSSImplementation(ABC):
         """Retrieve all cursor data. Pixels have to be RGB."""
 
     @abstractmethod
-    def grab(self, monitor: Monitor, /) -> Buffer | tuple[Buffer, Size]:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB.
+    def grab(self, region: Region, /) -> Buffer | tuple[Buffer, Size]:
+        """Retrieve all pixels from a capture region. Pixels have to be RGB.
 
-        If the monitor size is not in pixel units, include a Size in
-        pixels (see issue #23).
+        Return ``(buffer, size)`` when the pixel dimensions of the returned
+        buffer differ from the region's width and height. For example, a
+        Retina display region may be measured in logical points while its
+        image buffer contains twice as many pixels in each dimension (see
+        issue #23).
         """
 
     @abstractmethod
@@ -291,37 +296,47 @@ class MSS:
             self._impl.close()
             self._closed = True
 
-    def grab(self, monitor: Monitor | tuple[int, int, int, int], /) -> ScreenShot:
-        """Retrieve screen pixels for a given monitor.
+    def grab(self, region: Monitor | Region | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
+        """Retrieve screen pixels for a given region.
 
-        Note: ``monitor`` can be a tuple like the one
-        :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``
+        ``region`` can be a :class:`mss.models.Monitor`, a :class:`mss.models.Region`, a region dictionary, or a tuple
+        like the one :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``.
 
-        :param monitor: The coordinates and size of the box to capture.
-                        See :meth:`monitors <monitors>` for object details.
+        :param region: The coordinates and size of the box to capture.
+                       See :meth:`monitors <monitors>` for monitor object details.
         :returns: Screenshot of the requested region.
         """
-        # Convert PIL bbox style
-        if isinstance(monitor, tuple):
-            monitor = {
-                "left": monitor[0],
-                "top": monitor[1],
-                "width": monitor[2] - monitor[0],
-                "height": monitor[3] - monitor[1],
-            }
+        if isinstance(region, tuple):
+            grab_region = Region(
+                left=region[0],
+                top=region[1],
+                width=region[2] - region[0],
+                height=region[3] - region[1],
+            )
+        elif isinstance(region, Monitor):
+            grab_region = region.as_region()
+        elif isinstance(region, Region):
+            grab_region = copy(region)
+        elif isinstance(region, dict):
+            grab_region = Region(
+                left=region["left"],
+                top=region["top"],
+                width=region["width"],
+                height=region["height"],
+            )
 
-        if monitor["width"] <= 0 or monitor["height"] <= 0:
-            msg = f"Region has zero or negative size: {monitor!r}"
+        if grab_region.width <= 0 or grab_region.height <= 0:
+            msg = f"Region has zero or negative size: {grab_region!r}"
             raise ScreenShotError(msg)
 
         with self._lock:
-            img_data_and_maybe_size = self._impl.grab(monitor)
+            img_data_and_maybe_size = self._impl.grab(grab_region)
             if isinstance(img_data_and_maybe_size, tuple):
                 img_data, size = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, monitor, size=size)
+                screenshot = self.cls_image(img_data, grab_region, size=size)
             else:
                 img_data = img_data_and_maybe_size
-                screenshot = self.cls_image(img_data, monitor)
+                screenshot = self.cls_image(img_data, grab_region)
             if self._impl.with_cursor and (cursor := self._impl.cursor()):
                 return self._merge(screenshot, cursor)
             return screenshot
@@ -335,19 +350,19 @@ class MSS:
         This method has to fill ``self._monitors`` with all information
         and use it as a cache:
 
-        - ``self._monitors[0]`` is a dict of all monitors together
-        - ``self._monitors[N]`` is a dict of the monitor N (with N > 0)
+        - ``self._monitors[0]`` is all monitors together
+        - ``self._monitors[N]`` is monitor N (with N > 0)
 
-        Each monitor is a dict with:
+        Each :class:`mss.models.Monitor` has:
 
         - ``left``: the x-coordinate of the upper-left corner
         - ``top``: the y-coordinate of the upper-left corner
         - ``width``: the width
         - ``height``: the height
-        - ``is_primary``: (optional) true if this is the primary monitor
-        - ``name``: (optional) human-readable device name
-        - ``unique_id``: (optional) platform-specific stable identifier for the monitor
-        - ``output``: (optional, Linux only) monitor output name, compatible with xrandr
+        - ``is_primary``: true or false when known, otherwise ``None``
+        - ``name``: human-readable device name, or ``None``
+        - ``unique_id``: platform-specific stable identifier, or ``None``
+        - ``output``: Linux output name compatible with xrandr, or ``None``
         """
         with self._lock:
             if self._monitors is None:
@@ -376,7 +391,7 @@ class MSS:
             (
                 monitor
                 for monitor in monitors[1:]  # Skip the "all monitors" entry at index 0
-                if monitor.get("is_primary", False)
+                if monitor.is_primary
             ),
             monitors[1],  # Fallback to the first monitor if no primary is found
         )
@@ -396,7 +411,9 @@ class MSS:
             grabs monitor ``N``.
         :param str output: The output filename. Keywords: ``{mon}``,
             ``{top}``, ``{left}``, ``{width}``, ``{height}``,
-            ``{date}``.
+            ``{is_primary}``, ``{name}``, ``{unique_id}``, ``{output}``,
+            ``{date}``. Optional metadata is formatted as ``None`` when
+            unavailable.
         :param typing.Callable callback: Called before saving the
             screenshot; receives the ``output`` argument.
         :return: Created file(s).
@@ -409,7 +426,18 @@ class MSS:
         if mon == 0:
             # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
-                fname = output.format(mon=idx, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+                fname = output.format(
+                    mon=idx,
+                    date=datetime.now(UTC) if "{date" in output else None,
+                    top=monitor.top,
+                    left=monitor.left,
+                    width=monitor.width,
+                    height=monitor.height,
+                    is_primary=monitor.is_primary,
+                    name=monitor.name,
+                    unique_id=monitor.unique_id,
+                    output=monitor.output,
+                )
                 if callable(callback):
                     callback(fname)
                 sct = self.grab(monitor)
@@ -425,7 +453,18 @@ class MSS:
                 msg = f"Monitor {mon!r} does not exist."
                 raise ScreenShotError(msg) from exc
 
-            output = output.format(mon=mon, date=datetime.now(UTC) if "{date" in output else None, **monitor)
+            output = output.format(
+                mon=mon,
+                date=datetime.now(UTC) if "{date" in output else None,
+                top=monitor.top,
+                left=monitor.left,
+                width=monitor.width,
+                height=monitor.height,
+                is_primary=monitor.is_primary,
+                name=monitor.name,
+                unique_id=monitor.unique_id,
+                output=monitor.output,
+            )
             if callable(callback):
                 callback(output)
             sct = self.grab(monitor)

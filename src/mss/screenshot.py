@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from mss.exception import ScreenShotError
-from mss.models import Monitor, Pixel, Pixels, Pos, Size
+from mss.models import Monitor, Pixel, Pixels, Pos, Region, Size
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -35,15 +35,26 @@ class ScreenShot:
 
     __slots__ = {"__bgra", "__pixels", "__rgb", "_raw", "pos", "size"}
 
-    def __init__(self, data: Buffer, monitor: Monitor, /, *, size: Size | None = None) -> None:
+    def __init__(self, data: Buffer, region: Monitor | Region | dict[str, Any], /, *, size: Size | None = None) -> None:
+        if isinstance(region, dict):
+            region = Region(
+                left=region["left"],
+                top=region["top"],
+                width=region["width"],
+                height=region["height"],
+            )
+
         self.__pixels: Pixels | None = None
         self.__rgb: memoryview | None = None
 
         #: NamedTuple of the screenshot coordinates.
-        self.pos: Pos = Pos(monitor["left"], monitor["top"])
+        self.pos: Pos = Pos(region.left, region.top)
 
         #: NamedTuple of the screenshot size.
-        self.size: Size = Size(monitor["width"], monitor["height"]) if size is None else size
+        if size is not None:
+            self.size: Size = size
+        else:
+            self.size = Size(region.width, region.height)
 
         # Buffer of the raw BGRA pixels, retrieved by the platform-specific implementations.
         self._raw: memoryview[int] = memoryview(data)
@@ -84,8 +95,8 @@ class ScreenShot:
     @classmethod
     def from_size(cls: type[ScreenShot], data: Buffer, width: int, height: int, /) -> ScreenShot:
         """Instantiate a new class given only screenshot's data and size."""
-        monitor = {"left": 0, "top": 0, "width": width, "height": height}
-        return cls(data, monitor)
+        region = Region(left=0, top=0, width=width, height=height)
+        return cls(data, region)
 
     @property
     def bgra(self) -> memoryview[int]:

@@ -37,12 +37,13 @@ from typing import TYPE_CHECKING, Any
 
 from mss.base import MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 
 if TYPE_CHECKING:
     from threading import Thread
 
-    from mss.models import CFunctions, Monitor, Monitors
+    from mss.models import CFunctions, Monitors
 
 __all__ = ()
 
@@ -544,7 +545,7 @@ class MSSImplXlib(MSSImplementation):
             gwa = XWindowAttributes()
             self.xlib.XGetWindowAttributes(display, self._handles.root, byref(gwa))
             monitors.append(
-                {"left": int_(gwa.x), "top": int_(gwa.y), "width": int_(gwa.width), "height": int_(gwa.height)},
+                Monitor(left=int_(gwa.x), top=int_(gwa.y), width=int_(gwa.width), height=int_(gwa.height)),
             )
 
             # Each monitor
@@ -567,29 +568,29 @@ class MSSImplXlib(MSSImplementation):
                     continue
 
                 monitors.append(
-                    {
-                        "left": int_(crtc.x),
-                        "top": int_(crtc.y),
-                        "width": int_(crtc.width),
-                        "height": int_(crtc.height),
-                    },
+                    Monitor(
+                        left=int_(crtc.x),
+                        top=int_(crtc.y),
+                        width=int_(crtc.width),
+                        height=int_(crtc.height),
+                    ),
                 )
                 xrandr.XRRFreeCrtcInfo(crtc)
             xrandr.XRRFreeScreenResources(mon)
 
         return monitors
 
-    def grab(self, monitor: Monitor, /) -> bytearray:
-        """Retrieve all pixels from a monitor. Pixels have to be RGB."""
+    def grab(self, region: Region, /) -> bytearray:
+        """Retrieve all pixels from a capture region. Pixels have to be RGB."""
 
         with _lock:
             ximage = self.xlib.XGetImage(
                 self._handles.display,
                 self._handles.drawable,
-                monitor["left"],
-                monitor["top"],
-                monitor["width"],
-                monitor["height"],
+                region.left,
+                region.top,
+                region.width,
+                region.height,
                 PLAINMASK,
                 ZPIXMAP,
             )
@@ -602,7 +603,7 @@ class MSSImplXlib(MSSImplementation):
 
             raw_data = cast(
                 ximage.contents.data,
-                POINTER(c_ubyte * monitor["height"] * monitor["width"] * 4),
+                POINTER(c_ubyte * region.height * region.width * 4),
             )
             data = bytearray(raw_data.contents)
         finally:
@@ -625,17 +626,17 @@ class MSSImplXlib(MSSImplementation):
             raise ScreenShotError(msg)
 
         cursor_img: XFixesCursorImage = ximage.contents
-        region = {
-            "left": cursor_img.x - cursor_img.xhot,
-            "top": cursor_img.y - cursor_img.yhot,
-            "width": cursor_img.width,
-            "height": cursor_img.height,
-        }
+        region = Region(
+            left=cursor_img.x - cursor_img.xhot,
+            top=cursor_img.y - cursor_img.yhot,
+            width=cursor_img.width,
+            height=cursor_img.height,
+        )
 
-        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region["height"] * region["width"]))
+        raw_data = cast(cursor_img.pixels, POINTER(c_ulong * region.height * region.width))
         raw = bytearray(raw_data.contents)
 
-        data = bytearray(region["height"] * region["width"] * 4)
+        data = bytearray(region.height * region.width * 4)
         data[3::4] = raw[3::8]
         data[2::4] = raw[2::8]
         data[1::4] = raw[1::8]

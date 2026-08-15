@@ -16,10 +16,11 @@ from unittest.mock import Mock, patch
 import pytest
 
 import mss
-from mss.__main__ import _normalize_capture_region, _parse_coordinates
+from mss.__main__ import _normalize_capture_region, _parse_coordinates, _RegionWithEdges
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
+from mss.models import Monitor, Region
 from mss.screenshot import ScreenShot
 from tests.thread_helpers import run_threads
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import Any
 
-    from mss.models import Monitor, Monitors, Size
+    from mss.models import Monitors, Size
 
 try:
     from datetime import UTC
@@ -45,7 +46,7 @@ class MSS0(MSSImplementation):
 class MSS1(MSSImplementation):
     """Only `grab()` implemented."""
 
-    def grab(self, monitor: Monitor) -> None:  # type: ignore[override]
+    def grab(self, region: Region) -> None:  # type: ignore[override]
         pass
 
 
@@ -66,7 +67,7 @@ class MSSCloseRaises(MSSImplementation):
     def cursor(self) -> None:
         pass
 
-    def grab(self, _: Monitor) -> bytearray | tuple[bytearray, Size]:
+    def grab(self, _: Region) -> bytearray | tuple[bytearray, Size]:
         return bytearray()
 
     def monitors(self) -> Monitors:
@@ -119,11 +120,29 @@ def test_bad_monitor(mss_impl: Callable[..., MSS]) -> None:
 
 def test_repr(mss_impl: Callable[..., MSS]) -> None:
     box = {"top": 0, "left": 0, "width": 10, "height": 10}
-    expected_box = {"top": 0, "left": 0, "width": 10, "height": 10}
+    expected_region = Region(top=0, left=0, width=10, height=10)
     with mss_impl() as sct:
         img = sct.grab(box)
-    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_box)
+    ref = ScreenShot(bytearray(b"BGRA" * 100), expected_region)
     assert repr(img) == repr(ref)
+
+
+def test_screenshot_accepts_region_dictionary() -> None:
+    region = {"top": 0, "left": 0, "width": 10, "height": 10}
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), region)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
+
+
+def test_screenshot_accepts_monitor() -> None:
+    monitor = Monitor(left=0, top=0, width=10, height=10)
+
+    screenshot = ScreenShot(bytearray(b"BGRA" * 100), monitor)
+
+    assert screenshot.pos == (0, 0)
+    assert screenshot.size == (10, 10)
 
 
 def test_factory_no_backend() -> None:
@@ -206,7 +225,15 @@ class TestEntryPoint:
                     zip(sct.monitors[1:], captured.out.splitlines(), strict=False),
                     1,
                 ):
-                    filename = Path(fmt.format(mon=mon, **monitor))
+                    filename = Path(
+                        fmt.format(
+                            mon=mon,
+                            top=monitor.top,
+                            left=monitor.left,
+                            width=monitor.width,
+                            height=monitor.height,
+                        ),
+                    )
                     assert line.endswith(filename.name)
                     assert filename.is_file()
                     filename.unlink()
@@ -298,23 +325,79 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
 @pytest.mark.parametrize(
     ("coordinates", "expected"),
     [
-        pytest.param(" 15,14,0012,13 ", (15, 14, 12, 13, False, False), id="comma_pos_top_pos_left"),
-        pytest.param("-15, 0014,12,0013", (-15, 14, 12, 13, False, False), id="comma_neg_top_pos_left"),
-        pytest.param("0015 , -14 , 12 , 13", (15, -14, 12, 13, False, False), id="comma_pos_top_neg_left"),
-        pytest.param(" -0015,-14,12,0013  ", (-15, -14, 12, 13, False, False), id="comma_neg_top_neg_left"),
-        pytest.param("12x13+14+15", (15, 14, 12, 13, False, False), id="x_pos_top_pos_left"),
-        pytest.param(" 0012 x 13 - 14 + 15 ", (15, 14, 12, 13, False, True), id="x_pos_top_neg_left"),
-        pytest.param("12x0013+0014-15", (15, 14, 12, 13, True, False), id="x_neg_top_pos_left"),
-        pytest.param(" 12 x 13 - 0014 - 0015 ", (15, 14, 12, 13, True, True), id="x_neg_top_neg_left"),
-        pytest.param("12x13-+14+15", (15, 14, 12, 13, False, True), id="x_rel_12x13-+14+15"),
-        pytest.param("12x13+-14++15", (15, -14, 12, 13, False, False), id="x_rel_12x13+-14++15"),
-        pytest.param("12x13++14-15", (15, 14, 12, 13, True, False), id="x_rel_12x13++14-15"),
-        pytest.param("12x13-14-+15", (15, 14, 12, 13, True, True), id="x_rel_12x13-14-+15"),
-        pytest.param("12x13--14+-15", (-15, -14, 12, 13, False, True), id="x_rel_12x13--14+-15"),
-        pytest.param("12x13+14--15", (-15, 14, 12, 13, True, False), id="x_rel_12x13+14--15"),
+        pytest.param(
+            " 15,14,0012,13 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_pos_top_pos_left",
+        ),
+        pytest.param(
+            "-15, 0014,12,0013",
+            _RegionWithEdges(Region(left=14, top=-15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_neg_top_pos_left",
+        ),
+        pytest.param(
+            "0015 , -14 , 12 , 13",
+            _RegionWithEdges(Region(left=-14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_pos_top_neg_left",
+        ),
+        pytest.param(
+            " -0015,-14,12,0013  ",
+            _RegionWithEdges(Region(left=-14, top=-15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_neg_top_neg_left",
+        ),
+        pytest.param(
+            "12x13+14+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="x_pos_top_pos_left",
+        ),
+        pytest.param(
+            " 0012 x 13 - 14 + 15 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_pos_top_neg_left",
+        ),
+        pytest.param(
+            "12x0013+0014-15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_neg_top_pos_left",
+        ),
+        pytest.param(
+            " 12 x 13 - 0014 - 0015 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=True),
+            id="x_neg_top_neg_left",
+        ),
+        pytest.param(
+            "12x13-+14+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_rel_12x13-+14+15",
+        ),
+        pytest.param(
+            "12x13+-14++15",
+            _RegionWithEdges(Region(left=-14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="x_rel_12x13+-14++15",
+        ),
+        pytest.param(
+            "12x13++14-15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_rel_12x13++14-15",
+        ),
+        pytest.param(
+            "12x13-14-+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=True),
+            id="x_rel_12x13-14-+15",
+        ),
+        pytest.param(
+            "12x13--14+-15",
+            _RegionWithEdges(Region(left=-14, top=-15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_rel_12x13--14+-15",
+        ),
+        pytest.param(
+            "12x13+14--15",
+            _RegionWithEdges(Region(left=14, top=-15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_rel_12x13+14--15",
+        ),
     ],
 )
-def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int, bool, bool]) -> None:
+def test_parse_coordinates_valid(coordinates: str, expected: _RegionWithEdges) -> None:
     assert _parse_coordinates(coordinates) == expected
 
 
@@ -337,16 +420,16 @@ def test_parse_coordinates_invalid(coordinates: str) -> None:
 @pytest.mark.parametrize(
     ("geom", "expected"),
     [
-        pytest.param("100x100+25+25", {"top": 25, "left": 25, "height": 100, "width": 100}, id="+25"),
-        pytest.param("100x100+25-25", {"top": 355, "left": 25, "height": 100, "width": 100}, id="-25"),
-        pytest.param("100x100+25++25", {"top": 25, "left": 25, "height": 100, "width": 100}, id="++25"),
-        pytest.param("100x100+25+-25", {"top": -25, "left": 25, "height": 100, "width": 100}, id="+-25"),
-        pytest.param("100x100+25-+25", {"top": 355, "left": 25, "height": 100, "width": 100}, id="-+25"),
-        pytest.param("100x100+25--25", {"top": 405, "left": 25, "height": 100, "width": 100}, id="--25"),
+        pytest.param("100x100+25+25", Region(left=25, top=25, height=100, width=100), id="+25"),
+        pytest.param("100x100+25-25", Region(left=25, top=355, height=100, width=100), id="-25"),
+        pytest.param("100x100+25++25", Region(left=25, top=25, height=100, width=100), id="++25"),
+        pytest.param("100x100+25+-25", Region(left=25, top=-25, height=100, width=100), id="+-25"),
+        pytest.param("100x100+25-+25", Region(left=25, top=355, height=100, width=100), id="-+25"),
+        pytest.param("100x100+25--25", Region(left=25, top=405, height=100, width=100), id="--25"),
     ],
 )
-def test_parse_and_normalize_coordinates(geom: str, expected: Monitor) -> None:
-    mon = {"top": 0, "left": 0, "width": 640, "height": 480}
+def test_parse_and_normalize_coordinates(geom: str, expected: Region) -> None:
+    mon = Monitor(left=0, top=0, width=640, height=480)
     parsed = _parse_coordinates(geom)
     norm = _normalize_capture_region(parsed, mon)
     assert norm == expected
@@ -374,6 +457,22 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
         assert im.rgb == im2.rgb
 
 
+def test_grab_with_region(mss_impl: Callable[..., MSS]) -> None:
+    left = 100
+    top = 100
+    width = 400
+    height = 400
+
+    with mss_impl() as sct:
+        expected = sct.grab({"left": left, "top": top, "width": width, "height": height})
+        region = Region(left=left, top=top, width=width, height=height)
+        image = sct.grab(region)
+
+    assert image.size == expected.size
+    assert image.pos == expected.pos
+    assert image.rgb == expected.rgb
+
+
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         # Remember that rect tuples are PIL-style: (left, top, right, bottom)
@@ -394,8 +493,8 @@ def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:
 def test_grab_with_tuple_percents(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
-        left = monitor["left"] + monitor["width"] * 5 // 100  # 5% from the left
-        top = monitor["top"] + monitor["height"] * 5 // 100  # 5% from the top
+        left = monitor.left + monitor.width * 5 // 100  # 5% from the left
+        top = monitor.top + monitor.height * 5 // 100  # 5% from the top
         right = left + 500  # 500px
         lower = top + 500  # 500px
         width = right - left

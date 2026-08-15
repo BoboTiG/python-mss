@@ -2,6 +2,7 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+import dataclasses
 import os.path
 import platform
 import re
@@ -11,19 +12,16 @@ from typing import Any, NamedTuple
 
 from mss import MSS, __version__
 from mss.exception import ScreenShotError
-from mss.models import Monitor
+from mss.models import Monitor, Region
 from mss.tools import to_png
 
 _COORDINATES_SYNTAX = "TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP"
 
 
-class _CoordsWithEdges(NamedTuple):
-    top: int
-    left: int
-    width: int
-    height: int
-    from_bottom: bool
+class _RegionWithEdges(NamedTuple):
+    region: Region
     from_right: bool
+    from_bottom: bool
 
 
 def _backend_cli_choices() -> list[str]:
@@ -94,20 +92,14 @@ def _parse_xgeom_coordinate(sign1: str, sign2: str | None, magnitude: str) -> tu
     raise ValueError(msg)
 
 
-def _parse_coordinates(coordinates: str) -> _CoordsWithEdges:
+def _parse_coordinates(coordinates: str) -> _RegionWithEdges:
     """Parse a capture region string.
 
     Supports ``TOP,LEFT,WIDTH,HEIGHT`` and X11 geometry style
     ``WIDTHxHEIGHT+LEFT+TOP`` (with optional ``-`` special handling).
 
-    See _parse_xgeom_coordinate for notes about how negative values and
-    the
-
-    :param coordinates: Region string to parse.
-    :returns: Parsed coordinates as
-        ``(top, left, width, height, from_bottom, from_right)``.
-    :raises ValueError: If *coordinates* does not match a supported
-        syntax.
+    See _parse_xgeom_coordinate for notes about how negative values
+    are handled.
     """
     match_res = re.fullmatch(
         r"""(?x)^\s*(?:
@@ -130,25 +122,29 @@ def _parse_coordinates(coordinates: str) -> _CoordsWithEdges:
         raise ValueError(msg)
 
     if match_res["top1"] is not None:
-        return _CoordsWithEdges(
-            top=int(match_res["top1"]),
-            left=int(match_res["left1"]),
-            width=int(match_res["width1"]),
-            height=int(match_res["height1"]),
-            from_bottom=False,
+        return _RegionWithEdges(
+            region=Region(
+                left=int(match_res["left1"]),
+                top=int(match_res["top1"]),
+                width=int(match_res["width1"]),
+                height=int(match_res["height1"]),
+            ),
             from_right=False,
+            from_bottom=False,
         )
 
     if match_res["top2"] is not None:
         left, from_right = _parse_xgeom_coordinate(match_res["left2sign1"], match_res["left2sign2"], match_res["left2"])
         top, from_bottom = _parse_xgeom_coordinate(match_res["top2sign1"], match_res["top2sign2"], match_res["top2"])
-        return _CoordsWithEdges(
-            top=top,
-            left=left,
-            width=int(match_res["width2"]),
-            height=int(match_res["height2"]),
-            from_bottom=from_bottom,
+        return _RegionWithEdges(
+            region=Region(
+                left=left,
+                top=top,
+                width=int(match_res["width2"]),
+                height=int(match_res["height2"]),
+            ),
             from_right=from_right,
+            from_bottom=from_bottom,
         )
 
     msg = f"Coordinates syntax: {_COORDINATES_SYNTAX}"
@@ -192,7 +188,7 @@ def _build_parser() -> ArgumentParser:
     return cli_args
 
 
-def _prepare_grab_options(options: Namespace) -> tuple[int, str, _CoordsWithEdges | None]:
+def _prepare_grab_options(options: Namespace) -> tuple[int, str, _RegionWithEdges | None]:
     """Build grab options derived from parsed CLI arguments."""
     monitor_index = int(options.monitor)
     output_template = str(options.output)
@@ -213,17 +209,18 @@ def _build_mss_kwargs(options: Namespace) -> dict[str, Any]:
     return mss_kwargs
 
 
-def _normalize_capture_region(coordinates: _CoordsWithEdges, reference: Monitor) -> Monitor:
+def _normalize_capture_region(coordinates: _RegionWithEdges, monitor: Monitor) -> Region:
+    reference = monitor.as_region()
     if coordinates.from_bottom:
-        top = reference["top"] + reference["height"] - coordinates.top - coordinates.height
+        top = reference.top + reference.height - coordinates.region.top - coordinates.region.height
     else:
-        top = reference["top"] + coordinates.top
+        top = reference.top + coordinates.region.top
     if coordinates.from_right:
-        left = reference["left"] + reference["width"] - coordinates.left - coordinates.width
+        left = reference.left + reference.width - coordinates.region.left - coordinates.region.width
     else:
-        left = reference["left"] + coordinates.left
+        left = reference.left + coordinates.region.left
 
-    return {"top": top, "left": left, "height": coordinates.height, "width": coordinates.width}
+    return Region(left=left, top=top, width=coordinates.region.width, height=coordinates.region.height)
 
 
 def _capture_and_save(
@@ -232,13 +229,13 @@ def _capture_and_save(
     options: Namespace,
     monitor_index: int,
     output_template: str,
-    coordinates: _CoordsWithEdges | None,
+    coordinates: _RegionWithEdges | None,
 ) -> None:
     """Capture screenshots and write output files."""
     if coordinates is not None:
-        capture_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index])
-        output = output_template.format(**capture_region)
-        sct_img = sct.grab(capture_region)
+        normalized_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index])
+        output = output_template.format(**dataclasses.asdict(normalized_region))
+        sct_img = sct.grab(normalized_region)
         to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)
         if not options.quiet:
             print(os.path.realpath(output))
