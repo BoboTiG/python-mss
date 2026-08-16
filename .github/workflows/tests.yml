@@ -106,13 +106,8 @@ jobs:
         if: contains(fromJSON('["3.10", "3.11", "3.12"]'), matrix.python.runs-on)
         run: python -m pip install tensorflow
 
-      - name: Tests (GNU/Linux)
+      - name: Tests
         timeout-minutes: 10
-        if: matrix.os.name == 'linux'
-        run: xvfb-run python -m pytest
-      - name: Tests (macOS, Windows)
-        timeout-minutes: 10
-        if: matrix.os.name != 'linux'
         run: python -m pytest
 
   automerge:

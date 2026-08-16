@@ -3,6 +3,7 @@ Source: https://github.com/BoboTiG/python-mss.
 """
 
 import os
+import shutil
 from collections.abc import Callable, Generator
 from hashlib import sha256
 from pathlib import Path
@@ -14,6 +15,14 @@ import pytest
 
 from mss import MSS
 from mss.linux import xcb, xlib
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--no-virtual-display",
+        action="store_true",
+        help="Do not run all the tests under Xvfb",
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -89,8 +98,41 @@ def mss_impl(backend: str) -> Callable[..., MSS]:
     return impl
 
 
-@pytest.fixture(autouse=True, scope="session")
-def inhibit_x11_resets() -> Generator[None, None, None]:
+@pytest.fixture(scope="session", autouse=True)
+def virtual_display(request: pytest.FixtureRequest) -> Generator[None, None, None]:
+    """Use Xvnc for the test session, if feasible.
+
+    This isolates the testing from the development display.  This is
+    necessary to test X backends under Wayland (XWayland doesn't allow
+    programs to capture the root window), to avoid annoying the
+    developer with transient windows during testing, and to avoid
+    problems with the screen changing during tests that expect
+    successive screenshots to be identical.
+
+    If Xvfb and pyvirtualdisplay are not available, then the current
+    display is used as a fallback.
+    """
+    if system() != "Linux" or request.config.getoption("--no-virtual-display") or shutil.which("Xvfb") is None:
+        yield
+        return
+
+    try:
+        from pyvirtualdisplay import Display  # noqa: PLC0415
+    except ImportError:
+        yield
+        return
+
+    # We use 1280x1024 since test_issue_220 requires it.  The default for pyvirtualdisplay is manage_global_env=True,
+    # but we make it explicit here to forestall future changes.  We use MonkeyPatch to make sure that nothing tries to
+    # use Wayland, which would bypass $DISPLAY.
+    with Display(size=(1280, 1024), manage_global_env=True), pytest.MonkeyPatch.context() as mp:
+        mp.delenv("WAYLAND_DISPLAY", raising=False)
+        mp.delenv("XDG_SESSION_TYPE", raising=False)
+        yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def inhibit_x11_resets(virtual_display: None) -> Generator[None, None, None]:  # noqa: ARG001 virtual_display is for ordering
     """Ensure that an X11 connection is open during the test session.
 
     Under X11, when the last client disconnects, the server resets.  If
