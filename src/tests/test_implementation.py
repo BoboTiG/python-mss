@@ -16,7 +16,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 import mss
-from mss.__main__ import _parse_coordinates
+from mss.__main__ import _normalize_capture_region, _parse_coordinates, _RegionWithEdges
 from mss.__main__ import main as entry_point
 from mss.base import MSS, MSSImplementation
 from mss.exception import ScreenShotError
@@ -325,17 +325,79 @@ def test_entry_point_with_no_argument(capsys: pytest.CaptureFixture) -> None:
 @pytest.mark.parametrize(
     ("coordinates", "expected"),
     [
-        pytest.param(" 15,14,0012,13 ", (15, 14, 12, 13), id="comma_pos_top_pos_left"),
-        pytest.param("-15, 0014,12,0013", (-15, 14, 12, 13), id="comma_neg_top_pos_left"),
-        pytest.param("0015 , -14 , 12 , 13", (15, -14, 12, 13), id="comma_pos_top_neg_left"),
-        pytest.param(" -0015,-14,12,0013  ", (-15, -14, 12, 13), id="comma_neg_top_neg_left"),
-        pytest.param("12x13+14+15", (15, 14, 12, 13), id="x_pos_top_pos_left"),
-        pytest.param(" 0012 x 13 - 14 + 15 ", (15, -14, 12, 13), id="x_pos_top_neg_left"),
-        pytest.param("12x0013+0014-15", (-15, 14, 12, 13), id="x_neg_top_pos_left"),
-        pytest.param(" 12 x 13 - 0014 - 0015 ", (-15, -14, 12, 13), id="x_neg_top_neg_left"),
+        pytest.param(
+            " 15,14,0012,13 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_pos_top_pos_left",
+        ),
+        pytest.param(
+            "-15, 0014,12,0013",
+            _RegionWithEdges(Region(left=14, top=-15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_neg_top_pos_left",
+        ),
+        pytest.param(
+            "0015 , -14 , 12 , 13",
+            _RegionWithEdges(Region(left=-14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_pos_top_neg_left",
+        ),
+        pytest.param(
+            " -0015,-14,12,0013  ",
+            _RegionWithEdges(Region(left=-14, top=-15, width=12, height=13), from_bottom=False, from_right=False),
+            id="comma_neg_top_neg_left",
+        ),
+        pytest.param(
+            "12x13+14+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="x_pos_top_pos_left",
+        ),
+        pytest.param(
+            " 0012 x 13 - 14 + 15 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_pos_top_neg_left",
+        ),
+        pytest.param(
+            "12x0013+0014-15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_neg_top_pos_left",
+        ),
+        pytest.param(
+            " 12 x 13 - 0014 - 0015 ",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=True),
+            id="x_neg_top_neg_left",
+        ),
+        pytest.param(
+            "12x13-+14+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_rel_12x13-+14+15",
+        ),
+        pytest.param(
+            "12x13+-14++15",
+            _RegionWithEdges(Region(left=-14, top=15, width=12, height=13), from_bottom=False, from_right=False),
+            id="x_rel_12x13+-14++15",
+        ),
+        pytest.param(
+            "12x13++14-15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_rel_12x13++14-15",
+        ),
+        pytest.param(
+            "12x13-14-+15",
+            _RegionWithEdges(Region(left=14, top=15, width=12, height=13), from_bottom=True, from_right=True),
+            id="x_rel_12x13-14-+15",
+        ),
+        pytest.param(
+            "12x13--14+-15",
+            _RegionWithEdges(Region(left=-14, top=-15, width=12, height=13), from_bottom=False, from_right=True),
+            id="x_rel_12x13--14+-15",
+        ),
+        pytest.param(
+            "12x13+14--15",
+            _RegionWithEdges(Region(left=14, top=-15, width=12, height=13), from_bottom=True, from_right=False),
+            id="x_rel_12x13+14--15",
+        ),
     ],
 )
-def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int, int]) -> None:
+def test_parse_coordinates_valid(coordinates: str, expected: _RegionWithEdges) -> None:
     assert _parse_coordinates(coordinates) == expected
 
 
@@ -353,6 +415,24 @@ def test_parse_coordinates_valid(coordinates: str, expected: tuple[int, int, int
 def test_parse_coordinates_invalid(coordinates: str) -> None:
     with pytest.raises(ValueError, match=r"(?i)coordinates syntax"):
         _parse_coordinates(coordinates)
+
+
+@pytest.mark.parametrize(
+    ("geom", "expected"),
+    [
+        pytest.param("100x100+25+25", Region(left=25, top=25, height=100, width=100), id="+25"),
+        pytest.param("100x100+25-25", Region(left=25, top=355, height=100, width=100), id="-25"),
+        pytest.param("100x100+25++25", Region(left=25, top=25, height=100, width=100), id="++25"),
+        pytest.param("100x100+25+-25", Region(left=25, top=-25, height=100, width=100), id="+-25"),
+        pytest.param("100x100+25-+25", Region(left=25, top=355, height=100, width=100), id="-+25"),
+        pytest.param("100x100+25--25", Region(left=25, top=405, height=100, width=100), id="--25"),
+    ],
+)
+def test_parse_and_normalize_coordinates(geom: str, expected: Region) -> None:
+    mon = Monitor(left=0, top=0, width=640, height=480)
+    parsed = _parse_coordinates(geom)
+    norm = _normalize_capture_region(parsed, mon)
+    assert norm == expected
 
 
 def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:

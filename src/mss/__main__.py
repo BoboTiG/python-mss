@@ -2,19 +2,26 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+import dataclasses
 import os.path
 import platform
 import re
 import sys
 from argparse import ArgumentError, ArgumentParser, Namespace
-from typing import Any
+from typing import Any, NamedTuple
 
 from mss import MSS, __version__
 from mss.exception import ScreenShotError
-from mss.models import Region
+from mss.models import Monitor, Region
 from mss.tools import to_png
 
 _COORDINATES_SYNTAX = "TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP"
+
+
+class _RegionWithEdges(NamedTuple):
+    region: Region
+    from_right: bool
+    from_bottom: bool
 
 
 def _backend_cli_choices() -> list[str]:
@@ -34,16 +41,65 @@ def _backend_cli_choices() -> list[str]:
     return ["default"]
 
 
-def _parse_coordinates(coordinates: str) -> tuple[int, int, int, int]:
+def _parse_xgeom_coordinate(sign1: str, sign2: str | None, magnitude: str) -> tuple[int, bool]:
+    """Parse a TOP or LEFT coordinate of an X-style geometry.
+
+    As in XParseGeometry, the LEFT and/or TOP coordinates may be
+    preceded by ``-`` instead of ``+``.  This means that they should
+    be interpreted as offsets from the bottom or right, rather than
+    the top or left.
+
+    Additionally, the values themselves may be negative.  On X, this
+    normally indicates that they may be partially off-screen.  On
+    Windows and macOS, these are normal coordinates, since those
+    systems always place the primary monitor at 0,0.
+
+    When using values from the bottom or right, the height or width
+    should be added by the caller as additional offsets.  In other
+    words, a region with a width of 100 pixels, with a 25-pixel offset
+    from the right, should still have all 100 onscreen pixels
+    onscreen, with 25 pixels between the region and the right edge of
+    the screen.
+
+    Examples for the TOP coordinate (these are exhaustive):
+    - ``+25`` or ``++25``: 25 pixels from the top
+    - ``-25`` or ``-+25``: 25 pixels from the bottom
+    - ``+-25``: 25 pixels extend above the top
+    - ``--25``: 25 pixels extend below the bottom
+
+    The returned int is negative if the edge is meant to be offscreen,
+    and the returned bool is True if the edge is meant to be from the
+    opposite border.
+    """
+    assert sign1 in {"+", "-"}  # noqa: S101
+    assert sign2 in {"+", "-", None}  # noqa: S101
+    assert "+" not in magnitude  # noqa: S101
+    assert "-" not in magnitude  # noqa: S101
+
+    signs = sign1 if sign2 is None else sign1 + sign2
+
+    magnitude_value = int(magnitude)
+    if signs in {"+", "++"}:
+        return magnitude_value, False
+    if signs in {"-", "-+"}:
+        return magnitude_value, True
+    if signs == "+-":
+        return -magnitude_value, False
+    if signs == "--":
+        return -magnitude_value, True
+    # This is an internal error.
+    msg = "Invalid signs"
+    raise ValueError(msg)
+
+
+def _parse_coordinates(coordinates: str) -> _RegionWithEdges:
     """Parse a capture region string.
 
     Supports ``TOP,LEFT,WIDTH,HEIGHT`` and X11 geometry style
-    ``WIDTHxHEIGHT+LEFT+TOP`` (with optional ``-`` offsets).
+    ``WIDTHxHEIGHT+LEFT+TOP`` (with optional ``-`` special handling).
 
-    :param coordinates: Region string to parse.
-    :returns: Parsed coordinates as ``(top, left, width, height)``.
-    :raises ValueError: If *coordinates* does not match a supported
-        syntax.
+    See _parse_xgeom_coordinate for notes about how negative values
+    are handled.
     """
     match_res = re.fullmatch(
         r"""(?x)^\s*(?:
@@ -55,25 +111,42 @@ def _parse_coordinates(coordinates: str) -> tuple[int, int, int, int]:
         |
         (?: # WIDTHxHEIGHT+XOFF+YOFF (X11 geometry style; see X(7))
            (?P<width2>[0-9]+)\s*x\s*
-           (?P<height2>[0-9]+)\s*(?P<left2sign>[+-])\s*
-           (?P<left2>[0-9]+)\s*(?P<top2sign>[+-])\s*
-           (?P<top2>[0-9]+))
+           (?P<height2>[0-9]+)\s*
+           (?P<left2sign1>[+-])\s*(?P<left2sign2>[+-]\s*)?(?P<left2>[0-9]+)\s*
+           (?P<top2sign1>[+-])\s*(?P<top2sign2>[+-]\s*)?(?P<top2>[0-9]+))
         )\s*$""",
         coordinates,
     )
     if match_res is None:
         msg = f"Coordinates syntax: {_COORDINATES_SYNTAX}"
         raise ValueError(msg)
+
     if match_res["top1"] is not None:
-        return (int(match_res["top1"]), int(match_res["left1"]), int(match_res["width1"]), int(match_res["height1"]))
+        return _RegionWithEdges(
+            region=Region(
+                left=int(match_res["left1"]),
+                top=int(match_res["top1"]),
+                width=int(match_res["width1"]),
+                height=int(match_res["height1"]),
+            ),
+            from_right=False,
+            from_bottom=False,
+        )
+
     if match_res["top2"] is not None:
-        top2 = int(match_res["top2"])
-        if match_res["top2sign"] == "-":
-            top2 = -top2
-        left2 = int(match_res["left2"])
-        if match_res["left2sign"] == "-":
-            left2 = -left2
-        return top2, left2, int(match_res["width2"]), int(match_res["height2"])
+        left, from_right = _parse_xgeom_coordinate(match_res["left2sign1"], match_res["left2sign2"], match_res["left2"])
+        top, from_bottom = _parse_xgeom_coordinate(match_res["top2sign1"], match_res["top2sign2"], match_res["top2"])
+        return _RegionWithEdges(
+            region=Region(
+                left=left,
+                top=top,
+                width=int(match_res["width2"]),
+                height=int(match_res["height2"]),
+            ),
+            from_right=from_right,
+            from_bottom=from_bottom,
+        )
+
     msg = f"Coordinates syntax: {_COORDINATES_SYNTAX}"
     raise ValueError(msg)
 
@@ -88,10 +161,7 @@ def _build_parser() -> ArgumentParser:
         "--coordinates",
         default="",
         type=str,
-        help=(
-            "the part of the screen to capture: TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP; "
-            "negative TOP or LEFT are insets from the bottom or right edge"
-        ),
+        help="the part of the screen to capture: TOP,LEFT,WIDTH,HEIGHT or WIDTHxHEIGHT+LEFT+TOP",
     )
     cli_args.add_argument(
         "-l",
@@ -118,15 +188,14 @@ def _build_parser() -> ArgumentParser:
     return cli_args
 
 
-def _prepare_grab_options(options: Namespace) -> tuple[int, str, Region | None]:
+def _prepare_grab_options(options: Namespace) -> tuple[int, str, _RegionWithEdges | None]:
     """Build grab options derived from parsed CLI arguments."""
     monitor_index = int(options.monitor)
     output_template = str(options.output)
     if not options.coordinates:
         return monitor_index, output_template, None
 
-    top, left, width, height = _parse_coordinates(str(options.coordinates))
-    coordinates = Region(top=int(top), left=int(left), width=int(width), height=int(height))
+    coordinates = _parse_coordinates(str(options.coordinates))
     if options.output == "monitor-{mon}.png":
         output_template = "sct-{top}x{left}_{width}x{height}.png"
     return monitor_index, output_template, coordinates
@@ -140,27 +209,33 @@ def _build_mss_kwargs(options: Namespace) -> dict[str, Any]:
     return mss_kwargs
 
 
+def _normalize_capture_region(coordinates: _RegionWithEdges, monitor: Monitor) -> Region:
+    reference = monitor.as_region()
+    if coordinates.from_bottom:
+        top = reference.top + reference.height - coordinates.region.top - coordinates.region.height
+    else:
+        top = reference.top + coordinates.region.top
+    if coordinates.from_right:
+        left = reference.left + reference.width - coordinates.region.left - coordinates.region.width
+    else:
+        left = reference.left + coordinates.region.left
+
+    return Region(left=left, top=top, width=coordinates.region.width, height=coordinates.region.height)
+
+
 def _capture_and_save(
     sct: MSS,
     *,
     options: Namespace,
     monitor_index: int,
     output_template: str,
-    coordinates: Region | None,
+    coordinates: _RegionWithEdges | None,
 ) -> None:
     """Capture screenshots and write output files."""
     if coordinates is not None:
-        if coordinates.top < 0:
-            coordinates.top = sct.monitors[monitor_index].height + coordinates.top
-        if coordinates.left < 0:
-            coordinates.left = sct.monitors[monitor_index].width + coordinates.left
-        output = output_template.format(
-            top=coordinates.top,
-            left=coordinates.left,
-            width=coordinates.width,
-            height=coordinates.height,
-        )
-        sct_img = sct.grab(coordinates)
+        normalized_region = _normalize_capture_region(coordinates, sct.monitors[monitor_index])
+        output = output_template.format(**dataclasses.asdict(normalized_region))
+        sct_img = sct.grab(normalized_region)
         to_png(sct_img.rgb, sct_img.size, level=options.level, output=output)
         if not options.quiet:
             print(os.path.realpath(output))
