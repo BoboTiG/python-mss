@@ -2,9 +2,11 @@
 Source: https://github.com/BoboTiG/python-mss.
 """
 
+import operator
 import os
 import shutil
 from collections.abc import Callable, Generator
+from functools import reduce
 from hashlib import sha256
 from pathlib import Path
 from platform import system
@@ -36,20 +38,24 @@ def _no_warnings(recwarn: pytest.WarningsRecorder) -> Generator:
     assert not warnings
 
 
-def purge_files() -> None:
-    """Remove all generated files from previous runs."""
-    for file in Path().glob("*.png"):
-        print(f"Deleting {file} ...")
-        file.unlink()
-
-    for file in Path().glob("*.png.old"):
-        print(f"Deleting {file} ...")
-        file.unlink()
+_PURGE_GLOBS = {"*.png", "*.png.old"}
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _before_tests() -> None:
-    purge_files()
+def purge_files() -> Generator[None]:
+    """Remove any .png or .png.old files created during the test module.
+
+    This is useful for tests that generate screenshots, so that they
+    don't accumulate in the source tree and pollute the results of
+    future test runs.
+    """
+    before_images = reduce(operator.or_, (set(Path().glob(g)) for g in _PURGE_GLOBS))
+    yield
+    after_images = reduce(operator.or_, (set(Path().glob(g)) for g in _PURGE_GLOBS))
+    new_images = after_images - before_images
+    for file in new_images:
+        print(f"Deleting {file} ...")
+        file.unlink()
 
 
 @pytest.fixture(autouse=True)
