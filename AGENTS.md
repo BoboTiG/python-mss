@@ -51,12 +51,6 @@ When adding, removing, or renaming a packaged file, update the explicit expected
 python -m pytest src/tests/test_setup.py::test_sdist src/tests/test_setup.py::test_wheel
 ```
 
-On headless GNU/Linux environments, run tests with a virtual display:
-
-```shell
-xvfb-run python -m pytest
-```
-
 When documentation changes, install docs dependencies and build docs with warnings as errors:
 
 ```shell
