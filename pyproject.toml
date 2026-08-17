@@ -176,6 +176,7 @@ ignore = [
   "ANN401",   # typing.Any
   "C90",      # complexity
   "COM812",   # conflict
+  "CPY001",   # missing copyright notice at top of file
   "D",        # TODO
   "FIX002",   # Line contains TODO
   "ISC001",   # conflict
