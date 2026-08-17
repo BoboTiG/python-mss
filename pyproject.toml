@@ -180,6 +180,7 @@ ignore = [
   "D",        # TODO
   "FIX002",   # Line contains TODO
   "ISC001",   # conflict
+  "PLR0917",  # too many positional arguments
   "T201",     # `print()`
 ]
 
