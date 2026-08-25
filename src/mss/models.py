@@ -69,7 +69,7 @@ class Monitor:
 
         .. version-added:: 11.0.0
             Prior to this version, a Region and a Monitor were effectively
-            the same: a dict with left, top, width, and height entries.        
+            the same: a dict with left, top, width, and height entries.
         """
         return Region(left=self.left, top=self.top, width=self.width, height=self.height)
 
