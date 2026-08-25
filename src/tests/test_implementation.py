@@ -242,7 +242,7 @@ class TestEntryPoint:
         fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
         for opt in ("-o", "--out"):
             self._run_main(with_cursor, "-m 1", opt, fmt)
-            filename = Path(fmt.format(mon=1, date=datetime.now(tz=UTC)))
+            filename = Path(fmt.format(mon=1, date=datetime.now().astimezone()))
             captured = capsys.readouterr()
             assert captured.out.endswith(f"{filename}\n")
             assert filename.is_file()

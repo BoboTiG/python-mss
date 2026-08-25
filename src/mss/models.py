@@ -20,29 +20,57 @@ class Region:
 class Monitor:
     """Monitor geometry and optional platform metadata.
 
-    The optional metadata attributes are:
+    .. seealso::
+       - :py:attr:`.MSS.monitors`
+       - :py:attr:`.MSS.primary_monitor`
 
-    - ``is_primary``: whether this is the primary monitor; ``None`` means
-      the platform could not determine it.
-    - ``name``: the human-readable device name; ``None`` means it is
-      unavailable.
-    - ``unique_id``: the platform-specific stable identifier; ``None``
-      means it is unavailable.
-    - ``output``: the Linux output name compatible with xrandr; ``None``
-      means it is unavailable or does not apply to the platform.
+    .. version-changed:: 11.0.0
+       Prior to this version, ``Monitor`` was an alias for ``dict[str, int]``.
+       In MSS 11, it is still possible to access attributes with dict-style
+       string-key access, such as ``monitor["left"]``, but this
+       behavior is deprecated and will be removed in a later version.
     """
 
+    #: The monitor's left edge within the entire virtual desktop.
     left: int
+    #: The monitor's top edge within the entire virtual desktop.
     top: int
     width: int
     height: int
-    is_primary: bool | None = None
+    #: The human-readable name of this monitor, typically the brand
+    #: and model.
+    #:
+    #: .. version-added:: 10.2.0
     name: str | None = None
+    #: Whether this is the primary monitor, according to the operating
+    #: system.  If MSS can't determine the primary monitor, this will
+    #: be ``None`` for all monitors, although
+    #: :py:attr:`.MSS.primary_monitor` will still return a monitor
+    #: (the first one).
+    #:
+    #: .. version-added:: 10.2.0
+    is_primary: bool | None = None
+    #: The platform-specific stable identifier.  This is
+    #: generally stable across reboots, or ordinary disconnection /
+    #: reconnection, but may change when the display hardware or
+    #: connection topology changes.
+    #:
+    #: .. version-added:: 10.2.0
     unique_id: str | None = None
+    #: The short output name, for interfacing with other tools.  This
+    #: is only currently populated by Linux, where it is the name used
+    #: by xrandr.
+    #:
+    #: .. version-added:: 10.2.0
     output: str | None = None
 
     def as_region(self) -> Region:
-        """Return this monitor's geometry as a capture region."""
+        """Return this monitor's geometry as a capture region.
+
+        .. version-added:: 11.0.0
+            Prior to this version, a Region and a Monitor were effectively
+            the same: a dict with left, top, width, and height entries.        
+        """
         return Region(left=self.left, top=self.top, width=self.width, height=self.height)
 
     @overload

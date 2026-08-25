@@ -56,7 +56,7 @@ Each entry is an immutable :py:class:`mss.models.Monitor`.  Its geometry is avai
 ``width``, and ``height`` attributes.  The ``is_primary``, ``name``, ``unique_id``, and ``output`` metadata attributes
 are ``None`` when unavailable::
 
-    monitor = sct.monitors[1]
+    monitor = sct.primary_monitor
     print(monitor.width, monitor.height)
 
 Call ``monitor.as_region()`` when you need its geometry as a :py:class:`mss.models.Region`::

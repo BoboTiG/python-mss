@@ -6,7 +6,6 @@ from __future__ import annotations
 import platform
 import warnings
 from abc import ABC, abstractmethod
-from copy import copy
 from datetime import datetime
 from threading import Lock
 from typing import TYPE_CHECKING, Any
@@ -17,7 +16,7 @@ from mss.screenshot import ScreenShot
 from mss.tools import to_png
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Sequence
     from types import TracebackType
 
     from typing_extensions import Buffer, Self
@@ -299,31 +298,44 @@ class MSS:
     def grab(self, region: Monitor | Region | dict[str, Any] | tuple[int, int, int, int], /) -> ScreenShot:
         """Retrieve screen pixels for a given region.
 
-        ``region`` can be a :class:`mss.models.Monitor`, a :class:`mss.models.Region`, a region dictionary, or a tuple
-        like the one :py:func:`PIL.ImageGrab.grab` accepts: ``(left, top, right, bottom)``.
+        ``region`` can be a :class:`mss.models.Monitor`, a
+        :class:`mss.models.Region`, a region dictionary, or a tuple
+        like the one :py:func:`PIL.ImageGrab.grab` accepts: ``(left,
+        top, right, bottom)``.
 
         :param region: The coordinates and size of the box to capture.
-                       See :meth:`monitors <monitors>` for monitor object details.
         :returns: Screenshot of the requested region.
         """
         if isinstance(region, tuple):
+            if len(region) != 4:  # noqa: PLR2004
+                msg = "Tuples for grab must have exactly four elements: left, top, right, bottom"
+                raise ScreenShotError(msg)
             grab_region = Region(
-                left=region[0],
-                top=region[1],
-                width=region[2] - region[0],
-                height=region[3] - region[1],
+                left=int(region[0]),
+                top=int(region[1]),
+                width=int(region[2] - region[0]),
+                height=int(region[3] - region[1]),
             )
         elif isinstance(region, Monitor):
             grab_region = region.as_region()
         elif isinstance(region, Region):
-            grab_region = copy(region)
+            # Make a copy, in case the user changes the Region object later.  Also, coerce the elements to ints.
+            grab_region = Region(
+                left=int(region.left),
+                top=int(region.top),
+                width=int(region.width),
+                height=int(region.height),
+            )
         elif isinstance(region, dict):
             grab_region = Region(
-                left=region["left"],
-                top=region["top"],
-                width=region["width"],
-                height=region["height"],
+                left=int(region["left"]),
+                top=int(region["top"]),
+                width=int(region["width"]),
+                height=int(region["height"]),
             )
+        else:
+            msg = f"Capture area must be a Region, Monitor, tuple, or dict: {region!r}"
+            raise ScreenShotError(msg)
 
         if grab_region.width <= 0 or grab_region.height <= 0:
             msg = f"Region has zero or negative size: {grab_region!r}"
@@ -344,25 +356,21 @@ class MSS:
     @property
     def monitors(self) -> Monitors:
         """Get positions of all monitors.
-        If the monitor has rotation, you have to deal with it
-        inside this method.
 
-        This method has to fill ``self._monitors`` with all information
-        and use it as a cache:
+        If a monitor is rotated, its dimensions reflect its displayed
+        orientation. In other words, height is the visible height, not
+        the number of scanout lines.
 
-        - ``self._monitors[0]`` is all monitors together
-        - ``self._monitors[N]`` is monitor N (with N > 0)
+        The first element, ``monitors[0]``, is all the monitors
+        together.  It is the virtual desktop, holding all the monitors.
+        The remaining elements, ``monitors[N]`` (with N > 0), are the
+        individual displays.
 
-        Each :class:`mss.models.Monitor` has:
+        If monitors are being mirrored, the list will only include one
+        of the mirrored copies.
 
-        - ``left``: the x-coordinate of the upper-left corner
-        - ``top``: the y-coordinate of the upper-left corner
-        - ``width``: the width
-        - ``height``: the height
-        - ``is_primary``: true or false when known, otherwise ``None``
-        - ``name``: human-readable device name, or ``None``
-        - ``unique_id``: platform-specific stable identifier, or ``None``
-        - ``output``: Linux output name compatible with xrandr, or ``None``
+        .. seealso::
+            :py:attr:`primary_monitor`
         """
         with self._lock:
             if self._monitors is None:
@@ -374,9 +382,9 @@ class MSS:
     def primary_monitor(self) -> Monitor:
         """Get the primary monitor.
 
-        Returns the monitor marked as primary. If no monitor is marked as primary
-        (or the platform doesn't support primary monitor detection), returns the
-        first monitor (at index 1).
+        Returns the monitor marked as primary. If no monitor is marked
+        as primary (or the platform doesn't support primary monitor
+        detection), returns the first monitor (at index 1).
 
         :raises ScreenShotError: If no monitors are available.
 
@@ -403,7 +411,7 @@ class MSS:
         mon: int = 0,
         output: str = "monitor-{mon}.png",
         callback: Callable[[str], None] | None = None,
-    ) -> Iterator[str]:
+    ) -> Sequence[str]:
         """Grab a screenshot and save it to a file.
 
         :param int mon: The monitor to screenshot (default=0). ``-1``
@@ -416,19 +424,26 @@ class MSS:
             unavailable.
         :param typing.Callable callback: Called before saving the
             screenshot; receives the ``output`` argument.
-        :return: Created file(s).
+        :return: Names of created file(s).
+
+        .. version-changed:: 11.0.0
+            Prior to this version an Iterator was returned, rather than
+            a Sequence.
         """
         monitors = self.monitors
         if not monitors:
             msg = "No monitor found."
             raise ScreenShotError(msg)
 
+        rv: list[str] = []
+
+        date = datetime.now().astimezone()
         if mon == 0:
             # One screenshot by monitor
             for idx, monitor in enumerate(monitors[1:], 1):
                 fname = output.format(
                     mon=idx,
-                    date=datetime.now(UTC) if "{date" in output else None,
+                    date=date,
                     top=monitor.top,
                     left=monitor.left,
                     width=monitor.width,
@@ -442,7 +457,8 @@ class MSS:
                     callback(fname)
                 sct = self.grab(monitor)
                 to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
-                yield fname
+                rv.append(fname)
+
         else:
             # A screenshot of all monitors together or
             # a screenshot of the monitor N.
@@ -452,10 +468,9 @@ class MSS:
             except IndexError as exc:
                 msg = f"Monitor {mon!r} does not exist."
                 raise ScreenShotError(msg) from exc
-
-            output = output.format(
+            fname = output.format(
                 mon=mon,
-                date=datetime.now(UTC) if "{date" in output else None,
+                date=date,
                 top=monitor.top,
                 left=monitor.left,
                 width=monitor.width,
@@ -466,17 +481,19 @@ class MSS:
                 output=monitor.output,
             )
             if callable(callback):
-                callback(output)
+                callback(fname)
             sct = self.grab(monitor)
-            to_png(sct.rgb, sct.size, level=self.compression_level, output=output)
-            yield output
+            to_png(sct.rgb, sct.size, level=self.compression_level, output=fname)
+            rv.append(fname)
+
+        return rv
 
     def shot(self, /, **kwargs: Any) -> str:
         """Helper to save the screenshot of the 1st monitor, by default.
         You can pass the same arguments as for :meth:`save`.
         """
         kwargs["mon"] = kwargs.get("mon", 1)
-        return next(self.save(**kwargs))
+        return self.save(**kwargs)[0]
 
     @staticmethod
     def _merge(screenshot: ScreenShot, cursor: ScreenShot, /) -> ScreenShot:
