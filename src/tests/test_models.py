@@ -23,6 +23,13 @@ def test_region() -> None:
     assert (region.left, region.top, region.width, region.height) == (5, 6, 7, 8)
 
 
+def test_region_coerces_fields_to_int() -> None:
+    region = Region(left=1.1, top=2.2, width=3.9, height=4.5)  # type: ignore[arg-type]
+
+    assert (region.left, region.top, region.width, region.height) == (1, 2, 3, 4)
+    assert all(isinstance(value, int) for value in (region.left, region.top, region.width, region.height))
+
+
 def test_monitor() -> None:
     monitor = Monitor(
         left=1,

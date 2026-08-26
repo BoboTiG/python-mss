@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import platform
 import warnings
 from abc import ABC, abstractmethod
@@ -311,27 +312,23 @@ class MSS:
                 msg = "Tuples for grab must have exactly four elements: left, top, right, bottom"
                 raise ScreenShotError(msg)
             grab_region = Region(
-                left=int(region[0]),
-                top=int(region[1]),
-                width=int(region[2] - region[0]),
-                height=int(region[3] - region[1]),
+                left=region[0],
+                top=region[1],
+                width=region[2] - region[0],
+                height=region[3] - region[1],
             )
         elif isinstance(region, Monitor):
             grab_region = region.as_region()
         elif isinstance(region, Region):
-            # Make a copy, in case the user changes the Region object later.  Also, coerce the elements to ints.
-            grab_region = Region(
-                left=int(region.left),
-                top=int(region.top),
-                width=int(region.width),
-                height=int(region.height),
-            )
+            # Make a copy, in case the user changes the Region object later.  We use dataclasses.replace because
+            # copy.copy doesn't call __post_init__, and we want the type normalization.
+            grab_region = dataclasses.replace(region)
         elif isinstance(region, dict):
             grab_region = Region(
-                left=int(region["left"]),
-                top=int(region["top"]),
-                width=int(region["width"]),
-                height=int(region["height"]),
+                left=region["left"],
+                top=region["top"],
+                width=region["width"],
+                height=region["height"],
             )
         else:
             msg = f"Capture area must be a Region, Monitor, tuple, or dict: {region!r}"

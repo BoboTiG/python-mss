@@ -15,6 +15,12 @@ class Region:
     width: int
     height: int
 
+    def __post_init__(self) -> None:
+        self.left = int(self.left)
+        self.top = int(self.top)
+        self.width = int(self.width)
+        self.height = int(self.height)
+
 
 @dataclass(frozen=True, slots=True)
 class Monitor:
