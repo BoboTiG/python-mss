@@ -85,7 +85,7 @@ def test_output_format_optional(mss_impl: Callable[..., MSS]) -> None:
     with mss_impl() as sct:
         monitor = sct.monitors[1]
         with pytest.raises(FormattingCompleteError):
-            next(sct.save(mon=1, output=fmt, callback=capture_filename))
+            sct.save(mon=1, output=fmt, callback=capture_filename)
 
     assert filename == fmt.format(is_primary=monitor.is_primary, unique_id=monitor.unique_id)
 
@@ -105,5 +105,5 @@ def test_output_format_date_custom(mss_impl: Callable[..., MSS]) -> None:
     fmt = "sct_{date:%Y-%m-%d}.png"
     with mss_impl() as sct:
         filename = sct.shot(mon=1, output=fmt)
-    assert filename == fmt.format(date=datetime.now(tz=UTC))
+    assert filename == fmt.format(date=datetime.now().astimezone())
     assert Path(filename).is_file()

@@ -109,9 +109,6 @@ import torch
 import torchvision.models.detection
 import torchvision.transforms.v2
 
-# You'll also need to install MSS and Pillow, such as with "pip install mss pillow".
-from PIL import Image
-
 import mss
 
 # The model will identify objects even if they only vaguely look like something.  It also tell us a score of how
@@ -221,7 +218,7 @@ def main() -> None:
     cat_label = model_labels.index("cat")
 
     with mss.MSS() as sct:
-        monitor = sct.monitors[1]
+        monitor = sct.primary_monitor
 
         # Compute the minimum size, in square pixels, that we'll consider reliable.
         img_area = monitor.width * monitor.height

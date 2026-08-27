@@ -26,7 +26,7 @@ SUPPORTED_BLUE_MASK = 0x0000FF
 ALL_PLANES = 0xFFFFFFFF  # XCB doesn't define AllPlanes
 
 
-class _RandROutputIds(TypedDict, total=False):
+class _RandROutputInfo(TypedDict, total=False):
     name: str
     unique_id: str
     output: str
@@ -233,13 +233,13 @@ class MSSImplXCBBase(MSSImplementation):
         # Formerly, "EDID" was known as "EdidData".  I don't know when it changed.
         return xcb.intern_atom(self.conn, "EdidData", only_if_exists=True)
 
-    def _randr_output_ids(
+    def _randr_output_info(
         self,
         output: xcb.RandrOutput,
         timestamp: xcb.Timestamp,
         edid_atom: xcb.Atom | None,
         /,
-    ) -> _RandROutputIds:
+    ) -> _RandROutputInfo:
         if self.conn is None:
             msg = "Cannot identify monitors while the connection is closed"
             raise ScreenShotError(msg)
@@ -249,7 +249,7 @@ class MSSImplXCBBase(MSSImplementation):
             msg = "Display configuration changed while detecting monitors."
             raise ScreenShotError(msg)
 
-        rv: _RandROutputIds = {}
+        rv: _RandROutputInfo = {}
 
         output_name_arr = xcb.randr_get_output_info_name(output_info)
         rv["output"] = bytes(output_name_arr).decode("utf_8", errors="replace")
@@ -312,11 +312,11 @@ class MSSImplXCBBase(MSSImplementation):
         monitors_reply = xcb.randr_get_monitors(self.conn, self.drawable, 1)
         timestamp = monitors_reply.timestamp
         for randr_monitor in xcb.randr_get_monitors_monitors(monitors_reply):
-            output_ids: _RandROutputIds = {}
+            output_info: _RandROutputInfo = {}
             if randr_monitor.nOutput > 0:
                 outputs = xcb.randr_monitor_info_outputs(randr_monitor)
                 chosen_output = self._choose_randr_output(outputs, primary_output)
-                output_ids = self._randr_output_ids(chosen_output, timestamp, edid_atom)
+                output_info = self._randr_output_info(chosen_output, timestamp, edid_atom)
 
             monitors.append(
                 Monitor(
@@ -324,15 +324,12 @@ class MSSImplXCBBase(MSSImplementation):
                     top=randr_monitor.y,
                     width=randr_monitor.width,
                     height=randr_monitor.height,
-                    # Under XRandR, it's legal for no monitor to be primary.  In
-                    # this case, case MSSBase.primary_monitor will return the
-                    # first monitor.  That said, we note in the Monitor that we
-                    # explicitly are told by XRandR that all of the monitors are
-                    # not primary.  (This is distinct from the XRandR 1.2 path,
-                    # which doesn't have any information about primary
-                    # monitors.)
+                    # Under XRandR, it's legal for no monitor to be primary.  In this case, MSSBase.primary_monitor will
+                    # return the first monitor.  That said, we note in the Monitor that we explicitly are told by XRandR
+                    # that all of the monitors are not primary.  (This is distinct from the XRandR 1.2 path, which
+                    # doesn't have any information about primary monitors.)
                     is_primary=bool(randr_monitor.primary),
-                    **output_ids,
+                    **output_info,
                 ),
             )
 
@@ -366,7 +363,7 @@ class MSSImplXCBBase(MSSImplementation):
                 continue
             outputs = xcb.randr_get_crtc_info_outputs(crtc_info)
             chosen_output = self._choose_randr_output(outputs, primary_output)
-            output_ids = self._randr_output_ids(chosen_output, timestamp, edid_atom)
+            output_info = self._randr_output_info(chosen_output, timestamp, edid_atom)
             # The concept of primary outputs was added in XRandR 1.3.  We distinguish between "all the monitors are
             # not primary" (RRGetOutputPrimary returned XCB_NONE, a valid case) and "we have no way to get
             # information about the primary monitor": in the latter case, is_primary is None.
@@ -377,7 +374,7 @@ class MSSImplXCBBase(MSSImplementation):
                     width=crtc_info.width,
                     height=crtc_info.height,
                     is_primary=chosen_output == primary_output if primary_output is not None else None,
-                    **output_ids,
+                    **output_info,
                 ),
             )
 
@@ -441,8 +438,7 @@ class MSSImplXCBBase(MSSImplementation):
         Used by the XGetImage backend and by the XShmGetImage backend in
         fallback mode.
 
-        :param region: Rectangle specifying ``left``, ``top``,
-            ``width``, and ``height`` to capture.
+        :param region: Desktop area to capture.
         :returns: A screenshot object containing the captured region.
         """
 

@@ -142,6 +142,8 @@ import time
 from collections import deque
 from typing import TYPE_CHECKING, Literal
 
+# You'll want to install the following packages, through pip or the like:
+# mss pyserial pillow prettytable
 import serial
 from PIL import Image, ImageOps
 from prettytable import PrettyTable, TableStyle
@@ -517,7 +519,6 @@ def _capture_area_type(value: str) -> Region:
     integers.
 
     :param value: The capture area string to validate.
-    :returns: Capture region.
     :raises argparse.ArgumentTypeError: If the format is invalid or extents
         are non-positive.
     """

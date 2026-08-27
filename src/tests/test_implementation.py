@@ -242,7 +242,7 @@ class TestEntryPoint:
         fmt = "sct_{mon}-{date:%Y-%m-%d}.png"
         for opt in ("-o", "--out"):
             self._run_main(with_cursor, "-m 1", opt, fmt)
-            filename = Path(fmt.format(mon=1, date=datetime.now(tz=UTC)))
+            filename = Path(fmt.format(mon=1, date=datetime.now().astimezone()))
             captured = capsys.readouterr()
             assert captured.out.endswith(f"{filename}\n")
             assert filename.is_file()
@@ -435,7 +435,7 @@ def test_parse_and_normalize_coordinates(geom: str, expected: Region) -> None:
     assert norm == expected
 
 
-def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
+def test_grab_with_tuple_and_dict(mss_impl: Callable[..., MSS]) -> None:
     left = 100
     top = 100
     right = 500
@@ -444,12 +444,12 @@ def test_grab_with_tuple(mss_impl: Callable[..., MSS]) -> None:
     height = lower - top  # 400px height
 
     with mss_impl() as sct:
-        # PIL like
+        # PIL style
         box = (left, top, right, lower)
         im = sct.grab(box)
         assert im.size == (width, height)
 
-        # MSS like
+        # MSS pre-11 style
         box2 = {"left": left, "top": top, "width": width, "height": height}
         im2 = sct.grab(box2)
         assert im.size == im2.size
@@ -471,6 +471,38 @@ def test_grab_with_region(mss_impl: Callable[..., MSS]) -> None:
     assert image.size == expected.size
     assert image.pos == expected.pos
     assert image.rgb == expected.rgb
+
+
+def test_grab_coerces_floats_to_int(mss_impl: Callable[..., MSS], monkeypatch: pytest.MonkeyPatch) -> None:
+    left = 100.0
+    top = 100.0
+    width = 400.0
+    height = 400.0
+    right = left + width
+    lower = top + height
+    expected_region = Region(left=100, top=100, width=400, height=400)
+
+    with mss_impl() as sct:
+        # The implementation classes use __slots__, so "grab" must be patched on the class.  Mock
+        # isn't a descriptor, so wrap the already-bound method rather than the unbound one, or the
+        # instance's call (which supplies no "self") won't match the wrapped callable's signature.
+        mock_grab = Mock(wraps=sct._impl.grab)
+        monkeypatch.setattr(type(sct._impl), "grab", mock_grab)
+
+        sct.grab((left, top, right, lower))  # type: ignore[arg-type]
+        mock_grab.assert_called_once_with(expected_region)
+        mock_grab.reset_mock()
+
+        sct.grab({"left": left, "top": top, "width": width, "height": height})
+        mock_grab.assert_called_once_with(expected_region)
+        mock_grab.reset_mock()
+
+        sct.grab(Region(left=left, top=top, width=width, height=height))  # type: ignore[arg-type]
+        mock_grab.assert_called_once_with(expected_region)
+        mock_grab.reset_mock()
+
+        sct.grab(Monitor(left=left, top=top, width=width, height=height))  # type: ignore[arg-type]
+        mock_grab.assert_called_once_with(expected_region)
 
 
 def test_grab_with_invalid_tuple(mss_impl: Callable[..., MSS]) -> None:

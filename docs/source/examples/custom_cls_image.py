@@ -24,5 +24,5 @@ class SimpleScreenShot(ScreenShot):
 
 with mss.MSS() as sct:
     sct.cls_image = SimpleScreenShot
-    image = sct.grab(sct.monitors[1])
+    image = sct.grab(sct.primary_monitor)
     # ...
