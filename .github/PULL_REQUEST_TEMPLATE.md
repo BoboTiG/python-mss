@@ -1,7 +1,6 @@
-### Changes proposed in this PR
-
 Fixes #
-(...)
+
+<!-- Briefly describe what changed and why. -->
 
 - [ ] Tests added/updated (or your review concluded: not needed)
 - [ ] Documentation updated (or your review concluded: not needed)
