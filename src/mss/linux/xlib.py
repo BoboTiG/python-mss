@@ -331,7 +331,7 @@ def _error_handler(display: Display, event: XErrorEvent) -> int:
 
 
 def _validate_x11(
-    retval: _Pointer | None | XBool | XStatus | XID | int, func: Any, args: tuple[Any, Any], /
+    retval: _Pointer | XBool | XStatus | XID | int | None, func: Any, args: tuple[Any, Any], /
 ) -> tuple[Any, Any]:
     thread = current_thread()
 

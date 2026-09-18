@@ -208,7 +208,7 @@ class MSS:
         backend: str = "default",
         compression_level: int = 6,
         with_cursor: bool | _PlatformSpecific = _PD_WITH_CURSOR,
-        display: bytes | str | None | _PlatformSpecific = _PD_DISPLAY,
+        display: bytes | str | _PlatformSpecific | None = _PD_DISPLAY,
         max_displays: int | _PlatformSpecific = _PD_MAX_DISPLAYS,
     ) -> None:
         impl_kwargs = {}
