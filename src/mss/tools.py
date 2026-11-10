@@ -158,6 +158,10 @@ def to_png(
     .. versionchanged:: 3.2.0
        Added the ``level`` keyword argument to control the PNG compression level.
     """
+    if not 0 <= level <= 9:
+        msg = f"Bad compression level: {level!r} (expected 0-9)."
+        raise ValueError(msg)
+
     pack = struct.pack
     crc32 = zlib.crc32
 

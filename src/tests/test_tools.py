@@ -45,6 +45,13 @@ def test_compression_level(level: int) -> None:
     assert_is_valid_png(raw=raw)
 
 
+@pytest.mark.parametrize("level", [10, 42, -2])
+def test_to_png_rejects_out_of_range_level(level: int) -> None:
+    data = b"rgb" * WIDTH * HEIGHT
+    with pytest.raises(ValueError, match="Bad compression level"):
+        to_png(data, (WIDTH, HEIGHT), level=level)
+
+
 def test_output_file() -> None:
     data = b"rgb" * WIDTH * HEIGHT
     output = Path(f"{WIDTH}x{HEIGHT}.png")
