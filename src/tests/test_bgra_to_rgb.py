@@ -17,6 +17,15 @@ def test_contents() -> None:
     assert bytes(image.rgb) == b"RGB" * 1024 * 768
 
 
+def test_contents_across_chunks() -> None:
+    width, height = 513, 49
+    repeats = width * height // 3
+    data = memoryview(b"_" + b"abcdefghijkl" * repeats)[1:]
+    image = ScreenShot.from_size(data, width, height)
+
+    assert bytes(image.rgb) == b"cbagfekji" * repeats
+
+
 def test_ctypes_pointers_from_rgb() -> None:
     image = ScreenShot.from_size(b"BGRA" * 4, 2, 2)
     assert image.rgb.readonly is False

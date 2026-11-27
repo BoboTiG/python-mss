@@ -185,11 +185,19 @@ class ScreenShot:
             :py:meth:`memoryview.tobytes` to get a ``bytes`` object.
         """
         if self.__rgb is None:
-            rgb = bytearray(self.height * self.width * 3)
+            pixel_count = self.height * self.width
+            rgb = bytearray(pixel_count * 3)
             raw = self._raw
-            rgb[::3] = raw[2::4]
-            rgb[1::3] = raw[1::4]
-            rgb[2::3] = raw[::4]
+            # Slice contiguous bytes instead of strided memoryviews. Copying in
+            # chunks keeps the temporary buffers small for large screenshots.
+            pixels_per_chunk = 8192
+            for first_pixel in range(0, pixel_count, pixels_per_chunk):
+                last_pixel = min(first_pixel + pixels_per_chunk, pixel_count)
+                bgra = raw[first_pixel * 4 : last_pixel * 4].tobytes()
+                start, end = first_pixel * 3, last_pixel * 3
+                rgb[start:end:3] = bgra[2::4]
+                rgb[start + 1 : end : 3] = bgra[1::4]
+                rgb[start + 2 : end : 3] = bgra[::4]
             # We could just return the bytearray directly.  However, we would rather give ourselves the flexibility to
             # use other buffer types in the future.  Rather than declaring our return type as just generically Buffer
             # (which doesn't guarantee the indexing behavior of memoryview), we always return a memoryview, which is
